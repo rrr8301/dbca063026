@@ -1,0 +1,34 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          20
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT TESTS NOT REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      Build mlibc (x86_64, mlibc, gcc)
+  Docker image pulled: debian:trixie
+
+--- LLM-Generated Dockerfile ---
+  Base image:   debian:trixie
+  RUN steps:    5
+
+--- Test Reproducibility Gap ---
+  Original ran 413 test(s) across [Meson].
+  LLM build produced no test results (empty llm_log_stats).
+
+--- Root Cause ---
+  Reason type: Compilation / linker failure during build
+  Build stopped at step 104 of 1379
+  Key error(s) from build/test log:
+    FAILED: ld.so.p/options_internal_gcc_guard-abi.cpp.o
+    FAILED: ld.so.p/options_rtld_generic_main.cpp.o
+    FAILED: ld.so.p/options_rtld_generic_linker.cpp.o
+    ../../../src/mlibc/subprojects/freestnd-cxx-hdrs/x86_64/include/initializer_list:45:11: fatal error: definition of ‘class std::initializer_list<_E>’ does not match ‘#include <initializer_list>’
+    ninja: build stopped: subcommand failed.
+
+--- Original Test Statistics (not reproduced) ---
+  [Meson] 413 run, 409 passed, 0 failed, 0 skipped

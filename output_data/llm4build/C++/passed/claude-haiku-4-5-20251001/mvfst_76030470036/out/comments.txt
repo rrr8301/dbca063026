@@ -1,0 +1,56 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          5
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      build
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ sudo --preserve-env=http_proxy python3 build/fbcode_builder/getdeps.py --allow-system-packages install-system-deps --recursive mvfst && sudo --preserve-env=http_proxy python3 build/fbcode_builder/getdeps.py --allow-system-packages install-system-deps --recursive patchelf
+    $ python3 build/fbcode_builder/getdeps.py --allow-system-packages query-paths --recursive --src-dir=. mvfst  >> "$GITHUB_OUTPUT"
+    $ python3 build/fbcode_builder/getdeps.py --allow-system-packages fetch --no-tests boost
+    $ python3 build/fbcode_builder/getdeps.py --allow-system-packages fetch --no-tests fast_float
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ python3 build/fbcode_builder/getdeps.py --allow-system-packages fetch --no-tests boost
+  $ python3 build/fbcode_builder/getdeps.py --allow-system-packages fetch --no-tests fast_float
+  $ python3 build/fbcode_builder/getdeps.py --allow-system-packages fetch --no-tests fmt
+  $ python3 build/fbcode_builder/getdeps.py --allow-system-packages fetch --no-tests glog
+  $ python3 build/fbcode_builder/getdeps.py --allow-system-packages fetch --no-tests liboqs
+
+--- Reason(s) for Non-Reproducibility ---
+  - [CTest] Test run mismatch: original=1911, LLM=1896
+  - [CTest] Test passed mismatch: original=1911, LLM=1780
+  - [CTest] Test failed mismatch: original=0, LLM=116
+  - [CTest] 29 test(s) failed in LLM but not in original: QuicServerTakeoverTest.TakeoverTest, QuicServerTest.AddAcceptObserverAttachesOnWorkerEventBaseThread, QuicServerTest.DontRouteDataAfterShutdown, QuicServerTest.NetworkTest, QuicServerTest.NetworkTestHealthCheck, QuicServerTest.NetworkTestNoVersionNegotiation, QuicServerTest.NetworkTestReset, QuicServerTest.NetworkTestResetLargePacket (+21 more)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    712:    - cxx11_static_assert      : yes [2]
+    7382:    "g++"   -m64 -pthread -O3 -finline-functions -Wno-inline -Wall -g -fvisibility=default -fPIC -fPIC -DBOOST_ALL_NO_LIB=1 -DBOOST_COROUTINES_SOURCE -DBOOST_DISABLE_ASSERTS -DNDEBUG   -I"."  -c
+    7422:    "g++"   -m64 -pthread -O3 -finline-functions -Wno-inline -Wall -g -fvisibility=default -fPIC -fPIC -DBOOST_ALL_NO_LIB=1 -DBOOST_COROUTINES_SOURCE -DBOOST_DISABLE_ASSERTS -DNDEBUG   -I"."  -c
+    7827:    "g++"   -m64 -pthread -O3 -finline-functions -Wno-inline -Wall -g -fvisibility=default -fPIC -fPIC -DBOOST_ALL_NO_LIB=1 -DBOOST_COROUTINES_SOURCE -DBOOST_DISABLE_ASSERTS -DNDEBUG   -I"."  -c
+    712:    - cxx11_static_assert      : yes [2]
+    7382:    "g++"   -m64 -pthread -O3 -finline-functions -Wno-inline -Wall -g -fvisibility=default -fPIC -fPIC -DBOOST_ALL_NO_LIB=1 -DBOOST_COROUTINES_SOURCE -DBOOST_DISABLE_ASSERTS -DNDEBUG   -I"."  -c
+    7422:    "g++"   -m64 -pthread -O3 -finline-functions -Wno-inline -Wall -g -fvisibility=default -fPIC -fPIC -DBOOST_ALL_NO_LIB=1 -DBOOST_COROUTINES_SOURCE -DBOOST_DISABLE_ASSERTS -DNDEBUG   -I"."  -c
+    7827:    "g++"   -m64 -pthread -O3 -finline-functions -Wno-inline -Wall -g -fvisibility=default -fPIC -fPIC -DBOOST_ALL_NO_LIB=1 -DBOOST_COROUTINES_SOURCE -DBOOST_DISABLE_ASSERTS -DNDEBUG   -I"."  -c
+
+  [Root cause classification]
+  - Process aborted (SIGABRT) — likely a GLib g_assert() failure, AddressSanitizer/UBSan abort, or missing D-Bus/system service in Docker container.
+  - Network connectivity issue — test requires network access or a service (e.g., local server) that is unavailable in Docker.
+  - I/O error — test encountered a system-level I/O failure, possibly due to filesystem permissions or missing mount points.
+  - Assertion failure: 712:    - cxx11_static_assert      : yes [2]
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 1911 run, 1911 passed, 0 failed, 0 skipped
+    LLM:      1896 run, 1780 passed, 116 failed, 0 skipped

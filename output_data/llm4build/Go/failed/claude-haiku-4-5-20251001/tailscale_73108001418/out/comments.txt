@@ -1,0 +1,47 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      test (amd64)
+  Test command(s) run in original CI:
+    $ actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+    $ ./tool/go build  ./...
+    $ ./build_dist.sh --extra-small ./cmd/tailscaled
+    $ ./tool/go build -o /tmp/testwrapper ./cmd/testwrapper
+    $ NOBASHDEBUG=true NOPWSHDEBUG=true PATH=$PWD/tool:$PATH /tmp/testwrapper ./...
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ ./tool/go build -o /tmp/testwrapper ./cmd/testwrapper
+  $ /tmp/testwrapper ./...
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoDefault] Test run mismatch: original=3, LLM=27
+  - [GoDefault] Test passed mismatch: original=0, LLM=2
+  - [GoDefault] Test failed mismatch: original=2, LLM=7
+  - [GoDefault] 6 test(s) failed in LLM but not in original: tailscale.com/cmd/natc, tailscale.com/derp/xdp, tailscale.com/net/udprelay, tailscale.com/tstest/integration, tailscale.com/util/linuxfw, tailscale.com/wgengine/router/osrouter
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    1139---- FAIL: TestDNSOverTCPIntervalResolver (20.48s)
+    1099:FAIL	tailscale.com/wgengine/router/osrouter	0.045s
+    1073:FAIL	tailscale.com/util/linuxfw	0.045s
+
+  [Root cause classification]
+  - The LLM ran 27 packages vs. 3 in the original CI. The original's `testwrapper` with `PATH=$PWD/tool:$PATH /tmp/testwrapper ./...` ran with Tailscale's custom test wrapper that filters which packages to test based on available kernel features, skipping packages that require iptables, XDP, or WireGuard. The LLM's `/tmp/testwrapper ./...` ran the same binary but without the `PATH` override, causing the wrapper to fall back to testing all packages.
+
+  - The 6 extra failures in the LLM come from kernel-feature-dependent packages: `tailscale.com/util/linuxfw` and `wgengine/router/osrouter` require iptables/nftables kernel modules; `tailscale.com/derp/xdp` requires eXpress Data Path (XDP) kernel support; `tailscale.com/net/udprelay` requires unrestricted UDP socket operations; `tstest/integration` requires a full WireGuard netns environment; `cmd/natc` requires NAT connector kernel capabilities. None of these are available in a standard Docker container. `TestDNSOverTCPIntervalResolver` timed out (20.48s) because it waited for a DNS resolver that depends on a WireGuard interface that never came up.
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 3 run, 0 passed, 2 failed, 0 skipped
+    LLM:      27 run, 2 passed, 7 failed, 0 skipped

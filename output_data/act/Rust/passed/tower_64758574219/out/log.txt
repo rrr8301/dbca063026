@@ -1,0 +1,1071 @@
+# command: act push -W .github/workflows/CI.yml --directory project_path/tower -j test-versions --matrix rust:nightly
+
+time="2026-05-16T10:42:46-07:00" level=info msg="Using docker host 'unix:///var/run/docker.sock', and daemon socket 'unix:///var/run/docker.sock'"
+[CI/check-stable] ⭐ Run Set up job
+[CI/check-stable] 🚀  Start image=catthehacker/ubuntu:act-latest
+[CI/check-stable]   🐳  docker pull image=catthehacker/ubuntu:act-latest platform= username= forcePull=true
+[CI/check-stable] using DockerAuthConfig authentication for docker pull
+[CI/check-stable]   🐳  docker create image=catthehacker/ubuntu:act-latest platform= entrypoint=["tail" "-f" "/dev/null"] cmd=[] network="host"
+[CI/check-stable]   🐳  docker run image=catthehacker/ubuntu:act-latest platform= entrypoint=["tail" "-f" "/dev/null"] cmd=[] network="host"
+[CI/check-stable]   🐳  docker exec cmd=[node --no-warnings -e console.log(process.execPath)] user= workdir=
+[CI/check-stable]   ✅  Success - Set up job
+[CI/check-stable]   ☁  git clone 'https://github.com/dtolnay/rust-toolchain' # ref=stable
+[CI/check-stable] ⭐ Run Pre dtolnay/rust-toolchain@stable
+[CI/check-stable]   ✅  Success - Pre dtolnay/rust-toolchain@stable [133.914878ms]
+[CI/check-stable] ⭐ Run Main actions/checkout@v6
+[CI/check-stable]   🐳  docker cp src=/scratch/raian-files/LLM4Build/project_path/tower/. dst=/scratch/raian-files/LLM4Build/project_path/tower
+[CI/check-stable]   ✅  Success - Main actions/checkout@v6 [347.628753ms]
+[CI/check-stable] ⭐ Run Main dtolnay/rust-toolchain@stable
+[CI/check-stable]   🐳  docker cp src=/home/mnabil/.cache/act/dtolnay-rust-toolchain@stable/ dst=/var/run/act/actions/dtolnay-rust-toolchain@stable/
+[CI/check-stable] ⭐ Run Main : parse toolchain version
+if [[ -z $toolchain ]]; then
+  # GitHub does not enforce `required: true` inputs itself. https://github.com/actions/runner/issues/1070
+  echo "'toolchain' is a required input" >&2
+  exit 1
+elif [[ $toolchain =~ ^stable' '[0-9]+' '(year|month|week|day)s?' 'ago$ ]]; then
+  if [[ Linux == macOS ]]; then
+    echo "toolchain=1.$((($(date -v-$(sed 's/stable \([0-9]*\) \(.\).*/\1\2/' <<< $toolchain) +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT
+  else
+    echo "toolchain=1.$((($(date --date "${toolchain#stable }" +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT
+  fi
+elif [[ $toolchain =~ ^stable' 'minus' '[0-9]+' 'releases?$ ]]; then
+  echo "toolchain=1.$((($(date +%s)/60/60/24-16569)/7/6-${toolchain//[^0-9]/}))" >> $GITHUB_OUTPUT
+elif [[ $toolchain =~ ^1\.[0-9]+$ ]]; then
+  echo "toolchain=1.$((i=${toolchain#1.}, c=($(date +%s)/60/60/24-16569)/7/6, i+9*i*(10*i<=c)+90*i*(100*i<=c)))" >> $GITHUB_OUTPUT
+else
+  echo "toolchain=$toolchain" >> $GITHUB_OUTPUT
+fi
+[CI/check-stable]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/1-composite-parse.sh] user= workdir=
+[CI/check-stable]   ✅  Success - Main : parse toolchain version
+if [[ -z $toolchain ]]; then
+  # GitHub does not enforce `required: true` inputs itself. https://github.com/actions/runner/issues/1070
+  echo "'toolchain' is a required input" >&2
+  exit 1
+elif [[ $toolchain =~ ^stable' '[0-9]+' '(year|month|week|day)s?' 'ago$ ]]; then
+  if [[ Linux == macOS ]]; then
+    echo "toolchain=1.$((($(date -v-$(sed 's/stable \([0-9]*\) \(.\).*/\1\2/' <<< $toolchain) +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT
+  else
+    echo "toolchain=1.$((($(date --date "${toolchain#stable }" +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT
+  fi
+elif [[ $toolchain =~ ^stable' 'minus' '[0-9]+' 'releases?$ ]]; then
+  echo "toolchain=1.$((($(date +%s)/60/60/24-16569)/7/6-${toolchain//[^0-9]/}))" >> $GITHUB_OUTPUT
+elif [[ $toolchain =~ ^1\.[0-9]+$ ]]; then
+  echo "toolchain=1.$((i=${toolchain#1.}, c=($(date +%s)/60/60/24-16569)/7/6, i+9*i*(10*i<=c)+90*i*(100*i<=c)))" >> $GITHUB_OUTPUT
+else
+  echo "toolchain=$toolchain" >> $GITHUB_OUTPUT
+fi
+ [245.113895ms]
+[CI/check-stable]   ⚙  ::set-output:: toolchain=stable
+[CI/check-stable] ⭐ Run Main : construct rustup command line
+echo "targets=$(for t in ${targets//,/ }; do echo -n ' --target' $t; done)" >> $GITHUB_OUTPUT
+echo "components=$(for c in ${components//,/ }; do echo -n ' --component' $c; done)" >> $GITHUB_OUTPUT
+echo "downgrade=" >> $GITHUB_OUTPUT
+[CI/check-stable]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/1-composite-flags.sh] user= workdir=
+[CI/check-stable]   ✅  Success - Main : construct rustup command line
+echo "targets=$(for t in ${targets//,/ }; do echo -n ' --target' $t; done)" >> $GITHUB_OUTPUT
+echo "components=$(for c in ${components//,/ }; do echo -n ' --component' $c; done)" >> $GITHUB_OUTPUT
+echo "downgrade=" >> $GITHUB_OUTPUT
+ [221.810317ms]
+[CI/check-stable]   ⚙  ::set-output:: components=
+[CI/check-stable]   ⚙  ::set-output:: downgrade=
+[CI/check-stable]   ⚙  ::set-output:: targets=
+[CI/check-stable] ⭐ Run Main : set $CARGO_HOME
+echo CARGO_HOME=${CARGO_HOME:-"$HOME/.cargo"} >> $GITHUB_ENV
+[CI/check-stable]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/1-composite-2.sh] user= workdir=
+[CI/check-stable]   ✅  Success - Main : set $CARGO_HOME
+echo CARGO_HOME=${CARGO_HOME:-"$HOME/.cargo"} >> $GITHUB_ENV
+ [224.165687ms]
+[CI/check-stable]   ⚙  ::set-env:: CARGO_HOME=/root/.cargo
+[CI/check-stable] ⭐ Run Main : install rustup if needed
+if ! command -v rustup &>/dev/null; then
+  curl --proto '=https' --tlsv1.2 --retry 10 --retry-connrefused --location --silent --show-error --fail https://sh.rustup.rs | sh -s -- --default-toolchain none -y
+  echo "$CARGO_HOME/bin" >> $GITHUB_PATH
+fi
+[CI/check-stable]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/1-composite-3.sh] user= workdir=
+[CI/check-stable]   | info: downloading installer
+[CI/check-stable]   | warn: It looks like you have an existing rustup settings file at:
+[CI/check-stable]   | warn: /root/.rustup/settings.toml
+[CI/check-stable]   | warn: Rustup will install the default toolchain as specified in the settings file,
+[CI/check-stable]   | warn: instead of the one inferred from the default host triple.
+[CI/check-stable]   | info: profile set to default
+[CI/check-stable]   | info: default host triple is x86_64-unknown-linux-gnu
+[CI/check-stable]   | info: skipping toolchain installation
+[CI/check-stable]   | 
+[CI/check-stable]   | 
+[CI/check-stable]   | Rust is installed now. Great!
+[CI/check-stable]   | 
+[CI/check-stable]   | To get started you may need to restart your current shell.
+[CI/check-stable]   | This would reload your PATH environment variable to include
+[CI/check-stable]   | Cargo's bin directory ($HOME/.cargo/bin).
+[CI/check-stable]   | 
+[CI/check-stable]   | To configure your current shell, you need to source
+[CI/check-stable]   | the corresponding env file under $HOME/.cargo.
+[CI/check-stable]   | 
+[CI/check-stable]   | This is usually done by running one of the following (note the leading DOT):
+[CI/check-stable]   | . "$HOME/.cargo/env"            # For sh/bash/zsh/ash/dash/pdksh
+[CI/check-stable]   | source "$HOME/.cargo/env.fish"  # For fish
+[CI/check-stable]   | source "~/.cargo/env.nu"  # For nushell
+[CI/check-stable]   | source "$HOME/.cargo/env.tcsh"  # For tcsh
+[CI/check-stable]   | . "$HOME/.cargo/env.ps1"        # For pwsh
+[CI/check-stable]   | source "$HOME/.cargo/env.xsh"   # For xonsh
+[CI/check-stable]   ✅  Success - Main : install rustup if needed
+if ! command -v rustup &>/dev/null; then
+  curl --proto '=https' --tlsv1.2 --retry 10 --retry-connrefused --location --silent --show-error --fail https://sh.rustup.rs | sh -s -- --default-toolchain none -y
+  echo "$CARGO_HOME/bin" >> $GITHUB_PATH
+fi
+ [855.490497ms]
+[CI/check-stable]   ⚙  ::add-path:: /root/.cargo/bin
+[CI/check-stable] ⭐ Run Main rustup toolchain install stable
+[CI/check-stable]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/1-composite-5.sh] user= workdir=
+[CI/check-stable]   | info: syncing channel updates for stable-x86_64-unknown-linux-gnu
+[CI/check-stable]   | info: latest update on 2026-04-16 for version 1.95.0 (59807616e 2026-04-14)
+[CI/check-stable]   | info: downloading 3 components
+[CI/check-stable]   | 
+[CI/check-stable]   |   stable-x86_64-unknown-linux-gnu installed - rustc 1.95.0 (59807616e 2026-04-14)
+[CI/check-stable]   | 
+[CI/check-stable]   | info: default toolchain set to stable-x86_64-unknown-linux-gnu
+[CI/check-stable]   ✅  Success - Main rustup toolchain install stable [11.062411434s]
+[CI/check-stable] ⭐ Run Main rustup default stable
+[CI/check-stable]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/1-composite-6.sh] user= workdir=
+[CI/check-stable]   | info: using existing install for stable-x86_64-unknown-linux-gnu
+[CI/check-stable]   | info: default toolchain set to stable-x86_64-unknown-linux-gnu
+[CI/check-stable]   | 
+[CI/check-stable]   |   stable-x86_64-unknown-linux-gnu unchanged - rustc 1.95.0 (59807616e 2026-04-14)
+[CI/check-stable]   | 
+[CI/check-stable]   ✅  Success - Main rustup default stable [295.589952ms]
+[CI/check-stable] ⭐ Run Main : create cachekey
+DATE=$(rustc +stable --version --verbose | sed -ne 's/^commit-date: \(20[0-9][0-9]\)-\([01][0-9]\)-\([0-3][0-9]\)$/\1\2\3/p')
+HASH=$(rustc +stable --version --verbose | sed -ne 's/^commit-hash: //p')
+echo "cachekey=$(echo $DATE$HASH | head -c12)" >> $GITHUB_OUTPUT
+[CI/check-stable]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/1-composite-rustc-version.sh] user= workdir=
+[CI/check-stable]   ✅  Success - Main : create cachekey
+DATE=$(rustc +stable --version --verbose | sed -ne 's/^commit-date: \(20[0-9][0-9]\)-\([01][0-9]\)-\([0-3][0-9]\)$/\1\2\3/p')
+HASH=$(rustc +stable --version --verbose | sed -ne 's/^commit-hash: //p')
+echo "cachekey=$(echo $DATE$HASH | head -c12)" >> $GITHUB_OUTPUT
+ [274.368181ms]
+[CI/check-stable]   ⚙  ::set-output:: cachekey=202604145980
+[CI/check-stable] ⭐ Run Main : disable incremental compilation
+if [ -z "${CARGO_INCREMENTAL+set}" ]; then
+  echo CARGO_INCREMENTAL=0 >> $GITHUB_ENV
+fi
+[CI/check-stable]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/1-composite-8.sh] user= workdir=
+[CI/check-stable]   ✅  Success - Main : disable incremental compilation
+if [ -z "${CARGO_INCREMENTAL+set}" ]; then
+  echo CARGO_INCREMENTAL=0 >> $GITHUB_ENV
+fi
+ [230.543255ms]
+[CI/check-stable]   ⚙  ::set-env:: CARGO_INCREMENTAL=0
+[CI/check-stable] ⭐ Run Main : enable colors in Cargo output
+if [ -z "${CARGO_TERM_COLOR+set}" ]; then
+  echo CARGO_TERM_COLOR=always >> $GITHUB_ENV
+fi
+[CI/check-stable]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/1-composite-9.sh] user= workdir=
+[CI/check-stable]   ✅  Success - Main : enable colors in Cargo output
+if [ -z "${CARGO_TERM_COLOR+set}" ]; then
+  echo CARGO_TERM_COLOR=always >> $GITHUB_ENV
+fi
+ [237.014825ms]
+[CI/check-stable]   ⚙  ::set-env:: CARGO_TERM_COLOR=always
+[CI/check-stable] ⭐ Run Main : enable Cargo sparse registry
+# implemented in 1.66, stabilized in 1.68, made default in 1.70
+if [ -z "${CARGO_REGISTRIES_CRATES_IO_PROTOCOL+set}" -o -f "/tmp"/.implicit_cargo_registries_crates_io_protocol ]; then
+  if rustc +stable --version --verbose | grep -q '^release: 1\.6[89]\.'; then
+    touch "/tmp"/.implicit_cargo_registries_crates_io_protocol || true
+    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse >> $GITHUB_ENV
+  elif rustc +stable --version --verbose | grep -q '^release: 1\.6[67]\.'; then
+    touch "/tmp"/.implicit_cargo_registries_crates_io_protocol || true
+    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=git >> $GITHUB_ENV
+  fi
+fi
+[CI/check-stable]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/1-composite-10.sh] user= workdir=
+[CI/check-stable]   ✅  Success - Main : enable Cargo sparse registry
+# implemented in 1.66, stabilized in 1.68, made default in 1.70
+if [ -z "${CARGO_REGISTRIES_CRATES_IO_PROTOCOL+set}" -o -f "/tmp"/.implicit_cargo_registries_crates_io_protocol ]; then
+  if rustc +stable --version --verbose | grep -q '^release: 1\.6[89]\.'; then
+    touch "/tmp"/.implicit_cargo_registries_crates_io_protocol || true
+    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse >> $GITHUB_ENV
+  elif rustc +stable --version --verbose | grep -q '^release: 1\.6[67]\.'; then
+    touch "/tmp"/.implicit_cargo_registries_crates_io_protocol || true
+    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=git >> $GITHUB_ENV
+  fi
+fi
+ [277.859644ms]
+[CI/check-stable] ⭐ Run Main : work around spurious network errors in curl 8.0
+# https://rust-lang.zulipchat.com/#narrow/stream/246057-t-cargo/topic/timeout.20investigation
+if rustc +stable --version --verbose | grep -q '^release: 1\.7[01]\.'; then
+  echo CARGO_HTTP_MULTIPLEXING=false >> $GITHUB_ENV
+fi
+[CI/check-stable]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/1-composite-11.sh] user= workdir=
+[CI/check-stable]   ✅  Success - Main : work around spurious network errors in curl 8.0
+# https://rust-lang.zulipchat.com/#narrow/stream/246057-t-cargo/topic/timeout.20investigation
+if rustc +stable --version --verbose | grep -q '^release: 1\.7[01]\.'; then
+  echo CARGO_HTTP_MULTIPLEXING=false >> $GITHUB_ENV
+fi
+ [277.334655ms]
+[CI/check-stable] ⭐ Run Main rustc +stable --version --verbose
+[CI/check-stable]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/1-composite-12.sh] user= workdir=
+[CI/check-stable]   | rustc 1.95.0 (59807616e 2026-04-14)
+[CI/check-stable]   | binary: rustc
+[CI/check-stable]   | commit-hash: 59807616e1fa2540724bfbac14d7976d7e4a3860
+[CI/check-stable]   | commit-date: 2026-04-14
+[CI/check-stable]   | host: x86_64-unknown-linux-gnu
+[CI/check-stable]   | release: 1.95.0
+[CI/check-stable]   | LLVM version: 22.1.2
+[CI/check-stable]   ✅  Success - Main rustc +stable --version --verbose [252.40948ms]
+[CI/check-stable]   ⚙  ::set-output:: cachekey=202604145980
+[CI/check-stable]   ⚙  ::set-output:: name=stable
+[CI/check-stable]   ✅  Success - Main dtolnay/rust-toolchain@stable [16.983966066s]
+[CI/check-stable] ⭐ Run Main Check
+[CI/check-stable]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/2] user= workdir=
+[CI/check-stable]   | [1m[92m    Updating[0m crates.io index
+[CI/check-stable]   | [1m[92m     Locking[0m 90 packages to latest compatible versions
+[CI/check-stable]   | [1m[92m      Adding[0m rand v0.9.4 [1m[33m(available: v0.10.1)[0m
+[CI/check-stable]   | [1m[92m Downloading[0m crates ...
+[CI/check-stable]   | [1m[92m  Downloaded[0m byteorder v1.5.0
+[CI/check-stable]   | [1m[92m  Downloaded[0m rand_chacha v0.9.0
+[CI/check-stable]   | [1m[92m  Downloaded[0m autocfg v1.5.0
+[CI/check-stable]   | [1m[92m  Downloaded[0m aho-corasick v1.1.4
+[CI/check-stable]   | [1m[92m  Downloaded[0m env_logger v0.11.10
+[CI/check-stable]   | [1m[92m  Downloaded[0m equivalent v1.0.2
+[CI/check-stable]   | [1m[92m  Downloaded[0m cfg-if v1.0.4
+[CI/check-stable]   | [1m[92m  Downloaded[0m nu-ansi-term v0.50.3
+[CI/check-stable]   | [1m[92m  Downloaded[0m rand_core v0.10.1
+[CI/check-stable]   | [1m[92m  Downloaded[0m tokio-test v0.4.5
+[CI/check-stable]   | [1m[92m  Downloaded[0m zerocopy v0.8.48
+[CI/check-stable]   | [1m[92m  Downloaded[0m rand v0.10.1
+[CI/check-stable]   | [1m[92m  Downloaded[0m tokio-macros v2.7.0
+[CI/check-stable]   | [1m[92m  Downloaded[0m serde_core v1.0.228
+[CI/check-stable]   | [1m[92m  Downloaded[0m regex-syntax v0.8.10
+[CI/check-stable]   | [1m[92m  Downloaded[0m tokio-stream v0.1.18
+[CI/check-stable]   | [1m[92m  Downloaded[0m sync_wrapper v1.0.2
+[CI/check-stable]   | [1m[92m  Downloaded[0m unicode-ident v1.0.24
+[CI/check-stable]   | [1m[92m  Downloaded[0m sharded-slab v0.1.7
+[CI/check-stable]   | [1m[92m  Downloaded[0m tokio-util v0.7.18
+[CI/check-stable]   | [1m[92m  Downloaded[0m memchr v2.8.0
+[CI/check-stable]   | [1m[92m  Downloaded[0m indexmap v2.14.0
+[CI/check-stable]   | [1m[92m  Downloaded[0m syn v2.0.117
+[CI/check-stable]   | [1m[92m  Downloaded[0m regex v1.12.3
+[CI/check-stable]   | [1m[92m  Downloaded[0m rand v0.9.4
+[CI/check-stable]   | [1m[92m  Downloaded[0m http v1.4.0
+[CI/check-stable]   | [1m[92m  Downloaded[0m log v0.4.29
+[CI/check-stable]   | [1m[92m  Downloaded[0m hashbrown v0.17.1
+[CI/check-stable]   | [1m[92m  Downloaded[0m futures-util v0.3.32
+[CI/check-stable]   | [1m[92m  Downloaded[0m tracing-subscriber v0.3.23
+[CI/check-stable]   | [1m[92m  Downloaded[0m tracing-core v0.1.36
+[CI/check-stable]   | [1m[92m  Downloaded[0m tokio v1.52.3
+[CI/check-stable]   | [1m[92m  Downloaded[0m thread_local v1.1.9
+[CI/check-stable]   | [1m[92m  Downloaded[0m rand_core v0.9.5
+[CI/check-stable]   | [1m[92m  Downloaded[0m ppv-lite86 v0.2.21
+[CI/check-stable]   | [1m[92m  Downloaded[0m once_cell v1.21.4
+[CI/check-stable]   | [1m[92m  Downloaded[0m libc v0.2.186
+[CI/check-stable]   | [1m[92m  Downloaded[0m getrandom v0.4.2
+[CI/check-stable]   | [1m[92m  Downloaded[0m futures-task v0.3.32
+[CI/check-stable]   | [1m[92m  Downloaded[0m futures-core v0.3.32
+[CI/check-stable]   | [1m[92m  Downloaded[0m quickcheck v1.1.0
+[CI/check-stable]   | [1m[92m  Downloaded[0m proc-macro2 v1.0.106
+[CI/check-stable]   | [1m[92m  Downloaded[0m tracing v0.1.44
+[CI/check-stable]   | [1m[92m  Downloaded[0m futures-sink v0.3.32
+[CI/check-stable]   | [1m[92m  Downloaded[0m futures-macro v0.3.32
+[CI/check-stable]   | [1m[92m  Downloaded[0m num-traits v0.2.19
+[CI/check-stable]   | [1m[92m  Downloaded[0m lazy_static v1.5.0
+[CI/check-stable]   | [1m[92m  Downloaded[0m hdrhistogram v7.5.4
+[CI/check-stable]   | [1m[92m  Downloaded[0m futures v0.3.32
+[CI/check-stable]   | [1m[92m  Downloaded[0m slab v0.4.12
+[CI/check-stable]   | [1m[92m  Downloaded[0m regex-automata v0.4.14
+[CI/check-stable]   | [1m[92m  Downloaded[0m env_filter v1.0.1
+[CI/check-stable]   | [1m[92m  Downloaded[0m bytes v1.11.1
+[CI/check-stable]   | [1m[92m  Downloaded[0m futures-io v0.3.32
+[CI/check-stable]   | [1m[92m  Downloaded[0m futures-channel v0.3.32
+[CI/check-stable]   | [1m[92m  Downloaded[0m quote v1.0.45
+[CI/check-stable]   | [1m[92m  Downloaded[0m pin-project-lite v0.2.17
+[CI/check-stable]   | [1m[92m  Downloaded[0m itoa v1.0.18
+[CI/check-stable]   | [1m[92m  Downloaded[0m getrandom v0.3.4
+[CI/check-stable]   | [1m[92m   Compiling[0m proc-macro2 v1.0.106
+[CI/check-stable]   | [1m[92m   Compiling[0m quote v1.0.45
+[CI/check-stable]   | [1m[92m   Compiling[0m unicode-ident v1.0.24
+[CI/check-stable]   | [1m[92m    Checking[0m pin-project-lite v0.2.17
+[CI/check-stable]   | [1m[92m    Checking[0m futures-core v0.3.32
+[CI/check-stable]   | [1m[92m    Checking[0m memchr v2.8.0
+[CI/check-stable]   | [1m[92m    Checking[0m cfg-if v1.0.4
+[CI/check-stable]   | [1m[92m   Compiling[0m libc v0.2.186
+[CI/check-stable]   | [1m[92m   Compiling[0m autocfg v1.5.0
+[CI/check-stable]   | [1m[92m    Checking[0m tower-layer v0.3.3 (/scratch/raian-files/LLM4Build/project_path/tower/tower-layer)
+[CI/check-stable]   | [1m[92m    Checking[0m log v0.4.29
+[CI/check-stable]   | [1m[92m    Checking[0m futures-sink v0.3.32
+[CI/check-stable]   | [1m[92m    Checking[0m regex-syntax v0.8.10
+[CI/check-stable]   | [1m[92m    Checking[0m tower-service v0.3.3 (/scratch/raian-files/LLM4Build/project_path/tower/tower-service)
+[CI/check-stable]   | [1m[92m    Checking[0m bytes v1.11.1
+[CI/check-stable]   | [1m[92m   Compiling[0m getrandom v0.3.4
+[CI/check-stable]   | [1m[92m   Compiling[0m zerocopy v0.8.48
+[CI/check-stable]   | [1m[92m    Checking[0m once_cell v1.21.4
+[CI/check-stable]   | [1m[92m    Checking[0m futures-io v0.3.32
+[CI/check-stable]   | [1m[92m   Compiling[0m getrandom v0.4.2
+[CI/check-stable]   | [1m[92m    Checking[0m slab v0.4.12
+[CI/check-stable]   | [1m[92m    Checking[0m futures-task v0.3.32
+[CI/check-stable]   | [1m[92m    Checking[0m equivalent v1.0.2
+[CI/check-stable]   | [1m[92m    Checking[0m hashbrown v0.17.1
+[CI/check-stable]   | [1m[92m    Checking[0m byteorder v1.5.0
+[CI/check-stable]   | [1m[92m    Checking[0m rand_core v0.10.1
+[CI/check-stable]   | [1m[92m    Checking[0m sync_wrapper v1.0.2
+[CI/check-stable]   | [1m[92m    Checking[0m itoa v1.0.18
+[CI/check-stable]   | [1m[92m    Checking[0m lazy_static v1.5.0
+[CI/check-stable]   | [1m[92m    Checking[0m nu-ansi-term v0.50.3
+[CI/check-stable]   | [1m[92m    Checking[0m thread_local v1.1.9
+[CI/check-stable]   | [1m[92m    Checking[0m futures-channel v0.3.32
+[CI/check-stable]   | [1m[92m    Checking[0m sharded-slab v0.1.7
+[CI/check-stable]   | [1m[92m    Checking[0m tracing-core v0.1.36
+[CI/check-stable]   | [1m[92m   Compiling[0m num-traits v0.2.19
+[CI/check-stable]   | [1m[92m    Checking[0m aho-corasick v1.1.4
+[CI/check-stable]   | [1m[92m    Checking[0m tracing v0.1.44
+[CI/check-stable]   | [1m[92m    Checking[0m http v1.4.0
+[CI/check-stable]   | [1m[92m    Checking[0m indexmap v2.14.0
+[CI/check-stable]   | [1m[92m    Checking[0m tracing-subscriber v0.3.23
+[CI/check-stable]   | [1m[92m   Compiling[0m syn v2.0.117
+[CI/check-stable]   | [1m[92m    Checking[0m hdrhistogram v7.5.4
+[CI/check-stable]   | [1m[92m    Checking[0m regex-automata v0.4.14
+[CI/check-stable]   | [1m[92m    Checking[0m rand v0.10.1
+[CI/check-stable]   | [1m[92m    Checking[0m rand_core v0.9.5
+[CI/check-stable]   | [1m[92m    Checking[0m regex v1.12.3
+[CI/check-stable]   | [1m[92m    Checking[0m env_filter v1.0.1
+[CI/check-stable]   | [1m[92m    Checking[0m env_logger v0.11.10
+[CI/check-stable]   | [1m[92m    Checking[0m quickcheck v1.1.0
+[CI/check-stable]   | [1m[92m   Compiling[0m tokio-macros v2.7.0
+[CI/check-stable]   | [1m[92m   Compiling[0m futures-macro v0.3.32
+[CI/check-stable]   | [1m[92m    Checking[0m ppv-lite86 v0.2.21
+[CI/check-stable]   | [1m[92m    Checking[0m futures-util v0.3.32
+[CI/check-stable]   | [1m[92m    Checking[0m tokio v1.52.3
+[CI/check-stable]   | [1m[92m    Checking[0m rand_chacha v0.9.0
+[CI/check-stable]   | [1m[92m    Checking[0m rand v0.9.4
+[CI/check-stable]   | [1m[92m    Checking[0m tokio-stream v0.1.18
+[CI/check-stable]   | [1m[92m    Checking[0m tokio-util v0.7.18
+[CI/check-stable]   | [1m[92m    Checking[0m tokio-test v0.4.5
+[CI/check-stable]   | [1m[92m    Checking[0m futures v0.3.32
+[CI/check-stable]   | [1m[92m    Checking[0m tower v0.5.3 (/scratch/raian-files/LLM4Build/project_path/tower/tower)
+[CI/check-stable]   | [1m[92m    Checking[0m tower-test v0.4.1 (/scratch/raian-files/LLM4Build/project_path/tower/tower-test)
+[CI/check-stable]   | [1m[33mwarning[0m[1m: unused import: `assert_ready`[0m
+[CI/check-stable]   |  [1m[94m--> [0mtower/src/balance/p2c/test.rs:5:34
+[CI/check-stable]   |   [1m[94m|[0m
+[CI/check-stable]   | [1m[94m5[0m [1m[94m|[0m use tokio_test::{assert_pending, assert_ready, assert_ready_ok, task};
+[CI/check-stable]   |   [1m[94m|[0m                                  [1m[33m^^^^^^^^^^^^[0m
+[CI/check-stable]   |   [1m[94m|[0m
+[CI/check-stable]   |   [1m[94m= [0m[1mnote[0m: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+[CI/check-stable]   | 
+[CI/check-stable]   | [1m[33mwarning[0m[1m: unused import: `assert_ready`[0m
+[CI/check-stable]   |    [1m[94m--> [0mtower/src/load/peak_ewma.rs:314:22
+[CI/check-stable]   |     [1m[94m|[0m
+[CI/check-stable]   | [1m[94m314[0m [1m[94m|[0m     use tokio_test::{assert_ready, assert_ready_ok, task};
+[CI/check-stable]   |     [1m[94m|[0m                      [1m[33m^^^^^^^^^^^^[0m
+[CI/check-stable]   | 
+[CI/check-stable]   | [1m[33mwarning[0m[1m: unused import: `assert_ready`[0m
+[CI/check-stable]   |  [1m[94m--> [0mtower/tests/limit/concurrency.rs:2:34
+[CI/check-stable]   |   [1m[94m|[0m
+[CI/check-stable]   | [1m[94m2[0m [1m[94m|[0m use tokio_test::{assert_pending, assert_ready, assert_ready_ok};
+[CI/check-stable]   |   [1m[94m|[0m                                  [1m[33m^^^^^^^^^^^^[0m
+[CI/check-stable]   |   [1m[94m|[0m
+[CI/check-stable]   |   [1m[94m= [0m[1mnote[0m: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+[CI/check-stable]   | 
+[CI/check-stable]   | [1m[33mwarning[0m[1m: unused import: `assert_ready`[0m
+[CI/check-stable]   |  [1m[94m--> [0mtower/tests/limit/rate.rs:4:34
+[CI/check-stable]   |   [1m[94m|[0m
+[CI/check-stable]   | [1m[94m4[0m [1m[94m|[0m use tokio_test::{assert_pending, assert_ready, assert_ready_ok};
+[CI/check-stable]   |   [1m[94m|[0m                                  [1m[33m^^^^^^^^^^^^[0m
+[CI/check-stable]   | 
+[CI/check-stable]   | [1m[33mwarning[0m[1m: unused import: `assert_ready`[0m
+[CI/check-stable]   |  [1m[94m--> [0mtower/tests/hedge/main.rs:7:34
+[CI/check-stable]   |   [1m[94m|[0m
+[CI/check-stable]   | [1m[94m7[0m [1m[94m|[0m use tokio_test::{assert_pending, assert_ready, assert_ready_ok, task};
+[CI/check-stable]   |   [1m[94m|[0m                                  [1m[33m^^^^^^^^^^^^[0m
+[CI/check-stable]   |   [1m[94m|[0m
+[CI/check-stable]   |   [1m[94m= [0m[1mnote[0m: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+[CI/check-stable]   | 
+[CI/check-stable]   | [1m[33mwarning[0m[1m: unused import: `assert_ready`[0m
+[CI/check-stable]   |  [1m[94m--> [0mtower/tests/spawn_ready/main.rs:6:34
+[CI/check-stable]   |   [1m[94m|[0m
+[CI/check-stable]   | [1m[94m6[0m [1m[94m|[0m use tokio_test::{assert_pending, assert_ready, assert_ready_err, assert_ready_ok};
+[CI/check-stable]   |   [1m[94m|[0m                                  [1m[33m^^^^^^^^^^^^[0m
+[CI/check-stable]   |   [1m[94m|[0m
+[CI/check-stable]   |   [1m[94m= [0m[1mnote[0m: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+[CI/check-stable]   | 
+[CI/check-stable]   | [1m[33mwarning[0m: `tower` (lib test) generated 2 warnings (run `cargo fix --lib -p tower --tests` to apply 2 suggestions)
+[CI/check-stable]   | [1m[33mwarning[0m: `tower` (test "spawn_ready") generated 1 warning (run `cargo fix --test "spawn_ready" -p tower` to apply 1 suggestion)
+[CI/check-stable]   | [1m[33mwarning[0m: `tower` (test "hedge") generated 1 warning (run `cargo fix --test "hedge" -p tower` to apply 1 suggestion)
+[CI/check-stable]   | [1m[33mwarning[0m: `tower` (test "limit") generated 2 warnings (run `cargo fix --test "limit" -p tower` to apply 2 suggestions)
+[CI/check-stable]   | [1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 7.97s
+[CI/check-stable]   ✅  Success - Main Check [8.287540006s]
+[CI/check-stable] ⭐ Run Post dtolnay/rust-toolchain@stable
+[CI/check-stable]   🐳  docker cp src=/home/mnabil/.cache/act/dtolnay-rust-toolchain@stable/ dst=/var/run/act/actions/dtolnay-rust-toolchain@stable/
+[CI/check-stable]   ✅  Success - Post dtolnay/rust-toolchain@stable [151.049214ms]
+[CI/check-stable] ⭐ Run Complete job
+[CI/check-stable] Cleaning up container for job check-stable
+[CI/check-stable]   ✅  Success - Complete job
+[CI/check-stable] 🏁  Job succeeded
+[CI/test-versions] ⭐ Run Set up job
+[CI/test-versions] 🚀  Start image=catthehacker/ubuntu:act-latest
+[CI/test-versions]   🐳  docker pull image=catthehacker/ubuntu:act-latest platform= username= forcePull=true
+[CI/test-versions] using DockerAuthConfig authentication for docker pull
+[CI/test-versions]   🐳  docker create image=catthehacker/ubuntu:act-latest platform= entrypoint=["tail" "-f" "/dev/null"] cmd=[] network="host"
+[CI/test-versions]   🐳  docker run image=catthehacker/ubuntu:act-latest platform= entrypoint=["tail" "-f" "/dev/null"] cmd=[] network="host"
+[CI/test-versions]   🐳  docker exec cmd=[node --no-warnings -e console.log(process.execPath)] user= workdir=
+[CI/test-versions]   ✅  Success - Set up job
+[CI/test-versions]   ☁  git clone 'https://github.com/dtolnay/rust-toolchain' # ref=master
+[CI/test-versions] ⭐ Run Pre install Rust nightly
+[CI/test-versions]   ✅  Success - Pre install Rust nightly [128.002235ms]
+[CI/test-versions] 🧪  Matrix: map[rust:nightly]
+[CI/test-versions] ⭐ Run Main actions/checkout@v6
+[CI/test-versions]   🐳  docker cp src=/scratch/raian-files/LLM4Build/project_path/tower/. dst=/scratch/raian-files/LLM4Build/project_path/tower
+[CI/test-versions]   ✅  Success - Main actions/checkout@v6 [402.117755ms]
+[CI/test-versions] ⭐ Run Main install Rust nightly
+[CI/test-versions]   🐳  docker cp src=/home/mnabil/.cache/act/dtolnay-rust-toolchain@master/ dst=/var/run/act/actions/dtolnay-rust-toolchain@master/
+[CI/test-versions] ⭐ Run Main : parse toolchain version
+if [[ -z $toolchain ]]; then
+  # GitHub does not enforce `required: true` inputs itself. https://github.com/actions/runner/issues/1070
+  echo "'toolchain' is a required input" >&2
+  exit 1
+elif [[ $toolchain =~ ^stable' '[0-9]+' '(year|month|week|day)s?' 'ago$ ]]; then
+  if [[ Linux == macOS ]]; then
+    echo "toolchain=1.$((($(date -v-$(sed 's/stable \([0-9]*\) \(.\).*/\1\2/' <<< $toolchain) +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT
+  else
+    echo "toolchain=1.$((($(date --date "${toolchain#stable }" +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT
+  fi
+elif [[ $toolchain =~ ^stable' 'minus' '[0-9]+' 'releases?$ ]]; then
+  echo "toolchain=1.$((($(date +%s)/60/60/24-16569)/7/6-${toolchain//[^0-9]/}))" >> $GITHUB_OUTPUT
+elif [[ $toolchain =~ ^1\.[0-9]+$ ]]; then
+  echo "toolchain=1.$((i=${toolchain#1.}, c=($(date +%s)/60/60/24-16569)/7/6, i+9*i*(10*i<=c)+90*i*(100*i<=c)))" >> $GITHUB_OUTPUT
+else
+  echo "toolchain=$toolchain" >> $GITHUB_OUTPUT
+fi
+[CI/test-versions]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/1-composite-parse.sh] user= workdir=
+[CI/test-versions]   ✅  Success - Main : parse toolchain version
+if [[ -z $toolchain ]]; then
+  # GitHub does not enforce `required: true` inputs itself. https://github.com/actions/runner/issues/1070
+  echo "'toolchain' is a required input" >&2
+  exit 1
+elif [[ $toolchain =~ ^stable' '[0-9]+' '(year|month|week|day)s?' 'ago$ ]]; then
+  if [[ Linux == macOS ]]; then
+    echo "toolchain=1.$((($(date -v-$(sed 's/stable \([0-9]*\) \(.\).*/\1\2/' <<< $toolchain) +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT
+  else
+    echo "toolchain=1.$((($(date --date "${toolchain#stable }" +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT
+  fi
+elif [[ $toolchain =~ ^stable' 'minus' '[0-9]+' 'releases?$ ]]; then
+  echo "toolchain=1.$((($(date +%s)/60/60/24-16569)/7/6-${toolchain//[^0-9]/}))" >> $GITHUB_OUTPUT
+elif [[ $toolchain =~ ^1\.[0-9]+$ ]]; then
+  echo "toolchain=1.$((i=${toolchain#1.}, c=($(date +%s)/60/60/24-16569)/7/6, i+9*i*(10*i<=c)+90*i*(100*i<=c)))" >> $GITHUB_OUTPUT
+else
+  echo "toolchain=$toolchain" >> $GITHUB_OUTPUT
+fi
+ [261.742158ms]
+[CI/test-versions]   ⚙  ::set-output:: toolchain=nightly
+[CI/test-versions] ⭐ Run Main : construct rustup command line
+echo "targets=$(for t in ${targets//,/ }; do echo -n ' --target' $t; done)" >> $GITHUB_OUTPUT
+echo "components=$(for c in ${components//,/ }; do echo -n ' --component' $c; done)" >> $GITHUB_OUTPUT
+echo "downgrade=" >> $GITHUB_OUTPUT
+[CI/test-versions]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/1-composite-flags.sh] user= workdir=
+[CI/test-versions]   ✅  Success - Main : construct rustup command line
+echo "targets=$(for t in ${targets//,/ }; do echo -n ' --target' $t; done)" >> $GITHUB_OUTPUT
+echo "components=$(for c in ${components//,/ }; do echo -n ' --component' $c; done)" >> $GITHUB_OUTPUT
+echo "downgrade=" >> $GITHUB_OUTPUT
+ [238.388148ms]
+[CI/test-versions]   ⚙  ::set-output:: targets=
+[CI/test-versions]   ⚙  ::set-output:: components=
+[CI/test-versions]   ⚙  ::set-output:: downgrade=
+[CI/test-versions] ⭐ Run Main : set $CARGO_HOME
+echo CARGO_HOME=${CARGO_HOME:-"$HOME/.cargo"} >> $GITHUB_ENV
+[CI/test-versions]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/1-composite-2.sh] user= workdir=
+[CI/test-versions]   ✅  Success - Main : set $CARGO_HOME
+echo CARGO_HOME=${CARGO_HOME:-"$HOME/.cargo"} >> $GITHUB_ENV
+ [220.06959ms]
+[CI/test-versions]   ⚙  ::set-env:: CARGO_HOME=/root/.cargo
+[CI/test-versions] ⭐ Run Main : install rustup if needed
+if ! command -v rustup &>/dev/null; then
+  curl --proto '=https' --tlsv1.2 --retry 10 --retry-connrefused --location --silent --show-error --fail https://sh.rustup.rs | sh -s -- --default-toolchain none -y
+  echo "$CARGO_HOME/bin" >> $GITHUB_PATH
+fi
+[CI/test-versions]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/1-composite-3.sh] user= workdir=
+[CI/test-versions]   | info: downloading installer
+[CI/test-versions]   | warn: It looks like you have an existing rustup settings file at:
+[CI/test-versions]   | warn: /root/.rustup/settings.toml
+[CI/test-versions]   | warn: Rustup will install the default toolchain as specified in the settings file,
+[CI/test-versions]   | warn: instead of the one inferred from the default host triple.
+[CI/test-versions]   | info: profile set to default
+[CI/test-versions]   | info: default host triple is x86_64-unknown-linux-gnu
+[CI/test-versions]   | info: skipping toolchain installation
+[CI/test-versions]   | 
+[CI/test-versions]   | 
+[CI/test-versions]   | Rust is installed now. Great!
+[CI/test-versions]   | 
+[CI/test-versions]   | To get started you may need to restart your current shell.
+[CI/test-versions]   | This would reload your PATH environment variable to include
+[CI/test-versions]   | Cargo's bin directory ($HOME/.cargo/bin).
+[CI/test-versions]   | 
+[CI/test-versions]   | To configure your current shell, you need to source
+[CI/test-versions]   | the corresponding env file under $HOME/.cargo.
+[CI/test-versions]   | 
+[CI/test-versions]   | This is usually done by running one of the following (note the leading DOT):
+[CI/test-versions]   | . "$HOME/.cargo/env"            # For sh/bash/zsh/ash/dash/pdksh
+[CI/test-versions]   | source "$HOME/.cargo/env.fish"  # For fish
+[CI/test-versions]   | source "~/.cargo/env.nu"  # For nushell
+[CI/test-versions]   | source "$HOME/.cargo/env.tcsh"  # For tcsh
+[CI/test-versions]   | . "$HOME/.cargo/env.ps1"        # For pwsh
+[CI/test-versions]   | source "$HOME/.cargo/env.xsh"   # For xonsh
+[CI/test-versions]   ✅  Success - Main : install rustup if needed
+if ! command -v rustup &>/dev/null; then
+  curl --proto '=https' --tlsv1.2 --retry 10 --retry-connrefused --location --silent --show-error --fail https://sh.rustup.rs | sh -s -- --default-toolchain none -y
+  echo "$CARGO_HOME/bin" >> $GITHUB_PATH
+fi
+ [809.00047ms]
+[CI/test-versions]   ⚙  ::add-path:: /root/.cargo/bin
+[CI/test-versions] ⭐ Run Main rustup toolchain install nightly
+[CI/test-versions]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/1-composite-5.sh] user= workdir=
+[CI/test-versions]   | info: syncing channel updates for nightly-x86_64-unknown-linux-gnu
+[CI/test-versions]   | info: latest update on 2026-05-16 for version 1.97.0-nightly (d7f14d3d8 2026-05-15)
+[CI/test-versions]   | info: downloading 3 components
+[CI/test-versions]   | 
+[CI/test-versions]   |   nightly-x86_64-unknown-linux-gnu installed - rustc 1.97.0-nightly (d7f14d3d8 2026-05-15)
+[CI/test-versions]   | 
+[CI/test-versions]   | info: default toolchain set to nightly-x86_64-unknown-linux-gnu
+[CI/test-versions]   ✅  Success - Main rustup toolchain install nightly [10.823417081s]
+[CI/test-versions] ⭐ Run Main rustup default nightly
+[CI/test-versions]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/1-composite-6.sh] user= workdir=
+[CI/test-versions]   | info: using existing install for nightly-x86_64-unknown-linux-gnu
+[CI/test-versions]   | info: default toolchain set to nightly-x86_64-unknown-linux-gnu
+[CI/test-versions]   | 
+[CI/test-versions]   |   nightly-x86_64-unknown-linux-gnu unchanged - rustc 1.97.0-nightly (d7f14d3d8 2026-05-15)
+[CI/test-versions]   | 
+[CI/test-versions]   ✅  Success - Main rustup default nightly [287.429174ms]
+[CI/test-versions] ⭐ Run Main : create cachekey
+DATE=$(rustc +nightly --version --verbose | sed -ne 's/^commit-date: \(20[0-9][0-9]\)-\([01][0-9]\)-\([0-3][0-9]\)$/\1\2\3/p')
+HASH=$(rustc +nightly --version --verbose | sed -ne 's/^commit-hash: //p')
+echo "cachekey=$(echo $DATE$HASH | head -c12)" >> $GITHUB_OUTPUT
+[CI/test-versions]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/1-composite-rustc-version.sh] user= workdir=
+[CI/test-versions]   ✅  Success - Main : create cachekey
+DATE=$(rustc +nightly --version --verbose | sed -ne 's/^commit-date: \(20[0-9][0-9]\)-\([01][0-9]\)-\([0-3][0-9]\)$/\1\2\3/p')
+HASH=$(rustc +nightly --version --verbose | sed -ne 's/^commit-hash: //p')
+echo "cachekey=$(echo $DATE$HASH | head -c12)" >> $GITHUB_OUTPUT
+ [276.337266ms]
+[CI/test-versions]   ⚙  ::set-output:: cachekey=20260515d7f1
+[CI/test-versions] ⭐ Run Main : disable incremental compilation
+if [ -z "${CARGO_INCREMENTAL+set}" ]; then
+  echo CARGO_INCREMENTAL=0 >> $GITHUB_ENV
+fi
+[CI/test-versions]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/1-composite-8.sh] user= workdir=
+[CI/test-versions]   ✅  Success - Main : disable incremental compilation
+if [ -z "${CARGO_INCREMENTAL+set}" ]; then
+  echo CARGO_INCREMENTAL=0 >> $GITHUB_ENV
+fi
+ [245.262556ms]
+[CI/test-versions]   ⚙  ::set-env:: CARGO_INCREMENTAL=0
+[CI/test-versions] ⭐ Run Main : enable colors in Cargo output
+if [ -z "${CARGO_TERM_COLOR+set}" ]; then
+  echo CARGO_TERM_COLOR=always >> $GITHUB_ENV
+fi
+[CI/test-versions]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/1-composite-9.sh] user= workdir=
+[CI/test-versions]   ✅  Success - Main : enable colors in Cargo output
+if [ -z "${CARGO_TERM_COLOR+set}" ]; then
+  echo CARGO_TERM_COLOR=always >> $GITHUB_ENV
+fi
+ [211.679763ms]
+[CI/test-versions]   ⚙  ::set-env:: CARGO_TERM_COLOR=always
+[CI/test-versions] ⭐ Run Main : enable Cargo sparse registry
+# implemented in 1.66, stabilized in 1.68, made default in 1.70
+if [ -z "${CARGO_REGISTRIES_CRATES_IO_PROTOCOL+set}" -o -f "/tmp"/.implicit_cargo_registries_crates_io_protocol ]; then
+  if rustc +nightly --version --verbose | grep -q '^release: 1\.6[89]\.'; then
+    touch "/tmp"/.implicit_cargo_registries_crates_io_protocol || true
+    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse >> $GITHUB_ENV
+  elif rustc +nightly --version --verbose | grep -q '^release: 1\.6[67]\.'; then
+    touch "/tmp"/.implicit_cargo_registries_crates_io_protocol || true
+    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=git >> $GITHUB_ENV
+  fi
+fi
+[CI/test-versions]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/1-composite-10.sh] user= workdir=
+[CI/test-versions]   ✅  Success - Main : enable Cargo sparse registry
+# implemented in 1.66, stabilized in 1.68, made default in 1.70
+if [ -z "${CARGO_REGISTRIES_CRATES_IO_PROTOCOL+set}" -o -f "/tmp"/.implicit_cargo_registries_crates_io_protocol ]; then
+  if rustc +nightly --version --verbose | grep -q '^release: 1\.6[89]\.'; then
+    touch "/tmp"/.implicit_cargo_registries_crates_io_protocol || true
+    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse >> $GITHUB_ENV
+  elif rustc +nightly --version --verbose | grep -q '^release: 1\.6[67]\.'; then
+    touch "/tmp"/.implicit_cargo_registries_crates_io_protocol || true
+    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=git >> $GITHUB_ENV
+  fi
+fi
+ [298.648191ms]
+[CI/test-versions] ⭐ Run Main : work around spurious network errors in curl 8.0
+# https://rust-lang.zulipchat.com/#narrow/stream/246057-t-cargo/topic/timeout.20investigation
+if rustc +nightly --version --verbose | grep -q '^release: 1\.7[01]\.'; then
+  echo CARGO_HTTP_MULTIPLEXING=false >> $GITHUB_ENV
+fi
+[CI/test-versions]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/1-composite-11.sh] user= workdir=
+[CI/test-versions]   ✅  Success - Main : work around spurious network errors in curl 8.0
+# https://rust-lang.zulipchat.com/#narrow/stream/246057-t-cargo/topic/timeout.20investigation
+if rustc +nightly --version --verbose | grep -q '^release: 1\.7[01]\.'; then
+  echo CARGO_HTTP_MULTIPLEXING=false >> $GITHUB_ENV
+fi
+ [273.878635ms]
+[CI/test-versions] ⭐ Run Main rustc +nightly --version --verbose
+[CI/test-versions]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/1-composite-12.sh] user= workdir=
+[CI/test-versions]   | rustc 1.97.0-nightly (d7f14d3d8 2026-05-15)
+[CI/test-versions]   | binary: rustc
+[CI/test-versions]   | commit-hash: d7f14d3d89c39b2c12ed4b9864a0eb2c205d20bc
+[CI/test-versions]   | commit-date: 2026-05-15
+[CI/test-versions]   | host: x86_64-unknown-linux-gnu
+[CI/test-versions]   | release: 1.97.0-nightly
+[CI/test-versions]   | LLVM version: 22.1.4
+[CI/test-versions]   ✅  Success - Main rustc +nightly --version --verbose [250.76619ms]
+[CI/test-versions]   ⚙  ::set-output:: cachekey=20260515d7f1
+[CI/test-versions]   ⚙  ::set-output:: name=nightly
+[CI/test-versions]   ✅  Success - Main install Rust nightly [16.785825174s]
+[CI/test-versions] ⭐ Run Main Run tests
+[CI/test-versions]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/2] user= workdir=
+[CI/test-versions]   | [1m[92m    Updating[0m crates.io index
+[CI/test-versions]   | [1m[92m     Locking[0m 90 packages to latest compatible versions
+[CI/test-versions]   | [1m[92m      Adding[0m rand v0.9.4 [1m[33m(available: v0.10.1)[0m
+[CI/test-versions]   | [1m[92m Downloading[0m crates ...
+[CI/test-versions]   | [1m[92m  Downloaded[0m bytes v1.11.1
+[CI/test-versions]   | [1m[92m  Downloaded[0m cfg-if v1.0.4
+[CI/test-versions]   | [1m[92m  Downloaded[0m autocfg v1.5.0
+[CI/test-versions]   | [1m[92m  Downloaded[0m byteorder v1.5.0
+[CI/test-versions]   | [1m[92m  Downloaded[0m equivalent v1.0.2
+[CI/test-versions]   | [1m[92m  Downloaded[0m futures-io v0.3.32
+[CI/test-versions]   | [1m[92m  Downloaded[0m futures-task v0.3.32
+[CI/test-versions]   | [1m[92m  Downloaded[0m futures-sink v0.3.32
+[CI/test-versions]   | [1m[92m  Downloaded[0m aho-corasick v1.1.4
+[CI/test-versions]   | [1m[92m  Downloaded[0m futures-macro v0.3.32
+[CI/test-versions]   | [1m[92m  Downloaded[0m itoa v1.0.18
+[CI/test-versions]   | [1m[92m  Downloaded[0m env_filter v1.0.1
+[CI/test-versions]   | [1m[92m  Downloaded[0m pin-project-lite v0.2.17
+[CI/test-versions]   | [1m[92m  Downloaded[0m futures v0.3.32
+[CI/test-versions]   | [1m[92m  Downloaded[0m quote v1.0.45
+[CI/test-versions]   | [1m[92m  Downloaded[0m tokio-test v0.4.5
+[CI/test-versions]   | [1m[92m  Downloaded[0m sync_wrapper v1.0.2
+[CI/test-versions]   | [1m[92m  Downloaded[0m tokio-macros v2.7.0
+[CI/test-versions]   | [1m[92m  Downloaded[0m ppv-lite86 v0.2.21
+[CI/test-versions]   | [1m[92m  Downloaded[0m log v0.4.29
+[CI/test-versions]   | [1m[92m  Downloaded[0m rand_core v0.10.1
+[CI/test-versions]   | [1m[92m  Downloaded[0m proc-macro2 v1.0.106
+[CI/test-versions]   | [1m[92m  Downloaded[0m thread_local v1.1.9
+[CI/test-versions]   | [1m[92m  Downloaded[0m tokio-stream v0.1.18
+[CI/test-versions]   | [1m[92m  Downloaded[0m nu-ansi-term v0.50.3
+[CI/test-versions]   | [1m[92m  Downloaded[0m futures-channel v0.3.32
+[CI/test-versions]   | [1m[92m  Downloaded[0m getrandom v0.4.2
+[CI/test-versions]   | [1m[92m  Downloaded[0m lazy_static v1.5.0
+[CI/test-versions]   | [1m[92m  Downloaded[0m futures-core v0.3.32
+[CI/test-versions]   | [1m[92m  Downloaded[0m once_cell v1.21.4
+[CI/test-versions]   | [1m[92m  Downloaded[0m rand_core v0.9.5
+[CI/test-versions]   | [1m[92m  Downloaded[0m env_logger v0.11.10
+[CI/test-versions]   | [1m[92m  Downloaded[0m unicode-ident v1.0.24
+[CI/test-versions]   | [1m[92m  Downloaded[0m quickcheck v1.1.0
+[CI/test-versions]   | [1m[92m  Downloaded[0m tracing-core v0.1.36
+[CI/test-versions]   | [1m[92m  Downloaded[0m memchr v2.8.0
+[CI/test-versions]   | [1m[92m  Downloaded[0m rand_chacha v0.9.0
+[CI/test-versions]   | [1m[92m  Downloaded[0m rand v0.9.4
+[CI/test-versions]   | [1m[92m  Downloaded[0m serde_core v1.0.228
+[CI/test-versions]   | [1m[92m  Downloaded[0m slab v0.4.12
+[CI/test-versions]   | [1m[92m  Downloaded[0m indexmap v2.14.0
+[CI/test-versions]   | [1m[92m  Downloaded[0m rand v0.10.1
+[CI/test-versions]   | [1m[92m  Downloaded[0m num-traits v0.2.19
+[CI/test-versions]   | [1m[92m  Downloaded[0m sharded-slab v0.1.7
+[CI/test-versions]   | [1m[92m  Downloaded[0m getrandom v0.3.4
+[CI/test-versions]   | [1m[92m  Downloaded[0m http v1.4.0
+[CI/test-versions]   | [1m[92m  Downloaded[0m tokio-util v0.7.18
+[CI/test-versions]   | [1m[92m  Downloaded[0m regex v1.12.3
+[CI/test-versions]   | [1m[92m  Downloaded[0m hashbrown v0.17.1
+[CI/test-versions]   | [1m[92m  Downloaded[0m futures-util v0.3.32
+[CI/test-versions]   | [1m[92m  Downloaded[0m hdrhistogram v7.5.4
+[CI/test-versions]   | [1m[92m  Downloaded[0m tracing-subscriber v0.3.23
+[CI/test-versions]   | [1m[92m  Downloaded[0m syn v2.0.117
+[CI/test-versions]   | [1m[92m  Downloaded[0m zerocopy v0.8.48
+[CI/test-versions]   | [1m[92m  Downloaded[0m regex-syntax v0.8.10
+[CI/test-versions]   | [1m[92m  Downloaded[0m tracing v0.1.44
+[CI/test-versions]   | [1m[92m  Downloaded[0m tokio v1.52.3
+[CI/test-versions]   | [1m[92m  Downloaded[0m regex-automata v0.4.14
+[CI/test-versions]   | [1m[92m  Downloaded[0m libc v0.2.186
+[CI/test-versions]   | [1m[92m   Compiling[0m proc-macro2 v1.0.106
+[CI/test-versions]   | [1m[92m   Compiling[0m quote v1.0.45
+[CI/test-versions]   | [1m[92m   Compiling[0m unicode-ident v1.0.24
+[CI/test-versions]   | [1m[92m   Compiling[0m pin-project-lite v0.2.17
+[CI/test-versions]   | [1m[92m   Compiling[0m futures-core v0.3.32
+[CI/test-versions]   | [1m[92m   Compiling[0m memchr v2.8.0
+[CI/test-versions]   | [1m[92m   Compiling[0m libc v0.2.186
+[CI/test-versions]   | [1m[92m   Compiling[0m cfg-if v1.0.4
+[CI/test-versions]   | [1m[92m   Compiling[0m tower-layer v0.3.3 (/scratch/raian-files/LLM4Build/project_path/tower/tower-layer)
+[CI/test-versions]   | [1m[92m   Compiling[0m tower-service v0.3.3 (/scratch/raian-files/LLM4Build/project_path/tower/tower-service)
+[CI/test-versions]   | [1m[92m   Compiling[0m log v0.4.29
+[CI/test-versions]   | [1m[92m   Compiling[0m futures-sink v0.3.32
+[CI/test-versions]   | [1m[92m   Compiling[0m bytes v1.11.1
+[CI/test-versions]   | [1m[92m   Compiling[0m autocfg v1.5.0
+[CI/test-versions]   | [1m[92m   Compiling[0m once_cell v1.21.4
+[CI/test-versions]   | [1m[92m   Compiling[0m futures-io v0.3.32
+[CI/test-versions]   | [1m[92m   Compiling[0m zerocopy v0.8.48
+[CI/test-versions]   | [1m[92m   Compiling[0m getrandom v0.3.4
+[CI/test-versions]   | [1m[92m   Compiling[0m slab v0.4.12
+[CI/test-versions]   | [1m[92m   Compiling[0m futures-task v0.3.32
+[CI/test-versions]   | [1m[92m   Compiling[0m regex-syntax v0.8.10
+[CI/test-versions]   | [1m[92m   Compiling[0m equivalent v1.0.2
+[CI/test-versions]   | [1m[92m   Compiling[0m hashbrown v0.17.1
+[CI/test-versions]   | [1m[92m   Compiling[0m byteorder v1.5.0
+[CI/test-versions]   | [1m[92m   Compiling[0m getrandom v0.4.2
+[CI/test-versions]   | [1m[92m   Compiling[0m itoa v1.0.18
+[CI/test-versions]   | [1m[92m   Compiling[0m sync_wrapper v1.0.2
+[CI/test-versions]   | [1m[92m   Compiling[0m rand_core v0.10.1
+[CI/test-versions]   | [1m[92m   Compiling[0m lazy_static v1.5.0
+[CI/test-versions]   | [1m[92m   Compiling[0m nu-ansi-term v0.50.3
+[CI/test-versions]   | [1m[92m   Compiling[0m thread_local v1.1.9
+[CI/test-versions]   | [1m[92m   Compiling[0m futures-channel v0.3.32
+[CI/test-versions]   | [1m[92m   Compiling[0m sharded-slab v0.1.7
+[CI/test-versions]   | [1m[92m   Compiling[0m tracing-core v0.1.36
+[CI/test-versions]   | [1m[92m   Compiling[0m num-traits v0.2.19
+[CI/test-versions]   | [1m[92m   Compiling[0m aho-corasick v1.1.4
+[CI/test-versions]   | [1m[92m   Compiling[0m http v1.4.0
+[CI/test-versions]   | [1m[92m   Compiling[0m tracing v0.1.44
+[CI/test-versions]   | [1m[92m   Compiling[0m tracing-subscriber v0.3.23
+[CI/test-versions]   | [1m[92m   Compiling[0m indexmap v2.14.0
+[CI/test-versions]   | [1m[92m   Compiling[0m syn v2.0.117
+[CI/test-versions]   | [1m[92m   Compiling[0m hdrhistogram v7.5.4
+[CI/test-versions]   | [1m[92m   Compiling[0m rand v0.10.1
+[CI/test-versions]   | [1m[92m   Compiling[0m rand_core v0.9.5
+[CI/test-versions]   | [1m[92m   Compiling[0m regex-automata v0.4.14
+[CI/test-versions]   | [1m[92m   Compiling[0m tokio-macros v2.7.0
+[CI/test-versions]   | [1m[92m   Compiling[0m futures-macro v0.3.32
+[CI/test-versions]   | [1m[92m   Compiling[0m regex v1.12.3
+[CI/test-versions]   | [1m[92m   Compiling[0m ppv-lite86 v0.2.21
+[CI/test-versions]   | [1m[92m   Compiling[0m env_filter v1.0.1
+[CI/test-versions]   | [1m[92m   Compiling[0m tokio v1.52.3
+[CI/test-versions]   | [1m[92m   Compiling[0m env_logger v0.11.10
+[CI/test-versions]   | [1m[92m   Compiling[0m futures-util v0.3.32
+[CI/test-versions]   | [1m[92m   Compiling[0m quickcheck v1.1.0
+[CI/test-versions]   | [1m[92m   Compiling[0m rand_chacha v0.9.0
+[CI/test-versions]   | [1m[92m   Compiling[0m rand v0.9.4
+[CI/test-versions]   | [1m[92m   Compiling[0m tokio-stream v0.1.18
+[CI/test-versions]   | [1m[92m   Compiling[0m tokio-util v0.7.18
+[CI/test-versions]   | [1m[92m   Compiling[0m tokio-test v0.4.5
+[CI/test-versions]   | [1m[92m   Compiling[0m tower v0.5.3 (/scratch/raian-files/LLM4Build/project_path/tower/tower)
+[CI/test-versions]   | [1m[92m   Compiling[0m futures v0.3.32
+[CI/test-versions]   | [1m[92m   Compiling[0m tower-test v0.4.1 (/scratch/raian-files/LLM4Build/project_path/tower/tower-test)
+[CI/test-versions]   | [1m[33mwarning[0m[1m: unused import: `assert_ready`[0m
+[CI/test-versions]   |  [1m[94m--> [0mtower/src/balance/p2c/test.rs:5:34
+[CI/test-versions]   |   [1m[94m|[0m
+[CI/test-versions]   | [1m[94m5[0m [1m[94m|[0m use tokio_test::{assert_pending, assert_ready, assert_ready_ok, task};
+[CI/test-versions]   |   [1m[94m|[0m                                  [1m[33m^^^^^^^^^^^^[0m
+[CI/test-versions]   |   [1m[94m|[0m
+[CI/test-versions]   |   [1m[94m= [0m[1mnote[0m: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+[CI/test-versions]   | 
+[CI/test-versions]   | [1m[33mwarning[0m[1m: unused import: `assert_ready`[0m
+[CI/test-versions]   |    [1m[94m--> [0mtower/src/load/peak_ewma.rs:314:22
+[CI/test-versions]   |     [1m[94m|[0m
+[CI/test-versions]   | [1m[94m314[0m [1m[94m|[0m     use tokio_test::{assert_ready, assert_ready_ok, task};
+[CI/test-versions]   |     [1m[94m|[0m                      [1m[33m^^^^^^^^^^^^[0m
+[CI/test-versions]   | 
+[CI/test-versions]   | [1m[33mwarning[0m[1m: unused import: `assert_ready`[0m
+[CI/test-versions]   |  [1m[94m--> [0mtower/tests/hedge/main.rs:7:34
+[CI/test-versions]   |   [1m[94m|[0m
+[CI/test-versions]   | [1m[94m7[0m [1m[94m|[0m use tokio_test::{assert_pending, assert_ready, assert_ready_ok, task};
+[CI/test-versions]   |   [1m[94m|[0m                                  [1m[33m^^^^^^^^^^^^[0m
+[CI/test-versions]   |   [1m[94m|[0m
+[CI/test-versions]   |   [1m[94m= [0m[1mnote[0m: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+[CI/test-versions]   | 
+[CI/test-versions]   | [1m[33mwarning[0m[1m: unused import: `assert_ready`[0m
+[CI/test-versions]   |  [1m[94m--> [0mtower/tests/limit/concurrency.rs:2:34
+[CI/test-versions]   |   [1m[94m|[0m
+[CI/test-versions]   | [1m[94m2[0m [1m[94m|[0m use tokio_test::{assert_pending, assert_ready, assert_ready_ok};
+[CI/test-versions]   |   [1m[94m|[0m                                  [1m[33m^^^^^^^^^^^^[0m
+[CI/test-versions]   |   [1m[94m|[0m
+[CI/test-versions]   |   [1m[94m= [0m[1mnote[0m: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+[CI/test-versions]   | 
+[CI/test-versions]   | [1m[33mwarning[0m[1m: unused import: `assert_ready`[0m
+[CI/test-versions]   |  [1m[94m--> [0mtower/tests/limit/rate.rs:4:34
+[CI/test-versions]   |   [1m[94m|[0m
+[CI/test-versions]   | [1m[94m4[0m [1m[94m|[0m use tokio_test::{assert_pending, assert_ready, assert_ready_ok};
+[CI/test-versions]   |   [1m[94m|[0m                                  [1m[33m^^^^^^^^^^^^[0m
+[CI/test-versions]   | 
+[CI/test-versions]   | [1m[33mwarning[0m[1m: unused import: `assert_ready`[0m
+[CI/test-versions]   |  [1m[94m--> [0mtower/tests/spawn_ready/main.rs:6:34
+[CI/test-versions]   |   [1m[94m|[0m
+[CI/test-versions]   | [1m[94m6[0m [1m[94m|[0m use tokio_test::{assert_pending, assert_ready, assert_ready_err, assert_ready_ok};
+[CI/test-versions]   |   [1m[94m|[0m                                  [1m[33m^^^^^^^^^^^^[0m
+[CI/test-versions]   |   [1m[94m|[0m
+[CI/test-versions]   |   [1m[94m= [0m[1mnote[0m: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+[CI/test-versions]   | 
+[CI/test-versions]   | [1m[33mwarning[0m: `tower` (test "hedge") generated 1 warning (run `cargo fix --test "hedge" -p tower` to apply 1 suggestion)
+[CI/test-versions]   | [1m[33mwarning[0m: `tower` (test "spawn_ready") generated 1 warning (run `cargo fix --test "spawn_ready" -p tower` to apply 1 suggestion)
+[CI/test-versions]   | [1m[33mwarning[0m: `tower` (test "limit") generated 2 warnings (run `cargo fix --test "limit" -p tower` to apply 2 suggestions)
+[CI/test-versions]   | [1m[33mwarning[0m: `tower` (lib test) generated 2 warnings (run `cargo fix --lib -p tower --tests` to apply 2 suggestions)
+[CI/test-versions]   | [1m[92m    Finished[0m `test` profile [unoptimized + debuginfo] target(s) in 9.36s
+[CI/test-versions]   | [1m[92m     Running[0m unittests src/lib.rs (target/debug/deps/tower-34edbfb568e7e2ef)
+[CI/test-versions]   | 
+[CI/test-versions]   | running 24 tests
+[CI/test-versions]   | test balance::p2c::test::empty ... ok
+[CI/test-versions]   | test load::peak_ewma::tests::nanos ... ok
+[CI/test-versions]   | test load::peak_ewma::tests::default_decay ... ok
+[CI/test-versions]   | test balance::p2c::test::single_endpoint ... ok
+[CI/test-versions]   | test load::peak_ewma::tests::compound_decay ... ok
+[CI/test-versions]   | test balance::p2c::test::two_endpoints_with_equal_load ... ok
+[CI/test-versions]   | test make::make_service::shared::tests::as_make_service ... ok
+[CI/test-versions]   | test load::pending_requests::tests::with_completion ... ok
+[CI/test-versions]   | test load::pending_requests::tests::default ... ok
+[CI/test-versions]   | test make::make_service::shared::tests::as_make_service_into_service ... ok
+[CI/test-versions]   | test retry::backoff::tests::jitter_must_be_finite ... ok
+[CI/test-versions]   | test retry::backoff::tests::backoff_base_first ... ok
+[CI/test-versions]   | test retry::backoff::tests::backoff_base ... ok
+[CI/test-versions]   | test retry::budget::tps_budget::tests::tps_empty ... ok
+[CI/test-versions]   | test retry::budget::tps_budget::tests::tps_reserve ... ok
+[CI/test-versions]   | test retry::budget::tps_budget::tests::tps_leaky ... ok
+[CI/test-versions]   | test util::boxed::sync::is_sync ... ok
+[CI/test-versions]   | test retry::budget::tps_budget::tests::tps_slots ... ok
+[CI/test-versions]   | test util::future_service::tests::pending_service_debug_impl ... ok
+[CI/test-versions]   | test util::rng::tests::next_f64 ... ok
+[CI/test-versions]   | test util::rng::tests::sample_inplace_boundaries ... ok
+[CI/test-versions]   | test util::rng::tests::next_range ... ok
+[CI/test-versions]   | test retry::backoff::tests::backoff_jitter ... ok
+[CI/test-versions]   | test util::rng::tests::sample_floyd2 ... ok
+[CI/test-versions]   | 
+[CI/test-versions]   | test result: ok. 24 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+[CI/test-versions]   | 
+[CI/test-versions]   | [1m[92m     Running[0m tests/balance/main.rs (target/debug/deps/balance-9466b966954f7948)
+[CI/test-versions]   | 
+[CI/test-versions]   | running 1 test
+[CI/test-versions]   | test stress ... ok
+[CI/test-versions]   | 
+[CI/test-versions]   | test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.86s
+[CI/test-versions]   | 
+[CI/test-versions]   | [1m[92m     Running[0m tests/buffer/main.rs (target/debug/deps/buffer-172970015dbac974)
+[CI/test-versions]   | 
+[CI/test-versions]   | running 11 tests
+[CI/test-versions]   | test doesnt_leak_permits ... ok
+[CI/test-versions]   | test poll_ready_when_worker_is_dropped_early ... ok
+[CI/test-versions]   | test propagates_trace_spans ... ok
+[CI/test-versions]   | test wakes_pending_waiters_on_close ... ok
+[CI/test-versions]   | test wakes_pending_waiters_on_failure ... ok
+[CI/test-versions]   | test waits_for_channel_capacity ... ok
+[CI/test-versions]   | test response_future_when_worker_is_dropped_early ... ok
+[CI/test-versions]   | test req_and_res ... ok
+[CI/test-versions]   | test when_inner_fails ... ok
+[CI/test-versions]   | test clears_canceled_requests ... ok
+[CI/test-versions]   | test when_inner_is_not_ready ... ok
+[CI/test-versions]   | 
+[CI/test-versions]   | test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.20s
+[CI/test-versions]   | 
+[CI/test-versions]   | [1m[92m     Running[0m tests/builder.rs (target/debug/deps/builder-54f70cf82349bbf8)
+[CI/test-versions]   | 
+[CI/test-versions]   | running 1 test
+[CI/test-versions]   | test builder_service ... ok
+[CI/test-versions]   | 
+[CI/test-versions]   | test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+[CI/test-versions]   | 
+[CI/test-versions]   | [1m[92m     Running[0m tests/hedge/main.rs (target/debug/deps/hedge-4ed6b004663bf83d)
+[CI/test-versions]   | 
+[CI/test-versions]   | running 5 tests
+[CI/test-versions]   | test completes_before_hedge ... ok
+[CI/test-versions]   | test hedge_hedge_completes_first ... ok
+[CI/test-versions]   | test hedge_orig_completes_first ... ok
+[CI/test-versions]   | test request_not_clonable ... ok
+[CI/test-versions]   | test request_not_retyable ... ok
+[CI/test-versions]   | 
+[CI/test-versions]   | test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+[CI/test-versions]   | 
+[CI/test-versions]   | [1m[92m     Running[0m tests/limit/main.rs (target/debug/deps/limit-40697ad00da46d50)
+[CI/test-versions]   | 
+[CI/test-versions]   | running 10 tests
+[CI/test-versions]   | test concurrency::multi_waiters ... ok
+[CI/test-versions]   | test concurrency::basic_service_limit_functionality_with_poll_ready ... ok
+[CI/test-versions]   | test concurrency::basic_service_limit_functionality_without_poll_ready ... ok
+[CI/test-versions]   | test concurrency::request_without_capacity ... ok
+[CI/test-versions]   | test concurrency::reserve_capacity_without_sending_request ... ok
+[CI/test-versions]   | test concurrency::response_error_releases_capacity ... ok
+[CI/test-versions]   | test concurrency::response_future_drop_releases_capacity ... ok
+[CI/test-versions]   | test concurrency::service_drop_frees_capacity ... ok
+[CI/test-versions]   | test rate::remaining_gets_reset ... ok
+[CI/test-versions]   | test rate::reaching_capacity ... ok
+[CI/test-versions]   | 
+[CI/test-versions]   | test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+[CI/test-versions]   | 
+[CI/test-versions]   | [1m[92m     Running[0m tests/load_shed/main.rs (target/debug/deps/load_shed-0bd35c8250c8a2bc)
+[CI/test-versions]   | 
+[CI/test-versions]   | running 2 tests
+[CI/test-versions]   | test when_not_ready ... ok
+[CI/test-versions]   | test when_ready ... ok
+[CI/test-versions]   | 
+[CI/test-versions]   | test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+[CI/test-versions]   | 
+[CI/test-versions]   | [1m[92m     Running[0m tests/ready_cache/main.rs (target/debug/deps/ready_cache-62f93f52517da720)
+[CI/test-versions]   | 
+[CI/test-versions]   | running 9 tests
+[CI/test-versions]   | test duplicate_key_by_index ... ok
+[CI/test-versions]   | test error_after_promote ... ok
+[CI/test-versions]   | test evict_pending_then_error ... ok
+[CI/test-versions]   | test poll_ready_inner_failure ... ok
+[CI/test-versions]   | test evict_ready_then_error ... ok
+[CI/test-versions]   | test poll_ready_not_ready ... ok
+[CI/test-versions]   | test poll_ready_promotes_inner ... ok
+[CI/test-versions]   | test push_then_evict ... ok
+[CI/test-versions]   | test cancelation_observed ... ok
+[CI/test-versions]   | 
+[CI/test-versions]   | test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+[CI/test-versions]   | 
+[CI/test-versions]   | [1m[92m     Running[0m tests/retry/main.rs (target/debug/deps/retry-49cc99a7a023d6d0)
+[CI/test-versions]   | 
+[CI/test-versions]   | running 6 tests
+[CI/test-versions]   | test retry_error_inspection ... ok
+[CI/test-versions]   | test retry_errors ... ok
+[CI/test-versions]   | test retry_cannot_clone_request ... ok
+[CI/test-versions]   | test retry_limit ... ok
+[CI/test-versions]   | test retry_mutating_policy ... ok
+[CI/test-versions]   | test success_with_cannot_clone ... ok
+[CI/test-versions]   | 
+[CI/test-versions]   | test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+[CI/test-versions]   | 
+[CI/test-versions]   | [1m[92m     Running[0m tests/spawn_ready/main.rs (target/debug/deps/spawn_ready-6adf010fceeb1dfc)
+[CI/test-versions]   | 
+[CI/test-versions]   | running 4 tests
+[CI/test-versions]   | test abort_on_drop ... ok
+[CI/test-versions]   | test when_inner_fails ... ok
+[CI/test-versions]   | test when_inner_is_not_ready ... ok
+[CI/test-versions]   | test propagates_trace_spans ... ok
+[CI/test-versions]   | 
+[CI/test-versions]   | test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+[CI/test-versions]   | 
+[CI/test-versions]   | [1m[92m     Running[0m tests/steer/main.rs (target/debug/deps/steer-22d9cde0cfddf4dd)
+[CI/test-versions]   | 
+[CI/test-versions]   | running 2 tests
+[CI/test-versions]   | test pending_all_ready ... ok
+[CI/test-versions]   | test pick_correctly ... ok
+[CI/test-versions]   | 
+[CI/test-versions]   | test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+[CI/test-versions]   | 
+[CI/test-versions]   | [1m[92m     Running[0m tests/support.rs (target/debug/deps/support-f6c796cad2f08205)
+[CI/test-versions]   | 
+[CI/test-versions]   | running 0 tests
+[CI/test-versions]   | 
+[CI/test-versions]   | test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+[CI/test-versions]   | 
+[CI/test-versions]   | [1m[92m     Running[0m tests/util/main.rs (target/debug/deps/util-8cfacdabfcfda8ba)
+[CI/test-versions]   | 
+[CI/test-versions]   | running 7 tests
+[CI/test-versions]   | test call_all::ordered ... ok
+[CI/test-versions]   | test call_all::pending ... ok
+[CI/test-versions]   | test call_all::poll_ready_error ... ok
+[CI/test-versions]   | test call_all::unordered ... ok
+[CI/test-versions]   | test oneshot::service_driven_to_readiness ... ok
+[CI/test-versions]   | test service_fn::simple ... ok
+[CI/test-versions]   | test call_all::stream_does_not_block_service ... ok
+[CI/test-versions]   | 
+[CI/test-versions]   | test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+[CI/test-versions]   | 
+[CI/test-versions]   | [1m[92m     Running[0m unittests src/lib.rs (target/debug/deps/tower_layer-9dfcec60abc49d61)
+[CI/test-versions]   | 
+[CI/test-versions]   | running 1 test
+[CI/test-versions]   | test layer_fn::tests::layer_fn_has_useful_debug_impl ... ok
+[CI/test-versions]   | 
+[CI/test-versions]   | test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+[CI/test-versions]   | 
+[CI/test-versions]   | [1m[92m     Running[0m unittests src/lib.rs (target/debug/deps/tower_service-665a1a474b5ef794)
+[CI/test-versions]   | 
+[CI/test-versions]   | running 0 tests
+[CI/test-versions]   | 
+[CI/test-versions]   | test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+[CI/test-versions]   | 
+[CI/test-versions]   | [1m[92m     Running[0m unittests src/lib.rs (target/debug/deps/tower_test-87c388c1e77e00ef)
+[CI/test-versions]   | 
+[CI/test-versions]   | running 0 tests
+[CI/test-versions]   | 
+[CI/test-versions]   | test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+[CI/test-versions]   | 
+[CI/test-versions]   | [1m[92m     Running[0m tests/mock.rs (target/debug/deps/mock-634019336e5c27f9)
+[CI/test-versions]   | 
+[CI/test-versions]   | running 2 tests
+[CI/test-versions]   | test single_request_ready ... ok
+[CI/test-versions]   | test backpressure - should panic ... ok
+[CI/test-versions]   | 
+[CI/test-versions]   | test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+[CI/test-versions]   | 
+[CI/test-versions]   | [1m[92m   Doc-tests[0m tower
+[CI/test-versions]   | 
+[CI/test-versions]   | running 48 tests
+[CI/test-versions]   | test tower/src/builder/mod.rs - builder::ServiceBuilder (line 51) ... ok
+[CI/test-versions]   | test tower/src/builder/mod.rs - builder::ServiceBuilder (line 72) ... ok
+[CI/test-versions]   | test tower/src/builder/mod.rs - builder::ServiceBuilder (line 30) ... ok
+[CI/test-versions]   | test tower/src/builder/mod.rs - builder::ServiceBuilder<L>::option_layer (line 140) ... ok
+[CI/test-versions]   | test tower/src/builder/mod.rs - builder::ServiceBuilder (line 89) ... ok
+[CI/test-versions]   | test tower/src/load/mod.rs - load (line 34) ... ok
+[CI/test-versions]   | test tower/src/retry/policy.rs - retry::policy::Policy (line 7) ... ok
+[CI/test-versions]   | test tower/src/buffer/mod.rs - buffer (line 13) ... ok
+[CI/test-versions]   | test tower/src/util/mod.rs - util::option_layer (line 1080) ... ok
+[CI/test-versions]   | test tower/src/balance/mod.rs - balance (line 18) ... ok
+[CI/test-versions]   | test tower/src/builder/mod.rs - builder::ServiceBuilder<L>::service_fn (line 502) ... ok
+[CI/test-versions]   | test tower/src/util/boxed/layer.rs - util::boxed::layer::BoxLayer (line 21) ... ok
+[CI/test-versions]   | test tower/src/retry/budget/mod.rs - retry::budget (line 29) ... ok
+[CI/test-versions]   | test tower/src/util/mod.rs - util::ServiceExt::then (line 800) ... ok
+[CI/test-versions]   | test tower/src/util/future_service.rs - util::future_service::future_service (line 15) ... ok
+[CI/test-versions]   | test tower/src/discover/mod.rs - discover (line 14) ... ok
+[CI/test-versions]   | test tower/src/make/make_service.rs - make::make_service::MakeService::into_service (line 53) ... ok
+[CI/test-versions]   | test tower/src/util/mod.rs - util::ServiceExt::map_result (line 488) ... ok
+[CI/test-versions]   | test tower/src/builder/mod.rs - builder::ServiceBuilder<L>::check_service_clone (line 589) ... ok
+[CI/test-versions]   | test tower/src/util/mod.rs - util::ServiceExt::map_response (line 198) ... ok
+[CI/test-versions]   | test tower/src/builder/mod.rs - builder::ServiceBuilder<L>::check_clone (line 555) ... ok
+[CI/test-versions]   | test tower/src/util/mod.rs - util::ServiceExt::map_request (line 559) ... ok
+[CI/test-versions]   | test tower/src/util/mod.rs - util::ServiceExt::and_then (line 129) ... ok
+[CI/test-versions]   | test tower/src/builder/mod.rs - builder::ServiceBuilder<L>::check_service (line 627) ... ok
+[CI/test-versions]   | test tower/src/util/boxed/sync.rs - util::boxed::sync::BoxService (line 30) ... ok
+[CI/test-versions]   | test tower/src/util/future_service.rs - util::future_service::FutureService<F,S>::new (line 71) ... ok
+[CI/test-versions]   | test tower/src/util/mod.rs - util::ServiceExt::map_result (line 418) ... ok
+[CI/test-versions]   | test tower/src/util/mod.rs - util::ServiceExt::map_err (line 265) ... ok
+[CI/test-versions]   | test tower/src/util/mod.rs - util::ServiceExt::filter (line 619) ... ok
+[CI/test-versions]   | test tower/src/util/mod.rs - util::ServiceExt::map_result (line 355) ... ok
+[CI/test-versions]   | test tower/src/util/mod.rs - util::ServiceExt::filter_async (line 692) ... ok
+[CI/test-versions]   | test tower/src/util/mod.rs - util::ServiceExt::map_future (line 886) ... ok
+[CI/test-versions]   | test tower/src/make/make_service.rs - make::make_service::MakeService::as_service (line 92) ... ok
+[CI/test-versions]   | test tower/src/builder/mod.rs - builder::ServiceBuilder<L>::boxed_clone_sync (line 802) ... ok
+[CI/test-versions]   | test tower/src/builder/mod.rs - builder::ServiceBuilder<L>::boxed (line 681) ... ok
+[CI/test-versions]   | test tower/src/util/mod.rs - util::ServiceExt::boxed (line 988) ... ok
+[CI/test-versions]   | test tower/src/util/mod.rs - util::ServiceExt::boxed_clone (line 1034) ... ok
+[CI/test-versions]   | test tower/src/builder/mod.rs - builder::ServiceBuilder<L>::boxed_clone (line 739) ... ok
+[CI/test-versions]   | test tower/src/make/make_service/shared.rs - make::make_service::shared::Shared (line 11) ... ok
+[CI/test-versions]   | test tower/src/util/boxed/layer_clone_sync.rs - util::boxed::layer_clone_sync::BoxCloneSyncServiceLayer (line 25) ... ok
+[CI/test-versions]   | test tower/src/builder/mod.rs - builder::ServiceBuilder<L>::map_request (line 313) ... ok
+[CI/test-versions]   | test tower/src/util/boxed/layer_clone.rs - util::boxed::layer_clone::BoxCloneServiceLayer (line 24) ... ok
+[CI/test-versions]   | test tower/src/builder/mod.rs - builder::ServiceBuilder<L>::map_request (line 341) ... ok
+[CI/test-versions]   | test tower/src/util/boxed_clone.rs - util::boxed_clone::BoxCloneService (line 20) ... ok
+[CI/test-versions]   | test tower/src/util/service_fn.rs - util::service_fn::service_fn (line 12) ... ok
+[CI/test-versions]   | test tower/src/util/call_all/ordered.rs - util::call_all::ordered::CallAll (line 20) ... ok
+[CI/test-versions]   | test tower/src/steer/mod.rs - steer (line 10) ... ok
+[CI/test-versions]   | test tower/src/builder/mod.rs - builder::ServiceBuilder<L>::service_fn (line 514) ... ok
+[CI/test-versions]   | 
+[CI/test-versions]   | test result: ok. 48 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.60s
+[CI/test-versions]   | 
+[CI/test-versions]   | [1m[92m   Doc-tests[0m tower_layer
+[CI/test-versions]   | 
+[CI/test-versions]   | running 6 tests
+[CI/test-versions]   | test tower-layer/src/identity.rs - identity::Identity::new (line 29) ... ok
+[CI/test-versions]   | test tower-layer/src/stack.rs - stack::Stack<Inner,Outer>::new (line 31) ... ok
+[CI/test-versions]   | test tower-layer/src/lib.rs - Layer (line 47) ... ok
+[CI/test-versions]   | test tower-layer/src/identity.rs - identity::Identity (line 13) ... ok
+[CI/test-versions]   | test tower-layer/src/stack.rs - stack::Stack (line 8) ... ok
+[CI/test-versions]   | test tower-layer/src/layer_fn.rs - layer_fn::layer_fn (line 18) ... ok
+[CI/test-versions]   | 
+[CI/test-versions]   | test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s
+[CI/test-versions]   | 
+[CI/test-versions]   | [1m[92m   Doc-tests[0m tower_service
+[CI/test-versions]   | 
+[CI/test-versions]   | running 5 tests
+[CI/test-versions]   | test tower-service/src/lib.rs - Service (line 104) ... ignored
+[CI/test-versions]   | test tower-service/src/lib.rs - Service (line 289) ... ok
+[CI/test-versions]   | test tower-service/src/lib.rs - Service (line 56) ... ok
+[CI/test-versions]   | test tower-service/src/lib.rs - Service (line 254) ... ok
+[CI/test-versions]   | test tower-service/src/lib.rs - Service (line 126) ... ok
+[CI/test-versions]   | 
+[CI/test-versions]   | test result: ok. 4 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.16s
+[CI/test-versions]   | 
+[CI/test-versions]   | [1m[92m   Doc-tests[0m tower_test
+[CI/test-versions]   | 
+[CI/test-versions]   | running 1 test
+[CI/test-versions]   | test tower-test/src/macros.rs - macros::assert_request_eq (line 9) ... ok
+[CI/test-versions]   | 
+[CI/test-versions]   | test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s
+[CI/test-versions]   | 
+[CI/test-versions]   ✅  Success - Main Run tests [17.289386291s]
+[CI/test-versions] ⭐ Run Post install Rust nightly
+[CI/test-versions]   🐳  docker cp src=/home/mnabil/.cache/act/dtolnay-rust-toolchain@master/ dst=/var/run/act/actions/dtolnay-rust-toolchain@master/
+[CI/test-versions]   ✅  Success - Post install Rust nightly [160.617206ms]
+[CI/test-versions] ⭐ Run Complete job
+[CI/test-versions] Cleaning up container for job test-versions
+[CI/test-versions]   ✅  Success - Complete job
+[CI/test-versions] 🏁  Job succeeded

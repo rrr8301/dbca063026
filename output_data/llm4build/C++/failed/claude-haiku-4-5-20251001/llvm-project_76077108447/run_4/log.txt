@@ -1,0 +1,96 @@
+Error from docker build
+
+#1 [internal] load .dockerignore
+#1 transferring context: 2B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 1.88kB done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/ubuntu:24.04
+#3 DONE 0.2s
+
+#4 [ 2/10] RUN ln -snf /usr/share/zoneinfo/America/Los_Angeles /etc/localtime && echo America/Los_Angeles > /etc/timezone
+#4 CACHED
+
+#5 [ 1/10] FROM docker.io/library/ubuntu:24.04@sha256:c4a8d5503dfb2a3eb8ab5f807da5bc69a85730fb49b5cfca2330194ebcc41c7b
+#5 CACHED
+
+#6 [internal] load build context
+#6 transferring context: 51.40MB 4.9s
+#6 transferring context: 405.23MB 9.9s
+#6 ...
+
+#7 [3/9] RUN apt-get update -qq --allow-insecure-repositories ||     (echo "Primary mirror failed, retrying..."; sleep 5; apt-get update -qq) ||     (echo "Retrying with different approach..."; apt-get update -qq -o Acquire::http::timeout=30) || true
+#7 ...
+
+#6 [internal] load build context
+#6 transferring context: 1.13GB 14.9s
+#6 transferring context: 1.82GB 19.9s
+#6 transferring context: 2.52GB 24.9s
+#6 ...
+
+#7 [3/9] RUN apt-get update -qq --allow-insecure-repositories ||     (echo "Primary mirror failed, retrying..."; sleep 5; apt-get update -qq) ||     (echo "Retrying with different approach..."; apt-get update -qq -o Acquire::http::timeout=30) || true
+#7 27.37 W: Failed to fetch http://archive.ubuntu.com/ubuntu/dists/noble/InRelease  Could not resolve 'archive.ubuntu.com'
+#7 27.37 W: Failed to fetch http://archive.ubuntu.com/ubuntu/dists/noble-updates/InRelease  Could not resolve 'archive.ubuntu.com'
+#7 27.37 W: Failed to fetch http://archive.ubuntu.com/ubuntu/dists/noble-backports/InRelease  Could not resolve 'archive.ubuntu.com'
+#7 27.37 W: Failed to fetch http://security.ubuntu.com/ubuntu/dists/noble-security/InRelease  Could not resolve 'security.ubuntu.com'
+#7 27.37 W: Some index files failed to download. They have been ignored, or old ones used instead.
+#7 DONE 28.3s
+
+#8 [4/9] RUN apt-get install -y --no-install-recommends     build-essential     cmake     git     ninja-build     python3     python3-venv     python3-pip     wget     curl     ca-certificates &&     apt-get clean &&     rm -rf /var/lib/apt/lists/*
+#8 0.432 Reading package lists...
+#8 0.446 Building dependency tree...
+#8 0.446 Reading state information...
+#8 0.447 Package ca-certificates is not available, but is referred to by another package.
+#8 0.447 This may mean that the package is missing, has been obsoleted, or
+#8 0.447 is only available from another source
+#8 0.447 
+#8 0.448 E: Unable to locate package build-essential
+#8 0.448 E: Unable to locate package cmake
+#8 0.448 E: Unable to locate package git
+#8 0.448 E: Unable to locate package ninja-build
+#8 0.448 E: Unable to locate package python3
+#8 0.448 E: Unable to locate package python3-venv
+#8 0.448 E: Unable to locate package python3-pip
+#8 0.448 E: Unable to locate package wget
+#8 0.448 E: Unable to locate package curl
+#8 0.448 E: Package 'ca-certificates' has no installation candidate
+#8 ERROR: process "/bin/sh -c apt-get install -y --no-install-recommends     build-essential     cmake     git     ninja-build     python3     python3-venv     python3-pip     wget     curl     ca-certificates &&     apt-get clean &&     rm -rf /var/lib/apt/lists/*" did not complete successfully: exit code: 100
+
+#6 [internal] load build context
+#6 transferring context: 3.07GB 28.9s done
+#6 CANCELED
+------
+ > [4/9] RUN apt-get install -y --no-install-recommends     build-essential     cmake     git     ninja-build     python3     python3-venv     python3-pip     wget     curl     ca-certificates &&     apt-get clean &&     rm -rf /var/lib/apt/lists/*:
+#8 0.448 E: Unable to locate package build-essential
+#8 0.448 E: Unable to locate package cmake
+#8 0.448 E: Unable to locate package git
+#8 0.448 E: Unable to locate package ninja-build
+#8 0.448 E: Unable to locate package python3
+#8 0.448 E: Unable to locate package python3-venv
+#8 0.448 E: Unable to locate package python3-pip
+#8 0.448 E: Unable to locate package wget
+#8 0.448 E: Unable to locate package curl
+#8 0.448 E: Package 'ca-certificates' has no installation candidate
+------
+Dockerfile:13
+--------------------
+  12 |     # Install dependencies with retry logic
+  13 | >>> RUN apt-get install -y --no-install-recommends \
+  14 | >>>     build-essential \
+  15 | >>>     cmake \
+  16 | >>>     git \
+  17 | >>>     ninja-build \
+  18 | >>>     python3 \
+  19 | >>>     python3-venv \
+  20 | >>>     python3-pip \
+  21 | >>>     wget \
+  22 | >>>     curl \
+  23 | >>>     ca-certificates && \
+  24 | >>>     apt-get clean && \
+  25 | >>>     rm -rf /var/lib/apt/lists/*
+  26 |     
+--------------------
+ERROR: failed to solve: process "/bin/sh -c apt-get install -y --no-install-recommends     build-essential     cmake     git     ninja-build     python3     python3-venv     python3-pip     wget     curl     ca-certificates &&     apt-get clean &&     rm -rf /var/lib/apt/lists/*" did not complete successfully: exit code: 100

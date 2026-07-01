@@ -1,0 +1,44 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          14
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Ubuntu Clang AARCH64 MSAN
+  Test command(s) run in original CI:
+    $ ctest --verbose -C Release -E benchmark_zlib --output-on-failure --max-width 120 -j 5
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ ctest --test-dir build
+
+Note: Original had test failures; LLM build passed all — failed build has passed.
+
+--- Reason(s) for Non-Reproducibility ---
+  - [CTest] Test run mismatch: original=77, LLM=70
+  - [CTest] Test passed mismatch: original=76, LLM=70
+  - [CTest] Test failed mismatch: original=1, LLM=0
+  - [CTest] 1 test(s) failed in original but passed in LLM: gtest_zlib
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > 70/70 Test #70: gtest_zlib .......................   Passed    1.09 sec
+    > 100% tests passed, 0 tests failed out of 70
+    > (Original: gtest_zlib FAILED under MSAN/AARCH64; LLM: x86_64 no sanitizer)
+
+  [Root cause classification]
+  - The original CI job "Ubuntu Clang AARCH64 MSAN" runs on AArch64 architecture with MemorySanitizer (MSAN) enabled; the gtest_zlib test failure is caused by MSAN detecting uninitialized memory reads in zlib-ng's SIMD code path that is specific to the AArch64 NEON SIMD implementation, which is not present in x86_64 builds.
+  - The LLM built zlib-ng on ubuntu:24.04 x86_64 without MSAN instrumentation, causing gtest_zlib to pass because the x86_64 SIMD path (SSE/AVX) does not trigger the same uninitialized memory patterns that MSAN flags in the NEON code path on AArch64.
+  - The LLM ran 7 fewer tests (70 vs 77) because the original CI's ctest command excluded benchmark_zlib tests with `-E benchmark_zlib` but ran 7 additional architecture-specific AARCH64 SIMD tests that do not exist in the x86_64 cmake configuration; the LLM's simpler `ctest --test-dir build` invocation ran only the x86_64 default test set.
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 77 run, 76 passed, 1 failed, 0 skipped
+    LLM:      70 run, 70 passed, 0 failed, 0 skipped

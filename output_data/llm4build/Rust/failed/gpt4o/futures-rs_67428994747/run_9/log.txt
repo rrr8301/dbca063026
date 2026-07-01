@@ -1,0 +1,56 @@
+Error from docker build
+
+#1 [ 1/10] FROM docker.io/library/ubuntu:22.04
+#1 CACHED
+
+#2 [2/9] RUN ln -snf /usr/share/zoneinfo/America/Los_Angeles /etc/localtime && echo America/Los_Angeles > /etc/timezone
+#2 CACHED
+
+#3 [internal] load build definition from Dockerfile
+#3 transferring dockerfile: 917B done
+#3 DONE 0.0s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 2B done
+#4 DONE 0.0s
+
+#5 [internal] load metadata for docker.io/library/ubuntu:22.04
+#5 DONE 0.0s
+
+#6 [3/9] RUN apt-get update && apt-get install -y --no-install-recommends     git     curl     wget     && rm -rf /var/lib/apt/lists/*
+#6 CACHED
+
+#7 [internal] load build context
+#7 transferring context: 223.18kB 0.1s done
+#7 DONE 0.1s
+
+#8 [4/9] RUN useradd -m testuser
+#8 DONE 0.5s
+
+#9 [5/9] RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain nightly
+#9 0.455 curl: (77) error setting certificate file: /etc/ssl/certs/ca-certificates.crt
+#9 DONE 0.5s
+
+#10 [6/9] WORKDIR /workspace
+#10 DONE 0.0s
+
+#11 [7/9] COPY . .
+#11 DONE 0.4s
+
+#12 [8/9] RUN git config --global --add safe.directory '*'
+#12 DONE 0.4s
+
+#13 [9/9] RUN rustup default nightly
+#13 0.379 /bin/sh: 1: rustup: not found
+#13 ERROR: process "/bin/sh -c rustup default nightly" did not complete successfully: exit code: 127
+------
+ > [9/9] RUN rustup default nightly:
+#13 0.379 /bin/sh: 1: rustup: not found
+------
+Dockerfile:38
+--------------------
+  36 |     
+  37 |     # Ensure Rust environment is available for the user
+  38 | >>> RUN rustup default nightly
+--------------------
+ERROR: failed to solve: process "/bin/sh -c rustup default nightly" did not complete successfully: exit code: 127

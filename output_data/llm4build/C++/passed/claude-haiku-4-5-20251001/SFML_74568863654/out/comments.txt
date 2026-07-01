@@ -1,0 +1,49 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      build / Linux GCC Shared Debug
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ lukka/get-cmake@latest
+    $ cmake --preset dev -DCMAKE_VERBOSE_MAKEFILE=ON -DSFML_RUN_IPV4_LINK_TESTS=ON -DSFML_RUN_IPV4_INTERNET_TESTS=ON -DSFML_RUN_IPV6_LINK_TESTS=ON -DSFML_NETWORK_TESTS_MAX_FDS=1028 -GNinja -DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=Debug -DSFML_ENABLE_COVERAGE=ON -DSFML_FATAL_OPENGL_ERRORS=ON
+    $ cmake --build build --config Debug --target install
+    $ ctest --test-dir build --output-on-failure -C Debug --repeat until-pass:3
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ cmake --preset dev \
+  $ -DCMAKE_VERBOSE_MAKEFILE=ON \
+  $ -DSFML_RUN_IPV4_LINK_TESTS=ON \
+  $ -DSFML_RUN_IPV4_INTERNET_TESTS=ON \
+  $ -DSFML_RUN_IPV6_LINK_TESTS=ON \
+
+--- Reason(s) for Non-Reproducibility ---
+  - [CTest] Test result mismatch (same count 89): original=(89p/0f/0s), LLM=(88p/1f/0s)
+  - [CTest] Tests failed in LLM but passed in original: [Network] sf::Tcp Loopback
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    10:  SFML_ENABLE_STDLIB_ASSERTIONS="ON"
+    67:[1/267] ccache /usr/bin/c++ -DSFML_FATAL_OPENGL_ERRORS -DSFML_GRAPHICS_EXPORTS -DSTBI_FAILURE_USERMSG -D_GLIBCXX_ASSERTIONS=1 -D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE -I/workspace/
+    68:[2/267] ccache /usr/bin/c++ -DSFML_FATAL_OPENGL_ERRORS -DSFML_GRAPHICS_EXPORTS -DSTBI_FAILURE_USERMSG -D_GLIBCXX_ASSERTIONS=1 -D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE -I/workspace/
+    69:[3/267] ccache /usr/bin/c++ -DSFML_WINDOW_EXPORTS -D_GLIBCXX_ASSERTIONS=1 -D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE -I/workspace/include -I/workspace/src -isystem /workspace/extlibs
+
+  [Root cause classification]
+  - Network connectivity issue — test requires network access or a service (e.g., local server) that is unavailable in Docker.
+  - Test timed out — likely due to slower execution in Docker container or a blocking service call that never returns.
+  - Assertion failure: 10:  SFML_ENABLE_STDLIB_ASSERTIONS="ON"
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 89 run, 89 passed, 0 failed, 0 skipped
+    LLM:      89 run, 88 passed, 1 failed, 0 skipped

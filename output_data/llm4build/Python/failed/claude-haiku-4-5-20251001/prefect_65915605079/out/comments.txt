@@ -1,0 +1,76 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          5
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Orchestration Tests - python:3.13, sqlite
+  Test command(s) run in original CI:
+    $ uv sync --locked
+    $ uv run pytest tests/server/orchestration/ \
+        --timeout=20 --no-header -rN -q \
+        --numprocesses=auto --dist=loadfile -v
+
+--- LLM-Generated Dockerfile ---
+  Base image:   python:3.13-slim
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ uv sync --locked
+  $ uv run pytest tests/server/orchestration/ \
+      --timeout=20 --no-header -rN -q \
+      --numprocesses=auto --dist=loadfile -v
+
+--- Reason(s) for Non-Reproducibility ---
+  - [pytest] Test result mismatch (same count 2823): original=(2821p/1f/1s), LLM=(2822p/0f/1s)
+  - [pytest] Original fails test_bulk_delete_by_state_type; LLM passes it
+
+--- Root Cause Analysis ---
+  [Actual error messages from original CI log (prefect-65915605079.log)]
+    > _______ TestFlowRunBulkDelete.test_bulk_delete_by_state_type _______
+    > >     assert response.status_code == status.HTTP_200_OK
+    > E     assert 503 == 200
+    > E      +  where 503 = <Response [503 Service Unavailable]>.status_code
+    >
+    >     sqlite3.OperationalError: database is locked
+    >     sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) database is locked
+
+  [Root cause classification]
+  SQLite database lock contention during concurrent bulk delete → 503 Service Unavailable
+  → flaky test fails in original CI but passes in LLM Docker
+
+  `test_bulk_delete_by_state_type` sends a bulk delete request to the Prefect orchestration
+  API server that is backed by SQLite. The test runs under `--numprocesses=auto` with many
+  parallel workers (`--dist=loadfile`). During concurrent test execution, multiple workers
+  simultaneously perform database write operations. SQLite's single-writer lock model causes
+  `sqlite3.OperationalError: database is locked` when multiple connections attempt to write
+  to the same database simultaneously.
+
+  The SQLite lock triggers the Prefect API server's error handler, which returns:
+    `HTTP 503 Service Unavailable`
+  The test expects HTTP 200 OK, so it fails: `assert 503 == 200`.
+
+  In the LLM Docker, the test passes because the Docker environment has different timing
+  and resource contention characteristics: with fewer background processes and a quieter
+  system, the SQLite lock window is not triggered during test execution. The test's outcome
+  depends on timing and concurrency, making it a **known flaky test**.
+
+  Evidence from the git history: the repository has numerous active branches specifically
+  aimed at fixing this flakiness:
+    - `devin/1770145455-fix-flaky-bulk-delete-test`
+    - `devin/1770390648-fix-flaky-bulk-delete-state-type`
+    - `devin/1772646120-fix-flaky-bulk-delete-test`
+    - `devin/1772663207-fix-flaky-bulk-delete-no-filter`
+  These confirm the Prefect team has been actively investigating this flaky test.
+
+--- Test Statistics Comparison ---
+  [pytest]
+    Original: 2823 run, 2821 passed, 1 failed, 1 skipped
+    LLM:      2823 run, 2822 passed, 0 failed, 1 skipped
+    (Original fails test_bulk_delete_by_state_type due to SQLite database lock contention
+     during concurrent writes under --numprocesses=auto;
+     LLM passes because Docker's isolated environment avoids the timing-dependent lock contention)

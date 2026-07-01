@@ -1,0 +1,59 @@
+# command: act pull_request -W .github/workflows/test.yaml --directory project_path/ollama -j windows --matrix os:windows-latest
+
+time="2026-05-10T22:42:58-07:00" level=info msg="Using docker host 'unix:///var/run/docker.sock', and daemon socket 'unix:///var/run/docker.sock'"
+[test/changes] ⭐ Run Set up job
+[test/changes] 🚀  Start image=catthehacker/ubuntu:act-latest
+[test/changes]   🐳  docker pull image=catthehacker/ubuntu:act-latest platform= username= forcePull=true
+[test/changes] using DockerAuthConfig authentication for docker pull
+[test/changes]   🐳  docker create image=catthehacker/ubuntu:act-latest platform= entrypoint=["tail" "-f" "/dev/null"] cmd=[] network="host"
+[test/changes]   🐳  docker run image=catthehacker/ubuntu:act-latest platform= entrypoint=["tail" "-f" "/dev/null"] cmd=[] network="host"
+[test/changes]   🐳  docker exec cmd=[node --no-warnings -e console.log(process.execPath)] user= workdir=
+[test/changes]   ✅  Success - Set up job
+[test/changes] ⭐ Run Main actions/checkout@v4
+[test/changes]   🐳  docker cp src=/scratch/raian-files/LLM4Build/project_path/ollama/. dst=/scratch/raian-files/LLM4Build/project_path/ollama
+[test/changes]   ✅  Success - Main actions/checkout@v4 [3.534661005s]
+[test/changes] ⭐ Run Main changed() {
+  local BASE=
+  local HEAD=
+  local MERGE_BASE=$(git merge-base $BASE $HEAD)
+  git diff-tree -r --no-commit-id --name-only "$MERGE_BASE" "$HEAD" \
+    | xargs python3 -c "import sys; from pathlib import Path; print(any(Path(x).match(glob) for x in sys.argv[1:] for glob in '$*'.split(' ')))"
+}
+
+echo changed=$(changed 'llama/llama.cpp/**/*' 'ml/backend/ggml/ggml/**/*' '.github/**/*') | tee -a $GITHUB_OUTPUT
+echo vendorsha=$(make -f Makefile.sync print-base) | tee -a $GITHUB_OUTPUT
+[test/changes]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/changes] user= workdir=
+[test/changes]   | usage: git merge-base [-a | --all] <commit> <commit>...
+[test/changes]   |    or: git merge-base [-a | --all] --octopus <commit>...
+[test/changes]   |    or: git merge-base --is-ancestor <commit> <commit>
+[test/changes]   |    or: git merge-base --independent <commit>...
+[test/changes]   |    or: git merge-base --fork-point <ref> [<commit>]
+[test/changes]   | 
+[test/changes]   |     -a, --[no-]all        output all common ancestors
+[test/changes]   |     --octopus             find ancestors for a single n-way merge
+[test/changes]   |     --independent         list revs not reachable from others
+[test/changes]   |     --is-ancestor         is the first one ancestor of the other?
+[test/changes]   |     --fork-point          find where <commit> forked from reflog of <ref>
+[test/changes]   | 
+[test/changes]   | fatal: ambiguous argument '': unknown revision or path not in the working tree.
+[test/changes]   | Use '--' to separate paths from revisions, like this:
+[test/changes]   | 'git <command> [<revision>...] -- [<file>...]'
+[test/changes]   | changed=False
+[test/changes]   | vendorsha=ec98e2002
+[test/changes]   ✅  Success - Main changed() {
+  local BASE=
+  local HEAD=
+  local MERGE_BASE=$(git merge-base $BASE $HEAD)
+  git diff-tree -r --no-commit-id --name-only "$MERGE_BASE" "$HEAD" \
+    | xargs python3 -c "import sys; from pathlib import Path; print(any(Path(x).match(glob) for x in sys.argv[1:] for glob in '$*'.split(' ')))"
+}
+
+echo changed=$(changed 'llama/llama.cpp/**/*' 'ml/backend/ggml/ggml/**/*' '.github/**/*') | tee -a $GITHUB_OUTPUT
+echo vendorsha=$(make -f Makefile.sync print-base) | tee -a $GITHUB_OUTPUT
+ [227.817164ms]
+[test/changes]   ⚙  ::set-output:: changed=False
+[test/changes]   ⚙  ::set-output:: vendorsha=ec98e2002
+[test/changes] ⭐ Run Complete job
+[test/changes] Cleaning up container for job changes
+[test/changes]   ✅  Success - Complete job
+[test/changes] 🏁  Job succeeded

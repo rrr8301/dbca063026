@@ -1,0 +1,58 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          3
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Linux / Electron
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ mkdir -p .build && node build/azure-pipelines/common/computeNodeModulesCacheKey.ts linux $VSCODE_ARCH $(node -p process.arch) > .build/packagelockhash
+    $ tar -xzf .build/node_modules_cache/cache.tgz
+    $ mkdir -p .build
+    $ node build/azure-pipelines/common/computeBuiltInDepsCacheKey.ts > .build/builtindepshash
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ <test qual="any" name="family"><string>mono</string></test>
+  $ <test qual="any" name="family"><string>sans serif</string></test>
+  $ <test qual="any" name="family"><string>sans</string></test>
+  $ <test qual="any" name="family"><string>system ui</string></test>
+  $ <test qual="all" name="family" compare="not_eq"><string>sans-serif</string></test>
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in original but missing in LLM: Gradle, node:test
+  - [mocha] Test run mismatch: original=32186, LLM=9367
+  - [mocha] Test passed mismatch: original=31547, LLM=9210
+  - [mocha] Test failed mismatch: original=0, LLM=19
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > .build/electron/code-oss: error while loading shared libraries: libnspr4.so: cannot open shared object file: No such file or directory
+    > electron.launch: Process failed to launch!
+    > - [pid=XXXX][err] /workspace/.build/electron/code-oss: error while loading shared libraries: libnspr4.so
+
+  [Root cause classification]
+  - Identical root cause to `vscode_66283812764` (the failed-category counterpart for the same "Linux / Electron" CI job). The LLM used `ubuntu:24.04` and ran `./scripts/test.sh --tfs "Unit Tests"` plus node-based tests, but the Electron binary requires `libnspr4.so` and many other shared libraries not present in the Docker image. Every Electron-hosted test launch fails with "Process failed to launch!", and the affected test suites are either silently skipped or produce failures — resulting in 9,367 mocha tests (vs 32,186 in original) and 19 failures.
+
+  - The original CI ran 32,186 mocha tests (all passing), 32,022 Gradle-labeled tests (all passing, 639 skipped), and 61 node:test tests (all passing). The LLM ran only 9,367 mocha tests (with 19 failures from Electron launch failures) and missed Gradle and node:test entirely. The 22,819 missing mocha tests represent the Electron-hosted integration test suites that could not run due to the missing `libnspr4.so`, `libatk-1.0.so`, `libcups.so`, and related Chromium dependencies.
+
+  - The Gradle and node:test frameworks visible in the original statistics are artifacts of the vscode test result parser (the same attribution issue noted in `vscode_66283812764`): the vscode repo does not actually use Gradle or standalone node:test; the parser classifies some mocha-based results differently. The core issue remains the same as the failed-category vscode run: the LLM's Docker image lacks the Electron system library dependencies that the GitHub Actions `ubuntu-latest` runner pre-installs.
+
+--- Test Statistics Comparison ---
+  [Gradle]
+    Original: 32022 run, 31383 passed, 0 failed, 639 skipped
+    LLM:      (not present)
+  [mocha]
+    Original: 32186 run, 31547 passed, 0 failed, 639 skipped
+    LLM:      9367 run, 9210 passed, 19 failed, 138 skipped
+  [node:test]
+    Original: 61 run, 61 passed, 0 failed, 0 skipped
+    LLM:      (not present)

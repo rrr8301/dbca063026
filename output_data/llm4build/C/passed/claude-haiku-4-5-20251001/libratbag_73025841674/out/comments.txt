@@ -1,0 +1,47 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      build-and-dist (default)
+  Test command(s) run in original CI:
+    $ actions/checkout@v4
+    $ sudo ./.github/actions/pkginstall/install-apt.sh $UBUNTU_DEP_BUILD $UBUNTU_DEP_TEST
+    $ meson setup builddir . --prefix=$PWD/_instdir
+    $ meson compile -C builddir
+    $ meson test -C builddir --print-errorlogs
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ meson test -C builddir --print-errorlogs || true
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Meson] Test run mismatch: original=10, LLM=9
+  - [Meson] Test passed mismatch: original=9, LLM=9
+  - [Meson] Test failed mismatch: original=0, LLM=0
+  - [Meson] 1 test(s) failed then not counted (appeared in log but ultimately skipped): libratbag:ratbagctl-test
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    8/10 libratbag:ratbagctl-test     FAIL            0.21s   exit status 5
+    File "ratbagctl.test", line 886, in setUpModule
+      dbus = Gio.bus_get_sync(Gio.BusType.SYSTEM, None)
+    FAILED (errors=1)
+    (Test ran twice, failed both times, then final summary shows 9/9 pass — run.sh uses `|| true` so failure is swallowed)
+
+  [Root cause classification]
+  - D-Bus system bus unavailable — ratbagctl-test fails to get system bus: `ratbagctl.test` (a Python unittest) calls `Gio.bus_get_sync(Gio.BusType.SYSTEM, None)` in `setUpModule` to connect to the ratbagd D-Bus service. In Docker, no D-Bus system bus daemon is running (`dbus-daemon --system` is not started), so this call raises a GDBus error. The test exits with status 5 (Python unittest exit code for errors). Despite the 2 failures in the log, the LLM's `meson test ... || true` suppresses the exit code and summary.json counts 9 passed, 0 failed. The original CI has the same ratbagctl-test as the 1 SKIPPED test (it was deliberately skipped in original CI, not failed).
+  - 1 fewer test in LLM (9 vs 10): The original ran 10 tests (9 passed, 1 skipped). The skipped test was `libratbag:ratbagctl-test` which was properly skipped in original CI because the CI detected D-Bus unavailability. In the LLM, this test was not skipped — it ran and failed (but the failure was swallowed by `|| true`), so the summary counts it differently.
+
+--- Test Statistics Comparison ---
+  [Meson]
+    Original: 10 run, 9 passed, 0 failed, 1 skipped
+    LLM:      9 run, 9 passed, 0 failed, 0 skipped

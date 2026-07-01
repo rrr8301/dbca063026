@@ -1,0 +1,35 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      cli-integration (latest, yarn, CommonJS, ubuntu-latest)
+  Test command(s) run in original CI:
+    $ yarn test:integration:cli
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ yarn test:integration:cli
+
+--- Reason(s) for Non-Reproducibility ---
+  - [mocha] Test passed mismatch: original=6, LLM=5
+  - [mocha] Test failed mismatch: original=1, LLM=2
+  - [mocha] 1 test(s) failed in original but passed in LLM: Generated CLI Integration Tests CommonJS + yarn + node v25.7.0
+  - [mocha] 2 test(s) failed in LLM but not in original: Generated CLI Integration Tests CommonJS + npm + node v20.20.2 > Command failed: /app/bin/dev.js pack tarballs --targets linux-arm64 > generated CLI should be packable: > Warning: oclif update available from 4.22.81 to 4.23.0. > at warn (/app/node_modules/@oclif/core/lib/errors/warn.js:20:15) > at Object.warn (/app/node_modules/@oclif/core/lib/config/config.js:511:39) > at Object.hook (file:///app/node_modules/@oclif/plugin-warn-if-update-available/lib/hooks/init/check-update.js:143:18) > at async /app/node_modules/@oclif/core/lib/config/config.js:530:27 > at async Promise.all (index 3) > at async Config.runHook (/app/node_modules/@oclif/core/lib/config/config.js:558:9) > at async run (/app/node_modules/@oclif/core/lib/main.js:71:5) > at async /app/bin/dev.js:6:3 > Warning: No S3 bucket or host configured. CLI will not be able to update itself. > at Object.warn (/app/node_modules/@oclif/core/lib/errors/warn.js:20:15) > at Object.build (/app/src/tarballs/build.ts:86:19) > at async PackTarballs.run (/app/src/commands/pack/tarballs.ts:69:9) > at async PackTarballs._run (/app/node_modules/@oclif/core/lib/command.js:182:22) > at async Config.runCommand (/app/node_modules/@oclif/core/lib/config/config.js:456:25) > at async run (/app/node_modules/@oclif/core/lib/main.js:97:16), Generated CLI Integration Tests CommonJS + npm + node v20.20.2 > at async run (/app/node_modules/@oclif/core/lib/main.js:97:16) > at async /app/bin/dev.js:6:3 > generated CLI should be packable with --prune-lockfiles: > Command failed: /app/bin/dev.js pack tarballs --targets linux-arm64 --prune-lockfiles > Warning: oclif update available from 4.22.81 to 4.23.0. > at warn (/app/node_modules/@oclif/core/lib/errors/warn.js:20:15) > at Object.warn (/app/node_modules/@oclif/core/lib/config/config.js:511:39) > at Object.hook (file:///app/node_modules/@oclif/plugin-warn-if-update-available/lib/hooks/init/check-update.js:143:18) > at async /app/node_modules/@oclif/core/lib/config/config.js:530:27 > at async Promise.all (index 3) > at async Config.runHook (/app/node_modules/@oclif/core/lib/config/config.js:558:9) > at async run (/app/node_modules/@oclif/core/lib/main.js:71:5) > at async /app/bin/dev.js:6:3 > Warning: No S3 bucket or host configured. CLI will not be able to update itself. > at Object.warn (/app/node_modules/@oclif/core/lib/errors/warn.js:20:15) > at Object.build (/app/src/tarballs/build.ts:86:19) > at async PackTarballs.run (/app/src/commands/pack/tarballs.ts:69:9) > at async PackTarballs._run (/app/node_modules/@oclif/core/lib/command.js:182:22) > at async Config.runCommand (/app/node_modules/@oclif/core/lib/config/config.js:456:25) > at async run (/app/node_modules/@oclif/core/lib/main.js:97:16)
+
+--- Root Cause Analysis ---
+  - [mocha] 2 test(s) failed in LLM but not original: Generated CLI Integration Tests CommonJS + npm + node v20.20.2 > Command failed: /app/bin/dev.js pack tarballs --targets linux-arm64 > generated CLI should be packable: > Warning: oclif update available from 4.22.81 to 4.23.0. > at warn (/app/node_modules/@oclif/core/lib/errors/warn.js:20:15) > at Object.warn (/app/node_modules/@oclif/core/lib/config/config.js:511:39) > at Object.hook (file:///app/node_modules/@oclif/plugin-warn-if-update-available/lib/hooks/init/check-update.js:143:18) > at async /app/node_modules/@oclif/core/lib/config/config.js:530:27 > at async Promise.all (index 3) > at async Config.runHook (/app/node_modules/@oclif/core/lib/config/config.js:558:9) > at async run (/app/node_modules/@oclif/core/lib/main.js:71:5) > at async /app/bin/dev.js:6:3 > Warning: No S3 bucket or host configured. CLI will not be able to update itself. > at Object.warn (/app/node_modules/@oclif/core/lib/errors/warn.js:20:15) > at Object.build (/app/src/tarballs/build.ts:86:19) > at async PackTarballs.run (/app/src/commands/pack/tarballs.ts:69:9) > at async PackTarballs._run (/app/node_modules/@oclif/core/lib/command.js:182:22) > at async Config.runCommand (/app/node_modules/@oclif/core/lib/config/config.js:456:25) > at async run (/app/node_modules/@oclif/core/lib/main.js:97:16), Generated CLI Integration Tests CommonJS + npm + node v20.20.2 > at async run (/app/node_modules/@oclif/core/lib/main.js:97:16) > at async /app/bin/dev.js:6:3 > generated CLI should be packable with --prune-lockfiles: > Command failed: /app/bin/dev.js pack tarballs --targets linux-arm64 --prune-lockfiles > Warning: oclif update available from 4.22.81 to 4.23.0. > at warn (/app/node_modules/@oclif/core/lib/errors/warn.js:20:15) > at Object.warn (/app/node_modules/@oclif/core/lib/config/config.js:511:39) > at Object.hook (file:///app/node_modules/@oclif/plugin-warn-if-update-available/lib/hooks/init/check-update.js:143:18) > at async /app/node_modules/@oclif/core/lib/config/config.js:530:27 > at async Promise.all (index 3) > at async Config.runHook (/app/node_modules/@oclif/core/lib/config/config.js:558:9) > at async run (/app/node_modules/@oclif/core/lib/main.js:71:5) > at async /app/bin/dev.js:6:3 > Warning: No S3 bucket or host configured. CLI will not be able to update itself. > at Object.warn (/app/node_modules/@oclif/core/lib/errors/warn.js:20:15) > at Object.build (/app/src/tarballs/build.ts:86:19) > at async PackTarballs.run (/app/src/commands/pack/tarballs.ts:69:9) > at async PackTarballs._run (/app/node_modules/@oclif/core/lib/command.js:182:22) > at async Config.runCommand (/app/node_modules/@oclif/core/lib/config/config.js:456:25) > at async run (/app/node_modules/@oclif/core/lib/main.js:97:16)
+
+--- Test Statistics Comparison ---
+  [mocha]
+    Original: 7 run, 6 passed, 1 failed, 0 skipped
+    LLM:      7 run, 5 passed, 2 failed, 0 skipped

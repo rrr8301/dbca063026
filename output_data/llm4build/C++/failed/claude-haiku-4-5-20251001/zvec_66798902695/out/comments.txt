@@ -1,0 +1,79 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: TESTS RAN AND FAILED, BUT THE FAILING TEST SET DOES NOT MATCH (Name=False)
+
+--- Original CI Environment ---
+  CI job name:      build-and-test (ubuntu-24.04)
+  Test command(s) run in original CI:
+    $ cmake (configure with AVX-512 / RaBitQ support)
+    $ make unittest -j
+    $ ctest   (128-test suite)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ python -m pip install -v . --no-build-isolation \
+        --config-settings='cmake.define.BUILD_TOOLS="ON"'
+  $ cd /workspace/build && make unittest -j$NPROC
+  (CTest then runs the same 128-test suite)
+
+--- Reason(s) for Non-Reproducibility ---
+  - [CTest] Test run count MATCHES:  original=128, LLM=128
+  - [CTest] Failed count MATCHES:    original=6,   LLM=6   (Existence=True, Number=True)
+  - [CTest] Failing test NAMES DIFFER (Name=False -> FR=False):
+      only in ORIGINAL: schema_test          (CI #88)
+      only in LLM:      thread_queue_test     (CI #47)
+      shared (5):       collection_test, hnsw_rabitq_builder_test,
+                        hnsw_rabitq_searcher_test, hnsw_rabitq_streamer_test,
+                        index_interface_test
+
+--- Root Cause Analysis ---
+  [Actual error messages]
+    LLM log.txt:
+       47/128 Test #47: thread_queue_test ...........................***Failed   3.11 sec
+       /workspace/tests/ailego/parallel/thread_queue_test.cc:112: Failure
+       95% tests passed, 6 tests failed out of 128
+    Original CI log:
+       47/128 Test #47: thread_queue_test ...........................   Passed   3.06 sec
+       88/128 Test #88: schema_test .................................***Failed   0.04 sec
+       /.../tests/db/index/common/schema_test.cc:830,841,852,922,934: Failure
+       95% tests passed, 6 tests failed out of 128
+    Build-time SIMD detection (LLM log.txt):
+       -- best compiler march, sse: -march=corei7, avx2: -march=core-avx2, avx512: -march=graniterapids
+       -- Performing Test COMPILER_SUPPORTS_AVX512 - Success
+       -- RaBitQ support enabled (AVX-512)
+
+  [Root cause classification]
+  - CPU / Architecture / SIMD Features.
+    Both environments execute the identical 128-test CTest suite and both report exactly
+    6 failures, so test selection and failure COUNT are reproduced. The divergence is in
+    the IDENTITY of the marginal failures, and it is driven by the build/runtime CPU
+    environment rather than by the LLM's build script:
+      * thread_queue_test (a parallel thread-queue concurrency test) PASSES on the original
+        GitHub runner but FAILS in the container at thread_queue_test.cc:112. This is a
+        timing/scheduling-sensitive assertion whose outcome depends on the host CPU core
+        count and scheduler, which differ between the original runner and the Docker host.
+      * schema_test FAILS on the original runner (schema_test.cc:830..934) but does not fail
+        in the container.
+    The build auto-detected AVX-512 and selected -march=graniterapids, enabling the AVX-512
+    RaBitQ code path; the three hnsw_rabitq_* tests fail in BOTH environments (a genuine,
+    environment-independent failure of that SIMD code path). Net effect: run count (128) and
+    failure count (6) match exactly, but because one CPU/threading-sensitive test flips in
+    each direction (thread_queue_test in, schema_test out), the failing-name set does not
+    match and the run is not fully reproducible.
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 128 run, 122 passed, 6 failed, 0 skipped  (498.64s)
+      failed: collection_test, schema_test, hnsw_rabitq_builder_test,
+              hnsw_rabitq_searcher_test, hnsw_rabitq_streamer_test, index_interface_test
+    LLM:      128 run, 122 passed, 6 failed, 0 skipped  (737.18s)
+      failed: thread_queue_test, collection_test, hnsw_rabitq_builder_test,
+              hnsw_rabitq_searcher_test, hnsw_rabitq_streamer_test, index_interface_test

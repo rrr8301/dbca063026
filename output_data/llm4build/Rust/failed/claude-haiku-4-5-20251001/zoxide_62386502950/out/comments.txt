@@ -1,0 +1,106 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      ubuntu-latest
+  Platform:         GitHub Actions ubuntu-latest with Nix
+  Build environment: nix-shell --pure (provides black, shellcheck, shfmt, fish, xonsh, etc.)
+  Test command(s) run in original CI:
+    $ nix-shell --cores 0 --pure --run 'cargo nextest run --all-features --no-fail-fast --workspace'
+      (nextest: 502 run, 24 failed — all xonsh_black code formatting failures)
+      (cargo binary: 11952 run, 24 failed)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu-based with Rust stable (no Nix, no shell tools)
+  Architecture: x86_64 (Docker)
+  RUN steps:    several (no installation of fish, pwsh, shellcheck, shfmt, black, xonsh)
+
+--- LLM run.sh Test Command(s) ---
+  $ cargo nextest run --all-features --no-fail-fast --workspace
+    (nexttest: 502 run, 387 failed; cargo binary: 191244 run, 387 failed)
+
+--- Reason(s) for Non-Reproducibility ---
+  - [nexttest] Test count same (502), but 24 vs 387 failures (363 more LLM failures)
+  - Original: 24 xonsh_black Black formatter failures; LLM: 387 failures across all shell tests
+  - LLM lacks all shell tool dependencies (pwsh, fish, shellcheck, shfmt, black, xonsh)
+  - Nix pure shell in CI provides all these tools; Docker doesn't have them
+
+--- Root Cause Analysis ---
+  [Actual error messages from original CI log — xonsh_black failures]
+    > thread 'shell::tests::xonsh_black::...::echo_1_false::resolve_symlinks_1_false'
+    >   panicked: Unexpected failure.
+    > code=1
+    > stderr=`would reformat -
+    > Oh no! 💥 💔 💥
+    > 1 file would be reformatted.`
+    > command=`"black" "--check" "--diff" "-"`
+    > [same for all 24 xonsh_black test variants]
+
+  [Actual error messages from LLM log.txt — completions failures]
+    > thread 'completions_powershell' panicked at assert_cmd-2.0.17/src/cmd.rs:653:17:
+    > Failed to spawn Command { cmd: "pwsh" ... }:
+    >   No such file or directory (os error 2)
+    >
+    > thread 'completions_fish' panicked at assert_cmd-2.0.17/src/cmd.rs:653:17:
+    > Failed to spawn Command { cmd: ... "fish" ... }:
+    >   No such file or directory (os error 2)
+    >
+    > thread 'shell::tests::bash_shellcheck::...' panicked: ... [shellcheck not in PATH]
+    > thread 'shell::tests::bash_shfmt::...' panicked: ... [shfmt not in PATH]
+    > thread 'shell::tests::xonsh_black::...' panicked: ... [black not in PATH]
+
+  [Root cause classification]
+  Two distinct failure patterns with different root causes:
+
+  (1) Original CI only: xonsh_black Black formatter code style failure
+    The `shell::tests::xonsh_black` tests generate zoxide's xonsh shell integration script
+    and validate it against Black, the Python code formatter. The test runs:
+      `black --check --diff -` on the generated xonsh script.
+    Black reports "1 file would be reformatted" — the generated xonsh script doesn't comply
+    with Black's formatting rules. This is a pre-existing code style regression: the xonsh
+    script generator produces code that Black would reformat. All 24 failing tests are
+    xonsh_black test parameterizations (different combinations of cmd/hook/echo/resolve_symlinks).
+    The original CI's nix-shell provides `black` (Python formatter) and `xonsh`, so this
+    test reaches the formatting stage and fails.
+
+  (2) LLM only: all shell tool tests fail due to missing system tools
+    The LLM Docker doesn't install any of the shell tools required by zoxide's integration
+    tests. The 387 LLM failures span:
+    - `completions_powershell`: `pwsh` (PowerShell) not installed → "No such file or directory"
+    - `completions_fish`: `fish` (Fish shell) not installed → "No such file or directory"
+    - `completions_zsh`: zsh integration test fails (shell-specific test)
+    - `bash_shellcheck`: `shellcheck` (bash linter) not installed → "No such file or directory"
+    - `bash_shfmt`: `shfmt` (bash formatter) not installed → "No such file or directory"
+    - `xonsh_black`: `black` (Python formatter) not installed → "No such file or directory"
+    - Various other shell-specific integration tests
+
+    The original CI uses `nix-shell --pure` which creates an isolated environment with
+    precisely the tools declared in the nix derivation (black, shellcheck, shfmt, fish,
+    xonsh, pwsh via wine, etc.). The Docker container has none of these, so every test
+    that invokes an external shell tool fails immediately with ENOENT.
+
+  (3) Cargo binary count difference: original=11952, LLM=191244
+    The massive cargo binary count difference (11952 vs 191244) reflects that cargo's
+    test counting includes all test permutations in the parameterized test matrix.
+    The parameterized shell tests generate many test binaries when run with the full
+    feature set on a system where the underlying shell tools are present/absent differently.
+
+--- Test Statistics Comparison ---
+  [nexttest]
+    Original (nix-shell): 502 run, 478 passed, 24 failed
+      (24 failures: shell::tests::xonsh_black::* — Black formatter: "1 file would be reformatted"
+       for all parameterizations of xonsh_black integration tests)
+    LLM (plain Docker): 502 run, 115 passed, 387 failed
+      (387 failures:
+       completions_powershell — pwsh not installed (os error 2);
+       completions_fish — fish not installed (os error 2);
+       bash_shellcheck — shellcheck not installed;
+       bash_shfmt — shfmt not installed;
+       xonsh_black — black not installed;
+       plus all other tests requiring missing shell tools)

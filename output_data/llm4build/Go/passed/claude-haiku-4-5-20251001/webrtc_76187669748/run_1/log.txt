@@ -1,0 +1,46 @@
+Error from docker build
+
+#1 [internal] load .dockerignore
+#1 transferring context: 2B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 1.73kB done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/ubuntu:24.04
+#3 DONE 0.0s
+
+#4 [1/9] FROM docker.io/library/ubuntu:24.04
+#4 DONE 0.0s
+
+#5 [2/9] RUN apt-get update && apt-get install -y --no-install-recommends     git     curl     wget     ca-certificates     build-essential     tzdata     && rm -rf /var/lib/apt/lists/*
+#5 CACHED
+
+#6 [internal] load build context
+#6 transferring context: 254.20kB 0.1s done
+#6 DONE 0.1s
+
+#7 [3/9] RUN set -e;     GO_VERSION="1.24";     GO_URL="https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz";     if ! curl -fsSL --head "$GO_URL" 2>/dev/null | grep -q "200 OK"; then         GO_VERSION="1.23";         GO_URL="https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz";     fi;     curl -fsSL "$GO_URL" -o /tmp/go.tar.gz &&     tar -C /usr/local -xzf /tmp/go.tar.gz &&     rm /tmp/go.tar.gz
+#7 0.856 curl: (22) The requested URL returned error: 404
+#7 ERROR: process "/bin/sh -c set -e;     GO_VERSION=\"1.24\";     GO_URL=\"https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz\";     if ! curl -fsSL --head \"$GO_URL\" 2>/dev/null | grep -q \"200 OK\"; then         GO_VERSION=\"1.23\";         GO_URL=\"https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz\";     fi;     curl -fsSL \"$GO_URL\" -o /tmp/go.tar.gz &&     tar -C /usr/local -xzf /tmp/go.tar.gz &&     rm /tmp/go.tar.gz" did not complete successfully: exit code: 22
+------
+ > [3/9] RUN set -e;     GO_VERSION="1.24";     GO_URL="https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz";     if ! curl -fsSL --head "$GO_URL" 2>/dev/null | grep -q "200 OK"; then         GO_VERSION="1.23";         GO_URL="https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz";     fi;     curl -fsSL "$GO_URL" -o /tmp/go.tar.gz &&     tar -C /usr/local -xzf /tmp/go.tar.gz &&     rm /tmp/go.tar.gz:
+#7 0.856 curl: (22) The requested URL returned error: 404
+------
+Dockerfile:22
+--------------------
+  21 |     # Install Go 1.24 (or latest available if 1.24 not released)
+  22 | >>> RUN set -e; \
+  23 | >>>     GO_VERSION="1.24"; \
+  24 | >>>     GO_URL="https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz"; \
+  25 | >>>     if ! curl -fsSL --head "$GO_URL" 2>/dev/null | grep -q "200 OK"; then \
+  26 | >>>         GO_VERSION="1.23"; \
+  27 | >>>         GO_URL="https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz"; \
+  28 | >>>     fi; \
+  29 | >>>     curl -fsSL "$GO_URL" -o /tmp/go.tar.gz && \
+  30 | >>>     tar -C /usr/local -xzf /tmp/go.tar.gz && \
+  31 | >>>     rm /tmp/go.tar.gz
+  32 |     
+--------------------
+ERROR: failed to solve: process "/bin/sh -c set -e;     GO_VERSION=\"1.24\";     GO_URL=\"https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz\";     if ! curl -fsSL --head \"$GO_URL\" 2>/dev/null | grep -q \"200 OK\"; then         GO_VERSION=\"1.23\";         GO_URL=\"https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz\";     fi;     curl -fsSL \"$GO_URL\" -o /tmp/go.tar.gz &&     tar -C /usr/local -xzf /tmp/go.tar.gz &&     rm /tmp/go.tar.gz" did not complete successfully: exit code: 22

@@ -1,0 +1,33 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          N/A
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      ubuntu_build (25)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   eclipse-temurin:17-jdk-jammy
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ mvn -V -ntp clean install -P full verify
+  $ mvn test --fail-at-end
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Maven] Test run mismatch: original=249, LLM=22
+  - [Maven] Test passed mismatch: original=242, LLM=22
+  - [Maven] Test skipped mismatch: original=7, LLM=0
+
+--- Root Cause Analysis ---
+  - [Maven] LLM ran 227 fewer tests than original — LLM likely used a narrower test scope or missed some test suites.
+
+--- Test Statistics Comparison ---
+  [Maven]
+    Original: 249 run, 242 passed, 0 failed, 7 skipped
+    LLM:      22 run, 22 passed, 0 failed, 0 skipped

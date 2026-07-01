@@ -1,0 +1,76 @@
+Error from docker build
+
+#1 [internal] load .dockerignore
+#1 transferring context: 2B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 1.15kB done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/ubuntu:22.04
+#3 DONE 0.3s
+
+#4 [1/8] FROM docker.io/library/ubuntu:22.04@sha256:962f6cadeae0ea6284001009daa4cc9a8c37e75d1f5191cf0eb83fe565b63dd7
+#4 CACHED
+
+#5 [internal] load build context
+#5 transferring context: 188.28kB 0.1s done
+#5 DONE 0.1s
+
+#6 [ 2/10] RUN ln -snf /usr/share/zoneinfo/America/Los_Angeles /etc/localtime && echo America/Los_Angeles > /etc/timezone
+#6 CACHED
+
+#7 [ 3/10] RUN apt-get update && apt-get install -y     build-essential     clang     cmake     git     lsb-release     wget     software-properties-common     gnupg     curl     && rm -rf /var/lib/apt/lists/*
+#7 CACHED
+
+#8 [ 4/10] RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O /tmp/miniconda.sh &&     bash /tmp/miniconda.sh -b -p /opt/miniconda &&     rm /tmp/miniconda.sh
+#8 CACHED
+
+#9 [ 5/10] RUN /opt/miniconda/bin/conda init bash
+#9 CACHED
+
+#10 [ 6/10] WORKDIR /workspace
+#10 CACHED
+
+#11 [ 7/10] COPY . /workspace/
+#11 DONE 0.4s
+
+#12 [ 8/10] RUN /opt/miniconda/bin/conda env create -f /workspace/test/pytest/environment.yml
+#12 1.664 
+#12 1.664 CondaToSNonInteractiveError: Terms of Service have not been accepted for the following channels. Please accept or remove them before proceeding:
+#12 1.664     - https://repo.anaconda.com/pkgs/main
+#12 1.664     - https://repo.anaconda.com/pkgs/r
+#12 1.664 
+#12 1.664 To accept these channels' Terms of Service, run the following commands:
+#12 1.664     conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main
+#12 1.664     conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r
+#12 1.664 
+#12 1.664 For information on safely removing channels from your conda configuration,
+#12 1.664 please see the official documentation:
+#12 1.664 
+#12 1.664     https://www.anaconda.com/docs/tools/working-with-conda/channels
+#12 1.664 
+#12 ERROR: process "/bin/sh -c /opt/miniconda/bin/conda env create -f /workspace/test/pytest/environment.yml" did not complete successfully: exit code: 1
+------
+ > [ 8/10] RUN /opt/miniconda/bin/conda env create -f /workspace/test/pytest/environment.yml:
+#12 1.664 
+#12 1.664 To accept these channels' Terms of Service, run the following commands:
+#12 1.664     conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main
+#12 1.664     conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r
+#12 1.664 
+#12 1.664 For information on safely removing channels from your conda configuration,
+#12 1.664 please see the official documentation:
+#12 1.664 
+#12 1.664     https://www.anaconda.com/docs/tools/working-with-conda/channels
+#12 1.664 
+------
+Dockerfile:38
+--------------------
+  36 |     
+  37 |     # Create conda environment from environment.yml
+  38 | >>> RUN /opt/miniconda/bin/conda env create -f /workspace/test/pytest/environment.yml
+  39 |     
+  40 |     # Copy and set run.sh as entrypoint
+--------------------
+ERROR: failed to solve: process "/bin/sh -c /opt/miniconda/bin/conda env create -f /workspace/test/pytest/environment.yml" did not complete successfully: exit code: 1

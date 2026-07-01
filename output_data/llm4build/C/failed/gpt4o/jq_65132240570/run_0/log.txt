@@ -1,0 +1,98 @@
+/app/run.sh: line 4: repository-url: No such file or directory
+libtoolize: putting auxiliary files in '.'.
+libtoolize: copying file './ltmain.sh'
+libtoolize: putting macros in AC_CONFIG_MACRO_DIRS, 'm4'.
+libtoolize: copying file 'm4/libtool.m4'
+libtoolize: copying file 'm4/ltoptions.m4'
+libtoolize: copying file 'm4/ltsugar.m4'
+libtoolize: copying file 'm4/ltversion.m4'
+libtoolize: copying file 'm4/lt~obsolete.m4'
+libtoolize: putting auxiliary files in AC_CONFIG_AUX_DIR, 'config'.
+libtoolize: copying file 'config/ltmain.sh'
+libtoolize: putting macros in AC_CONFIG_MACRO_DIRS, 'config/m4'.
+libtoolize: copying file 'config/m4/libtool.m4'
+libtoolize: copying file 'config/m4/ltoptions.m4'
+libtoolize: copying file 'config/m4/ltsugar.m4'
+libtoolize: copying file 'config/m4/ltversion.m4'
+libtoolize: copying file 'config/m4/lt~obsolete.m4'
+configure.ac:11: installing 'config/ar-lib'
+configure.ac:8: installing 'config/compile'
+configure.ac:19: installing 'config/config.guess'
+configure.ac:19: installing 'config/config.sub'
+configure.ac:9: installing 'config/install-sh'
+configure.ac:9: installing 'config/missing'
+Makefile.am: installing 'config/depcomp'
+configure.ac: installing 'config/ylwrap'
+parallel-tests: installing 'config/test-driver'
+checking for gcc... gcc
+checking whether the C compiler works... no
+configure: error: in `/app':
+configure: error: C compiler cannot create executables
+See `config.log' for more details
+make: *** No targets specified and no makefile found.  Stop.
+./jq.exe: cannot open `./jq.exe' (No such file or directory)
+cp: cannot stat './jq.exe': No such file or directory
+make: *** No rule to make target 'check'.  Stop.
+diff --git a/Dockerfile b/Dockerfile
+index 17950b40..e91b9134 100644
+--- a/Dockerfile
++++ b/Dockerfile
+@@ -1,34 +1,29 @@
+-FROM debian:12-slim AS builder
++FROM ubuntu:22.04
+
+-ENV DEBIAN_FRONTEND=noninteractive \
+-    DEBCONF_NONINTERACTIVE_SEEN=true \
+-    LC_ALL=C.UTF-8 \
+-    LANG=C.UTF-8
++# Set timezone to Pacific Time
++ENV TZ=America/Los_Angeles
++RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+-RUN apt-get update \
+- && apt-get install -y \
+-      build-essential \
+-      autoconf \
+-      libtool \
+-      git \
+- && apt-get clean \
+- && rm -rf /var/lib/apt/lists/*
++# Install dependencies
++RUN apt-get update && apt-get install -y \
++    git \
++    autoconf \
++    automake \
++    libtool \
++    make \
++    gcc \
++    g++ \
++    && rm -rf /var/lib/apt/lists/*
+
++# Create work directory
+ WORKDIR /app
+-COPY . /app
+-RUN autoreconf -i \
+- && ./configure \
+-      --disable-docs \
+-      --with-oniguruma=builtin \
+-      --enable-static \
+-      --enable-all-static \
+-      --prefix=/usr/local \
+- && make -j$(nproc) \
+- && make check VERBOSE=yes \
+- && make install-strip
+
+-FROM scratch
++# Copy repository
++COPY . .
+
+-COPY --from=builder /app/AUTHORS /app/COPYING /usr/local/bin/jq /
+-RUN ["/jq", "--version"]
+-ENTRYPOINT ["/jq"]
++# Copy run.sh and make it executable
++COPY run.sh /app/run.sh
++RUN chmod +x /app/run.sh
++
++# Set entrypoint
++ENTRYPOINT ["/app/run.sh"]
+\ No newline at end of file

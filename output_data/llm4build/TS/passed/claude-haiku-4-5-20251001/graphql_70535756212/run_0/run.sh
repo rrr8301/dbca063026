@@ -1,0 +1,1 @@
+yarn test-ci --minWorkers=1 --maxWorkers=<CPU_COUNT>

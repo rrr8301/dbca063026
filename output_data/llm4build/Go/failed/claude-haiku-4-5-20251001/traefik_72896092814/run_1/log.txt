@@ -1,0 +1,52 @@
+Error from docker build
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 1.08kB done
+#1 DONE 0.0s
+
+#2 [internal] load .dockerignore
+#2 transferring context: 84B done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/ubuntu:24.04
+#3 DONE 0.1s
+
+#4 [ 2/10] RUN ln -snf /usr/share/zoneinfo/America/Los_Angeles /etc/localtime && echo America/Los_Angeles > /etc/timezone
+#4 CACHED
+
+#5 [ 1/10] FROM docker.io/library/ubuntu:24.04@sha256:c4a8d5503dfb2a3eb8ab5f807da5bc69a85730fb49b5cfca2330194ebcc41c7b
+#5 CACHED
+
+#6 [internal] load build context
+#6 transferring context: 862.88kB 0.4s done
+#6 DONE 0.4s
+
+#7 [3/9] RUN apt-get update && apt-get install -y --no-install-recommends     git     curl     build-essential     make     ca-certificates     && rm -rf /var/lib/apt/lists/*
+#7 CACHED
+
+#8 [4/9] WORKDIR /workspace
+#8 CACHED
+
+#9 [5/9] COPY . .
+#9 DONE 1.4s
+
+#10 [6/9] RUN GO_VERSION=$(cat .go-version | tr -d ' \n\r') &&     echo "Installing Go version: ${GO_VERSION}" &&     curl -fsSL https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz -o go.tar.gz &&     tar -C /usr/local -xzf go.tar.gz &&     rm go.tar.gz
+#10 0.311 Installing Go version: 1.25
+#10 0.587 curl: (22) The requested URL returned error: 404
+#10 ERROR: process "/bin/sh -c GO_VERSION=$(cat .go-version | tr -d ' \\n\\r') &&     echo \"Installing Go version: ${GO_VERSION}\" &&     curl -fsSL https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz -o go.tar.gz &&     tar -C /usr/local -xzf go.tar.gz &&     rm go.tar.gz" did not complete successfully: exit code: 22
+------
+ > [6/9] RUN GO_VERSION=$(cat .go-version | tr -d ' \n\r') &&     echo "Installing Go version: ${GO_VERSION}" &&     curl -fsSL https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz -o go.tar.gz &&     tar -C /usr/local -xzf go.tar.gz &&     rm go.tar.gz:
+#10 0.311 Installing Go version: 1.25
+#10 0.587 curl: (22) The requested URL returned error: 404
+------
+Dockerfile:22
+--------------------
+  21 |     # Extract Go version from .go-version file (trim whitespace)
+  22 | >>> RUN GO_VERSION=$(cat .go-version | tr -d ' \n\r') && \
+  23 | >>>     echo "Installing Go version: ${GO_VERSION}" && \
+  24 | >>>     curl -fsSL https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz -o go.tar.gz && \
+  25 | >>>     tar -C /usr/local -xzf go.tar.gz && \
+  26 | >>>     rm go.tar.gz
+  27 |     
+--------------------
+ERROR: failed to solve: process "/bin/sh -c GO_VERSION=$(cat .go-version | tr -d ' \\n\\r') &&     echo \"Installing Go version: ${GO_VERSION}\" &&     curl -fsSL https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz -o go.tar.gz &&     tar -C /usr/local -xzf go.tar.gz &&     rm go.tar.gz" did not complete successfully: exit code: 22

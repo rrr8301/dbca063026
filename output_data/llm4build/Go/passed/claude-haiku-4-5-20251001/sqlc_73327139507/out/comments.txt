@@ -1,0 +1,55 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      test
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ go install gotest.tools/gotestsum@latest
+    $ go install github.com/sqlc-dev/sqlc-gen-test@v0.1.0
+    $ go install ./scripts/test-json-process-plugin/
+    $ go build ./...
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ go install gotest.tools/gotestsum@latest
+  $ go install github.com/sqlc-dev/sqlc-gen-test@v0.1.0
+  $ go install ./scripts/test-json-process-plugin/
+  $ cd /workspace/internal/endtoend/testdata
+  $ go run ./cmd/sqlc-test-setup install || echo "Warning: Database installation may have failed, continuing..."
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoRace] Test run mismatch: original=6759, LLM=49
+  - [GoRace] Test passed mismatch: original=6648, LLM=40
+  - [GoRace] Test failed mismatch: original=0, LLM=9
+  - [GoRace] 9 test(s) failed in LLM but not in original: examples/authors/mysql/TestAuthors, examples/authors/postgresql/TestAuthors, examples/batch/postgresql/TestBatchBooks, examples/booktest/mysql/TestBooks, examples/booktest/postgresql/TestBooks, examples/ondeck/mysql/TestPrepared, examples/ondeck/mysql/TestQueries, examples/ondeck/postgresql/TestPrepared (+1 more)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    150:=== FAIL: examples/authors/mysql TestAuthors (0.00s)
+    153:=== FAIL: examples/authors/postgresql TestAuthors (0.00s)
+    219:			<failure message="Failed" type="">=== RUN   TestAuthors&#xA;    db_test.go:17: dial tcp 127.0.0.1:3306: connect: connection refused&#xA;--- FAIL: TestAuthors (0.00s)&#xA;</failure>
+    227:			<failure message="Failed" type="">=== RUN   TestAuthors&#xA;    postgres.go:104: creating database: sqlc_test_ZIrIGIfoZx&#xA;    postgres.go:26: create db: failed to connect to `user=postgres d
+    174:=== FAIL: examples/ondeck/mysql TestPrepared (0.00s)
+    177-=== FAIL: examples/ondeck/postgresql TestQueries (0.00s)
+    182:=== FAIL: examples/ondeck/postgresql TestPrepared (0.00s)
+    279:			<failure message="Failed" type="">=== RUN   TestPrepared&#xA;=== PAUSE TestPrepared&#xA;=== CONT  TestPrepared&#xA;    db_test.go:146: dial tcp 127.0.0.1:3306: connect: connection refused&#xA;-
+
+  [Root cause classification]
+  - All 9 failing tests require MySQL or PostgreSQL: `examples/authors/mysql` and `examples/booktest/mysql` fail with `dial tcp 127.0.0.1:3306: connect: connection refused` — MySQL is not running. `examples/authors/postgresql`, `examples/booktest/postgresql`, and `examples/ondeck/postgresql` fail with `failed to connect to user=postgres` — PostgreSQL is not running. The 6710 fewer tests (49 vs 6759) are end-to-end sqlc code generation tests that require both MySQL and PostgreSQL to validate that the generated Go database code actually executes correctly against live databases.
+
+  - The original CI had PostgreSQL and MySQL service containers attached (configured in the `test` job's `services:` block). The LLM ran `go run ./cmd/sqlc-test-setup install` but caught failures with `|| echo "Warning..."` and continued — the database setup step failed silently. The 49 tests that ran are the sqlc unit tests (in `internal/` packages) that do not require a live database. This is the same root cause as the failed-category counterpart `sqlc_73332173986`, where MySQL's `auth_socket` plugin blocked TCP root connections; in this passed-category run the issue is simpler — MySQL and PostgreSQL were simply never started.
+
+--- Test Statistics Comparison ---
+  [GoRace]
+    Original: 6759 run, 6648 passed, 0 failed, 111 skipped
+    LLM:      49 run, 40 passed, 9 failed, 0 skipped

@@ -1,0 +1,54 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          3
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      test (ubuntu-latest)
+  Test command(s) run in original CI:
+    $ actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+    $ npm ci
+    $ go install gotest.tools/gotestsum@latest
+    $ npx hereby test
+    $ npx hereby test:benchmarks
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ go install gotest.tools/gotestsum@latest
+  $ npx hereby test
+  $ npx hereby test:benchmarks
+  $ npx hereby test:tools
+  $ npx hereby test:api
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in original but missing in LLM: GoDefault, node:test
+  - [GoRace] Test run mismatch: original=10, LLM=10911
+  - [GoRace] Test passed mismatch: original=-2539, LLM=6779
+  - [GoRace] Test failed mismatch: original=0, LLM=0
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    ExecaError: Command failed with exit code 1: gotestsum --format-hide-empty-pkg --hide-summary skipped -- '-coverprofile=/workspace/coverage/coverage.tests.out' '-coverpkg=./...' ./...
+
+  [Root cause classification]
+  - The GoDefault results (52 run, 52 passed) are absent from the LLM because `gotestsum --format-hide-empty-pkg --hide-summary skipped -- '-coverprofile=...' '-coverpkg=./...' ./...` fails with exit code 1. The `-coverpkg=./...` flag tries to instrument all packages including those with CGO or build constraints that prevent compilation, causing the coverage measurement to abort. The original CI's `npx hereby test` uses a carefully constructed `gotestsum` invocation that avoids the `-coverpkg=./...` coverage measurement — it runs only the TypeScript compiler test packages using a specific coverage profile path that works around the CGO instrumentation issue.
+
+  - The node:test results (264 tests) are absent because the LLM did not run `npm ci` before the test commands — without `node_modules`, `npx hereby` cannot load the `hereby` task runner and falls back to running without Node.js test hooks. The GoRace count explosion (10911 vs 10) is because the LLM ran 4 additional `hereby` targets (`test:benchmarks`, `test:tools`, `test:api`) that include the full TypeScript compiler conformance test suite in JSON output format — the same 10901 extra tests seen in the failed-category counterpart `typescript-go_74711987240`. The original GoRace showed only 10 packages run with 2549 skipped (the conformance tests are skipped by the `hereby test` orchestration logic when gotestsum fails).
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 52 run, 52 passed, 0 failed, 0 skipped
+    LLM:      (not present)
+  [GoRace]
+    Original: 10 run, -2539 passed, 0 failed, 2549 skipped
+    LLM:      10911 run, 6779 passed, 0 failed, 4132 skipped
+  [node:test]
+    Original: 264 run, 264 passed, 0 failed, 0 skipped
+    LLM:      (not present)

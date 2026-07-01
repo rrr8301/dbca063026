@@ -1,0 +1,56 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          7
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Test with TypeScript latest on Node lts/* (ubuntu-latest)
+  Test command(s) run in original CI:
+    $ actions/checkout@v4
+    $ pnpm/action-setup@v4
+    $ pnpm install
+    $ pnpm add typescript@latest -w
+    $ pnpm build
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    6
+
+--- LLM run.sh Test Command(s) ---
+  $ pnpm add typescript@latest -w
+  $ pnpm test || TEST_FAILED=1
+  $ pnpm run --filter @zod/resolution test:all || TEST_FAILED=1
+  $ pnpm run --filter @zod/integration test:all || TEST_FAILED=1
+
+--- Reason(s) for Non-Reproducibility ---
+  - [vitest] Test run mismatch: original=3555, LLM=3556
+  - [vitest] Test passed mismatch: original=3555, LLM=3531
+  - [vitest] Test failed mismatch: original=0, LLM=25
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > tsconfig.build.json:3:3 - error TS5103: Invalid value for '--ignoreDeprecations'.
+    > fixtures/ai-sdk/tsconfig.json:17:27 - error TS5103: Invalid value for '--ignoreDeprecations'.
+    >   "ignoreDeprecations": "6.0"
+    > TypeCheckError: Type '{ errors string[]; properties? {...}; }' does not satisfy the constraint '...'
+    > TypeCheckError: Argument of type 'true' is not assignable to parameter of type 'false'.
+    >   × tuple with optional elements
+    >   × tuple with all optional elements
+    >   × default flattened errors type inference
+    >   × custom flattened errors type inference
+
+  [Root cause classification]
+  - The CI workflow runs `pnpm add typescript@latest -w` before building and testing, which installs the newest TypeScript release at the time of the Docker build. The LLM ran the same command, but the newest TypeScript version available at build time was newer than the one used in the original CI. The zod repository's `tsconfig.build.json` and some fixture configs use `"ignoreDeprecations": "6.0"` to suppress TypeScript 5.x deprecation warnings for older options. In the latest TypeScript, the value `"6.0"` for `--ignoreDeprecations` is no longer valid — TypeScript now rejects it with `error TS5103: Invalid value for '--ignoreDeprecations'`. This causes the build step to fail with exit code 2 before all tests compile.
+
+  - Despite the build compilation error, vitest's TS type-checking mode still ran and surfaced 25 TypeCheck failures. These are type-level assertion tests that use `expectTypeOf` and compile-time inference checks. The failures cluster around `z.tuple` with optional elements (`src/v4/classic/tests/tuple.test.ts`), inferred object types with optional properties (`src/v3/tests/object.test.ts`, `src/v3/tests/partials.test.ts`), and error-tree inference (`src/v4/classic/tests/error-utils.test.ts`, `src/v3/tests/all-errors.test.ts`). Each of these is a `TypeCheckError: Argument of type 'true' is not assignable to parameter of type 'false'` — the canonical vitest-expect-type failure form — indicating that a TypeScript type narrowing or inference constraint that was expected to hold at the previous TypeScript version no longer holds under the newer one.
+
+  - The original CI had 3,555 tests all passing because the TypeScript version it used (installed earlier in the workflow run) accepted `"ignoreDeprecations": "6.0"` and its type inference matched the expectations baked into the snapshot-style type tests. The LLM has 3,556 tests (1 more, from an extra test discovered due to slightly different module resolution) and 25 failures, all driven by TypeScript version drift. This is a fundamental reproducibility challenge for any project whose tests are gated on `typescript@latest`: the exact TypeScript release is non-deterministic at Docker build time.
+
+--- Test Statistics Comparison ---
+  [vitest]
+    Original: 3555 run, 3555 passed, 0 failed, 0 skipped
+    LLM:      3556 run, 3531 passed, 25 failed, 0 skipped

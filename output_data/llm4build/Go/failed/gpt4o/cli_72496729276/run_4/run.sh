@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# Activate Go environment
+export PATH="/usr/local/go/bin:${PATH}"
+
+# Check and update go.mod to a compatible version
+# Ensure the go.mod file specifies a compatible Go version
+sed -i 's/^go 1\.26\.1$/go 1.21/' go.mod
+
+# Remove unknown directives
+sed -i '/^toolchain/d' go.mod
+
+# Install project dependencies
+go mod download
+
+# Run tests
+go test -race -tags=integration ./...

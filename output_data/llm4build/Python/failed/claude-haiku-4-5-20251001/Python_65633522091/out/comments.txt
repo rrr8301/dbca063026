@@ -1,0 +1,91 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      build
+  Test command(s) run in original CI:
+    $ uv sync --group=test
+    $ uv run --with=pytest-run-parallel pytest --iterations=8 --parallel-threads=auto
+        --ignore=computer_vision/cnn_classification.py
+        --ignore=docs/conf.py
+        --ignore=dynamic_programming/k_means_clustering_tensorflow.py
+        --ignore=machine_learning/local_weighted_learning/local_weighted_learning.py
+        --ignore=machine_learning/lstm/lstm_prediction.py
+        --ignore=neural_network/input_data.py
+        --ignore=project_euler/
+        --ignore=quantum/q_fourier_transform.py
+        --ignore=scripts/validate_solutions.py
+        --ignore=web_programming/current_stock_price.py
+        --ignore=web_programming/fetch_anime_and_play.py
+        --cov-report=term-missing:skip-covered --cov=. .
+    $ python3 scripts/build_directory_md.py 2>&1 | tee DIRECTORY.md
+
+--- LLM-Generated Dockerfile ---
+  Base image:   python:3.14-slim
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ export UV_PYTHON_DOWNLOADS=never
+  $ uv sync --group=test
+  $ uv run --with=pytest-run-parallel pytest --iterations=8 --parallel-threads=auto
+      --ignore=computer_vision/cnn_classification.py
+      --ignore=docs/conf.py
+      --ignore=dynamic_programming/k_means_clustering_tensorflow.py
+      ... (same ignores as CI)
+      --cov-report=term-missing:skip-covered --cov=. .
+  $ python3 scripts/build_directory_md.py 2>&1 | tee DIRECTORY.md
+
+--- Reason(s) for Non-Reproducibility ---
+  - [pytest] Test run mismatch: original=2332, LLM=23 (2309 fewer tests)
+  - [pytest] Test passed mismatch: original=2329, LLM=0
+  - [pytest] Test failed mismatch: original=2, LLM=23
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > ____________ ERROR collecting computer_vision/flip_augmentation.py _____________
+    > ImportError while importing test module '/repo/computer_vision/flip_augmentation.py'.
+    >     import cv2
+    > E   ImportError: libGL.so.1: cannot open shared object file: No such file or directory
+    > (19 more identical libGL.so.1 errors covering computer_vision/*.py and
+    >  digital_image_processing/*.py modules)
+    >
+    > _ ERROR collecting digital_image_processing/convert_to_negative.py _
+    >     import cv2
+    > E   ImportError: libGL.so.1: cannot open shared object file: No such file or directory
+    >
+    > (no tkinter errors seen in this run; all 23 are libGL.so.1 collection errors)
+    >
+    > !!!!!!!!!!!!!!!!!!! Interrupted: 23 errors during collection !!!!!!!!!!!!!!!!!!!
+    > ============================= 23 errors in 62.11s ==============================
+
+  [Root cause classification]
+  - Missing libGL.so.1 (OpenGL shared library) → 23 collection errors abort pytest entirely
+    The Python algorithms repository (TheAlgorithms/Python) includes computer vision and image
+    processing algorithms that import OpenCV (`import cv2`). On Linux, OpenCV requires
+    `libGL.so.1` (the OpenGL Mesa library, provided by the `libgl1-mesa-glx` or `libgl1`
+    apt package). The LLM Dockerfile (python:3.14-slim) installs only `libhdf5-dev`, `git`,
+    `curl`, and `build-essential` — it does not install `libgl1-mesa-glx`.
+
+    At collection time, pytest tries to import 23 modules that `import cv2`:
+    the computer_vision/*.py files (flip_augmentation, harris_corner, mosaic_augmentation)
+    and digital_image_processing/*.py files (convert_to_negative, dithering/burkes,
+    edge_detection/canny, filters/bilateral_filter, filters/convolve, filters/gabor_filter,
+    and others). Each raises:
+      `ImportError: libGL.so.1: cannot open shared object file: No such file or directory`
+
+    Pytest aborts with "Interrupted: 23 errors during collection" and 0 test functions actually
+    run. The stats parser counts 23 collection errors as "23 failed". The original GitHub Actions
+    ubuntu-latest runner has `libgl1-mesa-glx` (or equivalent) pre-installed, so OpenCV loads
+    successfully and all 2332 tests are collected and run (2329 pass, 2 fail).
+
+--- Test Statistics Comparison ---
+  [pytest]
+    Original: 2332 run, 2329 passed, 2 failed, 1 skipped
+    LLM:      23 run, 0 passed, 23 failed, 0 skipped
+    (LLM's 23 "failed" are all collection errors due to missing libGL.so.1; 0 test functions ran)

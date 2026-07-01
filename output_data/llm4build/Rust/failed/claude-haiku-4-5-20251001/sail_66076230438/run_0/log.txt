@@ -1,0 +1,61 @@
+Error from docker build
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 1.45kB done
+#1 DONE 0.0s
+
+#2 [internal] load .dockerignore
+#2 transferring context: 156B done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/ubuntu:22.04
+#3 DONE 0.0s
+
+#4 [ 1/12] FROM docker.io/library/ubuntu:22.04
+#4 DONE 0.0s
+
+#5 [ 2/12] RUN ln -snf /usr/share/zoneinfo/America/Los_Angeles /etc/localtime && echo America/Los_Angeles > /etc/timezone
+#5 CACHED
+
+#6 [internal] load build context
+#6 transferring context: 10.85MB 0.2s done
+#6 DONE 0.2s
+
+#7 [ 6/12] RUN curl -fsSL https://github.com/protocolbuffers/protobuf/releases/download/v25.1/protoc-25.1-linux-x86_64.zip -o /tmp/protoc.zip &&     unzip /tmp/protoc.zip -d /usr/local &&     rm /tmp/protoc.zip
+#7 CACHED
+
+#8 [ 7/12] RUN cargo install grcov
+#8 CACHED
+
+#9 [ 4/12] RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable --profile default
+#9 CACHED
+
+#10 [ 9/12] WORKDIR /workspace
+#10 CACHED
+
+#11 [ 5/12] RUN rustup toolchain install stable --profile default --component llvm-tools-preview
+#11 CACHED
+
+#12 [ 8/12] RUN cargo install cargo-nextest
+#12 CACHED
+
+#13 [10/12] COPY . .
+#13 CACHED
+
+#14 [11/12] COPY run.sh /workspace/run.sh
+#14 ERROR: failed to calculate checksum of ref bbf0bc14-1281-4098-922e-22d26f66be72::osuobf3db3t71ddz6nlnbs2jy: "/run.sh": not found
+
+#15 [ 3/12] RUN apt-get update && apt-get install -y --no-install-recommends     build-essential     curl     git     pkg-config     python3     python3-pip     sudo     wget     && rm -rf /var/lib/apt/lists/*
+#15 CANCELED
+------
+ > [11/12] COPY run.sh /workspace/run.sh:
+------
+Dockerfile:48
+--------------------
+  46 |     
+  47 |     # Copy and set run.sh as entrypoint
+  48 | >>> COPY run.sh /workspace/run.sh
+  49 |     RUN chmod +x /workspace/run.sh
+  50 |     
+--------------------
+ERROR: failed to solve: failed to compute cache key: failed to calculate checksum of ref bbf0bc14-1281-4098-922e-22d26f66be72::osuobf3db3t71ddz6nlnbs2jy: "/run.sh": not found

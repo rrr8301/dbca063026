@@ -1,0 +1,91 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Tests Linux aarch64 stable
+  Platform:         Linux aarch64 (ARM64) — GitHub Actions ARM64 runner
+  Test command(s) run in original CI:
+    $ cargo test -p cargo
+    $ __CARGO_USE_GITOXIDE_INSTEAD_OF_GIT2=1 cargo test -p cargo git
+    $ __CARGO_TEST_FORCE_ARGFILE=1 cargo test -p cargo --test testsuite -- fix::
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    4
+  Architecture: x86_64 (Docker runs on x86_64 host)
+
+--- LLM run.sh Test Command(s) ---
+  $ cargo test -p cargo
+  $ bash ci/clean-test-output.sh
+  $ __CARGO_USE_GITOXIDE_INSTEAD_OF_GIT2=1 cargo test -p cargo git
+  $ bash ci/clean-test-output.sh
+  $ __CARGO_TEST_FORCE_ARGFILE=1 cargo test -p cargo --test testsuite -- fix::
+
+--- Reason(s) for Non-Reproducibility ---
+  - [cargo] Test run mismatch: original=4324, LLM=4327 (3 more tests in LLM)
+  - [cargo] Test failed mismatch: original=1, LLM=95 (94 new failures in LLM)
+  - [cargo] 94 new failures in LLM: cargo_add (54), cargo_remove (20), cargo_info (7),
+    cargo_init (5), cargo_new (3), registry (1), artifact_dep (1), warning_override (1)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > thread 'cargo_add::add_basic::case' panicked at crates/cargo-test-support/src/lib.rs:373:76:
+    >   called `Result::unwrap()` on an `Err` value: Error {
+    >     inner: "Failed to copy /workspace/tests/testsuite/cargo_add/add_basic/in
+    >             to /workspace/target/tmp/cit/testsuite/cargo_add/add_basic/case/case/:
+    >             Is a directory (os error 21)"
+    >   }
+    >
+    > (same pattern for all cargo_add/cargo_remove/cargo_init/cargo_new/cargo_info failures)
+    >
+    > thread 'artifact_dep::cross_doctests_works_with_artifacts' panicked at
+    >   tests/testsuite/utils/cross_compile.rs:181:5:
+    >   Cannot cross compile to i686-unknown-linux-gnu.
+    >   (the `i686-unknown-linux-gnu` target may not be installed)
+
+  [Root cause classification]
+  Two separate root causes produce 94 new failures in the LLM Docker:
+
+  (1) `COPY . .` in Dockerfile doesn't preserve `in` symlinks → EISDIR on 93 tests
+    The cargo test suite (using `snapbox`/`cargo-test-support`) stores per-test fixture
+    directories under `tests/testsuite/<command>/<test_name>/in/` and `out/`. These `in`
+    paths in the git repository are SYMLINKS pointing to another directory (e.g., the actual
+    fixture data is stored elsewhere). When Docker's `COPY . .` instruction copies the
+    repository, it follows symlinks and materializes their targets as real directories rather
+    than preserving them as symlinks.
+
+    At test runtime, `crates/cargo-test-support/src/lib.rs:373` calls `fs::copy(src, dst)`
+    on the `in` path, expecting a single-file copy (treating `in` as a symlink to a file).
+    But in the Docker container, `in` is now a real directory. `std::fs::copy()` cannot copy
+    directories — it returns `EISDIR (os error 21)`. This panics the test with:
+      `Failed to copy .../in to .../case/case/: Is a directory (os error 21)`
+
+    All 93 tests that use these symlinked fixture directories fail in the Docker container.
+    In the original CI (aarch64 GitHub Actions runner), git clone preserves symlinks correctly
+    so `in` remains a symlink and `fs::copy` succeeds.
+
+  (2) i686 cross-compilation target not installed → artifact_dep cross test fails
+    `artifact_dep::cross_doctests_works_with_artifacts` attempts to cross-compile to
+    `i686-unknown-linux-gnu`. On the original aarch64 CI runner, the i686 cross-compile
+    toolchain may be available. In the LLM's x86_64 Docker container, the i686 target is
+    not installed (`rustup target add i686-unknown-linux-gnu` is needed).
+
+  (3) Architecture difference: original CI is aarch64, LLM Docker is x86_64
+    The original CI runs on Linux aarch64 (ARM64). The LLM Docker runs on x86_64. Some
+    tests may produce different behavior on different architectures (endianness, pointer
+    size, etc.), accounting for the 3 additional tests collected in LLM.
+
+--- Test Statistics Comparison ---
+  [cargo]
+    Original: 4324 run, 3932 passed, 1 failed, 391 skipped
+      (aarch64 runner; 1 failure: warning_override::hard_warning_deny — pre-existing)
+    LLM:      4327 run, 3838 passed, 95 failed, 394 skipped
+      (x86_64 Docker; 93 failures: EISDIR on symlinked `in` fixture dirs;
+       1 failure: cross_doctests i686 target missing;
+       1 failure: warning_override::hard_warning_deny — same pre-existing failure)

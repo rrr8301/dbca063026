@@ -1,0 +1,37 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          N/A
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      maven-compile (ubuntu-latest, JDK-8)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ mvn clean install
+  $ mvn test || true  # Ensure all tests run even if some fail
+
+Note: Original had test failures; LLM build passed all — failed build has passed.
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Maven] Test run mismatch: original=936, LLM=2859
+  - [Maven] Test passed mismatch: original=923, LLM=2842
+  - [Maven] Test failed mismatch: original=1, LLM=0
+  - [Maven] Test skipped mismatch: original=12, LLM=17
+  - [Maven] 1 test(s) failed in original but passed in LLM: testSubscribe_PollMessageSuccess_WithCustomizedTraceTopic(org.apache.rocketmq.client.trace.DefaultMQLitePullConsumerWithTraceTest)
+
+--- Root Cause Analysis ---
+  - [Maven] LLM ran 1923 more tests than original — LLM likely used a broader test scope or included extra test suites.
+
+--- Test Statistics Comparison ---
+  [Maven]
+    Original: 936 run, 923 passed, 1 failed, 12 skipped
+    LLM:      2859 run, 2842 passed, 0 failed, 17 skipped

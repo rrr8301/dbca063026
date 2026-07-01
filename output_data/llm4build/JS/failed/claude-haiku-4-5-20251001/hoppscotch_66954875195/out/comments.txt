@@ -1,0 +1,45 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Test (22)
+  Test command(s) run in original CI:
+    $ actions/checkout@v4
+    $ pnpm/action-setup@v3
+    $ pnpm install
+    $ pnpm test
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ pnpm test
+
+--- Reason(s) for Non-Reproducibility ---
+  - [jest] Test run mismatch: original=686, LLM=683
+  - [jest] Test passed mismatch: original=686, LLM=683
+  - [jest] Test failed mismatch: original=0, LLM=0
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    packages/hoppscotch-backend do-test:       450 |       return E.left(MOCK_SERVER_CREATION_FAILED);
+    packages/hoppscotch-backend do-test:       Error logging request: Error: DB Error
+    packages/hoppscotch-backend do-test:       Error incrementing hit count: Error: DB Error
+    packages/hoppscotch-backend do-test:       Error parsing example: TypeError: Invalid URL
+
+  [Root cause classification]
+  - The `hoppscotch-backend` package's `do-test` script logs "DB Error" for "Error logging request" and "Error incrementing hit count", and "MOCK_SERVER_CREATION_FAILED" when the mock server can't start. These 3 missing tests are backend integration tests that require a PostgreSQL/Redis database to initialize the mock server infrastructure. When the database is absent, the mock server returns `MOCK_SERVER_CREATION_FAILED` and those 3 test functions never register — they fail silently before jest counts them. Since all registered tests pass in both environments (683 vs 686 with 0 failures), this is a test-registration scope issue rather than a test failure.
+
+  - The `TypeError: Invalid URL` from "Error parsing example" indicates that some backend test fixtures contain relative or missing URLs that the Hoppscotch API parser cannot resolve without a running server context. The 3 missing tests represent backend API mock tests that are conditionally registered only when the mock server initializes successfully. This is a benign 3-test scope difference with no test failures in either environment.
+
+--- Test Statistics Comparison ---
+  [jest]
+    Original: 686 run, 686 passed, 0 failed, 0 skipped
+    LLM:      683 run, 683 passed, 0 failed, 0 skipped

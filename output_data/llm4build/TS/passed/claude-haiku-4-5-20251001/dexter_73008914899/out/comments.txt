@@ -1,0 +1,36 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT TESTS NOT REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      checks (test, bun test)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    4
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > bun test v1.3.13 (bf2e2cec)
+    > (pass) gateway utils > toWhatsappJid > normalizes user JIDs with device suffix [0.09ms]
+    > ...
+    >  37 pass
+    >  0 fail
+    >  72 expect() calls
+    > Ran 37 tests across 7 files. [1317.00ms]
+
+  [Root cause classification]
+  - The LLM ran `bun test` successfully: 37 tests passed, 0 failed. However, TR=False because the test result parser cannot match the LLM's bun test output against the original CI output. The bun test runner uses a non-standard result format `(pass) <test suite> > <test name> [<time>ms]` instead of the standard JUnit/TAP/jest/vitest/mocha format that the parser handles. Without a recognized format, the parser cannot extract named test results, compare pass/fail counts by test name, or verify that the original and LLM test suites cover the same tests.
+
+  - The Dexter repository uses bun as its test runner (job name "checks (test, bun test)"). The original CI also ran bun test and presumably also had all tests pass (since the original build category is "passed"). The gap is purely a result-matching limitation: both runs likely produced the same tests passing, but the parser's bun format support is incomplete or absent for this specific bun output style.
+
+  - This is a benign non-reproducibility: the tests themselves appear to have been reproduced correctly (all 37 pass with 0 failures, matching the expected behavior of a "passed" original CI run), but the automated verification infrastructure cannot confirm the match.
+
+--- Test Reproducibility Gap ---
+  Test results could not be matched between builds.

@@ -1,0 +1,77 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      tests (3.11, ubuntu-latest)
+  Test command(s) run in original CI:
+    $ pip install -e .[test]
+    $ make test   (→ python -m pytest -n 3 tests/)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    6
+
+--- LLM run.sh Test Command(s) ---
+  $ make test   (→ python -m pytest -n 3 tests/)
+
+--- Reason(s) for Non-Reproducibility ---
+  - [pytest] Test result mismatch (same count 22644): original=(12008p/7538f/3088s), LLM=(11963p/7584f/3088s)
+  - [pytest] 46 more tests failed in LLM (7584 vs 7538)
+  - [pytest] Key new failure category: ImportError for convert_peft_adapter_state_dict_for_transformers
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > FAILED tests/test_helpers.py::TestScalingAdapters::test_transformers_pipeline
+    >   ImportError: cannot import name '_maybe_shard_state_dict_for_tp'
+    >     from 'peft.utils.save_and_load' (/workspace/src/peft/utils/save_and_load.py)
+    >
+    > FAILED tests/test_feature_extraction_models.py::TestPeftFeatureExtractionModel::
+    >     test_peft_model_device_map[IA3Config-config_kwargs7-...-RobertaModel]
+    >   File "/workspace/src/peft/utils/save_and_load.py", line 459, in save_pretrained
+    > >       from peft.utils.integrations import convert_peft_adapter_state_dict_for_transformers
+    > E       ImportError: cannot import name 'convert_peft_adapter_state_dict_for_transformers'
+    >         from 'peft.utils.integrations' (/workspace/src/peft/utils/integrations.py)
+    > (same error for DebertaModel, DebertaV2Model variants)
+
+  [Root cause classification]
+  Transformers v5 API compatibility code added to peft's save_and_load.py references a function
+  not yet defined in peft.utils.integrations → 46 new ImportError failures
+
+  The PEFT workspace source (`peft==0.18.2.dev0`) has `src/peft/utils/save_and_load.py:459`
+  which contains:
+    `from peft.utils.integrations import convert_peft_adapter_state_dict_for_transformers`
+  This import was added to handle transformers v5 state dict format conversion, but the
+  corresponding function `convert_peft_adapter_state_dict_for_transformers` was NOT added to
+  `/workspace/src/peft/utils/integrations.py` in this source snapshot.
+
+  The import is a lazy import inside the `save_pretrained()` function path, triggered only for
+  specific model types (IA3Config, LoRA with device maps, etc.) that call `save_pretrained()`.
+  Additionally, `test_helpers.py::TestScalingAdapters::test_transformers_pipeline` fails with
+  `ImportError: cannot import name '_maybe_shard_state_dict_for_tp' from 'peft.utils.save_and_load'`
+  — a second missing symbol in save_and_load.py related to tensor-parallel sharding support that
+  was also referenced before being defined in the workspace.
+
+  The original CI ran earlier when `save_and_load.py` had NOT yet added these transformers v5
+  conversion imports, so those 46 tests didn't encounter the ImportError. By the time the LLM
+  Docker was built and run, the workspace code added the references to
+  `convert_peft_adapter_state_dict_for_transformers` and `_maybe_shard_state_dict_for_tp` in
+  `save_and_load.py` without simultaneously adding the functions to `integrations.py`, leaving
+  the codebase in a partially-committed state.
+
+  Note: The original CI also had 7538 pre-existing test failures (mostly due to models
+  requiring GPU, optional dependencies like `bitsandbytes`, or Hugging Face Hub access
+  timeouts). The LLM's 7584 failures include all 7538 pre-existing failures plus 46 new ones.
+
+--- Test Statistics Comparison ---
+  [pytest]
+    Original: 22644 run, 12008 passed, 7538 failed, 3088 skipped
+    LLM:      22644 run, 11963 passed, 7584 failed, 3088 skipped
+    (46 new LLM failures: ImportError for convert_peft_adapter_state_dict_for_transformers
+     in peft.utils.integrations and _maybe_shard_state_dict_for_tp in peft.utils.save_and_load;
+     7538 pre-existing failures remain in both)

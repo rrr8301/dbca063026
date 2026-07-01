@@ -1,0 +1,40 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      linux (amd64)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    3
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in LLM but not in original: GoDefault
+  - [Autotools] Test run mismatch: original=30, LLM=39
+  - [Autotools] Test passed mismatch: original=30, LLM=37
+  - [Autotools] Test failed mismatch: original=0, LLM=2
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > FAIL: tests/shtest
+    > jq: parse error: Unfinished string at EOF at line 2, column 0
+    > jq: error (at <stdin>:0): Cannot dump a string containing NUL with --raw-output0 option
+    > make[4]: *** [Makefile:1302: test-suite.log] Error 1
+
+  [Root cause classification]
+  - The LLM Dockerfile installed `crossbuild-essential-amd64` which configures `--host=x86_64-linux-gnu` during configure, running 9 additional Autotools test groups beyond the standard 30 (including cross-compile checks and the `shtest` shell test). The `shtest` failure is caused by jq binary behavior differences (e.g. `--stream-errors` flag and NUL-in-string handling) that diverge between the LLM-built version and the version tested in CI. The spurious GoDefault result reflects the test harness accidentally picking up a Go binary invocation unrelated to jq's own test suite.
+
+--- Test Statistics Comparison ---
+  [Autotools]
+    Original: 30 run, 30 passed, 0 failed, 0 skipped
+    LLM:      39 run, 37 passed, 2 failed, 0 skipped
+  [GoDefault]
+    Original: (not present)
+    LLM:      1 run, 0 passed, 1 failed, 0 skipped

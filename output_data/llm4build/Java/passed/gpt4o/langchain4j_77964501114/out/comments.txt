@@ -1,0 +1,45 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      compile_and_unit_test (21)
+  Test command(s) run in original CI:
+    $ mvn -B -U -DembeddingsSkipCache -T8C test javadoc:aggregate 2>&1 | tee maven-output.log
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    6
+
+--- LLM run.sh Test Command(s) ---
+  $ mvn -B -U -DembeddingsSkipCache -T8C test javadoc:aggregate -Drat.skip=true -Dlicense.skip=true
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Maven] Test run mismatch: original=4495, LLM=2
+  - [Maven] Test passed mismatch: original=4464, LLM=0
+  - [Maven] Test failed mismatch: original=0, LLM=2
+  - [Maven] Compilation error mismatch: original=0 compilation errors, LLM=2 compilation errors
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    [ERROR] COMPILATION ERROR :
+    [ERROR] Source option 5 is no longer supported. Use 8 or later.
+    [ERROR] Target option 5 is no longer supported. Use 8 or later.
+    [ERROR] Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.1:compile on project langchain4j-internal-test-retry
+
+  [Root cause classification]
+  - The LLM used Maven 3.8.6 with JDK 21 (ubuntu openjdk-21-jdk, version 21.0.10) on ubuntu:22.04. A submodule (`langchain4j-internal-test-retry`) still declares Java source/target compatibility of level 5 via `maven-compiler-plugin:3.1`. Java 21 dropped support for `--source 5` and `--target 5`, causing a compilation error that halted the build very early.
+
+  - The original CI ran on ubuntu-24.04 with Java 21.0.11 (Eclipse Adoptium/Temurin) and succeeded — running 4495 tests with 4464 passed and 31 skipped. The slightly different JDK patch version (21.0.10 vs 21.0.11) is not the root cause; rather, the `maven-compiler-plugin:3.1` compatibility issue appears to manifest differently depending on the exact Maven version or JDK vendor.
+
+  - The LLM's Maven 3.8.6 with ubuntu's OpenJDK 21.0.10 triggered the `source option 5 not supported` error, while the original CI's Maven (from cache) with Temurin 21.0.11 handled it. This points to a JDK vendor or Maven version sensitivity in handling legacy compiler options.
+
+--- Test Statistics Comparison ---
+  [Maven]
+    Original: 4495 run, 4464 passed, 0 failed, 31 skipped (0 compilation errors)
+    LLM:      2 run, 0 passed, 2 failed, 0 skipped (2 compilation errors)

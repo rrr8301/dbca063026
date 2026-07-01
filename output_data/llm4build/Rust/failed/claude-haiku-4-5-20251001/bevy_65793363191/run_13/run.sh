@@ -1,0 +1,1 @@
+RUSTFLAGS="-C debuginfo=0 -D warnings -A unfulfilled-lint-expectations"

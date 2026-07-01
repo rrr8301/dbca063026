@@ -1,0 +1,83 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Build & Test (ubuntu-latest)
+  Platform:         GitHub Actions ubuntu-latest (x86_64)
+  Test command(s) run in original CI:
+    $ cargo test --workspace --all-features
+      (3696 tests; 1 failed — doctest compile failure in namespace_rpc_hook.rs)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04 with Rust 1.82.0
+  Architecture: x86_64 (Docker)
+  RUN steps:    several (installs clang/clang++, cmake, protobuf-compiler)
+
+--- LLM run.sh Test Command(s) ---
+  $ cargo test --workspace --all-features
+    (3526 tests; 1 failed — same doctest compile failure)
+
+--- Reason(s) for Non-Reproducibility ---
+  - [cargo] Test count mismatch: original=3696 run, LLM=3526 run (170 fewer in LLM)
+  - [cargo] Same test fails in both: rocketmq-client/src/hook/namespace_rpc_hook.rs - hook::namespace_rpc_hook::NamespaceRpcHook (line 36) - compile
+  - Different skip counts: original=113 skipped, LLM=114 skipped (1 more skip in LLM)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > ---- rocketmq-client/src/hook/namespace_rpc_hook.rs - hook::namespace_rpc_hook::NamespaceRpcHook (line 36) compile stdout ----
+    > error[E0433]: failed to resolve: use of undeclared crate or module `rocketmq_client`
+    >  --> rocketmq-client/src/hook/namespace_rpc_hook.rs:37:5
+    >   |
+    > 37 | use rocketmq_client::base::client_config::ClientConfig;
+    >   |     ^^^^^^^^^^^^^^^ use of undeclared crate or module `rocketmq_client`
+    >   |
+    > help: there is a crate or module with a similar name: `rocketmq_client_rust`
+    >
+    > error[E0433]: failed to resolve: use of undeclared crate or module `rocketmq_client`
+    >  --> rocketmq-client/src/hook/namespace_rpc_hook.rs:38:5
+    >   |
+    > 38 | use rocketmq_client::hook::namespace_rpc_hook::NamespaceRpcHook;
+    >   |     ^^^^^^^^^^^^^^^ use of undeclared crate or module `rocketmq_client`
+    >   |
+    > help: there is a crate or module with a similar name: `rocketmq_client_rust`
+
+  [Actual error messages from original CI log]
+    > error[E0433]: failed to resolve: use of undeclared crate or module `rocketmq_client`
+    > --> rocketmq-client/src/hook/namespace_rpc_hook.rs:37:5
+    > help: there is a crate or module with a similar name: `rocketmq_client_rust`
+    > [same error pattern — identical to LLM failure]
+
+  [Root cause classification]
+  Pre-existing doctest crate name bug: the crate `rocketmq-client` was renamed to
+  `rocketmq_client_rust` at some point but the documentation example in
+  `rocketmq-client/src/hook/namespace_rpc_hook.rs` lines 36–39 was not updated to
+  reflect the new name. The doctest uses:
+    `use rocketmq_client::base::client_config::ClientConfig;`
+    `use rocketmq_client::hook::namespace_rpc_hook::NamespaceRpcHook;`
+  but the actual crate name is `rocketmq_client_rust`. The Rust compiler provides a
+  "help: there is a crate or module with a similar name: `rocketmq_client_rust`" hint
+  in both environments, confirming this is the same pre-existing bug.
+
+  This failure is identical in the original CI and the LLM Docker: same test, same
+  E0433 error, same file and line numbers. The FR=False classification is due to a
+  test count discrepancy of 170 tests (3696 original vs 3526 LLM). This difference
+  likely arises from the LLM Dockerfile's toolchain setup (installs clang/clang++
+  explicitly, uses Rust 1.82.0 vs the CI's default Rust version), which causes
+  different feature-gated or platform-specific tests to be discovered or compiled.
+  The extra 1 skip in LLM (114 vs 113) further supports that the test collection
+  differs slightly between environments.
+
+--- Test Statistics Comparison ---
+  [cargo]
+    Original: 3696 run, 3582 passed, 1 failed, 113 skipped
+      (1 failure: rocketmq-client/src/hook/namespace_rpc_hook.rs:36 compile
+       E0433: use of undeclared crate `rocketmq_client` — should be `rocketmq_client_rust`)
+    LLM:      3526 run, 3411 passed, 1 failed, 114 skipped
+      (1 failure: same doctest compile error — identical root cause)
+      (170 fewer tests: toolchain/feature/platform differences in test discovery)

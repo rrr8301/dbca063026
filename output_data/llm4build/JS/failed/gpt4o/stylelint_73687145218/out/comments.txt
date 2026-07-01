@@ -1,0 +1,40 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          4
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      test / Test on Node.js 22 and ubuntu-latest
+  Test command(s) run in original CI:
+    $ npm test --ignore-scripts -- 
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ npm test
+
+--- Reason(s) for Non-Reproducibility ---
+  - [jest] Test run mismatch: original=10907, LLM=10865
+  - [jest] Test passed mismatch: original=10891, LLM=10849
+  - [jest] 1 test(s) failed in original but passed in LLM: lib/rules/function-url-quotes/__tests__/index.mjs
+  - [jest] 1 test(s) failed in LLM but not in original: lib/rules/value-keyword-case/__tests__/index.mjs
+
+--- Root Cause Analysis ---
+  - [jest] LLM ran 42 fewer tests than original — LLM likely used a narrower test scope or missed some test suites.
+  - [jest] 1 test(s) failed in LLM but not original: lib/rules/value-keyword-case/__tests__/index.mjs
+  - Test command differences detected — original CI vs LLM run.sh may use different flags or test selection.
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 4 run, 0 passed, 4 failed, 0 skipped
+    LLM:      4 run, 0 passed, 4 failed, 0 skipped
+  [jest]
+    Original: 10907 run, 10891 passed, 2 failed, 14 skipped
+    LLM:      10865 run, 10849 passed, 2 failed, 14 skipped

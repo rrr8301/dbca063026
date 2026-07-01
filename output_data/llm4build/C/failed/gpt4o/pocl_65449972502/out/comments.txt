@@ -1,0 +1,39 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      LLVM 21 - DBKs
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+Note: Original had test failures; LLM build passed all — failed build has passed.
+
+--- Reason(s) for Non-Reproducibility ---
+  - [CTest] Test passed mismatch: original=155, LLM=280
+  - [CTest] Test failed mismatch: original=125, LLM=0
+  - [CTest] 125 test(s) failed in original but passed in LLM: EinsteinToolkit, EinsteinToolkit_SubDev, examples/boxadd, examples/example2, examples/example2_poclbin ... (+120 more)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > 100% tests passed, 0 tests failed out of 288
+    > Total Test time (real) = 42.32 sec
+    > (Original: kernel/test_as_type_loopvec, kernel/test_convert_type_*, runtime/test_svm, etc. — 125 failures)
+
+  [Root cause classification]
+  - The original CI job "LLVM 21 - DBKs" uses LLVM 21 and runs the DBK (Device Built-in Kernels) test suite on an actual GitHub Actions runner with access to hardware or software OpenCL drivers; 125 kernel and runtime tests fail in the original because LLVM 21 is a bleeding-edge version with known regressions in the pocl code generation backend for certain SIMD/vector operations.
+  - The LLM built pocl against a stable LLVM version available in ubuntu:24.04 apt (likely LLVM 17 or 18), which does not trigger the LLVM 21 code generation bugs; this causes all kernel tests (test_as_type, test_convert_type, test_hadd, test_shuffle, etc.) to pass in the LLM build where they fail with LLVM 21 in the original CI.
+  - The runtime tests (test_svm, test_command_buffer, test_device_address) that fail in the original require OpenCL device features (shared virtual memory, command buffers) not available in the LLVM 21 pocl device being tested; the LLM's pocl build uses the CPU device with a different LLVM version that correctly handles these features, causing them to pass.
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 288 run, 155 passed, 125 failed, 8 skipped
+    LLM:      288 run, 280 passed, 0 failed, 8 skipped

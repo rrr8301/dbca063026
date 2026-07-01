@@ -1,0 +1,34 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          12
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      test-unit (github.com/traefik/traefik/v3/pkg/config/label github.com/traefik/traefik/v3/pkg/confi...
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    7
+
+--- LLM run.sh Test Command(s) ---
+  $ go test -v -parallel 8 ./...
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoDefault] Test run mismatch: original=279, LLM=3637
+  - [GoDefault] Test passed mismatch: original=279, LLM=3621
+  - [GoDefault] Test failed mismatch: original=0, LLM=2
+  - [GoDefault] 2 test(s) failed in LLM but not in original: github.com/traefik/traefik/v3/integration, github.com/traefik/traefik/v3/pkg/proxy/fast
+
+--- Root Cause Analysis ---
+  - [GoDefault] LLM ran 3358 more tests than original — LLM likely used a broader test scope or included extra test suites.
+  - [GoDefault] 2 test(s) failed in LLM but not original: github.com/traefik/traefik/v3/integration, github.com/traefik/traefik/v3/pkg/proxy/fast
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 279 run, 279 passed, 0 failed, 0 skipped
+    LLM:      3637 run, 3621 passed, 2 failed, 0 skipped

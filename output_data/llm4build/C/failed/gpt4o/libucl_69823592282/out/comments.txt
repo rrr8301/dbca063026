@@ -1,0 +1,39 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      build
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    4
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Autotools] Test passed mismatch: original=4, LLM=0
+  - [Autotools] Test failed mismatch: original=1, LLM=5
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > FAIL: basic.test
+    > FAIL: generate.test
+    > FAIL: schema.test
+    > FAIL: msgpack.test
+    > FAIL: speed.test
+    > # TOTAL: 5 / # PASS: 0 / # FAIL: 5
+
+  [Root cause classification]
+  - The original CI (ubuntu-24.04) passes 4 of 5 tests and only fails msgpack.test, while the LLM build (ubuntu:22.04) fails all 5 tests including basic.test, generate.test, and schema.test that pass in the original. The use of ubuntu:22.04 instead of ubuntu-24.04 introduces a different GCC version (GCC 11 vs. GCC 13) and glibc version (2.35 vs. 2.39), which can cause subtle differences in integer handling, floating-point behavior, or C standard library function output that the UCL parser tests check against expected output files.
+  - The libucl test harness compares parsed UCL output byte-by-byte against reference output files bundled in the repository. Differences in how GCC 11 on ubuntu-22.04 vs. GCC 13 on ubuntu-24.04 handle certain printf formatting, memory alignment, or standard library behavior in the test_basic, test_generate, and test_schema binaries could cause mismatches against the expected output, leading to test failures.
+  - The msgpack.test failure is shared between both builds and represents a known upstream issue with the libucl msgpack parser. The 4 additional failures (basic, generate, schema, speed) in the LLM run are attributable to the OS version downgrade from ubuntu-24.04 to ubuntu:22.04, making the test environment incompatible with the expected output baselines.
+
+--- Test Statistics Comparison ---
+  [Autotools]
+    Original: 5 run, 4 passed, 1 failed, 0 skipped
+    LLM:      5 run, 0 passed, 5 failed, 0 skipped

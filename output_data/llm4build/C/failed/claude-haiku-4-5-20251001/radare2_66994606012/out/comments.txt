@@ -1,0 +1,38 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      linux-test
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ make tests || TEST_FAILED=1
+
+--- Reason(s) for Non-Reproducibility ---
+  - [radare2-r2r] Test run mismatch: original=16054, LLM=15855
+  - [radare2-r2r] Test passed mismatch: original=14998, LLM=14837
+  - [radare2-r2r] Test failed mismatch: original=10, LLM=3
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    (LLM ran 15855 r2r tests; 15852 passed, 3 failed)
+    (Original CI ran 16054 r2r tests; 14998 passed, 10 failed, 1056 unknown)
+
+  [Root cause classification]
+  - Test corpus version difference: The r2r (radare2 regression tests) test suite is maintained in a separate repository and the test corpus content depends on the exact commit checked out. The LLM ran 199 fewer tests (15855 vs 16054) because the test repository at the time of the LLM run contained fewer test cases (or the LLM cloned a slightly different version of the test corpus). The 7 fewer failures (3 vs 10) in LLM suggests the 7 missing tests were among the originally-failing ones, or the environmental differences (system library versions, tool behavior) that caused those 7 failures in original CI were absent in the Docker environment.
+
+--- Test Statistics Comparison ---
+  [radare2-r2r]
+    Original: 16054 run, 14998 passed, 10 failed, 0 skipped
+    LLM:      15855 run, 14837 passed, 3 failed, 0 skipped

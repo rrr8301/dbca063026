@@ -1,0 +1,48 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   False
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          20
+Original build category: failed
+
+STATUS: BUILD EXECUTION FAILED
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      Acceptance tests (Node 22.18.0, sqlite3)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    5
+
+--- Failure Analysis ---
+  Failure type: Docker build error
+  Failed at Docker build step: 7 of 9
+  Step label:   RUN npm install -g yarn && yarn install
+
+  Original build was already failing. LLM could not reproduce or fix it after 20 attempt(s).
+
+--- Dockerfile Error Context ---
+  Dockerfile:27
+  --------------------
+    25 |     
+    26 |     # Install project dependencies
+    27 | >>> RUN npm install -g yarn && yarn install
+    28 |     
+    29 |     # Copy run.sh and make it executable
+  --------------------
+
+--- Error Message(s) ---
+  #11 ERROR: process "/bin/sh -c npm install -g yarn && yarn install" did not complete successfully: exit code: 1
+  ERROR: failed to solve: process "/bin/sh -c npm install -g yarn && yarn install" did not complete successfully: exit code: 1
+
+No test results could be produced due to build failure.
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > error ghost-admin@6.21.0: The engine "node" is incompatible with this module. Expected version "^22.13.1". Got "20.20.2"
+    > error Found incompatible module.
+    > yarn install v1.22.22 ... exit code: 1
+
+  [Root cause classification]
+  - Node.js version mismatch: the LLM installed Node 20 (via nodesource setup_20.x) but ghost-admin@6.21.0 strictly requires Node >=22.13.1. The CI environment ran on Node 22 matching the engine constraint, while the Dockerfile pinned an older version. This is a fundamental engine incompatibility that yarn's strict engine check enforces, preventing any dependency installation from completing.

@@ -1,0 +1,32 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          20
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT TESTS NOT REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-22.04
+  CI job name:      linux-test
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    8
+
+--- Test Reproducibility Gap ---
+  Original ran 16054 test(s) across [radare2-r2r].
+  LLM build produced no test results (empty llm_log_stats).
+
+--- Root Cause ---
+  Reason type: Compilation / linker failure during build
+  Key error(s) from build/test log:
+    Error: libr/config.mk not found. Ensure the build process is complete.
+
+  - The LLM's build process did not complete the full radare2 compilation; the `libr/config.mk` file is generated during the `./configure` or `meson` setup phase and is required before the r2r test runner can locate the compiled binaries. Its absence indicates the build was either not run, terminated early, or the LLM's run.sh incorrectly invoked the test runner before the build finished.
+  - The radare2 r2r test framework (16054 tests) requires the full binary tree to be present at a specific relative path from the build directory; since libr/config.mk was not found, r2r could not determine the radare2 installation prefix and exited immediately without running any tests.
+  - The root mismatch is a build orchestration error in the LLM's Dockerfile: with 8 RUN steps, the build steps likely did not produce a complete installation or failed silently, leaving the test runner unable to find the compiled radare2 libraries.
+
+--- Original Test Statistics (not reproduced) ---
+  [radare2-r2r] 16054 run, 14998 passed, 10 failed, 0 skipped

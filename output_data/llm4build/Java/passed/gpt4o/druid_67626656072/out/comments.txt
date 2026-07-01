@@ -1,0 +1,40 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          N/A
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      unit tests / unit tests(main) (21, D*,H*,L*) / test-jdk21-[D*,H*,L*]
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ mvn clean install -DskipTests
+  $ mvn test -Dmaven.test.failure.ignore=true
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in LLM but not in original: jest
+  - [Maven] Test run mismatch: original=23534, LLM=22345
+  - [Maven] Test passed mismatch: original=23036, LLM=21764
+  - [Maven] Test failed mismatch: original=0, LLM=36
+  - [Maven] Test skipped mismatch: original=498, LLM=545
+  - [Maven] 52 test(s) failed in LLM but not in original: (org.apache.druid.indexing.kafka.simulate.EmbeddedKafkaSupervisorTest), (org.apache.druid.testing.embedded.msq.EmbeddedDurableShuffleStorageTest), (org.apache.druid.testing.embedded.msq.EmbeddedMSQRealtimeQueryTest), (org.apache.druid.testing.embedded.msq.EmbeddedMSQRealtimeUnnestQueryTest), (org.apache.druid.testing.embedded.query.QueryRetryOnMissingSegmentsTest) ... (+47 more)
+
+--- Root Cause Analysis ---
+  - [Maven] LLM ran 1189 fewer tests than original — LLM likely used a narrower test scope or missed some test suites.
+  - [Maven] 52 test(s) failed in LLM but not original: (org.apache.druid.indexing.kafka.simulate.EmbeddedKafkaSupervisorTest), (org.apache.druid.testing.embedded.msq.EmbeddedDurableShuffleStorageTest), (org.apache.druid.testing.embedded.msq.EmbeddedMSQRealtimeQueryTest), (org.apache.druid.testing.embedded.msq.EmbeddedMSQRealtimeUnnestQueryTest), (org.apache.druid.testing.embedded.query.QueryRetryOnMissingSegmentsTest) ... (+47 more)
+
+--- Test Statistics Comparison ---
+  [Maven]
+    Original: 23534 run, 23036 passed, 0 failed, 498 skipped
+    LLM:      22345 run, 21764 passed, 36 failed, 545 skipped
+  [jest]
+    Original: (not present)
+    LLM:      749 run, 749 passed, 0 failed, 0 skipped

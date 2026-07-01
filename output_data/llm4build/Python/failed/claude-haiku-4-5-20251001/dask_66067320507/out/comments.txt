@@ -1,0 +1,90 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          3
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      ubuntu-latest / 3.13
+  Test command(s) run in original CI:
+    $ pytest dask/tests/test_imports.py
+    $ source continuous_integration/scripts/run_tests.sh
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ mamba env create -f continuous_integration/environment-3.13.yaml -n test-environment --yes
+  $ conda activate test-environment
+  $ pytest dask/tests/test_imports.py || IMPORT_TEST_FAILED=1
+  $ source continuous_integration/scripts/run_tests.sh || TEST_SUITE_FAILED=1
+
+--- Reason(s) for Non-Reproducibility ---
+  - [pytest] Test result mismatch (same count 18115): original=(16480p/2f/1012s), LLM=(16477p/5f/1012s)
+  - [pytest] 3 tests failed in LLM but passed in original:
+    dask/tests/test_system.py::test_cpu_count_cgroups_v2[2005-/]
+    dask/tests/test_system.py::test_cpu_count_cgroups_v2[2005-/user.slice]
+    dask/tests/test_system.py::test_cpu_count_cgroups_v2[2005-/user.slice/more.slice]
+  - [pytest] 2 tests failed in LLM but passed in original:
+    dask/tests/test_config.py::test_collect_yaml_permission_errors[directory]
+    dask/tests/test_config.py::test_collect_yaml_permission_errors[file]
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > ______________________ test_cpu_count_cgroups_v2[2005-/] _______________________
+    >   def test_cpu_count_cgroups_v2(quota, group_name, monkeypatch, monkeypatch_cpu_count):
+    >       monkeypatch_cpu_count = None  (fixture not overriding host cpu count)
+    >       (monkeypatches /proc/self/cgroup and /sys/fs/cgroup/cpu.max)
+    > >     assert count == 201
+    > E     assert 250 == 201
+    >
+    > ________________ test_collect_yaml_permission_errors[directory] ________________
+    >   tmp_path = PosixPath('/tmp/pytest-of-root/pytest-0/popen-gw1/...')
+    >   with no_read_permissions(cant_read):
+    > >     assert dask.config.collect(...) == {}
+    > E     AssertionError: assert {'x': 1, 'y': 3, 'z': 4} == {}
+    > __________________ test_collect_yaml_permission_errors[file] ___________________
+    > E   AssertionError: assert {'x': 1, 'y': 3, 'z': 4} == {'y': 3, 'z': 4}
+
+  [Root cause classification]
+  Two separate Docker-specific failures:
+
+  (1) Docker host has 250 CPUs; cgroup v2 monkeypatch doesn't override actual cgroup files
+    The three `test_cpu_count_cgroups_v2[2005-*]` tests check that dask's cpu_count function
+    returns `min(host_cpus, cpu_quota/cpu_period)`. The test sets `quota=2005` and patches
+    `/proc/self/cgroup` (via monkeypatch) to point to a group named `/`, `/user.slice`, or
+    `/user.slice/more.slice`. Based on the quota, the expected CPU count is `ceil(2005/10) = 201`.
+    The test expects `count == 201`, meaning the cgroup v2 quota should cap the CPU count.
+
+    In the Docker environment, the `monkeypatch_cpu_count = None` fixture means the host's
+    `os.cpu_count()` is not mocked and returns the actual host CPU count (250). The cgroup v2
+    cpu quota limit calculation reads from `/sys/fs/cgroup/{group}/cpu.max`, but the
+    monkeypatch only patches `/proc/self/cgroup` (the group discovery file), not the actual
+    `/sys/fs/cgroup/cpu.max` quota file. The real container's cgroup file may have `max 100000`
+    (no limit), so the quota calculation falls back to the host CPU count of 250.
+    The assertion `assert 250 == 201` fails because the test's expected quota limit is not
+    applied in the Docker container's cgroup hierarchy.
+
+  (2) Docker root user bypasses file permission restrictions → config permission tests fail
+    `test_collect_yaml_permission_errors[directory]` and `[file]` test that dask's config
+    collector ignores YAML files and directories that cannot be read (permission denied).
+    The tests use a context manager `no_read_permissions(path)` that calls `chmod(path, 0o000)`,
+    then expects `dask.config.collect(...)` to return an empty dict (no config from the
+    inaccessible file) or skip the inaccessible file in the returned config.
+
+    Docker runs as root (uid=0). On Linux, root bypasses file permission checks — `chmod 000`
+    does NOT prevent root from reading files. The dask config collector successfully reads the
+    "restricted" YAML file because root has unrestricted access, producing `{'x': 1, 'y': 3,
+    'z': 4}` instead of `{}`. The test expects a PermissionError to be silently caught, but
+    no PermissionError occurs when running as root.
+
+--- Test Statistics Comparison ---
+  [pytest]
+    Original: 18115 run, 16480 passed, 2 failed, 1012 skipped
+    LLM:      18115 run, 16477 passed, 5 failed, 1012 skipped
+    (3 new CPU count failures: cgroup v2 quota not applied in Docker;
+     2 new permission failures: root user bypasses chmod 000)

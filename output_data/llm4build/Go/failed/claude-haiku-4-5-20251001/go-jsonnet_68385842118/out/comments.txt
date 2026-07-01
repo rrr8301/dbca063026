@@ -1,0 +1,50 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          16
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Test go1.24.x amd64
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ pip install -U pytest setuptools
+    $ make install.dependencies
+    $ make test
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ make install.dependencies
+  $ make test
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoDefault] Test run mismatch: original=16, LLM=14
+  - [GoDefault] Test passed mismatch: original=8, LLM=8
+  - [GoDefault] Test failed mismatch: original=8, LLM=6
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    test_cmd/run_cmd_tests.sh: FAILED: 6 / 88
+    TESTS FAILED
+
+  [Root cause classification]
+  - The go-jsonnet test suite is a hybrid: Go unit tests, Python pytest, Python unittest, and shell-based integration tests (`test_cmd/run_cmd_tests.sh` which runs 88 command-line tests). The `make test` target invokes all four. The 2 missing packages (14 vs 16 in LLM) are the Python-based test files that require `pip install -U pytest setuptools` — which the original CI ran but the LLM's Dockerfile did not include, so those 2 packages fail to initialise and disappear from the count.
+
+  - The `test_cmd/run_cmd_tests.sh` script runs 88 end-to-end jsonnet command tests and reports `FAILED: 6 / 88`. The 6 shell-based failures represent cases where the `jsonnet` binary produces slightly different output formatting or error messages than the expected golden files — likely due to the LLM building against a different go-jsonnet commit than the original CI used (the script uses `actions/checkout@v6` which pins to a specific commit). The pytest and unittest suites (10 + 31 = 41 tests) matched perfectly in both environments.
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 16 run, 8 passed, 8 failed, 0 skipped
+    LLM:      14 run, 8 passed, 6 failed, 0 skipped
+  [pytest]
+    Original: 10 run, 10 passed, 0 failed, 0 skipped
+    LLM:      10 run, 10 passed, 0 failed, 0 skipped
+  [unittest]
+    Original: 31 run, 31 passed, 0 failed, 0 skipped
+    LLM:      31 run, 31 passed, 0 failed, 0 skipped

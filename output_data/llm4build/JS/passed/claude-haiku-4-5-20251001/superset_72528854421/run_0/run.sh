@@ -1,0 +1,1 @@
+npm run test -- --coverage --shard=3/8 --coverageReporters=json

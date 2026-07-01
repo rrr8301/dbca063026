@@ -1,0 +1,42 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      Tests (24, ubuntu-latest)
+  Test command(s) run in original CI:
+    $ pnpm test
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    6
+
+--- LLM run.sh Test Command(s) ---
+  $ pnpm test
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoDefault] Test run mismatch: original=23, LLM=24
+  - [GoDefault] Test failed mismatch: original=23, LLM=24
+  - [GoDefault] 1 test(s) failed in LLM but not in original: packages/svelte/tests/runtime-browser/test.ts
+  - [vitest] Test run mismatch: original=7409, LLM=7406
+  - [vitest] Test passed mismatch: original=7325, LLM=7233
+  - [vitest] Test skipped mismatch: original=61, LLM=150
+
+--- Root Cause Analysis ---
+  - [GoDefault] LLM ran 1 more tests than original — LLM likely used a broader test scope or included extra test suites.
+  - [GoDefault] 1 test(s) failed in LLM but not original: packages/svelte/tests/runtime-browser/test.ts
+  - [vitest] LLM ran 3 fewer tests than original — LLM likely used a narrower test scope or missed some test suites.
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 23 run, 0 passed, 23 failed, 0 skipped
+    LLM:      24 run, 0 passed, 24 failed, 0 skipped
+  [vitest]
+    Original: 7409 run, 7325 passed, 23 failed, 61 skipped
+    LLM:      7406 run, 7233 passed, 23 failed, 150 skipped

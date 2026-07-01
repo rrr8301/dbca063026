@@ -1,0 +1,36 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     macos-15-arm64
+  CI job name:      Test (1.26.x, macos-latest)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    4
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    (no specific error messages — GoRace results matched perfectly; GoDefault not produced)
+
+  [Root cause classification]
+  - The original CI ran on `macos-15-arm64` (Apple Silicon). The GoDefault framework in the original represents 1 package-level test result from the `go run ./cmd/task test` invocation running under macOS's test harness — a package that fails on macOS (1 run, 0 passed, 1 failed) likely due to a macOS-specific path, symlink, or signal handling test that only runs on macOS. The LLM ran on Linux Docker and produced 0 GoDefault results because the macOS-specific test package was excluded by `//go:build darwin` constraints.
+
+  - The GoRace suite matched perfectly (605 run, 604 passed, 1 failed in both environments) because those tests are platform-agnostic unit tests. The single GoDefault test that the original CI ran (and failed) is a macOS-specific integration test — it can't run on Linux, so it simply doesn't appear in the LLM's output. This is a platform-substitution issue: the CI ran on Apple Silicon macOS but the LLM used Linux Docker.
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in original but missing in LLM: GoDefault
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 1 run, 0 passed, 1 failed, 0 skipped
+    LLM:      (not present)
+  [GoRace]
+    Original: 605 run, 604 passed, 1 failed, 0 skipped
+    LLM:      605 run, 604 passed, 1 failed, 0 skipped

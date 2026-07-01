@@ -1,0 +1,39 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          N/A
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT TESTS NOT REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      test (plugin/trino-redshift, fte-tests)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ mvn clean install ${MAVEN_FAST_INSTALL} -am -pl "plugin/trino-redshift" -Drat.skip=true -Dlicense.skip=true --settings ${MAVEN_SETTINGS}
+  $ mvn test ${MAVEN_TEST} -pl "plugin/trino-redshift" -P "fte-tests" \
+
+--- Test Reproducibility Gap ---
+  Original ran 13 test(s) across [Maven].
+  LLM build produced no test results (empty llm_log_stats).
+
+--- Root Cause ---
+  Reason type: Test runner executed but produced no parseable output
+  Last log output before stopping:
+    [INFO] Njord session closed
+    [ERROR] Failed to execute goal on project trino-redshift: Could not resolve dependencies for project io.trino:trino-redshift:trino-plugin:480-SNAPSHOT: The following artifacts could not be resolved: i
+    [ERROR]
+    [ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+    [ERROR] Re-run Maven using the -X switch to enable full debug logging.
+    [ERROR]
+    [ERROR] For more information about the errors and possible solutions, please read the following articles:
+    [ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/DependencyResolutionException
+
+--- Original Test Statistics (not reproduced) ---
+  [Maven] 13 run, 10 passed, 1 failed, 2 skipped

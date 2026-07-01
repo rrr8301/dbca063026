@@ -1,0 +1,46 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          8
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Build: Linux (Noble, GCC, OpenSSL, libssh2)
+  Test command(s) run in original CI:
+    $ actions/checkout@v4
+    $ ./source/.github/actions/download-or-build-container
+    $ mkdir build
+    $ ./source/.github/actions/run-build
+    $ export CMAKE_GLOBAL_OPTIONS="-DDEPRECATE_HARD=ON -DENABLE_WERROR=ON -DBUILD_EXAMPLES=ON -DBUILD_FUZZERS=ON -DUSE_STANDALONE_FUZZERS=ON"
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ cat > /etc/ssh/sshd_config.d/99-test.conf <<EOF
+  $ /workspace/source/ci/test.sh
+  $ TEST_RESULT=$?
+  $ exit $TEST_RESULT
+
+--- Reason(s) for Non-Reproducibility ---
+  - [CTest] Test run mismatch: original=21, LLM=13
+  - [CTest] Test passed mismatch: original=21, LLM=13
+  - [CTest] Test failed mismatch: original=0, LLM=0
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > (no errors — 13 CTest suites passed; 8 fewer than original's 21)
+
+  [Root cause classification]
+  - The original CI used `CMAKE_GLOBAL_OPTIONS="-DDEPRECATE_HARD=ON -DENABLE_WERROR=ON -DBUILD_EXAMPLES=ON -DBUILD_FUZZERS=ON -DUSE_STANDALONE_FUZZERS=ON"`. The flags `BUILD_FUZZERS=ON` and `USE_STANDALONE_FUZZERS=ON` add standalone fuzzer executables as CTest targets — each fuzzer (e.g., `pack-fuzzer`, `pack-reader-fuzzer`, `commit-graph-fuzzer`) becomes a separate CTest suite. The LLM's cmake configuration does not include these flags, so the fuzzer-based CTest targets are not registered, removing approximately 8 of the 21 CTest suites.
+
+  - The `ubuntu:22.04` base image (vs. the original's `ubuntu-24.04` Noble runner) is also a contributing factor: the CI job name is "Build: Linux (Noble, GCC, OpenSSL, libssh2)" specifically calling out Ubuntu Noble (24.04) with the Noble libssl version. The LLM used `ubuntu:22.04` with an older OpenSSL, which may affect the TLS and SSH test variants that are registered as separate suites. All 13 suites that the LLM did run pass (0 failures, 0 skipped), so the gap is entirely in what cmake registered as test targets due to missing build flags.
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 21 run, 21 passed, 0 failed, 0 skipped
+    LLM:      13 run, 13 passed, 0 failed, 0 skipped

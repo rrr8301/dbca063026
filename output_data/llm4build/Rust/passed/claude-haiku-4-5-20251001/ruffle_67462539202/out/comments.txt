@@ -1,0 +1,48 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          5
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Test Rust stable / ubuntu-24.04
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ : set $CARGO_HOME
+    $ : enable colors in Cargo output
+    $ : enable Cargo sparse registry
+    $ echo FEATURES=${FEATURES},imgtests | tee -a $GITHUB_ENV
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ cargo install --locked cargo-nextest
+  $ cargo nextest run --profile ci --cargo-profile ci ${TEST_OPTS} --features ${FEATURES}
+  $ cargo test --doc --profile ci ${TEST_OPTS} --features ${FEATURES}
+
+--- Reason(s) for Non-Reproducibility ---
+  - [cargo] Test run mismatch: original=53, LLM=125
+  - [cargo] Test passed mismatch: original=37, LLM=49
+  - [cargo] Test failed mismatch: original=0, LLM=0
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > (no errors — all tests passed; cargo doctest ran 72 more tests than original)
+
+  [Root cause classification]
+  - The `[cargo]` rows track Ruffle's `cargo test --doc` (doctest) step. The LLM ran `cargo test --doc --profile ci --workspace --locked --no-fail-fast -j 4 --features lzma,jpegxr,imgtests` across all workspace crates, collecting doctests from every crate in the Ruffle monorepo. The original CI ran doctests from a narrower set of packages — the captured CI step shows only `echo FEATURES=${FEATURES},imgtests | tee -a $GITHUB_ENV` setup; the actual test command is not captured, but the original likely specified an explicit package list (`-p ruffle_core -p ruffle_render …`) rather than `--workspace`. Including all workspace packages adds doctests from utility and proc-macro crates that the original CI excluded, producing 72 more tests (mostly skipped due to lacking the required display/rendering environment).
+
+  - The `[nexttest]` rows — 4800 run, 4787 passed, 13 skipped in both runs — match exactly, confirming that the nextest component of the test suite is fully reproducible. The reproducibility gap is confined to the cargo doctest count difference caused by `--workspace` vs. an implicit package subset. Both runs have 0 failures across all test types.
+
+--- Test Statistics Comparison ---
+  [cargo]
+    Original: 53 run, 37 passed, 0 failed, 16 skipped
+    LLM:      125 run, 49 passed, 0 failed, 76 skipped
+  [nexttest]
+    Original: 4800 run, 4787 passed, 0 failed, 13 skipped
+    LLM:      4800 run, 4787 passed, 0 failed, 13 skipped

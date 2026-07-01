@@ -1,0 +1,60 @@
+Error from docker build
+
+#1 [ 1/10] FROM docker.io/library/ubuntu:22.04
+#1 CACHED
+
+#2 [2/9] RUN ln -snf /usr/share/zoneinfo/America/Los_Angeles /etc/localtime && echo America/Los_Angeles > /etc/timezone
+#2 CACHED
+
+#3 [internal] load .dockerignore
+#3 transferring context: 2B done
+#3 DONE 0.0s
+
+#4 [internal] load build definition from Dockerfile
+#4 transferring dockerfile: 1.31kB done
+#4 DONE 0.0s
+
+#5 [internal] load metadata for docker.io/library/ubuntu:22.04
+#5 DONE 0.0s
+
+#6 [internal] load build context
+#6 transferring context: 223.57kB 0.1s done
+#6 DONE 0.1s
+
+#7 [ 4/14] RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain nightly
+#7 CACHED
+
+#8 [ 3/14] RUN apt-get update && apt-get install -y --no-install-recommends     git     curl     wget     && rm -rf /var/lib/apt/lists/*
+#8 CACHED
+
+#9 [ 5/14] WORKDIR /workspace
+#9 CACHED
+
+#10 [ 6/14] COPY . .
+#10 DONE 0.4s
+
+#11 [ 7/14] RUN git config --global --add safe.directory '*'
+#11 DONE 0.4s
+
+#12 [ 8/14] RUN useradd -m testuser
+#12 DONE 0.4s
+
+#13 [ 9/14] RUN mkdir -p /home/testuser/.cargo
+#13 DONE 0.4s
+
+#14 [10/14] RUN cp -r /root/.cargo/* /home/testuser/.cargo/
+#14 0.407 cp: cannot stat '/root/.cargo/*': No such file or directory
+#14 ERROR: process "/bin/sh -c cp -r /root/.cargo/* /home/testuser/.cargo/" did not complete successfully: exit code: 1
+------
+ > [10/14] RUN cp -r /root/.cargo/* /home/testuser/.cargo/:
+#14 0.407 cp: cannot stat '/root/.cargo/*': No such file or directory
+------
+Dockerfile:36
+--------------------
+  34 |     # Ensure Rust environment is available for the user
+  35 |     RUN mkdir -p /home/testuser/.cargo
+  36 | >>> RUN cp -r /root/.cargo/* /home/testuser/.cargo/
+  37 |     RUN chown -R testuser:testuser /home/testuser/.cargo
+  38 |     
+--------------------
+ERROR: failed to solve: process "/bin/sh -c cp -r /root/.cargo/* /home/testuser/.cargo/" did not complete successfully: exit code: 1

@@ -1,0 +1,1 @@
+RUN sh -c 'cat > .golangci.yml << '\''EOF'\'''

@@ -1,0 +1,42 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      build (wolf, libwolfssl-dev, build.wolf, poll)
+  Test command(s) run in original CI:
+    $ actions/checkout@v4
+    $ sudo apt-get install ninja-build
+    $ mkdir build.wolf && cd build.wolf && cmake -G Ninja -DCMAKE_BUILD_TYPE=Debug -D NNG_ENABLE_TLS=ON -DNNG_POLLQ_POLLER=poll -DNNG_TLS_ENGINE=wolf ..
+    $ cd build.wolf && ninja
+    $ cd build.wolf && ctest --output-on-failure
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ cmake -G Ninja \
+  $ -DCMAKE_BUILD_TYPE=Debug \
+  $ ctest --output-on-failure
+
+--- Reason(s) for Non-Reproducibility ---
+  - [CTest] Test result mismatch (same count 77): original=(76p/1f/0s), LLM=(77p/0f/0s)
+  - [CTest] Tests failed in original but passed in LLM: nng.sp.transport.ws.ws_test
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    (All 77 CTest tests passed in LLM run; no error messages)
+
+  [Root cause classification]
+  - TLS engine difference: The original CI built with `-D NNG_ENABLE_TLS=ON -DNNG_TLS_ENGINE=wolf` (wolfSSL as the TLS backend) and `-DNNG_POLLQ_POLLER=poll`. The LLM's cmake command omitted these flags, building without TLS support or using the default MbedTLS/no-TLS configuration. The `nng.sp.transport.ws.ws_test` (WebSocket transport test) failed in the original CI, likely because wolfSSL's WebSocket TLS handshake had a bug or incompatibility with the specific test scenario. Without wolfSSL, the WebSocket test uses a different code path that succeeds. The original CI's `poll` poller backend (`-DNNG_POLLQ_POLLER=poll`) may also contribute to timing differences in the WebSocket test.
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 77 run, 76 passed, 1 failed, 0 skipped
+    LLM:      77 run, 77 passed, 0 failed, 0 skipped

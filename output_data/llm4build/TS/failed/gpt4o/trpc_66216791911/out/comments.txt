@@ -1,0 +1,35 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      unit and integration tests
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    5
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoDefault] Test run mismatch: original=3, LLM=16
+  - [GoDefault] Test failed mismatch: original=3, LLM=16
+  - [GoDefault] 2 test(s) failed in LLM but not in original: @trpc/tanstack-react-query, @trpc/upgrade
+  - [vitest] Test passed mismatch: original=911, LLM=896
+  - [vitest] Test failed mismatch: original=1, LLM=16
+
+--- Root Cause Analysis ---
+  - [GoDefault] LLM ran 13 more tests than original — LLM likely used a broader test scope or included extra test suites.
+  - [GoDefault] 2 test(s) failed in LLM but not original: @trpc/tanstack-react-query, @trpc/upgrade
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 3 run, 0 passed, 3 failed, 0 skipped
+    LLM:      16 run, 0 passed, 16 failed, 0 skipped
+  [vitest]
+    Original: 912 run, 911 passed, 1 failed, 0 skipped
+    LLM:      912 run, 896 passed, 16 failed, 0 skipped

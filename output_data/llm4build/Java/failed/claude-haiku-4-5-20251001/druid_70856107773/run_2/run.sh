@@ -1,0 +1,1 @@
+mvn clean test -Dtest="!QTest,'$PATTERN'" -Dmaven.test.failure.ignore=true

@@ -1,0 +1,42 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          20
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT TESTS NOT REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      Unit Testing with Go stable
+  Test command(s) run in original CI:
+    $ make test
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    7
+
+--- LLM run.sh Test Command(s) ---
+  $ make test
+  $ go test ./... -v -coverprofile=profile.out -json > _test/unittests.json || echo "Tests failed or no tests found."
+
+--- Test Reproducibility Gap ---
+  Original ran 1065 test(s) across [GoDefault, GoRace].
+  LLM build produced no test results (empty llm_log_stats).
+
+--- Root Cause ---
+  Reason type: Test runner executed but produced no parseable output
+  Last log output before stopping:
+    | 🟢 PASS | 38.67s  | github.com/IBM/sarama                                       | 76.6% | 992  |  0   |  27  |
+    | 🟢 PASS |  0.01s  | github.com/IBM/sarama/internal/toxiproxy                    |  --   |  0   |  0   |  0   |
+    | 🟢 PASS |  0.02s  | github.com/IBM/sarama/mocks                                 | 82.5% |  36  |  0   |  0   |
+    | 🟢 PASS |  0.01s  | github.com/IBM/sarama/tools/kafka-console-consumer          |  --   |  0   |  0   |  0   |
+    | 🟢 PASS |  0.01s  | github.com/IBM/sarama/tools/kafka-console-partitionconsumer |  --   |  0   |  0   |  0   |
+    | 🟢 PASS |  0.01s  | github.com/IBM/sarama/tools/kafka-console-producer          |  --   |  0   |  0   |  0   |
+    | 🟢 PASS |  0.01s  | github.com/IBM/sarama/tools/kafka-producer-performance      |  --   |  0   |  0   |  0   |
+    | 🟢 PASS |  0.01s  | github.com/IBM/sarama/tools/tls                             |  --   |  0   |  0   |  0   |
+
+--- Original Test Statistics (not reproduced) ---
+  [GoDefault] 10 run, 487 passed, 3 failed, 0 skipped
+  [GoRace] 1055 run, 1027 passed, 1 failed, 27 skipped

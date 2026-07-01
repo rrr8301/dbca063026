@@ -1,0 +1,87 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          4
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Leader Lock Tests (w/Redis)
+  Platform:         GitHub Actions Linux (ubuntu)
+  Test command(s) run in original CI:
+    $ cargo test --package fuel-core --lib service::adapters::consensus_module::poa::tests::
+        --features leader_lock -- --test-threads=1 --nocapture
+    $ cargo test --package fuel-core-tests --test integration_tests leader_lock
+        --features leader_lock -- --test-threads=1 --nocapture
+      (37 tests in consensus_module::poa::tests; 1 failed — flaky Redis timing test)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   (determined from Dockerfile)
+  Architecture: x86_64 (Docker)
+  RUN steps:    several (includes redis-server)
+
+--- LLM run.sh Test Command(s) ---
+  $ redis-server --port 6379 --bind 127.0.0.1 --daemonize yes ...
+  $ cargo test --package fuel-core --lib service::adapters::consensus_module::poa::tests::
+        --features leader_lock -- --test-threads=1 --nocapture
+  $ cargo test --package fuel-core-tests --test integration_tests leader_lock
+        --features leader_lock -- --test-threads=1 --nocapture
+
+--- Reason(s) for Non-Reproducibility ---
+  - [cargo] Same count (37 run, 1 failed) but different test fails in original vs LLM
+  - Original fails: has_lease_owner_quorum__adopts_higher_epoch_from_expanded_node
+  - LLM fails: unreconciled_blocks__when_redis_node_restarts_and_loses_data__drops_block_below_quorum
+  - Both are flaky timing-sensitive Redis distributed leader-lock tests
+
+--- Root Cause Analysis ---
+  [Actual error messages from original CI log]
+    > thread 'service::adapters::consensus_module::poa::tests::has_lease_owner_quorum__adopts_higher_epoch_from_expanded_node'
+    >   panicked at crates/fuel-core/src/service/adapters/consensus_module/poa.rs:3899:9:
+    > Leader's epoch (1) should be > node C's pre-acquisition epoch (1)
+
+  [Actual error messages from LLM log.txt]
+    > thread 'service::adapters::consensus_module::poa::tests::unreconciled_blocks__when_redis_node_restarts_and_loses_data__drops_block_below_quorum'
+    >   panicked at crates/fuel-core/src/service/adapters/consensus_module/poa.rs:3737:14:
+    > reconciliation should succeed: Backlog unresolved at height 1: repair error:
+    >   Lost lock during repair — another leader took over
+
+  [Root cause classification]
+  Both tests belong to fuel-core's consensus module Proof-of-Authority (PoA) leader lock
+  implementation that uses Redis for distributed state. These tests simulate multi-node
+  scenarios — acquiring Redis leases, competing for leadership, epoch tracking, and block
+  reconciliation — all using real Redis timing and key expiry (PEXPIRE).
+
+  The tests are inherently non-deterministic: they rely on timing windows for Redis TTL
+  operations and tokio async task scheduling. Two different timing-sensitive assertions fail:
+
+  (1) Original CI: `has_lease_owner_quorum__adopts_higher_epoch_from_expanded_node`
+    The test expands a lock to a new node C and expects the leader to advance to epoch 2
+    before node C can acquire at epoch 1. The assertion is:
+      `Leader's epoch (1) should be > node C's pre-acquisition epoch (1)`
+    The epoch counter stayed at 1 instead of advancing to 2 — a race condition where the
+    lock expansion and epoch bump didn't complete before node C read its epoch.
+
+  (2) LLM Docker: `unreconciled_blocks__when_redis_node_restarts_and_loses_data__drops_block_below_quorum`
+    The test simulates a Redis node restart (data loss) and expects the leader to detect
+    the data loss and drop the affected block from the quorum set. Instead, the lock was
+    lost to another simulated leader during the repair operation:
+      `repair error: Lost lock during repair — another leader took over`
+    The simulated lock loss occurred faster than expected due to Docker timing differences
+    vs the original CI environment.
+
+  Both are pre-existing flaky tests that test the same Redis leader-lock consensus logic
+  from different angles. The failure manifests non-deterministically depending on scheduling
+  latency, Redis operation timing, and system load. On the LLM's 4th attempt it converged
+  on a different flaky test failing than on the original CI run.
+
+--- Test Statistics Comparison ---
+  [cargo]
+    Original: 37 run, 36 passed, 1 failed, 0 skipped
+      (1 failure: has_lease_owner_quorum__adopts_higher_epoch_from_expanded_node
+       "Leader's epoch (1) should be > node C's pre-acquisition epoch (1)")
+    LLM:      37 run, 36 passed, 1 failed, 0 skipped
+      (1 failure: unreconciled_blocks__when_redis_node_restarts_and_loses_data__drops_block_below_quorum
+       "repair error: Lost lock during repair — another leader took over")
+      (same total counts, different flaky test fails due to timing non-determinism)

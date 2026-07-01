@@ -1,0 +1,98 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      test (ubuntu-latest)
+  Platform:         GitHub Actions ubuntu-latest
+  Test command(s) run in original CI:
+    $ cargo test --all
+      (1577 tests; 1 failed; 7 skipped signal tests)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu-based
+  Architecture: x86_64 (Docker)
+  RUN steps:    several
+
+--- LLM run.sh Test Command(s) ---
+  $ cargo test --all
+    (same command; 1577 tests; 3 failed; 7 skipped)
+
+--- Reason(s) for Non-Reproducibility ---
+  - [cargo] Test fail mismatch: original=1 failed, LLM=3 failed (2 additional LLM failures)
+  - Both fail: options::value_requires_long_or_short (pre-existing error column bug)
+  - LLM additionally fails: backticks::trailing_newlines_are_stripped, functions::env_var_functions
+
+--- Root Cause Analysis ---
+  [Actual error messages from original CI log]
+    > ---- options::value_requires_long_or_short stdout ----
+    > Bad stderr: Diff:
+    >  error: Argument attribute `value` only valid with `long` or `short`
+    > < ——▶ justfile:1:2   (actual: points to bracket position 2)
+    > > ——▶ justfile:1:13  (expected: points to `value` keyword at position 13)
+    >    │
+    >  1 │ [arg('bar', value='baz')]
+    > <  │  ^^^
+    > >  │             ^^^^^
+
+  [Actual error messages from LLM log.txt]
+    > ---- backticks::trailing_newlines_are_stripped stdout ----
+    > Bad stderr: Diff:
+    > < error: Backtick could not be run because just could not find the shell:
+    > < No such file or directory (os error 2)
+    > < ——▶ justfile:3:9
+    > <  │
+    > < 3 │ foos := `print('foo' * 4)`
+    > <  │         ^^^^^^^^^^^^^^^^^^
+    > (expected: exit 0, stdout "foofoofoofoo")
+    >
+    > ---- functions::env_var_functions stdout ----
+    > thread 'functions::env_var_functions' panicked at tests/functions.rs:86:55:
+    > called `Result::unwrap()` on an `Err` value: NotPresent
+
+  [Root cause classification]
+  Three different failures with distinct root causes:
+
+  (1) Pre-existing: options::value_requires_long_or_short (both environments)
+    The `just` error reporting for the `[arg(..., value='baz')]` attribute validation
+    points to the wrong column in the error message. The error says:
+      `error: Argument attribute 'value' only valid with 'long' or 'short'`
+    The actual error highlights column 2 (the `[` bracket) but the test expects column 13
+    (the `value` keyword position). This is a pre-existing bug in just's error location
+    reporting for argument attribute validation — the span points to the start of the
+    attribute syntax instead of the specific `value=` identifier.
+
+  (2) Missing shell for backtick execution (LLM Docker only)
+    The `backticks::trailing_newlines_are_stripped` test uses a justfile with:
+      `foos := \`print('foo' * 4)\``
+    The justfile specifies a shell like `set shell := ["python3", "-c"]` to interpret
+    backtick expressions using Python (since `print('foo' * 4)` is Python syntax producing
+    "foofoofoofoo"). In the Docker image, the specified shell interpreter is not installed
+    or not in the expected PATH, causing just to fail with:
+      `Backtick could not be run because just could not find the shell: No such file or directory`
+    On GitHub Actions ubuntu-latest, the required interpreter is available and `foos` gets
+    the value "foofoofoofoo" correctly.
+
+  (3) Environment variable not set in Docker (LLM Docker only)
+    `functions::env_var_functions` tests just's `env_var()` and `env_var_or_default()`
+    functions by reading actual environment variables. At `tests/functions.rs:86`, the test
+    calls `.unwrap()` on `std::env::var("SOME_VAR")` where the expected variable is not
+    set in the Docker container:
+      `called Result::unwrap() on an Err value: NotPresent`
+    GitHub Actions automatically sets environment variables (e.g., `RUNNER_OS`,
+    `GITHUB_WORKSPACE`, `HOME`, or other CI-specific vars) that this test relies on.
+    The Docker container's minimal environment doesn't include those variables.
+
+--- Test Statistics Comparison ---
+  [cargo]
+    Original: 1577 run, 1569 passed, 1 failed, 7 skipped
+      (1 failure: options::value_requires_long_or_short — error column position bug)
+    LLM:      1577 run, 1567 passed, 3 failed, 7 skipped
+      (1 pre-existing: options::value_requires_long_or_short — same error column bug;
+       1 new: backticks::trailing_newlines_are_stripped — shell not found in Docker;
+       1 new: functions::env_var_functions — env var not set in Docker)

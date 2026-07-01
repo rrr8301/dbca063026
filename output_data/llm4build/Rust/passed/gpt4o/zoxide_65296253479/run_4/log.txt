@@ -1,0 +1,84 @@
+Error from docker build
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 1.30kB done
+#1 DONE 0.0s
+
+#2 [internal] load .dockerignore
+#2 transferring context: 2B done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/ubuntu:22.04
+#3 DONE 0.1s
+
+#4 [ 1/11] FROM docker.io/library/ubuntu:22.04@sha256:962f6cadeae0ea6284001009daa4cc9a8c37e75d1f5191cf0eb83fe565b63dd7
+#4 DONE 0.0s
+
+#5 [ 2/11] RUN ln -snf /usr/share/zoneinfo/America/Los_Angeles /etc/localtime && echo America/Los_Angeles > /etc/timezone
+#5 CACHED
+
+#6 [ 3/11] RUN apt-get update && apt-get install -y     git     curl     wget     build-essential     && rm -rf /var/lib/apt/lists/*
+#6 CACHED
+
+#7 [ 4/11] RUN mkdir -m 0755 /nix && chown root /nix
+#7 CACHED
+
+#8 [internal] load build context
+#8 transferring context: 46.08kB 0.0s done
+#8 DONE 0.0s
+
+#9 [ 5/11] RUN addgroup --system nixbld &&     adduser --system --disabled-password --home /var/empty --gecos "Nix build user" --ingroup nixbld nixbld &&     curl -L https://nixos.org/nix/install -o install-nix.sh &&     sh install-nix.sh --no-daemon &&     rm install-nix.sh
+#9 0.347 Adding group `nixbld' (GID 102) ...
+#9 0.368 Done.
+#9 0.426 Adding system user `nixbld' (UID 101) ...
+#9 0.426 Adding new user `nixbld' (UID 101) with group `nixbld' ...
+#9 0.470 Creating home directory `/var/empty' ...
+#9 0.483   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+#9 0.483                                  Dload  Upload   Total   Spent    Left  Speed
+#9 0.483 
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+#9 0.759 
+100  4267  100  4267    0     0  15455      0 --:--:-- --:--:-- --:--:-- 15455
+#9 0.772 downloading Nix 2.34.6 binary tarball for x86_64-linux from 'https://releases.nixos.org/nix/nix-2.34.6/nix-2.34.6-x86_64-linux.tar.xz' to '/tmp/nix-binary-tarball-unpack.SmnAnMa9TS'...
+#9 0.782   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+#9 0.782                                  Dload  Upload   Total   Spent    Left  Speed
+#9 0.782 
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+ 11 24.1M   11 2829k    0     0  11.7M      0  0:00:02 --:--:--  0:00:02 11.7M
+100 24.1M  100 24.1M    0     0  50.4M      0 --:--:-- --:--:-- --:--:-- 50.3M
+#9 3.511 Note: a multi-user installation is possible. See https://nix.dev/manual/nix/stable/installation/installing-binary.html#multi-user-installation
+#9 3.514 [1;31mwarning: installing Nix as root is not supported by this script![0m
+#9 3.514 performing a single-user installation of Nix...
+#9 3.514 copying Nix to /nix/store...
+#9 4.262 
+#9 4.351 installing 'nix-2.34.6'
+#9 4.361 error: the build users group 'nixbld' has no members
+#9 4.369 /tmp/nix-binary-tarball-unpack.SmnAnMa9TS/unpack/nix-2.34.6-x86_64-linux/install: unable to install Nix into your default profile
+#9 ERROR: process "/bin/sh -c addgroup --system nixbld &&     adduser --system --disabled-password --home /var/empty --gecos \"Nix build user\" --ingroup nixbld nixbld &&     curl -L https://nixos.org/nix/install -o install-nix.sh &&     sh install-nix.sh --no-daemon &&     rm install-nix.sh" did not complete successfully: exit code: 1
+------
+ > [ 5/11] RUN addgroup --system nixbld &&     adduser --system --disabled-password --home /var/empty --gecos "Nix build user" --ingroup nixbld nixbld &&     curl -L https://nixos.org/nix/install -o install-nix.sh &&     sh install-nix.sh --no-daemon &&     rm install-nix.sh:
+#9 0.759 
+100  4267  100  4267    0     0  15455      0 --:--:-- --:--:-- --:--:-- 15455
+
+100 24.1M  100 24.1M    0     0  50.4M      0 --:--:-- --:--:-- --:--:-- 50.3M
+#9 3.511 Note: a multi-user installation is possible. See https://nix.dev/manual/nix/stable/installation/installing-binary.html#multi-user-installation
+#9 3.514 [1;31mwarning: installing Nix as root is not supported by this script![0m
+#9 3.514 performing a single-user installation of Nix...
+#9 3.514 copying Nix to /nix/store...
+#9 4.262 
+#9 4.351 installing 'nix-2.34.6'
+#9 4.361 error: the build users group 'nixbld' has no members
+#9 4.369 /tmp/nix-binary-tarball-unpack.SmnAnMa9TS/unpack/nix-2.34.6-x86_64-linux/install: unable to install Nix into your default profile
+------
+Dockerfile:19
+--------------------
+  18 |     # Install Nix using a Docker-compatible method
+  19 | >>> RUN addgroup --system nixbld && \
+  20 | >>>     adduser --system --disabled-password --home /var/empty --gecos "Nix build user" --ingroup nixbld nixbld && \
+  21 | >>>     curl -L https://nixos.org/nix/install -o install-nix.sh && \
+  22 | >>>     sh install-nix.sh --no-daemon && \
+  23 | >>>     rm install-nix.sh
+  24 |     
+--------------------
+ERROR: failed to solve: process "/bin/sh -c addgroup --system nixbld &&     adduser --system --disabled-password --home /var/empty --gecos \"Nix build user\" --ingroup nixbld nixbld &&     curl -L https://nixos.org/nix/install -o install-nix.sh &&     sh install-nix.sh --no-daemon &&     rm install-nix.sh" did not complete successfully: exit code: 1

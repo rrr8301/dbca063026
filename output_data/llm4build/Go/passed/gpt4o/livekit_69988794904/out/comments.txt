@@ -1,0 +1,34 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          5
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      test
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    8
+
+--- LLM run.sh Test Command(s) ---
+  $ MallocNanoZone=0 go test -race -json -v ./... 2>&1 | tee /tmp/gotest.log | gotestfmt
+
+--- Reason(s) for Non-Reproducibility ---
+  - [gotestfmt] Test run mismatch: original=510, LLM=478
+  - [gotestfmt] Test passed mismatch: original=510, LLM=476
+  - [gotestfmt] Test failed mismatch: original=0, LLM=2
+  - [gotestfmt] 2 test(s) failed in LLM but not in original: TestDataPublishSlowSubscriber/testRTCServicePath=v0-single-peer-connection, TestDataPublishSlowSubscriber/testRTCServicePath=v1
+
+--- Root Cause Analysis ---
+  - [gotestfmt] LLM ran 32 fewer tests than original — LLM likely used a narrower test scope or missed some test suites.
+  - [gotestfmt] 2 test(s) failed in LLM but not original: TestDataPublishSlowSubscriber/testRTCServicePath=v0-single-peer-connection, TestDataPublishSlowSubscriber/testRTCServicePath=v1
+
+--- Test Statistics Comparison ---
+  [gotestfmt]
+    Original: 510 run, 510 passed, 0 failed, 0 skipped
+    LLM:      478 run, 476 passed, 2 failed, 0 skipped

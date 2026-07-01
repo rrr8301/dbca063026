@@ -1,0 +1,63 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          3
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      build_and_test
+  Test command(s) run in original CI:
+    $ actions/checkout@v4
+    $ actions/setup-java@v4 (java-version: 17)
+    $ mvn -T 4 --batch-mode -Djava.awt.headless=true verify -P enableTests,enableCheckStyle
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    6
+
+--- LLM run.sh Test Command(s) ---
+  $ mvn -T 4 --batch-mode -Djava.awt.headless=true verify -P enableTests,enableCheckStyle
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Maven] Test run mismatch: original=559, LLM=192
+  - [Maven] Test passed mismatch: original=557, LLM=191
+  - [Maven] Test failed mismatch: original=0, LLM=1
+  - [Maven] 1 test fails in LLM but passes in original:
+    testUtf8(org.gephi.io.exporter.plugin.SpreadsheetTest)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    Default locale: en_US, platform encoding: ANSI_X3.4-1968
+
+    ERROR SpreadsheetTest.testUtf8 -- Time elapsed: 0.009 s <<< FAILURE!
+    org.junit.ComparisonFailure:
+      expected:<Id,Label
+    1,S[????nn??]t
+    2,
+    > but was:<Id,Label
+    1,S[??nn?]t
+    2,
+    >
+
+  [Root cause classification]
+  - No LANG/locale set in Docker → platform encoding is ANSI_X3.4-1968 (ASCII). The
+    `SpreadsheetTest.testUtf8` test exports a graph whose node label contains non-ASCII
+    characters (e.g., umlauts or Latin-extended characters like `Sönnét`). The test then
+    compares the exported CSV bytes against a hardcoded expected string literal in the source
+    file. Under ASCII compilation, each multi-byte UTF-8 character in the expected string
+    literal is replaced with a separate `?` per byte (e.g., a 2-byte sequence → 2 `?` marks,
+    a 3-byte sequence → 3 `?` marks), giving `S????nn??t` (4+2 question marks). At runtime,
+    the Gephi exporter writes the label with proper Unicode encoding, but when compared as a
+    string under ASCII, the Unicode chars appear as fewer `?` marks (`S??nn?t`), causing the
+    assertion to fail. In the original CI (UTF-8 locale, Java 17), the expected string in the
+    source file compiles correctly with the actual Unicode characters, and the comparison passes.
+    Because Maven stops the build at the failing `modules/src/test/java/...` module (no `-fae`),
+    only 192 of 559 total tests run.
+
+--- Test Statistics Comparison ---
+  [Maven]
+    Original: 559 run, 557 passed, 0 failed, 2 skipped
+    LLM:      192 run, 191 passed, 1 failed, 0 skipped

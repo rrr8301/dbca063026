@@ -1,0 +1,46 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          5
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      build-ubuntu-debug
+  Test command(s) run in original CI:
+    $ CMAKE_PREFIX_PATH=$QT_ROOT_DIR cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DZINT_TEST=ON -DZINT_STATIC=ON -DZINT_QT6=ON
+    $ cmake --build . -j8 --config $BUILD_TYPE
+    $ LD_LIBRARY_PATH=$LD_LIBRARY_PATH:"$(pwd)/backend" PATH=$PATH:"$(pwd)/frontend" QT_QPA_PLATFORM=offscreen ctest -V -C $BUILD_TYPE
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ cmake .. -DCMAKE_BUILD_TYPE=${BUILD_TYPE:-Debug} -DZINT_TEST=ON -DZINT_STATIC=ON -DZINT_QT6=ON
+  $ cmake --build . -j8 --config ${BUILD_TYPE:-Debug}
+  $ LD_LIBRARY_PATH=$LD_LIBRARY_PATH:"$(pwd)/backend" PATH=$PATH:"$(pwd)/frontend" QT_QPA_PLATFORM=offscreen ctest -V -C ${BUILD_TYPE:-Debug}
+
+--- Reason(s) for Non-Reproducibility ---
+  - [CTest] Test count mismatch: original=124 run, LLM=117 run (7 fewer tests)
+  - [CTest] Test failed mismatch: original=2 failed (common, common-static), LLM=2 failed (common, common-static) — same failing tests
+  - [CTest] Missing Qt6 GUI tests in LLM: 7 qzint GUI tests were not registered because Qt6 was not found
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    41: -- Using Qt6
+    45: "Qt6Widgets", but CMake did not find one.
+    98: -- Could NOT find Qt6
+    111: -- Configuring done
+
+  [Root cause classification]
+  - The original CI installs Qt6.9.0 via `aqt install-qt linux desktop 6.9.0` and sets `CMAKE_PREFIX_PATH=$QT_ROOT_DIR` to point CMake at the installed Qt6 location. The LLM installs `qtbase5-dev` (Qt5) from the Ubuntu 22.04 repositories but specifies `-DZINT_QT6=ON`, causing CMake to attempt Qt6 discovery and fail ("Could NOT find Qt6"). Without Qt6, the qzint GUI tests (7 tests) are not built or registered, producing 117 tests instead of 124.
+  - The two tests that failed in both environments (common and common-static) exercise `test_zero_fill()` in the zint common library, which tests memory-fill behavior that is architecture/OS-dependent. This failure reproduces correctly.
+  - The overall test outcome is the same category (2 failures, same names), but the test count differs (117 vs 124) because the LLM environment lacks Qt6, making this not fully reproducible.
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 124 run, 122 passed, 2 failed, 0 skipped
+    LLM:      117 run, 115 passed, 2 failed, 0 skipped

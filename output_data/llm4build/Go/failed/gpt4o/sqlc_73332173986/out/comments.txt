@@ -1,0 +1,32 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          6
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      test
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    6
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoRace] Test run mismatch: original=1769, LLM=1051
+  - [GoRace] Test passed mismatch: original=1721, LLM=377
+  - [GoRace] Test failed mismatch: original=2, LLM=674
+  - [GoRace] Test skipped mismatch: original=46, LLM=0
+  - [GoRace] 1 test(s) failed in LLM but not in original: internal/sql/sqlpath
+
+--- Root Cause Analysis ---
+  - [GoRace] LLM ran 718 fewer tests than original — LLM likely used a narrower test scope or missed some test suites.
+  - [GoRace] 1 test(s) failed in LLM but not original: internal/sql/sqlpath
+
+--- Test Statistics Comparison ---
+  [GoRace]
+    Original: 1769 run, 1721 passed, 2 failed, 46 skipped
+    LLM:      1051 run, 377 passed, 674 failed, 0 skipped

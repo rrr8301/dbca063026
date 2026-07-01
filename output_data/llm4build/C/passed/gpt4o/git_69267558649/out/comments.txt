@@ -1,0 +1,48 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          20
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT TESTS NOT REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      linux-TEST-vars (ubuntu:20.04)
+  Docker image pulled: ubuntu:20.04
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:20.04
+  RUN steps:    3
+
+--- Test Reproducibility Gap ---
+  Original ran 34511 test(s) across [perl-harness, tap, GoDefault].
+  LLM build produced no test results (empty llm_log_stats).
+
+--- Root Cause ---
+  Reason type: Test runner executed but produced no parseable output
+  Last log output before stopping:
+    PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin
+    SUDO_COMMAND=./ci/run-build-and-tests.sh
+    SHELL=/bin/sh
+    SUDO_USER=root
+    CI_TYPE=local
+    CUSTOM_PATH=/custom
+    PWD=/app
+    + exit 1
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > Could not identify CI type
+    > + exit 1
+    > + echo Could not identify CI type
+    > CI_TYPE=local
+
+  [Root cause classification]
+  - Git's CI scripts (ci/install-dependencies.sh and ci/run-build-and-tests.sh) detect the CI environment by inspecting environment variables such as GITHUB_ACTIONS, TRAVIS, or CIRCLECI; when none of those are set, the scripts print "Could not identify CI type" and exit with code 1. The LLM invoked these scripts directly but did not set any recognized CI_TYPE variable, so the build and test harness aborted before running any tests. The original CI ran inside GitHub Actions where the detection logic succeeded and invoked the full perl-harness/TAP test suite.
+
+--- Original Test Statistics (not reproduced) ---
+  [perl-harness] 34339 run, 34339 passed, 0 failed, 0 skipped
+  [tap] 87 run, 87 passed, 0 failed, 0 skipped
+  [GoDefault] 85 run, 85 passed, 0 failed, 0 skipped

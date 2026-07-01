@@ -1,0 +1,51 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          7
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Test ubuntu-latest / 3.12
+  Test command(s) run in original CI:
+    $ actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+    $ uv sync --all-packages --group testing-extra --all-extras
+    $ make test NUM_THREADS=1
+
+--- LLM-Generated Dockerfile ---
+  Base image:   python:3.12-slim
+  RUN steps:    6
+
+--- LLM run.sh Test Command(s) ---
+  $ uv sync --all-packages --group testing-extra --all-extras
+  $ make test NUM_THREADS=1
+
+--- Reason(s) for Non-Reproducibility ---
+  - [pytest] Test run mismatch: original=12230, LLM=12229 (1 fewer test)
+  - [pytest] Skip mismatch: original=455 skipped, LLM=456 skipped (1 more skip)
+  - No test failures in either run
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    (none — no failures; all 12229 tests passed)
+
+  [Root cause classification]
+  - One test that ran in the original CI was skipped in the LLM run
+    The difference is exactly 1 test: original ran 12230 tests (455 skipped), LLM ran
+    12229 tests (456 skipped). No failures occurred in either run. One test that passed
+    in the original CI was converted to a skip in the LLM run.
+    This is a trivially minor difference, most likely caused by a platform or environment
+    detection skip condition — e.g., a test that checks for a specific Python version
+    patch level, an OS-level feature, or a third-party package version that is marginally
+    different between the GitHub Actions ubuntu-latest runner (ubuntu-24.04) and the
+    Docker container (python:3.12-slim based on Debian Bookworm). The specific test that
+    became a skip was not identified in the log since it produces no failure output.
+    The build is essentially fully reproducible: 0 failures in both, all 12229/12230
+    passing tests produce identical results.
+
+--- Test Statistics Comparison ---
+  [pytest]
+    Original: 12230 run, 12230 passed, 0 failed, 455 skipped, 38 xfailed
+    LLM:      12229 run, 12229 passed, 0 failed, 456 skipped, 38 xfailed

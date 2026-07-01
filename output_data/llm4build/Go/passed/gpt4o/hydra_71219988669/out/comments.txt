@@ -1,0 +1,41 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          20
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT TESTS NOT REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      Run tests and lints
+  Docker image pulled: postgres:18
+  Test command(s) run in original CI:
+    $ go test -coverprofile coverage.out -failfast -timeout=20m ./...
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    7
+
+--- LLM run.sh Test Command(s) ---
+  $ go test -coverprofile coverage.out -failfast -timeout=20m ./...
+
+--- Test Reproducibility Gap ---
+  Original ran 32 test(s) across [GoDefault].
+  LLM build produced no test results (empty llm_log_stats).
+
+--- Root Cause ---
+  Reason type: Test runner executed but produced no parseable output
+  Last log output before stopping:
+    store[0]:            path=/app/cockroach-data
+    storage engine:      pebble
+    status:              initialized new cluster
+    clusterID:           735b2f12-cd58-408b-8296-3700a722d677
+    nodeID:              1
+    go: errors parsing go.mod:
+    /app/go.mod:251: unknown block type: tool
+    Error in go.mod file. Please check the file for syntax errors.
+
+--- Original Test Statistics (not reproduced) ---
+  [GoDefault] 32 run, 32 passed, 0 failed, 0 skipped

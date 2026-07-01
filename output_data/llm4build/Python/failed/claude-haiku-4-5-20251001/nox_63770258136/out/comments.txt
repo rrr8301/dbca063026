@@ -1,0 +1,89 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          4
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      build (ubuntu-latest, 3.12)
+  Test command(s) run in original CI:
+    $ nox --session "tests-3.12" -- --full-trace
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ nox --session "tests-3.12" -- --full-trace
+  $ nox --session minimums --force-python="3.12" -- --full-trace
+
+--- Reason(s) for Non-Reproducibility ---
+  - [pytest] Test result mismatch (same count 1387): original=(1369p/2f/14s), LLM=(1331p/4f/50s)
+  - [pytest] 2 new failures in LLM: test_symlink_sym (captured from minimums session)
+  - [pytest] 36 more skips in LLM (50 vs 14)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > _______________________________ test_symlink_sym _______________________________
+    >   def test_symlink_sym(monkeypatch: pytest.MonkeyPatch) -> None:
+    > >     subprocess.run([sys.executable, "-m", "nox", "-s", "sym"], check=True)
+    > E     subprocess.CalledProcessError: Command '[...python3', '-m', 'nox', '-s', 'sym']'
+    >       returned non-zero exit status 1.
+    >
+    >   [From the failed nox -s sym subprocess]
+    >   File "/workspace/tests/resources/sym_dir/noxfile.py", line 1
+    >     ../orig_dir/noxfile.py
+    >     ^
+    > SyntaxError: invalid syntax
+    >
+    > test_main_requires[sessions1-expected_order1]:
+    > E   AssertionError: assert ('k-3.10', 'k-3.11', 'm') == ('k-3.9', 'k-3.10', 'm')
+    > E     At index 0 diff: 'k-3.10' != 'k-3.9'
+    >
+    > test_main_requires[sessions2-expected_order2]:
+    > E   AssertionError: assert ('k-3.11', 'n') == ('k-3.10', 'n')
+    > E     At index 0 diff: 'k-3.11' != 'k-3.10'
+
+  [Root cause classification]
+  Two separate issues cause the non-reproducibility:
+
+  (1) Docker COPY does not preserve symlinks → test_symlink_sym fails
+    `test_symlink_sym` runs `subprocess.run([..., "nox", "-s", "sym"], check=True)` which
+    invokes nox on `tests/resources/sym_dir/`. The `sym_dir/noxfile.py` is a SYMLINK pointing
+    to `../orig_dir/noxfile.py` in the repository. When Docker's `COPY . /workspace/` copies
+    the repository, symlinks are NOT followed — the symlink itself is copied as a regular file
+    containing the literal symlink target path text `../orig_dir/noxfile.py`.
+
+    When nox tries to parse this "file" as Python via `ast.parse()` in `nox/_version.py:54`,
+    it gets `SyntaxError: invalid syntax` because the text `../orig_dir/noxfile.py` is not
+    valid Python syntax. In the GitHub Actions runner, git checkout preserves symlinks, so
+    `sym_dir/noxfile.py` correctly resolves to `orig_dir/noxfile.py` (valid Python).
+
+    This failure appears in BOTH the `tests-3.12` and `minimums` sessions. The summary
+    captures the `minimums` session's results (the second session), which shows `test_symlink_sym`
+    twice in the failure list.
+
+  (2) LLM runs an extra nox session (`minimums`) not run by original CI
+    The original CI only runs `nox --session "tests-3.12" -- --full-trace`. The LLM's run.sh
+    additionally runs `nox --session minimums --force-python="3.12" -- --full-trace`. The
+    summary captures the `minimums` session results (1387 run, 4 failed, 50 skipped) rather
+    than the `tests-3.12` session (1387 run, 3 failed, 14 skipped). This inflates the skip
+    count from 14 to 50 (36 additional tests skipped in `minimums` vs `tests` session, likely
+    due to different `marks` filtering or session-specific skip conditions).
+
+  (3) Pre-existing failures (same in both): test_main_requires Python version discovery
+    Both `test_main_requires[sessions1-expected_order1]` and `[sessions2-expected_order2]`
+    fail in both original CI and LLM Docker. The test parametrization expects Python 3.9 to
+    be discoverable as the lowest interpreter (first in `('k-3.9', 'k-3.10', 'm')`), but both
+    environments return `('k-3.10', 'k-3.11', 'm')` — neither has Python 3.9 available as a
+    nox interpreter target. These are pre-existing failures unrelated to Docker.
+
+--- Test Statistics Comparison ---
+  [pytest]
+    Original: 1387 run, 1369 passed, 2 failed, 14 skipped
+    LLM:      1387 run, 1331 passed, 4 failed, 50 skipped
+    (LLM summary captures minimums session; 2 new failures from test_symlink_sym due to Docker
+     COPY not preserving symlinks; 36 extra skips from the minimums session's skip conditions)

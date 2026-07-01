@@ -1,0 +1,21 @@
+FROM bugswarm/githubactionsjobrunners:ubuntu-22.04
+RUN sudo rm -rf /var/lib/apt/lists/*
+RUN sudo rm -rf /etc/apt/sources.list.d/*
+RUN sudo apt-get clean
+RUN sudo apt-get update && sudo apt-get -y install --only-upgrade openssl libssl-dev vim
+RUN echo "TERM=dumb" >> /etc/environment
+RUN touch /etc/reproducer-environment && chmod 777 /etc/reproducer-environment
+RUN useradd -ms /bin/bash github
+RUN echo "ALL ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers
+ADD repo-to-docker.tar /home/github/build/
+ADD --chown=github:github 66241898323/run.sh /usr/local/bin/
+ADD --chown=github:github 66241898323/actions /home/github/66241898323/actions
+ADD --chown=github:github 66241898323/steps /home/github/66241898323/steps
+ADD --chown=github:github 66241898323/helpers /home/github/66241898323/helpers
+ADD --chown=github:github 66241898323/event.json /home/github/66241898323/event.json
+RUN chmod 777 /usr/local/bin/run.sh
+RUN chmod -R 777 /home/github/66241898323
+RUN rm -rf /home/linuxbrew && chown -R github:github /home
+USER github
+ENTRYPOINT ["/bin/bash", "-c"]
+CMD ["/usr/local/bin/run.sh"]

@@ -1,0 +1,39 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      test-react-legacy (18, 2/2)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoDefault] Test run mismatch: original=2, LLM=12
+  - [GoDefault] Test failed mismatch: original=2, LLM=6
+  - [GoDefault] 3 test(s) failed in LLM but not in original: components/calendar/__tests__/demo.test.ts, components/form/__tests__/demo-extend.test.ts, components/space/__tests__/demo-extend.test.ts
+  - [jest] Test run mismatch: original=3249, LLM=3310
+  - [jest] Test passed mismatch: original=3210, LLM=3255
+  - [jest] Test failed mismatch: original=1, LLM=17
+  - [jest] 1 test(s) failed in original but passed in LLM: Unknown
+  - [jest] 1 test(s) failed in LLM but not in original: components/space/__tests__/demo-extend.test.ts (13.586 s)
+
+--- Root Cause Analysis ---
+  - [GoDefault] LLM ran 10 more tests than original — LLM likely used a broader test scope or included extra test suites.
+  - [GoDefault] 3 test(s) failed in LLM but not original: components/calendar/__tests__/demo.test.ts, components/form/__tests__/demo-extend.test.ts, components/space/__tests__/demo-extend.test.ts
+  - [jest] LLM ran 61 more tests than original — LLM likely used a broader test scope or included extra test suites.
+  - [jest] 1 test(s) failed in LLM but not original: components/space/__tests__/demo-extend.test.ts (13.586 s)
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 2 run, 0 passed, 2 failed, 0 skipped
+    LLM:      12 run, 0 passed, 6 failed, 0 skipped
+  [jest]
+    Original: 3249 run, 3210 passed, 1 failed, 38 skipped
+    LLM:      3310 run, 3255 passed, 17 failed, 38 skipped

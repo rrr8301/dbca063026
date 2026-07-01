@@ -1,0 +1,89 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      test / cargo test on linux
+  Platform:         GitHub Actions Linux x86_64
+  Python versions:  multiple Python versions available (installed via uv managed toolchain)
+  Test command(s) run in original CI:
+    $ cargo nextest run --profile ci-linux (with nextest setup hook)
+      (42 tests run; 42 failed — auth and secret_service insta snapshot failures)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu-based with Rust stable
+  Architecture: x86_64 (Docker)
+  RUN steps:    several (no Python 3.12 installation)
+
+--- LLM run.sh Test Command(s) ---
+  $ cargo test (or cargo nextest run)
+    (2654 tests run; 387 failed — Python 3.12 not found)
+
+--- Reason(s) for Non-Reproducibility ---
+  - [cargo/nexttest] Test count mismatch: original=42 run (filtered scope), LLM=2654 run
+  - [cargo/nexttest] Original: 42 auth/secret_service snapshot failures; LLM: 387 different failures
+  - LLM: "Could not find Python 3.12 for test" — Python 3.12 not installed in Docker
+  - Original CI: insta snapshot regressions in auth tests (pre-existing)
+  - LLM runs wider test scope (no --profile ci-linux filter)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > thread 'branching_urls::root_package_splits_other_dependencies_too' panicked at
+    >   crates/uv-test/src/lib.rs:2087:17:
+    > Could not find Python 3.12 for test
+    > Try `cargo run python install` first, or refer to CONTRIBUTING.md
+    >
+    > [same error for all 387 LLM failures: build_backend::*, branching_urls::*,
+    >  build::*, auth::bazel_helper_* tests]
+
+  [Actual error messages from original CI log]
+    > thread 'auth::logout_token_native_auth' panicked at insta-1.46.3/src/runtime.rs:719:13:
+    > snapshot assertion for 'logout_token_native_auth' failed in line 878
+    > [same insta pattern for all 42 original failures:
+    >  auth::logout_token_native_auth, auth::native_auth_host_fallback,
+    >  auth::native_auth_prefix_match, auth::token_native_auth, auth::token_native_auth_realm,
+    >  secret_service::tests::test_* (7 tests),
+    >  test_create_set_then_move, test_create_then_move, test_simultaneous_create_set_then_move]
+
+  [Root cause classification]
+  Two separate failure causes:
+
+  (1) Original CI only: insta snapshot regressions in auth and secret_service tests
+    The uv `auth` integration tests verify authentication flows (native auth tokens,
+    host fallback, prefix matching) and `secret_service` tests verify credential storage
+    behavior. These tests use `insta` for snapshot assertions. The snapshots at their
+    respective locations are outdated — the current implementation produces different output
+    than the committed snapshots (e.g., `logout_token_native_auth` snapshot at line 878
+    produces different HTTP request/response sequences). This is a pre-existing insta
+    snapshot regression that appears in both auth and secret_service tests.
+
+  (2) LLM only: Python 3.12 not installed in Docker
+    The uv integration test suite at `crates/uv-test/src/lib.rs:2087` contains a
+    `find_python` helper that locates Python interpreters of specific versions to
+    create test virtual environments. The test setup panics with:
+      "Could not find Python 3.12 for test. Try `cargo run python install` first"
+    The uv test harness requires a Python 3.12 installation accessible at a standard
+    path or via the uv managed toolchain. The LLM's Dockerfile doesn't install Python
+    3.12 or run `cargo run python install` to set up the managed Python toolchain.
+    All 387 LLM failures share this root cause: the tests panic immediately at setup
+    before any actual test code executes.
+
+  (3) Test scope difference: original=42 (filtered), LLM=2654 (full workspace)
+    The original CI uses `--profile ci-linux` which applies a custom nextest profile
+    that limits the test scope with a setup hook script (`scripts/nextest-setup-hook-unix.sh`)
+    and runs only a filtered subset of tests that need specific external credentials.
+    The LLM runs the full workspace without the profile filter, discovering 2654 tests.
+
+--- Test Statistics Comparison ---
+  [cargo/nexttest]
+    Original (ci-linux profile): 42 run, 0 passed, 42 failed
+      (42 failures: auth::* and secret_service::* insta snapshot regressions —
+       committed snapshots no longer match current authentication flow output)
+    LLM (full workspace): 2654 run, 2267 passed, 387 failed
+      (387 failures: all fail at setup with "Could not find Python 3.12 for test";
+       includes build::*, branching_urls::*, build_backend::*, auth::bazel_helper_* tests)

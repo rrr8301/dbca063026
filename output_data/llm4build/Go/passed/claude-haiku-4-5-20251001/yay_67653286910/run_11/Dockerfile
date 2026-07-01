@@ -1,0 +1,1 @@
+RUN bash -c 'cat > /run.sh << '"'"'EOF'"'"'

@@ -1,0 +1,50 @@
+Error from docker build
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 1.44kB done
+#1 DONE 0.0s
+
+#2 [internal] load .dockerignore
+#2 transferring context: 160B done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/ubuntu:22.04
+#3 DONE 0.1s
+
+#4 [1/9] FROM docker.io/library/ubuntu:22.04@sha256:962f6cadeae0ea6284001009daa4cc9a8c37e75d1f5191cf0eb83fe565b63dd7
+#4 DONE 0.0s
+
+#5 [2/9] RUN ln -snf /usr/share/zoneinfo/America/Los_Angeles /etc/localtime && echo America/Los_Angeles > /etc/timezone
+#5 CACHED
+
+#6 [3/9] RUN apt-get update && apt-get install -y --no-install-recommends     git     curl     wget     build-essential     make     softhsm2     opensc     ca-certificates     && rm -rf /var/lib/apt/lists/*
+#6 CACHED
+
+#7 [4/9] WORKDIR /workspace
+#7 DONE 0.0s
+
+#8 [internal] load build context
+#8 transferring context: 638.33kB 0.2s done
+#8 DONE 0.3s
+
+#9 [5/9] COPY . .
+#9 DONE 1.0s
+
+#10 [6/9] RUN GO_VERSION=$(grep -oP '(?<=^go )\d+\.\d+' go.mod | head -1) &&     if [ -z "$GO_VERSION" ]; then GO_VERSION="1.22.0"; fi &&     curl -fsSL https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz -o go.tar.gz &&     tar -C /usr/local -xzf go.tar.gz &&     rm go.tar.gz
+#10 0.717 curl: (22) The requested URL returned error: 404
+#10 ERROR: process "/bin/sh -c GO_VERSION=$(grep -oP '(?<=^go )\\d+\\.\\d+' go.mod | head -1) &&     if [ -z \"$GO_VERSION\" ]; then GO_VERSION=\"1.22.0\"; fi &&     curl -fsSL https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz -o go.tar.gz &&     tar -C /usr/local -xzf go.tar.gz &&     rm go.tar.gz" did not complete successfully: exit code: 22
+------
+ > [6/9] RUN GO_VERSION=$(grep -oP '(?<=^go )\d+\.\d+' go.mod | head -1) &&     if [ -z "$GO_VERSION" ]; then GO_VERSION="1.22.0"; fi &&     curl -fsSL https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz -o go.tar.gz &&     tar -C /usr/local -xzf go.tar.gz &&     rm go.tar.gz:
+#10 0.717 curl: (22) The requested URL returned error: 404
+------
+Dockerfile:26
+--------------------
+  25 |     # Extract Go version from go.mod and install it
+  26 | >>> RUN GO_VERSION=$(grep -oP '(?<=^go )\d+\.\d+' go.mod | head -1) && \
+  27 | >>>     if [ -z "$GO_VERSION" ]; then GO_VERSION="1.22.0"; fi && \
+  28 | >>>     curl -fsSL https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz -o go.tar.gz && \
+  29 | >>>     tar -C /usr/local -xzf go.tar.gz && \
+  30 | >>>     rm go.tar.gz
+  31 |     
+--------------------
+ERROR: failed to solve: process "/bin/sh -c GO_VERSION=$(grep -oP '(?<=^go )\\d+\\.\\d+' go.mod | head -1) &&     if [ -z \"$GO_VERSION\" ]; then GO_VERSION=\"1.22.0\"; fi &&     curl -fsSL https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz -o go.tar.gz &&     tar -C /usr/local -xzf go.tar.gz &&     rm go.tar.gz" did not complete successfully: exit code: 22

@@ -1,0 +1,39 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      🧪 Test
+  Test command(s) run in original CI:
+    $ yarn test-ci --minWorkers=1 --maxWorkers=4
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    6
+
+--- LLM run.sh Test Command(s) ---
+  $ yarn test-ci --minWorkers=1 --maxWorkers=$(nproc)
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in LLM but not in original: GoDefault
+  - [vitest] Test passed mismatch: original=3421, LLM=3420
+  - [vitest] Test failed mismatch: original=0, LLM=1
+  - [vitest] 1 test(s) failed in LLM but not in original: src/__tests__/createServer.test.ts
+
+--- Root Cause Analysis ---
+  - [vitest] 1 test(s) failed in LLM but not original: src/__tests__/createServer.test.ts
+  - Test command differences detected — original CI vs LLM run.sh may use different flags or test selection.
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: (not present)
+    LLM:      1 run, 0 passed, 1 failed, 0 skipped
+  [vitest]
+    Original: 3431 run, 3421 passed, 0 failed, 10 skipped
+    LLM:      3431 run, 3420 passed, 1 failed, 10 skipped

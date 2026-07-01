@@ -1,0 +1,48 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          3
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      gcc normal - ubuntu-24.04 - mbedtls4
+  Test command(s) run in original CI:
+    $ sudo apt update && sudo apt install -y liblzo2-dev libpam0g-dev liblz4-dev linux-libc-dev man2html clang libcmocka-dev python3-docutils python3-jinja2 python3-jsonschema libtool automake autoconf pkg-config libcap-ng-dev libnl-genl-3-dev
+    $ actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+    $ lukka/get-cmake@f176ccd3f28bda569c43aae4894f60b2435a3375
+    $ cmake -B build -DCMAKE_INSTALL_PREFIX=
+    $ cmake --build build
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ make -j3
+  $ make -j3 check VERBOSE=1
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Autotools] Test result mismatch (same count 30): original=(24p/4f/2s), LLM=(22p/6f/2s)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    961:FAIL: t_cltsrv.sh  (Error: private key password verification failed)
+    963:./t_net.sh: line 36: ip: command not found
+    964:./t_net.sh: line 37: ip: command not found
+    965:./t_net.sh: line 38: ip: command not found
+    967:FAIL: t_net.sh
+    968:ERROR: failed to start server t_server_null_server-1194_udp
+    985:ERROR: failed to start server t_server_null_server-1195_tcp
+
+  [Root cause classification]
+  - `ip` command not found: `t_net.sh` requires the `iproute2` package for network interface configuration. The `ip` command is absent in the Docker container, so `t_net.sh` fails on lines 36-38 where it calls `ip link`, `ip addr`, and `ip route`. The original CI had iproute2 pre-installed. This accounts for the 2 extra failures (6 vs 4).
+  - Private key password verification failure: `t_cltsrv.sh` uses TLS certificates for VPN connection tests. The test expects to authenticate with a specific private key, but the certificate/key files are not set up correctly in the Docker environment. This test also failed in the original CI (it was one of the 4 original failures).
+  - `t_server_null` start failures: The null server tests fail to start, likely because the TLS configuration for the VPN endpoints cannot be established without proper certificates and network namespace setup.
+
+--- Test Statistics Comparison ---
+  [Autotools]
+    Original: 30 run, 24 passed, 4 failed, 2 skipped
+    LLM:      30 run, 22 passed, 6 failed, 2 skipped

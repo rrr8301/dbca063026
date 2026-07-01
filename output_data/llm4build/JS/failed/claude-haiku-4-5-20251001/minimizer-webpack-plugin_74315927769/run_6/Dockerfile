@@ -1,0 +1,1 @@
+RUN bash -c 'cat > /workspace/run.sh << '"'"'EOF'"'"'

@@ -1,0 +1,39 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   False
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          20
+Original build category: failed
+
+STATUS: BUILD EXECUTION FAILED
+
+--- Original CI Environment ---
+  CI job name:      test (3.14)
+  Test command(s) run in original CI:
+    $ PYTHONMALLOC=debug LD_PRELOAD="$(realpath "$(gcc -print-file-name=libasan.so)") $(realpath "$(gcc -print-file-name=libstdc++.so)")" ASAN_OPTIONS="detect_leaks=0" coverage run --source Bio,BioSQL run_tests.py --offline
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    6
+
+--- LLM run.sh Test Command(s) ---
+  $ service mysql start && PYTHONMALLOC=debug LD_PRELOAD="$(realpath "$(gcc -print-file-name=libasan.so)") $(realpath "$(gcc -print-file-name=libstdc++.so)")" ASAN_OPTIONS="detect_leaks=0" coverage run --source Bio,BioSQL run_tests.py --offline
+
+--- Reason(s) for Non-Reproducibility ---
+  - [ER=False] Docker build failed: `libasan8` package does not exist on Ubuntu 22.04 (only available from Ubuntu 24.04+), causing the Docker image build to fail.
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    (log.txt is empty — no output was produced after 20 attempts)
+
+  [Root cause classification]
+  - The LLM's Dockerfile attempted to install `libasan8` on ubuntu:22.04. This package is only available in Ubuntu 24.04 (Noble) repositories; Ubuntu 22.04 (Jammy) ships `libasan5` and `libasan6`. The `apt-get install libasan8` command fails, aborting the Docker build before any tests can run.
+
+  - The original CI used Python 3.14.3 with GCC's AddressSanitizer (`libasan.so`) via `gcc -print-file-name=libasan.so`. The original CI ran on a GitHub-hosted runner (Ubuntu 24.04) where `libasan8` is available.
+
+  - After 20 failed attempts, the LLM was unable to identify the correct ASAN library package name for Ubuntu 22.04. The fix would be to either use ubuntu:24.04 as the base image (where libasan8 is available) or install `libasan6` on ubuntu:22.04 instead.
+
+--- Test Statistics Comparison ---
+  [No test statistics available — execution failed]
+    Original: (no stats recorded)
+    LLM:      (no stats recorded)

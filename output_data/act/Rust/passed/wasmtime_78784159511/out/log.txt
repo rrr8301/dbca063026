@@ -1,0 +1,177 @@
+# command: act workflow_dispatch -W .github/workflows/main.yml --directory project_path/wasmtime -j test
+
+time="2026-06-02T07:31:24-07:00" level=info msg="Using docker host 'unix:///var/run/docker.sock', and daemon socket 'unix:///var/run/docker.sock'"
+[CI/Determine CI jobs to run] ⭐ Run Set up job
+[CI/Determine CI jobs to run] 🚀  Start image=catthehacker/ubuntu:act-latest
+[CI/Determine CI jobs to run]   🐳  docker pull image=catthehacker/ubuntu:act-latest platform= username= forcePull=true
+[CI/Determine CI jobs to run] using DockerAuthConfig authentication for docker pull
+[CI/Determine CI jobs to run]   🐳  docker create image=catthehacker/ubuntu:act-latest platform= entrypoint=["tail" "-f" "/dev/null"] cmd=[] network="host"
+[CI/Determine CI jobs to run]   🐳  docker run image=catthehacker/ubuntu:act-latest platform= entrypoint=["tail" "-f" "/dev/null"] cmd=[] network="host"
+[CI/Determine CI jobs to run]   🐳  docker exec cmd=[node --no-warnings -e console.log(process.execPath)] user= workdir=
+[CI/Determine CI jobs to run]   ✅  Success - Set up job
+[CI/Determine CI jobs to run] ⭐ Run Main actions/checkout@v6
+[CI/Determine CI jobs to run]   🐳  docker cp src=/scratch/raian-files/LLM4Build/project_path/wasmtime/. dst=/scratch/raian-files/LLM4Build/project_path/wasmtime
+[CI/Determine CI jobs to run]   ✅  Success - Main actions/checkout@v6 [8.537052998s]
+[CI/Determine CI jobs to run] ⭐ Run Main touch commits.log names.log
+# Note that CI doesn't run on pushes to `main`, only pushes to merge
+# queue branches and release branches, so this only runs full CI in
+# those locations.
+if [ "workflow_dispatch" != "pull_request" ]; then
+  run_full=true
+else
+  pr=
+  gh pr view $pr --json commits | tee commits.log
+  gh pr diff $pr --name-only | tee names.log || echo "failed to get files"
+  if [ "" != "main" ]; then
+    run_full=true
+  elif grep -q 'prtest:full' commits.log; then
+    run_full=true
+  elif grep -q 'prtest:debug' commits.log; then
+    echo run-dwarf=true >> $GITHUB_OUTPUT
+  elif grep -q 'prtest:platform-checks' commits.log; then
+    echo platform-checks=true >> $GITHUB_OUTPUT
+  elif grep -q 'prtest:miri' commits.log; then
+    echo test-miri=true >> $GITHUB_OUTPUT
+  elif grep -q 'prtest:capi' commits.log; then
+    echo test-capi=true >> $GITHUB_OUTPUT
+  fi
+  if grep -q crates.c-api names.log; then
+    echo test-capi=true >> $GITHUB_OUTPUT
+  fi
+  if grep -q fuzz names.log; then
+    echo test-nightly=true >> $GITHUB_OUTPUT
+  fi
+  if grep -q sys.custom names.log; then
+    echo test-nightly=true >> $GITHUB_OUTPUT
+  fi
+  if grep -q Cargo.lock names.log; then
+    echo audit=true >> $GITHUB_OUTPUT
+  fi
+  if grep -q supply-chain names.log; then
+    echo audit=true >> $GITHUB_OUTPUT
+  fi
+  if grep -q component-adapter names.log; then
+    echo preview1-adapter=true >> $GITHUB_OUTPUT
+  fi
+  if grep -q debug names.log; then
+    echo run-dwarf=true >> $GITHUB_OUTPUT
+  fi
+  if grep -q pulley names.log; then
+    echo test-nightly=true >> $GITHUB_OUTPUT
+  fi
+  if grep -q gc names.log; then
+    echo test-gc-zeal=true >> $GITHUB_OUTPUT
+  fi
+fi
+matrix="$(node ./ci/build-test-matrix.js ./commits.log ./names.log $run_full)"
+echo "test-matrix={\"include\":$(echo $matrix)}" >> $GITHUB_OUTPUT
+echo "$matrix"
+
+matrix="$(node ./ci/build-build-matrix.js)"
+echo "build-matrix={\"include\":$(echo $matrix)}" >> $GITHUB_OUTPUT
+
+if [ "$run_full" = "true" ]; then
+    echo run-full=true >> $GITHUB_OUTPUT
+    echo test-capi=true >> $GITHUB_OUTPUT
+    echo test-nightly=true >> $GITHUB_OUTPUT
+    echo test-miri=true >> $GITHUB_OUTPUT
+    echo test-gc-zeal=true >> $GITHUB_OUTPUT
+    echo audit=true >> $GITHUB_OUTPUT
+    echo preview1-adapter=true >> $GITHUB_OUTPUT
+    echo run-dwarf=true >> $GITHUB_OUTPUT
+    echo platform-checks=true >> $GITHUB_OUTPUT
+fi
+[CI/Determine CI jobs to run]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/calculate.sh] user= workdir=
+[CI/Determine CI jobs to run]   | node:internal/child_process:287
+[CI/Determine CI jobs to run]   |       const err = new ErrnoException(exitCode, syscall);
+[CI/Determine CI jobs to run]   |                   ^
+[CI/Determine CI jobs to run]   | 
+[CI/Determine CI jobs to run]   | Error: spawn cargo ENOENT
+[CI/Determine CI jobs to run]   |     at ChildProcess._handle.onexit (node:internal/child_process:287:19)
+[CI/Determine CI jobs to run]   |     at onErrorNT (node:internal/child_process:508:16)
+[CI/Determine CI jobs to run]   |     at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+[CI/Determine CI jobs to run]   |   errno: -2,
+[CI/Determine CI jobs to run]   |   code: 'ENOENT',
+[CI/Determine CI jobs to run]   |   syscall: 'spawn cargo',
+[CI/Determine CI jobs to run]   |   path: 'cargo',
+[CI/Determine CI jobs to run]   |   spawnargs: [ 'metadata' ]
+[CI/Determine CI jobs to run]   | }
+[CI/Determine CI jobs to run]   | 
+[CI/Determine CI jobs to run]   | Node.js v24.16.0
+[CI/Determine CI jobs to run]   ❌  Failure - Main touch commits.log names.log
+# Note that CI doesn't run on pushes to `main`, only pushes to merge
+# queue branches and release branches, so this only runs full CI in
+# those locations.
+if [ "workflow_dispatch" != "pull_request" ]; then
+  run_full=true
+else
+  pr=
+  gh pr view $pr --json commits | tee commits.log
+  gh pr diff $pr --name-only | tee names.log || echo "failed to get files"
+  if [ "" != "main" ]; then
+    run_full=true
+  elif grep -q 'prtest:full' commits.log; then
+    run_full=true
+  elif grep -q 'prtest:debug' commits.log; then
+    echo run-dwarf=true >> $GITHUB_OUTPUT
+  elif grep -q 'prtest:platform-checks' commits.log; then
+    echo platform-checks=true >> $GITHUB_OUTPUT
+  elif grep -q 'prtest:miri' commits.log; then
+    echo test-miri=true >> $GITHUB_OUTPUT
+  elif grep -q 'prtest:capi' commits.log; then
+    echo test-capi=true >> $GITHUB_OUTPUT
+  fi
+  if grep -q crates.c-api names.log; then
+    echo test-capi=true >> $GITHUB_OUTPUT
+  fi
+  if grep -q fuzz names.log; then
+    echo test-nightly=true >> $GITHUB_OUTPUT
+  fi
+  if grep -q sys.custom names.log; then
+    echo test-nightly=true >> $GITHUB_OUTPUT
+  fi
+  if grep -q Cargo.lock names.log; then
+    echo audit=true >> $GITHUB_OUTPUT
+  fi
+  if grep -q supply-chain names.log; then
+    echo audit=true >> $GITHUB_OUTPUT
+  fi
+  if grep -q component-adapter names.log; then
+    echo preview1-adapter=true >> $GITHUB_OUTPUT
+  fi
+  if grep -q debug names.log; then
+    echo run-dwarf=true >> $GITHUB_OUTPUT
+  fi
+  if grep -q pulley names.log; then
+    echo test-nightly=true >> $GITHUB_OUTPUT
+  fi
+  if grep -q gc names.log; then
+    echo test-gc-zeal=true >> $GITHUB_OUTPUT
+  fi
+fi
+matrix="$(node ./ci/build-test-matrix.js ./commits.log ./names.log $run_full)"
+echo "test-matrix={\"include\":$(echo $matrix)}" >> $GITHUB_OUTPUT
+echo "$matrix"
+
+matrix="$(node ./ci/build-build-matrix.js)"
+echo "build-matrix={\"include\":$(echo $matrix)}" >> $GITHUB_OUTPUT
+
+if [ "$run_full" = "true" ]; then
+    echo run-full=true >> $GITHUB_OUTPUT
+    echo test-capi=true >> $GITHUB_OUTPUT
+    echo test-nightly=true >> $GITHUB_OUTPUT
+    echo test-miri=true >> $GITHUB_OUTPUT
+    echo test-gc-zeal=true >> $GITHUB_OUTPUT
+    echo audit=true >> $GITHUB_OUTPUT
+    echo preview1-adapter=true >> $GITHUB_OUTPUT
+    echo run-dwarf=true >> $GITHUB_OUTPUT
+    echo platform-checks=true >> $GITHUB_OUTPUT
+fi
+ [1.297597975s]
+[CI/Determine CI jobs to run] exitcode '1': failure
+[CI/Determine CI jobs to run] ⭐ Run Complete job
+[CI/Determine CI jobs to run]   ✅  Success - Complete job
+[CI/Determine CI jobs to run] 🏁  Job failed
+time="2026-06-02T07:32:06-07:00" level=error msg="Error while evaluating matrix: Invalid JSON: unexpected end of JSON input"
+time="2026-06-02T07:32:06-07:00" level=error msg="Failed to parse 'fail-fast' option: strconv.ParseBool: parsing \"${{ github.event_name != 'pull_request' }}\": invalid syntax"
+Error: Job 'Determine CI jobs to run' failed

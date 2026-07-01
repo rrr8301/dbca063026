@@ -1,0 +1,46 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Test - ubuntu-latest - Node v25.x, Webpack latest, DevServer latest
+  Test command(s) run in original CI:
+    $ actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+    $ pnpm/action-setup@41ff72655975bd51cab0327fa583b6e92b6d3061
+    $ npm ci --ignore-scripts
+    $ npm run build -- --sourceMap true
+    $ npm run test:coverage -- --ci
+
+--- LLM-Generated Dockerfile ---
+  Base image:   node:25-slim
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ npm run build -- --sourceMap true
+  $ npm run test:coverage -- --ci
+
+--- Reason(s) for Non-Reproducibility ---
+  - [jest] Test result mismatch (same count 683): original=(681p/1f/1s), LLM=(680p/2f/1s)
+  - [jest] Tests failed in LLM but passed in original: test/create-webpack-app/init/init.test.js
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    492:FAIL test/create-webpack-app/init/init.test.js (147.608 s)
+    514-Summary of all failing tests
+    515-FAIL test/build/config-format/typescript-cjs/typescript.test.mjs (19.801 s)
+    536:FAIL test/create-webpack-app/init/init.test.js (147.608 s)
+
+  [Root cause classification]
+  - `test/create-webpack-app/init/init.test.js` takes 147.608 seconds to fail in the LLM — nearly 2.5 minutes. This test runs `webpack-cli --init` (or `create-webpack-app`) which is an interactive scaffolding tool that calls `npm init webpack` or `npx create-webpack-app`. Inside Docker without internet access to the npm registry, the scaffolding tool hangs waiting for npm to download the `create-webpack-app` package, eventually timing out after the jest test timeout threshold. The original CI (ubuntu-latest with full npm registry access) completed the scaffolding in time and the test passed.
+
+  - `test/build/config-format/typescript-cjs/typescript.test.mjs` also takes 19.801 seconds and appears in the LLM failure summary — this test compiles a TypeScript webpack configuration file using `tsc`. The `node:25-slim` image may lack the system libraries needed for the `@node-loader/core` or `ts-node` CJS TypeScript compilation path. However, since only `init.test.js` appears in the "Tests failed in LLM but passed in original" count (1 new failure), the `typescript.test.mjs` may have been an existing failure in the original CI's 1 pre-existing failure as well.
+
+--- Test Statistics Comparison ---
+  [jest]
+    Original: 683 run, 681 passed, 1 failed, 1 skipped
+    LLM:      683 run, 680 passed, 2 failed, 1 skipped

@@ -1,0 +1,41 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Ubuntu (cmake, mbedtls)
+  Test command(s) run in original CI:
+    $ actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
+    $ sudo apt-get install -y autoconf automake build-essential cmake git libssl-dev nettle-dev libmbedtls-dev libacl1-dev libbz2-dev liblzma-dev liblz4-dev libzstd-dev lzop pkg-config zlib1g-dev
+    $ ./build/ci/build.sh -a autogen
+    $ ./build/ci/build.sh -a configure
+    $ ./build/ci/build.sh -a build
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ ./build/ci/build.sh -a test
+
+--- Reason(s) for Non-Reproducibility ---
+  - [CTest] Test result mismatch (same count 902): original=(794p/0f/108s), LLM=(762p/1f/139s)
+  - [CTest] Tests failed in LLM but passed in original: bsdtar_test_extract_tar_absolute_paths
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    3023:  Assertions checked:      18
+    3024:  Assertions failed:        1
+
+  [Root cause classification]
+  - Assertion failure: 3023:  Assertions checked:      18
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 902 run, 794 passed, 0 failed, 108 skipped
+    LLM:      902 run, 762 passed, 1 failed, 139 skipped

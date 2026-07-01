@@ -1,0 +1,48 @@
+Error from docker build
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 1.64kB done
+#1 DONE 0.0s
+
+#2 [internal] load .dockerignore
+#2 transferring context: 2B done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/ubuntu:24.04
+#3 DONE 0.1s
+
+#4 [ 1/10] FROM docker.io/library/ubuntu:24.04@sha256:786a8b558f7be160c6c8c4a54f9a57274f3b4fb1491cf65146521ae77ff1dc54
+#4 DONE 0.0s
+
+#5 [ 2/10] RUN apt-get update &&     apt-get install -y --no-install-recommends     git     curl     wget     build-essential     pkg-config     libssl-dev     clang     cmake     mold     ca-certificates &&     rm -rf /var/lib/apt/lists/*
+#5 CACHED
+
+#6 [ 3/10] RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y &&     /bin/bash -c "source $HOME/.cargo/env &&     rustup toolchain install 1.93.0 &&     rustup component add clippy --toolchain 1.93.0 &&     rustup target add wasm32-unknown-unknown &&     cargo install cargo-make --version 0.36.4 &&     cargo install cargo-nextest --version 0.9.100"
+#6 CACHED
+
+#7 [internal] load build context
+#7 transferring context: 308.42kB 0.2s done
+#7 DONE 0.2s
+
+#8 [ 4/10] RUN useradd -m testuser && echo "testuser ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+#8 DONE 0.7s
+
+#9 [ 5/10] RUN /bin/bash -c "source $HOME/.cargo/env &&     rustup toolchain install 1.93.0 &&     rustup component add clippy --toolchain 1.93.0 &&     rustup target add wasm32-unknown-unknown &&     cargo install cargo-make --version 0.36.4 &&     cargo install cargo-nextest --version 0.9.100"
+#9 0.476 /bin/bash: line 1: /home/testuser/.cargo/env: No such file or directory
+#9 ERROR: process "/bin/sh -c /bin/bash -c \"source $HOME/.cargo/env &&     rustup toolchain install 1.93.0 &&     rustup component add clippy --toolchain 1.93.0 &&     rustup target add wasm32-unknown-unknown &&     cargo install cargo-make --version 0.36.4 &&     cargo install cargo-nextest --version 0.9.100\"" did not complete successfully: exit code: 1
+------
+ > [ 5/10] RUN /bin/bash -c "source $HOME/.cargo/env &&     rustup toolchain install 1.93.0 &&     rustup component add clippy --toolchain 1.93.0 &&     rustup target add wasm32-unknown-unknown &&     cargo install cargo-make --version 0.36.4 &&     cargo install cargo-nextest --version 0.9.100":
+#9 0.476 /bin/bash: line 1: /home/testuser/.cargo/env: No such file or directory
+------
+Dockerfile:41
+--------------------
+  40 |     # Set up Rust environment for testuser
+  41 | >>> RUN /bin/bash -c "source $HOME/.cargo/env && \
+  42 | >>>     rustup toolchain install 1.93.0 && \
+  43 | >>>     rustup component add clippy --toolchain 1.93.0 && \
+  44 | >>>     rustup target add wasm32-unknown-unknown && \
+  45 | >>>     cargo install cargo-make --version 0.36.4 && \
+  46 | >>>     cargo install cargo-nextest --version 0.9.100"
+  47 |     
+--------------------
+ERROR: failed to solve: process "/bin/sh -c /bin/bash -c \"source $HOME/.cargo/env &&     rustup toolchain install 1.93.0 &&     rustup component add clippy --toolchain 1.93.0 &&     rustup target add wasm32-unknown-unknown &&     cargo install cargo-make --version 0.36.4 &&     cargo install cargo-nextest --version 0.9.100\"" did not complete successfully: exit code: 1

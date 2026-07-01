@@ -1,0 +1,57 @@
+Error from docker build
+
+#1 [internal] load .dockerignore
+#1 transferring context: 84B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 1.07kB done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/ubuntu:22.04
+#3 DONE 0.1s
+
+#4 [1/8] FROM docker.io/library/ubuntu:22.04@sha256:962f6cadeae0ea6284001009daa4cc9a8c37e75d1f5191cf0eb83fe565b63dd7
+#4 CACHED
+
+#5 [internal] load build context
+#5 transferring context: 863.82kB 0.4s done
+#5 DONE 0.4s
+
+#6 [3/9] RUN apt-get update && apt-get install -y     git     curl     wget
+#6 CACHED
+
+#7 [2/9] RUN ln -snf /usr/share/zoneinfo/America/Los_Angeles /etc/localtime && echo America/Los_Angeles > /etc/timezone
+#7 CACHED
+
+#8 [4/9] COPY .go-version /tmp/.go-version
+#8 CACHED
+
+#9 [5/9] RUN GO_VERSION=$(cat /tmp/.go-version) &&     if [ -z "$GO_VERSION" ]; then echo "Go version not specified"; exit 1; fi &&     curl -sSL https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz -o /tmp/go${GO_VERSION}.linux-amd64.tar.gz &&     if ! tar -C /usr/local -xzf /tmp/go${GO_VERSION}.linux-amd64.tar.gz; then         echo "Failed to extract Go tarball"; exit 1;     fi &&     rm /tmp/go${GO_VERSION}.linux-amd64.tar.gz
+#9 0.823 
+#9 0.823 gzip: stdin: not in gzip format
+#9 0.823 tar: Child returned status 1
+#9 0.823 tar: Error is not recoverable: exiting now
+#9 0.824 Failed to extract Go tarball
+#9 ERROR: process "/bin/sh -c GO_VERSION=$(cat /tmp/.go-version) &&     if [ -z \"$GO_VERSION\" ]; then echo \"Go version not specified\"; exit 1; fi &&     curl -sSL https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz -o /tmp/go${GO_VERSION}.linux-amd64.tar.gz &&     if ! tar -C /usr/local -xzf /tmp/go${GO_VERSION}.linux-amd64.tar.gz; then         echo \"Failed to extract Go tarball\"; exit 1;     fi &&     rm /tmp/go${GO_VERSION}.linux-amd64.tar.gz" did not complete successfully: exit code: 1
+------
+ > [5/9] RUN GO_VERSION=$(cat /tmp/.go-version) &&     if [ -z "$GO_VERSION" ]; then echo "Go version not specified"; exit 1; fi &&     curl -sSL https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz -o /tmp/go${GO_VERSION}.linux-amd64.tar.gz &&     if ! tar -C /usr/local -xzf /tmp/go${GO_VERSION}.linux-amd64.tar.gz; then         echo "Failed to extract Go tarball"; exit 1;     fi &&     rm /tmp/go${GO_VERSION}.linux-amd64.tar.gz:
+#9 0.823 
+#9 0.823 gzip: stdin: not in gzip format
+#9 0.823 tar: Child returned status 1
+#9 0.823 tar: Error is not recoverable: exiting now
+#9 0.824 Failed to extract Go tarball
+------
+Dockerfile:15
+--------------------
+  14 |     COPY .go-version /tmp/.go-version
+  15 | >>> RUN GO_VERSION=$(cat /tmp/.go-version) && \
+  16 | >>>     if [ -z "$GO_VERSION" ]; then echo "Go version not specified"; exit 1; fi && \
+  17 | >>>     curl -sSL https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz -o /tmp/go${GO_VERSION}.linux-amd64.tar.gz && \
+  18 | >>>     if ! tar -C /usr/local -xzf /tmp/go${GO_VERSION}.linux-amd64.tar.gz; then \
+  19 | >>>         echo "Failed to extract Go tarball"; exit 1; \
+  20 | >>>     fi && \
+  21 | >>>     rm /tmp/go${GO_VERSION}.linux-amd64.tar.gz
+  22 |     
+--------------------
+ERROR: failed to solve: process "/bin/sh -c GO_VERSION=$(cat /tmp/.go-version) &&     if [ -z \"$GO_VERSION\" ]; then echo \"Go version not specified\"; exit 1; fi &&     curl -sSL https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz -o /tmp/go${GO_VERSION}.linux-amd64.tar.gz &&     if ! tar -C /usr/local -xzf /tmp/go${GO_VERSION}.linux-amd64.tar.gz; then         echo \"Failed to extract Go tarball\"; exit 1;     fi &&     rm /tmp/go${GO_VERSION}.linux-amd64.tar.gz" did not complete successfully: exit code: 1

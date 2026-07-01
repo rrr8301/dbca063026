@@ -1,0 +1,98 @@
+Error from docker build
+
+#1 [internal] load .dockerignore
+#1 transferring context: 105B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 1.30kB done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/ubuntu:latest
+#3 DONE 0.2s
+
+#4 [ 1/13] FROM docker.io/library/ubuntu:latest@sha256:c4a8d5503dfb2a3eb8ab5f807da5bc69a85730fb49b5cfca2330194ebcc41c7b
+#4 DONE 0.0s
+
+#5 [ 2/13] RUN ln -snf /usr/share/zoneinfo/America/Los_Angeles /etc/localtime && echo America/Los_Angeles > /etc/timezone
+#5 CACHED
+
+#6 [internal] load build context
+#6 transferring context: 112.66kB 0.1s done
+#6 DONE 0.1s
+
+#7 [ 3/14] RUN apt-get update && apt-get install -y     git     curl     wget     make     gcc     g++     && rm -rf /var/lib/apt/lists/*
+#7 CACHED
+
+#8 [ 5/14] RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - &&     apt-get install -y nodejs
+#8 CACHED
+
+#9 [ 4/14] RUN wget https://golang.org/dl/go1.20.linux-amd64.tar.gz &&     tar -C /usr/local -xzf go1.20.linux-amd64.tar.gz &&     rm go1.20.linux-amd64.tar.gz
+#9 CACHED
+
+#10 [ 6/14] RUN curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.50.1
+#10 CACHED
+
+#11 [ 7/14] WORKDIR /app
+#11 CACHED
+
+#12 [ 8/14] COPY . .
+#12 DONE 0.2s
+
+#13 [ 9/14] RUN sed -i 's/^go 1\.24\.1$/go 1.20/' go.mod
+#13 DONE 0.4s
+
+#14 [10/14] RUN go mod download
+#14 DONE 4.9s
+
+#15 [11/14] WORKDIR /app/ui/app
+#15 DONE 0.0s
+
+#16 [12/14] RUN npm ci
+#16 1.066 npm error code EUSAGE
+#16 1.066 npm error
+#16 1.066 npm error The `npm ci` command can only install with an existing package-lock.json or
+#16 1.066 npm error npm-shrinkwrap.json with lockfileVersion >= 1. Run an install with npm@5 or
+#16 1.066 npm error later to generate a package-lock.json file, then try again.
+#16 1.066 npm error
+#16 1.066 npm error Clean install a project
+#16 1.066 npm error
+#16 1.066 npm error Usage:
+#16 1.066 npm error npm ci
+#16 1.066 npm error
+#16 1.066 npm error Options:
+#16 1.066 npm error [--install-strategy <hoisted|nested|shallow|linked>] [--legacy-bundling]
+#16 1.066 npm error [--global-style] [--omit <dev|optional|peer> [--omit <dev|optional|peer> ...]]
+#16 1.066 npm error [--include <prod|dev|optional|peer> [--include <prod|dev|optional|peer> ...]]
+#16 1.066 npm error [--strict-peer-deps] [--foreground-scripts] [--ignore-scripts] [--no-audit]
+#16 1.066 npm error [--no-bin-links] [--no-fund] [--dry-run]
+#16 1.066 npm error [-w|--workspace <workspace-name> [-w|--workspace <workspace-name> ...]]
+#16 1.066 npm error [-ws|--workspaces] [--include-workspace-root] [--install-links]
+#16 1.066 npm error
+#16 1.066 npm error aliases: clean-install, ic, install-clean, isntall-clean
+#16 1.066 npm error
+#16 1.066 npm error Run "npm help ci" for more info
+#16 1.067 npm error A complete log of this run can be found in: /root/.npm/_logs/2026-04-26T18_39_06_867Z-debug-0.log
+#16 ERROR: process "/bin/sh -c npm ci" did not complete successfully: exit code: 1
+------
+ > [12/14] RUN npm ci:
+#16 1.066 npm error [--include <prod|dev|optional|peer> [--include <prod|dev|optional|peer> ...]]
+#16 1.066 npm error [--strict-peer-deps] [--foreground-scripts] [--ignore-scripts] [--no-audit]
+#16 1.066 npm error [--no-bin-links] [--no-fund] [--dry-run]
+#16 1.066 npm error [-w|--workspace <workspace-name> [-w|--workspace <workspace-name> ...]]
+#16 1.066 npm error [-ws|--workspaces] [--include-workspace-root] [--install-links]
+#16 1.066 npm error
+#16 1.066 npm error aliases: clean-install, ic, install-clean, isntall-clean
+#16 1.066 npm error
+#16 1.066 npm error Run "npm help ci" for more info
+#16 1.067 npm error A complete log of this run can be found in: /root/.npm/_logs/2026-04-26T18_39_06_867Z-debug-0.log
+------
+Dockerfile:44
+--------------------
+  42 |     # Install Node.js dependencies
+  43 |     WORKDIR /app/ui/app
+  44 | >>> RUN npm ci
+  45 |     
+  46 |     # Copy run.sh and make it executable
+--------------------
+ERROR: failed to solve: process "/bin/sh -c npm ci" did not complete successfully: exit code: 1

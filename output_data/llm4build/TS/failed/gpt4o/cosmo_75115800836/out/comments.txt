@@ -1,0 +1,41 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          5
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      build_test
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ pnpm install --frozen-lockfile
+  $ pnpm buf generate --template buf.ts.gen.yaml
+  $ pnpm run --filter ./controlplane/ lint:fix
+  $ pnpm run --filter ./controlplane --filter ./connect --filter ./shared --filter ./composition --filter ./protographic build
+  $ DB_URL="postgresql://postgres:changeme@localhost:5432/controlplane" pnpm run --filter controlplane test:coverage
+
+--- Reason(s) for Non-Reproducibility ---
+  - vitest test count mismatch: original=1036 failed / 170 passed, LLM=0 failed / 161 passed / 1061 skipped (88 suites failed)
+  - The LLM's test run had 1061 tests skipped vs 16 in the original, and 88 test suites failed vs 87 originally
+
+--- Root Cause Analysis ---
+  Actual error messages from LLM log.txt:
+    > TypeError: fetch failed
+    > Error: connect ECONNREFUSED 127.0.0.1:5432
+    > ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  controlplane@0.220.0 test:coverage
+
+  Root cause classification: Missing PostgreSQL service / external service dependencies not started
+  - The cosmo controlplane test suite requires a running PostgreSQL database and a Keycloak authentication server, neither of which was properly started in the LLM's container before tests ran. The widespread "TypeError: fetch failed" errors across all 88 failing test suites indicate that the backend HTTP service could not connect to the database (ECONNREFUSED on port 5432), causing the controlplane server to fail to start. The original CI provisions these services as separate jobs/services in the GitHub Actions workflow, a pattern the LLM did not fully replicate.
+
+--- Test Statistics Comparison ---
+  vitest
+    Original: 1222 run, 170 passed, 1036 failed, 16 skipped
+    LLM:      1222 run, 161 passed, 0 failed, 1061 skipped (88 suites failed)

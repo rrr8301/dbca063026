@@ -1,0 +1,76 @@
+Error from docker build
+
+#1 [ 1/10] FROM docker.io/library/ubuntu:22.04
+#1 CACHED
+
+#2 [2/9] RUN ln -snf /usr/share/zoneinfo/America/Los_Angeles /etc/localtime && echo America/Los_Angeles > /etc/timezone
+#2 CACHED
+
+#3 [internal] load build definition from Dockerfile
+#3 transferring dockerfile: 1.11kB done
+#3 DONE 0.0s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 2B done
+#4 DONE 0.0s
+
+#5 [internal] load metadata for docker.io/library/ubuntu:22.04
+#5 DONE 0.0s
+
+#6 [ 3/12] RUN apt-get update && apt-get install -y     git     curl     wget     build-essential     && rm -rf /var/lib/apt/lists/*
+#6 CACHED
+
+#7 [ 4/12] RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
+#7 CACHED
+
+#8 [internal] load build context
+#8 transferring context: 3.03MB 1.3s done
+#8 DONE 1.4s
+
+#9 [ 5/12] RUN bash -c ". /root/.nvm/nvm.sh && nvm install --lts && nvm use --lts"
+#0 0.357 Installing latest LTS version.
+#0 0.799 Downloading and installing node v24.16.0...
+#0 1.032 Downloading https://nodejs.org/dist/v24.16.0/node-v24.16.0-linux-x64.tar.xz...
+#0 1.184 
+                                                                           0.2%
+#######################                                                   32.9%
+##################################################                        69.7%
+######################################################################## 100.0%
+#9 1.504 Computing checksum with sha256sum
+#9 1.761 Checksums matched!
+#9 5.046 Now using node v24.16.0 (npm v11.13.0)
+#9 5.365 Creating default alias: default -> lts/* (-> v24.16.0 *)
+#9 5.817 Now using node v24.16.0 (npm v11.13.0)
+#9 DONE 6.1s
+
+#10 [ 6/12] RUN useradd -m testuser
+#10 DONE 0.5s
+
+#11 [ 7/12] WORKDIR /workspace
+#11 DONE 0.0s
+
+#12 [ 8/12] RUN chown -R testuser:testuser /workspace
+#12 DONE 0.5s
+
+#13 [ 9/12] COPY . /workspace
+#13 DONE 5.7s
+
+#14 [10/12] RUN git config --global --add safe.directory '*'
+#14 DONE 0.4s
+
+#15 [11/12] RUN bash -c ". /root/.nvm/nvm.sh && npm install -g yarn"
+#15 0.348 bash: line 1: /root/.nvm/nvm.sh: Permission denied
+#15 ERROR: process "/bin/sh -c bash -c \". $NVM_DIR/nvm.sh && npm install -g yarn\"" did not complete successfully: exit code: 1
+------
+ > [11/12] RUN bash -c ". /root/.nvm/nvm.sh && npm install -g yarn":
+#15 0.348 bash: line 1: /root/.nvm/nvm.sh: Permission denied
+------
+Dockerfile:39
+--------------------
+  37 |     
+  38 |     # Install yarn globally
+  39 | >>> RUN bash -c ". $NVM_DIR/nvm.sh && npm install -g yarn"
+  40 |     
+  41 |     # Install project dependencies
+--------------------
+ERROR: failed to solve: process "/bin/sh -c bash -c \". $NVM_DIR/nvm.sh && npm install -g yarn\"" did not complete successfully: exit code: 1

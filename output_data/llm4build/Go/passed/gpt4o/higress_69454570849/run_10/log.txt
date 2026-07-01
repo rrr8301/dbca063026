@@ -1,0 +1,63 @@
+Error from docker build
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 742B done
+#1 DONE 0.0s
+
+#2 [internal] load .dockerignore
+#2 transferring context: 2B done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/golang:1.24
+#3 DONE 0.2s
+
+#4 [1/8] FROM docker.io/library/golang:1.24@sha256:d2d2bc1c84f7e60d7d2438a3836ae7d0c847f4888464e7ec9ba3a1339a1ee804
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 2.63MB 1.0s done
+#5 DONE 1.1s
+
+#6 [3/8] COPY go.mod go.sum ./
+#6 CACHED
+
+#7 [2/8] WORKDIR /app
+#7 CACHED
+
+#8 [4/8] RUN mkdir -p ./hgctl ./external/go-control-plane
+#8 CACHED
+
+#9 [5/8] COPY . .
+#9 DONE 3.7s
+
+#10 [6/8] RUN chmod +x ./run.sh
+#10 DONE 0.3s
+
+#11 [7/8] RUN ./run.sh setup
+#11 0.298 go version go1.24.13 linux/amd64
+#11 0.302 The go.mod file contains a replacement for github.com/envoyproxy/go-control-plane.
+#11 0.302 Ensure the path ./external/go-control-plane exists or adjust the go.mod file.
+#11 0.306 Cloning into './external/go-control-plane'...
+#11 5.327 The go.mod file contains a replacement for github.com/alibaba/higress/hgctl.
+#11 5.327 Ensure the path ./hgctl exists or adjust the go.mod file.
+#11 5.331 fatal: destination path './hgctl' already exists and is not an empty directory.
+#11 ERROR: process "/bin/sh -c ./run.sh setup" did not complete successfully: exit code: 128
+------
+ > [7/8] RUN ./run.sh setup:
+#11 0.298 go version go1.24.13 linux/amd64
+#11 0.302 The go.mod file contains a replacement for github.com/envoyproxy/go-control-plane.
+#11 0.302 Ensure the path ./external/go-control-plane exists or adjust the go.mod file.
+#11 0.306 Cloning into './external/go-control-plane'...
+#11 5.327 The go.mod file contains a replacement for github.com/alibaba/higress/hgctl.
+#11 5.327 Ensure the path ./hgctl exists or adjust the go.mod file.
+#11 5.331 fatal: destination path './hgctl' already exists and is not an empty directory.
+------
+Dockerfile:20
+--------------------
+  18 |     
+  19 |     # Ensure the replacement paths are set up before downloading dependencies
+  20 | >>> RUN ./run.sh setup
+  21 |     
+  22 |     # Download all dependencies. Dependencies will be cached if the go.mod and go.sum files are not changed
+--------------------
+ERROR: failed to solve: process "/bin/sh -c ./run.sh setup" did not complete successfully: exit code: 128

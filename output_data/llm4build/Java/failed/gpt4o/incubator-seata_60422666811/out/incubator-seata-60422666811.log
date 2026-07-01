@@ -1,0 +1,1893 @@
+﻿2026-01-15T01:38:09.1053509Z Current runner version: '2.330.0'
+2026-01-15T01:38:09.1088311Z ##[group]Runner Image Provisioner
+2026-01-15T01:38:09.1089810Z Hosted Compute Agent
+2026-01-15T01:38:09.1090896Z Version: 20251211.462
+2026-01-15T01:38:09.1091939Z Commit: 6cbad8c2bb55d58165063d031ccabf57e2d2db61
+2026-01-15T01:38:09.1093055Z Build Date: 2025-12-11T16:28:49Z
+2026-01-15T01:38:09.1094345Z Worker ID: {e3e665a3-4170-4df1-ae4d-c068e3307d17}
+2026-01-15T01:38:09.1095520Z ##[endgroup]
+2026-01-15T01:38:09.1096441Z ##[group]Operating System
+2026-01-15T01:38:09.1097376Z Ubuntu
+2026-01-15T01:38:09.1098625Z 24.04.3
+2026-01-15T01:38:09.1099346Z LTS
+2026-01-15T01:38:09.1100059Z ##[endgroup]
+2026-01-15T01:38:09.1100886Z ##[group]Runner Image
+2026-01-15T01:38:09.1101660Z Image: ubuntu-24.04
+2026-01-15T01:38:09.1102496Z Version: 20260105.202.1
+2026-01-15T01:38:09.1104091Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260105.202/images/ubuntu/Ubuntu2404-Readme.md
+2026-01-15T01:38:09.1106601Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260105.202
+2026-01-15T01:38:09.1108287Z ##[endgroup]
+2026-01-15T01:38:09.1112870Z ##[group]GITHUB_TOKEN Permissions
+2026-01-15T01:38:09.1116205Z Actions: write
+2026-01-15T01:38:09.1117161Z ArtifactMetadata: write
+2026-01-15T01:38:09.1118059Z Attestations: write
+2026-01-15T01:38:09.1119428Z Checks: write
+2026-01-15T01:38:09.1120199Z Contents: write
+2026-01-15T01:38:09.1120942Z Deployments: write
+2026-01-15T01:38:09.1122313Z Discussions: write
+2026-01-15T01:38:09.1123212Z Issues: write
+2026-01-15T01:38:09.1124005Z Metadata: read
+2026-01-15T01:38:09.1124990Z Models: read
+2026-01-15T01:38:09.1125897Z Packages: write
+2026-01-15T01:38:09.1126788Z Pages: write
+2026-01-15T01:38:09.1127781Z PullRequests: write
+2026-01-15T01:38:09.1128987Z RepositoryProjects: write
+2026-01-15T01:38:09.1129945Z SecurityEvents: write
+2026-01-15T01:38:09.1130928Z Statuses: write
+2026-01-15T01:38:09.1131791Z ##[endgroup]
+2026-01-15T01:38:09.1134644Z Secret source: Actions
+2026-01-15T01:38:09.1136404Z Prepare workflow directory
+2026-01-15T01:38:09.2148759Z Prepare all required actions
+2026-01-15T01:38:09.2204309Z Getting action download info
+2026-01-15T01:38:09.5514160Z Download action repository 'actions/checkout@v3' (SHA:f43a0e5ff2bd294095638e18286ca9a3d1956744)
+2026-01-15T01:38:09.6732400Z Download action repository 'actions/setup-python@v2' (SHA:e9aba2c848f5ebd159c070c61ea2c4e2b122355e)
+2026-01-15T01:38:09.7585268Z Download action repository 'actions/setup-java@v3.12.0' (SHA:cd89f46ac9d01407894225f350157564c9c7cee2)
+2026-01-15T01:38:10.4503956Z Complete job name: test (8, ubuntu-24.04, 2.6.15         -D spring-framework-bom.version=5.3.27)
+2026-01-15T01:38:10.4969399Z ##[group]Checking docker version
+2026-01-15T01:38:10.4983136Z ##[command]/usr/bin/docker version --format '{{.Server.APIVersion}}'
+2026-01-15T01:38:10.5838665Z '1.48'
+2026-01-15T01:38:10.5854637Z Docker daemon API version: '1.48'
+2026-01-15T01:38:10.5856983Z ##[command]/usr/bin/docker version --format '{{.Client.APIVersion}}'
+2026-01-15T01:38:10.6024527Z '1.48'
+2026-01-15T01:38:10.6039685Z Docker client API version: '1.48'
+2026-01-15T01:38:10.6046101Z ##[endgroup]
+2026-01-15T01:38:10.6050155Z ##[group]Clean up resources from previous jobs
+2026-01-15T01:38:10.6056413Z ##[command]/usr/bin/docker ps --all --quiet --no-trunc --filter "label=eeb4d6"
+2026-01-15T01:38:10.6200179Z ##[command]/usr/bin/docker network prune --force --filter "label=eeb4d6"
+2026-01-15T01:38:10.6335028Z ##[endgroup]
+2026-01-15T01:38:10.6335955Z ##[group]Create local container network
+2026-01-15T01:38:10.6347701Z ##[command]/usr/bin/docker network create --label eeb4d6 github_network_dea50a9e993144bc9fb1f50519613ecd
+2026-01-15T01:38:10.6857875Z f7f32210e1d0b5a7807c547ae9b32069b7893a98b1d9a40c1c9586c7f7e68a4e
+2026-01-15T01:38:10.6880409Z ##[endgroup]
+2026-01-15T01:38:10.6914137Z ##[group]Starting redis service container
+2026-01-15T01:38:10.6934596Z ##[command]/usr/bin/docker pull redis:7.2
+2026-01-15T01:38:11.2520318Z 7.2: Pulling from library/redis
+2026-01-15T01:38:11.4130668Z c02d17997ce3: Pulling fs layer
+2026-01-15T01:38:11.4133318Z 5a8a1ddac675: Pulling fs layer
+2026-01-15T01:38:11.4134648Z c8d70ddedb79: Pulling fs layer
+2026-01-15T01:38:11.4135870Z 413f71042199: Pulling fs layer
+2026-01-15T01:38:11.4137033Z 365497bf7ec4: Pulling fs layer
+2026-01-15T01:38:11.4138216Z e513aaf12be1: Pulling fs layer
+2026-01-15T01:38:11.4139643Z 4f4fb700ef54: Pulling fs layer
+2026-01-15T01:38:11.4140855Z 6993e86ee1be: Pulling fs layer
+2026-01-15T01:38:11.4142006Z e513aaf12be1: Waiting
+2026-01-15T01:38:11.4143060Z 6993e86ee1be: Waiting
+2026-01-15T01:38:11.4144145Z 4f4fb700ef54: Waiting
+2026-01-15T01:38:11.4145209Z 413f71042199: Waiting
+2026-01-15T01:38:11.4146244Z 365497bf7ec4: Waiting
+2026-01-15T01:38:11.5990143Z c8d70ddedb79: Verifying Checksum
+2026-01-15T01:38:11.5992474Z c8d70ddedb79: Download complete
+2026-01-15T01:38:11.6090829Z 5a8a1ddac675: Verifying Checksum
+2026-01-15T01:38:11.6093045Z 5a8a1ddac675: Download complete
+2026-01-15T01:38:11.8202264Z 413f71042199: Verifying Checksum
+2026-01-15T01:38:11.8204170Z 413f71042199: Download complete
+2026-01-15T01:38:11.8366364Z c02d17997ce3: Verifying Checksum
+2026-01-15T01:38:11.8368992Z c02d17997ce3: Download complete
+2026-01-15T01:38:12.0150454Z e513aaf12be1: Verifying Checksum
+2026-01-15T01:38:12.0153028Z e513aaf12be1: Download complete
+2026-01-15T01:38:12.0184682Z 365497bf7ec4: Verifying Checksum
+2026-01-15T01:38:12.0186396Z 365497bf7ec4: Download complete
+2026-01-15T01:38:12.0282157Z 4f4fb700ef54: Verifying Checksum
+2026-01-15T01:38:12.0286157Z 4f4fb700ef54: Download complete
+2026-01-15T01:38:12.2032715Z 6993e86ee1be: Verifying Checksum
+2026-01-15T01:38:13.0165355Z c02d17997ce3: Pull complete
+2026-01-15T01:38:13.7697239Z 5a8a1ddac675: Pull complete
+2026-01-15T01:38:13.7833224Z c8d70ddedb79: Pull complete
+2026-01-15T01:38:13.8274339Z 413f71042199: Pull complete
+2026-01-15T01:38:14.0415935Z 365497bf7ec4: Pull complete
+2026-01-15T01:38:14.0519264Z e513aaf12be1: Pull complete
+2026-01-15T01:38:14.0605496Z 4f4fb700ef54: Pull complete
+2026-01-15T01:38:14.0816600Z 6993e86ee1be: Pull complete
+2026-01-15T01:38:14.0860322Z Digest: sha256:a39bcfd02a18afc6b8799ee87dde8b65d51f4dc54a5b1ca706a32ae3273c6445
+2026-01-15T01:38:14.0874227Z Status: Downloaded newer image for redis:7.2
+2026-01-15T01:38:14.0885945Z docker.io/library/redis:7.2
+2026-01-15T01:38:14.0919623Z ##[command]/usr/bin/docker create --name 74dd9609d72d4101af6458193f4cf99d_redis72_d76686 --label eeb4d6 --network github_network_dea50a9e993144bc9fb1f50519613ecd --network-alias redis -p 6379:6379 --health-cmd="redis-cli ping" --health-interval=10s --health-timeout=5s --health-retries=3 -e GITHUB_ACTIONS=true -e CI=true redis:7.2
+2026-01-15T01:38:14.1172475Z 6bef17286bbed987fba16f09bff9b314fb44ce771e1d9432deeea70fed0c09d9
+2026-01-15T01:38:14.1196453Z ##[command]/usr/bin/docker start 6bef17286bbed987fba16f09bff9b314fb44ce771e1d9432deeea70fed0c09d9
+2026-01-15T01:38:14.3874385Z 6bef17286bbed987fba16f09bff9b314fb44ce771e1d9432deeea70fed0c09d9
+2026-01-15T01:38:14.3896641Z ##[command]/usr/bin/docker ps --all --filter id=6bef17286bbed987fba16f09bff9b314fb44ce771e1d9432deeea70fed0c09d9 --filter status=running --no-trunc --format "{{.ID}} {{.Status}}"
+2026-01-15T01:38:14.4026543Z 6bef17286bbed987fba16f09bff9b314fb44ce771e1d9432deeea70fed0c09d9 Up Less than a second (health: starting)
+2026-01-15T01:38:14.4047286Z ##[command]/usr/bin/docker port 6bef17286bbed987fba16f09bff9b314fb44ce771e1d9432deeea70fed0c09d9
+2026-01-15T01:38:14.4164553Z 6379/tcp -> 0.0.0.0:6379
+2026-01-15T01:38:14.4165073Z 6379/tcp -> [::]:6379
+2026-01-15T01:38:14.4209680Z ##[endgroup]
+2026-01-15T01:38:14.4211052Z ##[group]Starting nacos service container
+2026-01-15T01:38:14.4212467Z ##[command]/usr/bin/docker pull nacos/nacos-server:v2.4.2
+2026-01-15T01:38:14.9663684Z v2.4.2: Pulling from nacos/nacos-server
+2026-01-15T01:38:15.1377393Z c6a83fedfae6: Pulling fs layer
+2026-01-15T01:38:15.1377941Z ce5fed4d79e9: Pulling fs layer
+2026-01-15T01:38:15.1378628Z 79ebfd9c7624: Pulling fs layer
+2026-01-15T01:38:15.1379181Z 914a4e7d41a8: Pulling fs layer
+2026-01-15T01:38:15.1379869Z 2c679055f785: Pulling fs layer
+2026-01-15T01:38:15.1380287Z 6552c55e9512: Pulling fs layer
+2026-01-15T01:38:15.1380724Z 0faed1dcb158: Pulling fs layer
+2026-01-15T01:38:15.1381128Z 2c679055f785: Waiting
+2026-01-15T01:38:15.1381387Z 6552c55e9512: Waiting
+2026-01-15T01:38:15.1381598Z 914a4e7d41a8: Waiting
+2026-01-15T01:38:15.3131084Z 79ebfd9c7624: Verifying Checksum
+2026-01-15T01:38:15.3131660Z 79ebfd9c7624: Download complete
+2026-01-15T01:38:15.3825636Z c6a83fedfae6: Verifying Checksum
+2026-01-15T01:38:15.3826134Z c6a83fedfae6: Download complete
+2026-01-15T01:38:15.4957824Z c6a83fedfae6: Pull complete
+2026-01-15T01:38:15.5540693Z 2c679055f785: Download complete
+2026-01-15T01:38:15.7447108Z 6552c55e9512: Verifying Checksum
+2026-01-15T01:38:15.7447907Z 6552c55e9512: Download complete
+2026-01-15T01:38:15.9008006Z 0faed1dcb158: Verifying Checksum
+2026-01-15T01:38:15.9008640Z 0faed1dcb158: Download complete
+2026-01-15T01:38:16.1292538Z ce5fed4d79e9: Verifying Checksum
+2026-01-15T01:38:16.1293003Z ce5fed4d79e9: Download complete
+2026-01-15T01:38:17.6272733Z ce5fed4d79e9: Pull complete
+2026-01-15T01:38:17.6388879Z 79ebfd9c7624: Pull complete
+2026-01-15T01:38:18.1316338Z 914a4e7d41a8: Verifying Checksum
+2026-01-15T01:38:18.1316960Z 914a4e7d41a8: Download complete
+2026-01-15T01:38:18.8742274Z 914a4e7d41a8: Pull complete
+2026-01-15T01:38:18.8867659Z 2c679055f785: Pull complete
+2026-01-15T01:38:18.9216551Z 6552c55e9512: Pull complete
+2026-01-15T01:38:18.9318928Z 0faed1dcb158: Pull complete
+2026-01-15T01:38:18.9357427Z Digest: sha256:790c352dcf298dde62ea233a70dc32332ae6e3672673de13ef97701af248b32c
+2026-01-15T01:38:18.9371031Z Status: Downloaded newer image for nacos/nacos-server:v2.4.2
+2026-01-15T01:38:18.9378683Z docker.io/nacos/nacos-server:v2.4.2
+2026-01-15T01:38:18.9423616Z ##[command]/usr/bin/docker create --name 84ecd86782a342219d2ffa8518f583b9_nacosnacosserverv242_e4e80b --label eeb4d6 --network github_network_dea50a9e993144bc9fb1f50519613ecd --network-alias nacos -p 8848:8848 --health-cmd="curl -f http://localhost:8848/nacos" --health-interval=10s --health-timeout=5s --health-retries=3 --health-start-period=30s -e "MODE=standalone" -e "SPRING_SECURITY_ENABLED=false" -e GITHUB_ACTIONS=true -e CI=true nacos/nacos-server:v2.4.2
+2026-01-15T01:38:18.9656146Z 4ca1ad6fb36111728382fffe5bcb0df44e9ecf164774262781a06453f94e4881
+2026-01-15T01:38:18.9670793Z ##[command]/usr/bin/docker start 4ca1ad6fb36111728382fffe5bcb0df44e9ecf164774262781a06453f94e4881
+2026-01-15T01:38:19.0957940Z 4ca1ad6fb36111728382fffe5bcb0df44e9ecf164774262781a06453f94e4881
+2026-01-15T01:38:19.0974668Z ##[command]/usr/bin/docker ps --all --filter id=4ca1ad6fb36111728382fffe5bcb0df44e9ecf164774262781a06453f94e4881 --filter status=running --no-trunc --format "{{.ID}} {{.Status}}"
+2026-01-15T01:38:19.1106665Z 4ca1ad6fb36111728382fffe5bcb0df44e9ecf164774262781a06453f94e4881 Up Less than a second (health: starting)
+2026-01-15T01:38:19.1120300Z ##[command]/usr/bin/docker port 4ca1ad6fb36111728382fffe5bcb0df44e9ecf164774262781a06453f94e4881
+2026-01-15T01:38:19.1247783Z 8848/tcp -> 0.0.0.0:8848
+2026-01-15T01:38:19.1248596Z 8848/tcp -> [::]:8848
+2026-01-15T01:38:19.1262252Z ##[endgroup]
+2026-01-15T01:38:19.1278060Z ##[group]Waiting for all services to be ready
+2026-01-15T01:38:19.1295103Z ##[command]/usr/bin/docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" 6bef17286bbed987fba16f09bff9b314fb44ce771e1d9432deeea70fed0c09d9
+2026-01-15T01:38:19.1432188Z starting
+2026-01-15T01:38:19.1453182Z redis service is starting, waiting 2 seconds before checking again.
+2026-01-15T01:38:21.1452897Z ##[command]/usr/bin/docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" 6bef17286bbed987fba16f09bff9b314fb44ce771e1d9432deeea70fed0c09d9
+2026-01-15T01:38:21.1641548Z starting
+2026-01-15T01:38:21.1663437Z redis service is starting, waiting 4 seconds before checking again.
+2026-01-15T01:38:25.2159597Z ##[command]/usr/bin/docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" 6bef17286bbed987fba16f09bff9b314fb44ce771e1d9432deeea70fed0c09d9
+2026-01-15T01:38:25.2326275Z healthy
+2026-01-15T01:38:25.2364437Z redis service is healthy.
+2026-01-15T01:38:25.2365696Z ##[command]/usr/bin/docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" 4ca1ad6fb36111728382fffe5bcb0df44e9ecf164774262781a06453f94e4881
+2026-01-15T01:38:25.2590048Z starting
+2026-01-15T01:38:25.2613964Z nacos service is starting, waiting 2 seconds before checking again.
+2026-01-15T01:38:27.2630788Z ##[command]/usr/bin/docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" 4ca1ad6fb36111728382fffe5bcb0df44e9ecf164774262781a06453f94e4881
+2026-01-15T01:38:27.2841018Z starting
+2026-01-15T01:38:27.2875205Z nacos service is starting, waiting 4 seconds before checking again.
+2026-01-15T01:38:31.4380663Z ##[command]/usr/bin/docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" 4ca1ad6fb36111728382fffe5bcb0df44e9ecf164774262781a06453f94e4881
+2026-01-15T01:38:31.4499972Z starting
+2026-01-15T01:38:31.4513120Z nacos service is starting, waiting 8 seconds before checking again.
+2026-01-15T01:38:40.0936549Z ##[command]/usr/bin/docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" 4ca1ad6fb36111728382fffe5bcb0df44e9ecf164774262781a06453f94e4881
+2026-01-15T01:38:40.1059966Z healthy
+2026-01-15T01:38:40.1074040Z nacos service is healthy.
+2026-01-15T01:38:40.1074401Z ##[endgroup]
+2026-01-15T01:38:40.1397007Z ##[group]Run actions/checkout@v3
+2026-01-15T01:38:40.1397563Z with:
+2026-01-15T01:38:40.1397771Z   repository: apache/incubator-seata
+2026-01-15T01:38:40.1398239Z   token: ***
+2026-01-15T01:38:40.1398794Z   ssh-strict: true
+2026-01-15T01:38:40.1398995Z   persist-credentials: true
+2026-01-15T01:38:40.1399210Z   clean: true
+2026-01-15T01:38:40.1399393Z   sparse-checkout-cone-mode: true
+2026-01-15T01:38:40.1399635Z   fetch-depth: 1
+2026-01-15T01:38:40.1399809Z   fetch-tags: false
+2026-01-15T01:38:40.1400000Z   lfs: false
+2026-01-15T01:38:40.1400165Z   submodules: false
+2026-01-15T01:38:40.1400341Z   set-safe-directory: true
+2026-01-15T01:38:40.1400825Z ##[endgroup]
+2026-01-15T01:38:40.2313782Z Syncing repository: apache/incubator-seata
+2026-01-15T01:38:40.2315902Z ##[group]Getting Git version info
+2026-01-15T01:38:40.2316634Z Working directory is '/home/runner/work/incubator-seata/incubator-seata'
+2026-01-15T01:38:40.2317670Z [command]/usr/bin/git version
+2026-01-15T01:38:40.2379439Z git version 2.52.0
+2026-01-15T01:38:40.2407586Z ##[endgroup]
+2026-01-15T01:38:40.2422058Z Temporarily overriding HOME='/home/runner/work/_temp/b0b0ae7d-ca07-4f2c-a1ae-101cce9fb310' before making global git config changes
+2026-01-15T01:38:40.2422861Z Adding repository directory to the temporary git global config as a safe directory
+2026-01-15T01:38:40.2425801Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/incubator-seata/incubator-seata
+2026-01-15T01:38:40.2465083Z Deleting the contents of '/home/runner/work/incubator-seata/incubator-seata'
+2026-01-15T01:38:40.2468863Z ##[group]Initializing the repository
+2026-01-15T01:38:40.2471984Z [command]/usr/bin/git init /home/runner/work/incubator-seata/incubator-seata
+2026-01-15T01:38:40.2578764Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-01-15T01:38:40.2579632Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-01-15T01:38:40.2580206Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-01-15T01:38:40.2580615Z hint: call:
+2026-01-15T01:38:40.2580815Z hint:
+2026-01-15T01:38:40.2581085Z hint: 	git config --global init.defaultBranch <name>
+2026-01-15T01:38:40.2581412Z hint:
+2026-01-15T01:38:40.2581715Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-01-15T01:38:40.2582552Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-01-15T01:38:40.2583116Z hint:
+2026-01-15T01:38:40.2583525Z hint: 	git branch -m <name>
+2026-01-15T01:38:40.2583754Z hint:
+2026-01-15T01:38:40.2584091Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-01-15T01:38:40.2584720Z Initialized empty Git repository in /home/runner/work/incubator-seata/incubator-seata/.git/
+2026-01-15T01:38:40.2592869Z [command]/usr/bin/git remote add origin https://github.com/apache/incubator-seata
+2026-01-15T01:38:40.2627023Z ##[endgroup]
+2026-01-15T01:38:40.2627441Z ##[group]Disabling automatic garbage collection
+2026-01-15T01:38:40.2630638Z [command]/usr/bin/git config --local gc.auto 0
+2026-01-15T01:38:40.2657840Z ##[endgroup]
+2026-01-15T01:38:40.2658189Z ##[group]Setting up auth
+2026-01-15T01:38:40.2663738Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-01-15T01:38:40.2691981Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-01-15T01:38:40.3049010Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-01-15T01:38:40.3076836Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-01-15T01:38:40.3307756Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-01-15T01:38:40.3345075Z ##[endgroup]
+2026-01-15T01:38:40.3345742Z ##[group]Fetching the repository
+2026-01-15T01:38:40.3354848Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --progress --no-recurse-submodules --depth=1 origin +fdbbbee6d424ebeb6a1c747a72ea4c69edbac386:refs/remotes/origin/2.6.0
+2026-01-15T01:38:40.5861969Z remote: Enumerating objects: 5967, done.        
+2026-01-15T01:38:40.5862697Z remote: Counting objects:   0% (1/5967)        
+2026-01-15T01:38:40.5865464Z remote: Counting objects:   1% (60/5967)        
+2026-01-15T01:38:40.5866182Z remote: Counting objects:   2% (120/5967)        
+2026-01-15T01:38:40.5866809Z remote: Counting objects:   3% (180/5967)        
+2026-01-15T01:38:40.5867521Z remote: Counting objects:   4% (239/5967)        
+2026-01-15T01:38:40.5868936Z remote: Counting objects:   5% (299/5967)        
+2026-01-15T01:38:40.5869449Z remote: Counting objects:   6% (359/5967)        
+2026-01-15T01:38:40.5869898Z remote: Counting objects:   7% (418/5967)        
+2026-01-15T01:38:40.6088703Z remote: Counting objects:   8% (478/5967)        
+2026-01-15T01:38:40.6089325Z remote: Counting objects:   9% (538/5967)        
+2026-01-15T01:38:40.6089752Z remote: Counting objects:  10% (597/5967)        
+2026-01-15T01:38:40.6090110Z remote: Counting objects:  11% (657/5967)        
+2026-01-15T01:38:40.6090443Z remote: Counting objects:  12% (717/5967)        
+2026-01-15T01:38:40.6090775Z remote: Counting objects:  13% (776/5967)        
+2026-01-15T01:38:40.6091150Z remote: Counting objects:  14% (836/5967)        
+2026-01-15T01:38:40.6091705Z remote: Counting objects:  15% (896/5967)        
+2026-01-15T01:38:40.6092220Z remote: Counting objects:  16% (955/5967)        
+2026-01-15T01:38:40.6092679Z remote: Counting objects:  17% (1015/5967)        
+2026-01-15T01:38:40.6093023Z remote: Counting objects:  18% (1075/5967)        
+2026-01-15T01:38:40.6093367Z remote: Counting objects:  19% (1134/5967)        
+2026-01-15T01:38:40.6093716Z remote: Counting objects:  20% (1194/5967)        
+2026-01-15T01:38:40.6094045Z remote: Counting objects:  21% (1254/5967)        
+2026-01-15T01:38:40.6094378Z remote: Counting objects:  22% (1313/5967)        
+2026-01-15T01:38:40.6094740Z remote: Counting objects:  23% (1373/5967)        
+2026-01-15T01:38:40.6095076Z remote: Counting objects:  24% (1433/5967)        
+2026-01-15T01:38:40.6095409Z remote: Counting objects:  25% (1492/5967)        
+2026-01-15T01:38:40.6095738Z remote: Counting objects:  26% (1552/5967)        
+2026-01-15T01:38:40.6096439Z remote: Counting objects:  27% (1612/5967)        
+2026-01-15T01:38:40.6096810Z remote: Counting objects:  28% (1671/5967)        
+2026-01-15T01:38:40.6097145Z remote: Counting objects:  29% (1731/5967)        
+2026-01-15T01:38:40.6097476Z remote: Counting objects:  30% (1791/5967)        
+2026-01-15T01:38:40.6097810Z remote: Counting objects:  31% (1850/5967)        
+2026-01-15T01:38:40.6098144Z remote: Counting objects:  32% (1910/5967)        
+2026-01-15T01:38:40.6098753Z remote: Counting objects:  33% (1970/5967)        
+2026-01-15T01:38:40.6099093Z remote: Counting objects:  34% (2029/5967)        
+2026-01-15T01:38:40.6099423Z remote: Counting objects:  35% (2089/5967)        
+2026-01-15T01:38:40.6099756Z remote: Counting objects:  36% (2149/5967)        
+2026-01-15T01:38:40.6100093Z remote: Counting objects:  37% (2208/5967)        
+2026-01-15T01:38:40.6100427Z remote: Counting objects:  38% (2268/5967)        
+2026-01-15T01:38:40.6100767Z remote: Counting objects:  39% (2328/5967)        
+2026-01-15T01:38:40.6101297Z remote: Counting objects:  40% (2387/5967)        
+2026-01-15T01:38:40.6101694Z remote: Counting objects:  41% (2447/5967)        
+2026-01-15T01:38:40.6102023Z remote: Counting objects:  42% (2507/5967)        
+2026-01-15T01:38:40.6102533Z remote: Counting objects:  43% (2566/5967)        
+2026-01-15T01:38:40.6102933Z remote: Counting objects:  44% (2626/5967)        
+2026-01-15T01:38:40.6103208Z remote: Counting objects:  45% (2686/5967)        
+2026-01-15T01:38:40.6103691Z remote: Counting objects:  46% (2745/5967)        
+2026-01-15T01:38:40.6103980Z remote: Counting objects:  47% (2805/5967)        
+2026-01-15T01:38:40.6104258Z remote: Counting objects:  48% (2865/5967)        
+2026-01-15T01:38:40.6104544Z remote: Counting objects:  49% (2924/5967)        
+2026-01-15T01:38:40.6104827Z remote: Counting objects:  50% (2984/5967)        
+2026-01-15T01:38:40.6105096Z remote: Counting objects:  51% (3044/5967)        
+2026-01-15T01:38:40.6105373Z remote: Counting objects:  52% (3103/5967)        
+2026-01-15T01:38:40.6105646Z remote: Counting objects:  53% (3163/5967)        
+2026-01-15T01:38:40.6105918Z remote: Counting objects:  54% (3223/5967)        
+2026-01-15T01:38:40.6106191Z remote: Counting objects:  55% (3282/5967)        
+2026-01-15T01:38:40.6106459Z remote: Counting objects:  56% (3342/5967)        
+2026-01-15T01:38:40.6106733Z remote: Counting objects:  57% (3402/5967)        
+2026-01-15T01:38:40.6106999Z remote: Counting objects:  58% (3461/5967)        
+2026-01-15T01:38:40.6107275Z remote: Counting objects:  59% (3521/5967)        
+2026-01-15T01:38:40.6107545Z remote: Counting objects:  60% (3581/5967)        
+2026-01-15T01:38:40.6107820Z remote: Counting objects:  61% (3640/5967)        
+2026-01-15T01:38:40.6108087Z remote: Counting objects:  62% (3700/5967)        
+2026-01-15T01:38:40.6108610Z remote: Counting objects:  63% (3760/5967)        
+2026-01-15T01:38:40.6108986Z remote: Counting objects:  64% (3819/5967)        
+2026-01-15T01:38:40.6109290Z remote: Counting objects:  65% (3879/5967)        
+2026-01-15T01:38:40.6109574Z remote: Counting objects:  66% (3939/5967)        
+2026-01-15T01:38:40.6109851Z remote: Counting objects:  67% (3998/5967)        
+2026-01-15T01:38:40.6110120Z remote: Counting objects:  68% (4058/5967)        
+2026-01-15T01:38:40.6110398Z remote: Counting objects:  69% (4118/5967)        
+2026-01-15T01:38:40.6110666Z remote: Counting objects:  70% (4177/5967)        
+2026-01-15T01:38:40.6110940Z remote: Counting objects:  71% (4237/5967)        
+2026-01-15T01:38:40.6111218Z remote: Counting objects:  72% (4297/5967)        
+2026-01-15T01:38:40.6111492Z remote: Counting objects:  73% (4356/5967)        
+2026-01-15T01:38:40.6111770Z remote: Counting objects:  74% (4416/5967)        
+2026-01-15T01:38:40.6112036Z remote: Counting objects:  75% (4476/5967)        
+2026-01-15T01:38:40.6112308Z remote: Counting objects:  76% (4535/5967)        
+2026-01-15T01:38:40.6112574Z remote: Counting objects:  77% (4595/5967)        
+2026-01-15T01:38:40.6112847Z remote: Counting objects:  78% (4655/5967)        
+2026-01-15T01:38:40.6113313Z remote: Counting objects:  79% (4714/5967)        
+2026-01-15T01:38:40.6113588Z remote: Counting objects:  80% (4774/5967)        
+2026-01-15T01:38:40.6113856Z remote: Counting objects:  81% (4834/5967)        
+2026-01-15T01:38:40.6114127Z remote: Counting objects:  82% (4893/5967)        
+2026-01-15T01:38:40.6114398Z remote: Counting objects:  83% (4953/5967)        
+2026-01-15T01:38:40.6114671Z remote: Counting objects:  84% (5013/5967)        
+2026-01-15T01:38:40.6114945Z remote: Counting objects:  85% (5072/5967)        
+2026-01-15T01:38:40.6115212Z remote: Counting objects:  86% (5132/5967)        
+2026-01-15T01:38:40.6115486Z remote: Counting objects:  87% (5192/5967)        
+2026-01-15T01:38:40.6115754Z remote: Counting objects:  88% (5251/5967)        
+2026-01-15T01:38:40.6116025Z remote: Counting objects:  89% (5311/5967)        
+2026-01-15T01:38:40.6116300Z remote: Counting objects:  90% (5371/5967)        
+2026-01-15T01:38:40.6116572Z remote: Counting objects:  91% (5430/5967)        
+2026-01-15T01:38:40.6116845Z remote: Counting objects:  92% (5490/5967)        
+2026-01-15T01:38:40.6117112Z remote: Counting objects:  93% (5550/5967)        
+2026-01-15T01:38:40.6117385Z remote: Counting objects:  94% (5609/5967)        
+2026-01-15T01:38:40.6117660Z remote: Counting objects:  95% (5669/5967)        
+2026-01-15T01:38:40.6118149Z remote: Counting objects:  96% (5729/5967)        
+2026-01-15T01:38:40.6118704Z remote: Counting objects:  97% (5788/5967)        
+2026-01-15T01:38:40.6118989Z remote: Counting objects:  98% (5848/5967)        
+2026-01-15T01:38:40.6119269Z remote: Counting objects:  99% (5908/5967)        
+2026-01-15T01:38:40.6119539Z remote: Counting objects: 100% (5967/5967)        
+2026-01-15T01:38:40.6119843Z remote: Counting objects: 100% (5967/5967), done.        
+2026-01-15T01:38:40.6120150Z remote: Compressing objects:   0% (1/3159)        
+2026-01-15T01:38:40.6120439Z remote: Compressing objects:   1% (32/3159)        
+2026-01-15T01:38:40.6120737Z remote: Compressing objects:   2% (64/3159)        
+2026-01-15T01:38:40.6249946Z remote: Compressing objects:   3% (95/3159)        
+2026-01-15T01:38:40.6275240Z remote: Compressing objects:   4% (127/3159)        
+2026-01-15T01:38:40.6322735Z remote: Compressing objects:   5% (158/3159)        
+2026-01-15T01:38:40.6376279Z remote: Compressing objects:   6% (190/3159)        
+2026-01-15T01:38:40.6428599Z remote: Compressing objects:   7% (222/3159)        
+2026-01-15T01:38:40.6484071Z remote: Compressing objects:   8% (253/3159)        
+2026-01-15T01:38:40.6497680Z remote: Compressing objects:   9% (285/3159)        
+2026-01-15T01:38:40.6513487Z remote: Compressing objects:  10% (316/3159)        
+2026-01-15T01:38:40.6577228Z remote: Compressing objects:  11% (348/3159)        
+2026-01-15T01:38:40.6640403Z remote: Compressing objects:  12% (380/3159)        
+2026-01-15T01:38:40.6701795Z remote: Compressing objects:  13% (411/3159)        
+2026-01-15T01:38:40.6753621Z remote: Compressing objects:  14% (443/3159)        
+2026-01-15T01:38:40.6839299Z remote: Compressing objects:  15% (474/3159)        
+2026-01-15T01:38:40.6906260Z remote: Compressing objects:  16% (506/3159)        
+2026-01-15T01:38:40.7027969Z remote: Compressing objects:  17% (538/3159)        
+2026-01-15T01:38:40.7090546Z remote: Compressing objects:  18% (569/3159)        
+2026-01-15T01:38:40.7176783Z remote: Compressing objects:  19% (601/3159)        
+2026-01-15T01:38:40.7257885Z remote: Compressing objects:  20% (632/3159)        
+2026-01-15T01:38:40.7334347Z remote: Compressing objects:  21% (664/3159)        
+2026-01-15T01:38:40.7398907Z remote: Compressing objects:  22% (695/3159)        
+2026-01-15T01:38:40.7497744Z remote: Compressing objects:  23% (727/3159)        
+2026-01-15T01:38:40.7639512Z remote: Compressing objects:  24% (759/3159)        
+2026-01-15T01:38:40.7688981Z remote: Compressing objects:  25% (790/3159)        
+2026-01-15T01:38:40.7780364Z remote: Compressing objects:  26% (822/3159)        
+2026-01-15T01:38:40.7893526Z remote: Compressing objects:  27% (853/3159)        
+2026-01-15T01:38:40.7988565Z remote: Compressing objects:  28% (885/3159)        
+2026-01-15T01:38:40.8070356Z remote: Compressing objects:  29% (917/3159)        
+2026-01-15T01:38:40.8148049Z remote: Compressing objects:  30% (948/3159)        
+2026-01-15T01:38:40.8212794Z remote: Compressing objects:  31% (980/3159)        
+2026-01-15T01:38:40.8295772Z remote: Compressing objects:  32% (1011/3159)        
+2026-01-15T01:38:40.8356307Z remote: Compressing objects:  33% (1043/3159)        
+2026-01-15T01:38:40.8438309Z remote: Compressing objects:  34% (1075/3159)        
+2026-01-15T01:38:40.8550034Z remote: Compressing objects:  35% (1106/3159)        
+2026-01-15T01:38:40.8615124Z remote: Compressing objects:  36% (1138/3159)        
+2026-01-15T01:38:40.8680667Z remote: Compressing objects:  37% (1169/3159)        
+2026-01-15T01:38:40.8721034Z remote: Compressing objects:  38% (1201/3159)        
+2026-01-15T01:38:40.8777507Z remote: Compressing objects:  39% (1233/3159)        
+2026-01-15T01:38:40.8849055Z remote: Compressing objects:  40% (1264/3159)        
+2026-01-15T01:38:40.8915257Z remote: Compressing objects:  41% (1296/3159)        
+2026-01-15T01:38:40.8977150Z remote: Compressing objects:  42% (1327/3159)        
+2026-01-15T01:38:40.9053237Z remote: Compressing objects:  43% (1359/3159)        
+2026-01-15T01:38:40.9184485Z remote: Compressing objects:  44% (1390/3159)        
+2026-01-15T01:38:40.9242437Z remote: Compressing objects:  45% (1422/3159)        
+2026-01-15T01:38:40.9283091Z remote: Compressing objects:  46% (1454/3159)        
+2026-01-15T01:38:40.9329650Z remote: Compressing objects:  47% (1485/3159)        
+2026-01-15T01:38:40.9436406Z remote: Compressing objects:  48% (1517/3159)        
+2026-01-15T01:38:40.9502869Z remote: Compressing objects:  49% (1548/3159)        
+2026-01-15T01:38:40.9626076Z remote: Compressing objects:  50% (1580/3159)        
+2026-01-15T01:38:40.9710371Z remote: Compressing objects:  51% (1612/3159)        
+2026-01-15T01:38:40.9753862Z remote: Compressing objects:  52% (1643/3159)        
+2026-01-15T01:38:40.9799699Z remote: Compressing objects:  53% (1675/3159)        
+2026-01-15T01:38:40.9852624Z remote: Compressing objects:  54% (1706/3159)        
+2026-01-15T01:38:40.9927104Z remote: Compressing objects:  55% (1738/3159)        
+2026-01-15T01:38:40.9962375Z remote: Compressing objects:  56% (1770/3159)        
+2026-01-15T01:38:41.0023936Z remote: Compressing objects:  57% (1801/3159)        
+2026-01-15T01:38:41.0094177Z remote: Compressing objects:  58% (1833/3159)        
+2026-01-15T01:38:41.0158167Z remote: Compressing objects:  59% (1864/3159)        
+2026-01-15T01:38:41.0257652Z remote: Compressing objects:  60% (1896/3159)        
+2026-01-15T01:38:41.0352543Z remote: Compressing objects:  61% (1927/3159)        
+2026-01-15T01:38:41.0353164Z remote: Compressing objects:  62% (1959/3159)        
+2026-01-15T01:38:41.0355008Z remote: Compressing objects:  63% (1991/3159)        
+2026-01-15T01:38:41.0356138Z remote: Compressing objects:  64% (2022/3159)        
+2026-01-15T01:38:41.0356947Z remote: Compressing objects:  65% (2054/3159)        
+2026-01-15T01:38:41.0359438Z remote: Compressing objects:  66% (2085/3159)        
+2026-01-15T01:38:41.0360650Z remote: Compressing objects:  67% (2117/3159)        
+2026-01-15T01:38:41.0361904Z remote: Compressing objects:  68% (2149/3159)        
+2026-01-15T01:38:41.0364954Z remote: Compressing objects:  69% (2180/3159)        
+2026-01-15T01:38:41.0367063Z remote: Compressing objects:  70% (2212/3159)        
+2026-01-15T01:38:41.0367691Z remote: Compressing objects:  71% (2243/3159)        
+2026-01-15T01:38:41.0371082Z remote: Compressing objects:  72% (2275/3159)        
+2026-01-15T01:38:41.0371730Z remote: Compressing objects:  73% (2307/3159)        
+2026-01-15T01:38:41.0372813Z remote: Compressing objects:  74% (2338/3159)        
+2026-01-15T01:38:41.0373415Z remote: Compressing objects:  75% (2370/3159)        
+2026-01-15T01:38:41.0376497Z remote: Compressing objects:  76% (2401/3159)        
+2026-01-15T01:38:41.0377517Z remote: Compressing objects:  77% (2433/3159)        
+2026-01-15T01:38:41.0378094Z remote: Compressing objects:  78% (2465/3159)        
+2026-01-15T01:38:41.0381187Z remote: Compressing objects:  79% (2496/3159)        
+2026-01-15T01:38:41.0381823Z remote: Compressing objects:  80% (2528/3159)        
+2026-01-15T01:38:41.0382416Z remote: Compressing objects:  81% (2559/3159)        
+2026-01-15T01:38:41.0382999Z remote: Compressing objects:  82% (2591/3159)        
+2026-01-15T01:38:41.0384052Z remote: Compressing objects:  83% (2622/3159)        
+2026-01-15T01:38:41.0484775Z remote: Compressing objects:  84% (2654/3159)        
+2026-01-15T01:38:41.0485368Z remote: Compressing objects:  85% (2686/3159)        
+2026-01-15T01:38:41.0485890Z remote: Compressing objects:  86% (2717/3159)        
+2026-01-15T01:38:41.0486339Z remote: Compressing objects:  87% (2749/3159)        
+2026-01-15T01:38:41.0486645Z remote: Compressing objects:  88% (2780/3159)        
+2026-01-15T01:38:41.0486950Z remote: Compressing objects:  89% (2812/3159)        
+2026-01-15T01:38:41.0487241Z remote: Compressing objects:  90% (2844/3159)        
+2026-01-15T01:38:41.0487536Z remote: Compressing objects:  91% (2875/3159)        
+2026-01-15T01:38:41.0487825Z remote: Compressing objects:  92% (2907/3159)        
+2026-01-15T01:38:41.0488108Z remote: Compressing objects:  93% (2938/3159)        
+2026-01-15T01:38:41.0488846Z remote: Compressing objects:  94% (2970/3159)        
+2026-01-15T01:38:41.0489153Z remote: Compressing objects:  95% (3002/3159)        
+2026-01-15T01:38:41.0489442Z remote: Compressing objects:  96% (3033/3159)        
+2026-01-15T01:38:41.0489747Z remote: Compressing objects:  97% (3065/3159)        
+2026-01-15T01:38:41.0490034Z remote: Compressing objects:  98% (3096/3159)        
+2026-01-15T01:38:41.0490331Z remote: Compressing objects:  99% (3128/3159)        
+2026-01-15T01:38:41.0490638Z remote: Compressing objects: 100% (3159/3159)        
+2026-01-15T01:38:41.0490957Z remote: Compressing objects: 100% (3159/3159), done.        
+2026-01-15T01:38:41.0815141Z Receiving objects:   0% (1/5967)
+2026-01-15T01:38:41.1053976Z Receiving objects:   1% (60/5967)
+2026-01-15T01:38:41.1067574Z Receiving objects:   2% (120/5967)
+2026-01-15T01:38:41.1083756Z Receiving objects:   3% (180/5967)
+2026-01-15T01:38:41.1094521Z Receiving objects:   4% (239/5967)
+2026-01-15T01:38:41.1281632Z Receiving objects:   5% (299/5967)
+2026-01-15T01:38:41.1294107Z Receiving objects:   6% (359/5967)
+2026-01-15T01:38:41.1302624Z Receiving objects:   7% (418/5967)
+2026-01-15T01:38:41.1315206Z Receiving objects:   8% (478/5967)
+2026-01-15T01:38:41.1327632Z Receiving objects:   9% (538/5967)
+2026-01-15T01:38:41.1339924Z Receiving objects:  10% (597/5967)
+2026-01-15T01:38:41.1353872Z Receiving objects:  11% (657/5967)
+2026-01-15T01:38:41.1365822Z Receiving objects:  12% (717/5967)
+2026-01-15T01:38:41.1373060Z Receiving objects:  13% (776/5967)
+2026-01-15T01:38:41.1384945Z Receiving objects:  14% (836/5967)
+2026-01-15T01:38:41.1389621Z Receiving objects:  15% (896/5967)
+2026-01-15T01:38:41.1392237Z Receiving objects:  16% (955/5967)
+2026-01-15T01:38:41.1393870Z Receiving objects:  17% (1015/5967)
+2026-01-15T01:38:41.1399223Z Receiving objects:  18% (1075/5967)
+2026-01-15T01:38:41.1509827Z Receiving objects:  19% (1134/5967)
+2026-01-15T01:38:41.1522540Z Receiving objects:  20% (1194/5967)
+2026-01-15T01:38:41.1527874Z Receiving objects:  21% (1254/5967)
+2026-01-15T01:38:41.1532864Z Receiving objects:  22% (1313/5967)
+2026-01-15T01:38:41.1540060Z Receiving objects:  23% (1373/5967)
+2026-01-15T01:38:41.1550650Z Receiving objects:  24% (1433/5967)
+2026-01-15T01:38:41.1752558Z Receiving objects:  25% (1492/5967)
+2026-01-15T01:38:41.1763947Z Receiving objects:  26% (1552/5967)
+2026-01-15T01:38:41.1774101Z Receiving objects:  27% (1612/5967)
+2026-01-15T01:38:41.1780946Z Receiving objects:  28% (1671/5967)
+2026-01-15T01:38:41.1802604Z Receiving objects:  29% (1731/5967)
+2026-01-15T01:38:41.1814760Z Receiving objects:  30% (1791/5967)
+2026-01-15T01:38:41.1820150Z Receiving objects:  31% (1850/5967)
+2026-01-15T01:38:41.1829996Z Receiving objects:  32% (1910/5967)
+2026-01-15T01:38:41.1851845Z Receiving objects:  33% (1970/5967)
+2026-01-15T01:38:41.1868900Z Receiving objects:  34% (2029/5967)
+2026-01-15T01:38:41.1878971Z Receiving objects:  35% (2089/5967)
+2026-01-15T01:38:41.1881906Z Receiving objects:  36% (2149/5967)
+2026-01-15T01:38:41.1886277Z Receiving objects:  37% (2208/5967)
+2026-01-15T01:38:41.1893770Z Receiving objects:  38% (2268/5967)
+2026-01-15T01:38:41.1898055Z Receiving objects:  39% (2328/5967)
+2026-01-15T01:38:41.1926755Z Receiving objects:  40% (2387/5967)
+2026-01-15T01:38:41.1929731Z Receiving objects:  41% (2447/5967)
+2026-01-15T01:38:41.1931796Z Receiving objects:  42% (2507/5967)
+2026-01-15T01:38:41.1934575Z Receiving objects:  43% (2566/5967)
+2026-01-15T01:38:41.1938017Z Receiving objects:  44% (2626/5967)
+2026-01-15T01:38:41.1944601Z Receiving objects:  45% (2686/5967)
+2026-01-15T01:38:41.1953531Z Receiving objects:  46% (2745/5967)
+2026-01-15T01:38:41.1959005Z Receiving objects:  47% (2805/5967)
+2026-01-15T01:38:41.1965247Z Receiving objects:  48% (2865/5967)
+2026-01-15T01:38:41.1968084Z Receiving objects:  49% (2924/5967)
+2026-01-15T01:38:41.1976387Z Receiving objects:  50% (2984/5967)
+2026-01-15T01:38:41.1982554Z Receiving objects:  51% (3044/5967)
+2026-01-15T01:38:41.1986504Z Receiving objects:  52% (3103/5967)
+2026-01-15T01:38:41.1989625Z Receiving objects:  53% (3163/5967)
+2026-01-15T01:38:41.1999467Z Receiving objects:  54% (3223/5967)
+2026-01-15T01:38:41.2012137Z Receiving objects:  55% (3282/5967)
+2026-01-15T01:38:41.2028214Z Receiving objects:  56% (3342/5967)
+2026-01-15T01:38:41.2041927Z Receiving objects:  57% (3402/5967)
+2026-01-15T01:38:41.2051257Z Receiving objects:  58% (3461/5967)
+2026-01-15T01:38:41.2071715Z Receiving objects:  59% (3521/5967)
+2026-01-15T01:38:41.2088318Z Receiving objects:  60% (3581/5967)
+2026-01-15T01:38:41.2100189Z Receiving objects:  61% (3640/5967)
+2026-01-15T01:38:41.2117936Z Receiving objects:  62% (3700/5967)
+2026-01-15T01:38:41.2123083Z Receiving objects:  63% (3760/5967)
+2026-01-15T01:38:41.2129361Z Receiving objects:  64% (3819/5967)
+2026-01-15T01:38:41.2140542Z Receiving objects:  65% (3879/5967)
+2026-01-15T01:38:41.2148098Z Receiving objects:  66% (3939/5967)
+2026-01-15T01:38:41.2152352Z Receiving objects:  67% (3998/5967)
+2026-01-15T01:38:41.2160589Z Receiving objects:  68% (4058/5967)
+2026-01-15T01:38:41.2168894Z Receiving objects:  69% (4118/5967)
+2026-01-15T01:38:41.2302763Z Receiving objects:  70% (4177/5967)
+2026-01-15T01:38:41.2310513Z Receiving objects:  71% (4237/5967)
+2026-01-15T01:38:41.2317521Z Receiving objects:  72% (4297/5967)
+2026-01-15T01:38:41.2326101Z Receiving objects:  73% (4356/5967)
+2026-01-15T01:38:41.2331523Z Receiving objects:  74% (4416/5967)
+2026-01-15T01:38:41.2335669Z Receiving objects:  75% (4476/5967)
+2026-01-15T01:38:41.2340099Z Receiving objects:  76% (4535/5967)
+2026-01-15T01:38:41.2342932Z Receiving objects:  77% (4595/5967)
+2026-01-15T01:38:41.2347558Z Receiving objects:  78% (4655/5967)
+2026-01-15T01:38:41.2350262Z Receiving objects:  79% (4714/5967)
+2026-01-15T01:38:41.2353473Z Receiving objects:  80% (4774/5967)
+2026-01-15T01:38:41.2357036Z Receiving objects:  81% (4834/5967)
+2026-01-15T01:38:41.2363252Z Receiving objects:  82% (4893/5967)
+2026-01-15T01:38:41.2368941Z Receiving objects:  83% (4953/5967)
+2026-01-15T01:38:41.2379322Z Receiving objects:  84% (5013/5967)
+2026-01-15T01:38:41.2398145Z Receiving objects:  85% (5072/5967)
+2026-01-15T01:38:41.2406372Z Receiving objects:  86% (5132/5967)
+2026-01-15T01:38:41.2421238Z Receiving objects:  87% (5192/5967)
+2026-01-15T01:38:41.2437309Z Receiving objects:  88% (5251/5967)
+2026-01-15T01:38:41.2451668Z Receiving objects:  89% (5311/5967)
+2026-01-15T01:38:41.2458719Z Receiving objects:  90% (5371/5967)
+2026-01-15T01:38:41.2468685Z Receiving objects:  91% (5430/5967)
+2026-01-15T01:38:41.3187252Z Receiving objects:  92% (5490/5967)
+2026-01-15T01:38:41.3192769Z Receiving objects:  93% (5550/5967)
+2026-01-15T01:38:41.3198149Z Receiving objects:  94% (5609/5967)
+2026-01-15T01:38:41.3205046Z Receiving objects:  95% (5669/5967)
+2026-01-15T01:38:41.3208996Z Receiving objects:  96% (5729/5967)
+2026-01-15T01:38:41.3214580Z Receiving objects:  97% (5788/5967)
+2026-01-15T01:38:41.3215237Z remote: Total 5967 (delta 2626), reused 4054 (delta 1769), pack-reused 0 (from 0)        
+2026-01-15T01:38:41.3228322Z Receiving objects:  98% (5848/5967)
+2026-01-15T01:38:41.3233528Z Receiving objects:  99% (5908/5967)
+2026-01-15T01:38:41.3234193Z Receiving objects: 100% (5967/5967)
+2026-01-15T01:38:41.3234798Z Receiving objects: 100% (5967/5967), 5.23 MiB | 19.90 MiB/s, done.
+2026-01-15T01:38:41.3249663Z Resolving deltas:   0% (0/2626)
+2026-01-15T01:38:41.3253690Z Resolving deltas:   1% (27/2626)
+2026-01-15T01:38:41.3260020Z Resolving deltas:   2% (53/2626)
+2026-01-15T01:38:41.3267209Z Resolving deltas:   3% (79/2626)
+2026-01-15T01:38:41.3275588Z Resolving deltas:   4% (106/2626)
+2026-01-15T01:38:41.3279484Z Resolving deltas:   5% (132/2626)
+2026-01-15T01:38:41.3283554Z Resolving deltas:   6% (158/2626)
+2026-01-15T01:38:41.3287126Z Resolving deltas:   7% (184/2626)
+2026-01-15T01:38:41.3292149Z Resolving deltas:   8% (211/2626)
+2026-01-15T01:38:41.3296231Z Resolving deltas:   9% (237/2626)
+2026-01-15T01:38:41.3300634Z Resolving deltas:  10% (263/2626)
+2026-01-15T01:38:41.3306363Z Resolving deltas:  11% (289/2626)
+2026-01-15T01:38:41.3312507Z Resolving deltas:  12% (316/2626)
+2026-01-15T01:38:41.3317050Z Resolving deltas:  13% (342/2626)
+2026-01-15T01:38:41.3324604Z Resolving deltas:  14% (368/2626)
+2026-01-15T01:38:41.3329331Z Resolving deltas:  15% (394/2626)
+2026-01-15T01:38:41.3332848Z Resolving deltas:  16% (422/2626)
+2026-01-15T01:38:41.3339117Z Resolving deltas:  17% (447/2626)
+2026-01-15T01:38:41.3342780Z Resolving deltas:  18% (473/2626)
+2026-01-15T01:38:41.3344950Z Resolving deltas:  19% (499/2626)
+2026-01-15T01:38:41.3351101Z Resolving deltas:  20% (526/2626)
+2026-01-15T01:38:41.3356489Z Resolving deltas:  21% (552/2626)
+2026-01-15T01:38:41.3359980Z Resolving deltas:  22% (579/2626)
+2026-01-15T01:38:41.3366584Z Resolving deltas:  23% (604/2626)
+2026-01-15T01:38:41.3371720Z Resolving deltas:  24% (631/2626)
+2026-01-15T01:38:41.3377684Z Resolving deltas:  25% (658/2626)
+2026-01-15T01:38:41.3384404Z Resolving deltas:  26% (683/2626)
+2026-01-15T01:38:41.3387498Z Resolving deltas:  27% (710/2626)
+2026-01-15T01:38:41.3388343Z Resolving deltas:  28% (736/2626)
+2026-01-15T01:38:41.3389621Z Resolving deltas:  29% (762/2626)
+2026-01-15T01:38:41.3392587Z Resolving deltas:  30% (788/2626)
+2026-01-15T01:38:41.3394715Z Resolving deltas:  31% (815/2626)
+2026-01-15T01:38:41.3401888Z Resolving deltas:  32% (841/2626)
+2026-01-15T01:38:41.3411541Z Resolving deltas:  33% (868/2626)
+2026-01-15T01:38:41.3415815Z Resolving deltas:  34% (893/2626)
+2026-01-15T01:38:41.3420621Z Resolving deltas:  35% (920/2626)
+2026-01-15T01:38:41.3427552Z Resolving deltas:  36% (946/2626)
+2026-01-15T01:38:41.3430458Z Resolving deltas:  37% (972/2626)
+2026-01-15T01:38:41.3433725Z Resolving deltas:  38% (998/2626)
+2026-01-15T01:38:41.3435690Z Resolving deltas:  39% (1025/2626)
+2026-01-15T01:38:41.3440662Z Resolving deltas:  40% (1051/2626)
+2026-01-15T01:38:41.3445720Z Resolving deltas:  41% (1078/2626)
+2026-01-15T01:38:41.3451830Z Resolving deltas:  42% (1103/2626)
+2026-01-15T01:38:41.3458904Z Resolving deltas:  43% (1131/2626)
+2026-01-15T01:38:41.3464203Z Resolving deltas:  44% (1156/2626)
+2026-01-15T01:38:41.3468902Z Resolving deltas:  45% (1182/2626)
+2026-01-15T01:38:41.3473902Z Resolving deltas:  46% (1208/2626)
+2026-01-15T01:38:41.3480815Z Resolving deltas:  47% (1235/2626)
+2026-01-15T01:38:41.3486396Z Resolving deltas:  48% (1261/2626)
+2026-01-15T01:38:41.3491154Z Resolving deltas:  49% (1287/2626)
+2026-01-15T01:38:41.3509211Z Resolving deltas:  50% (1313/2626)
+2026-01-15T01:38:41.3517531Z Resolving deltas:  51% (1340/2626)
+2026-01-15T01:38:41.3526335Z Resolving deltas:  52% (1366/2626)
+2026-01-15T01:38:41.3530711Z Resolving deltas:  53% (1392/2626)
+2026-01-15T01:38:41.3535040Z Resolving deltas:  54% (1419/2626)
+2026-01-15T01:38:41.3540242Z Resolving deltas:  55% (1445/2626)
+2026-01-15T01:38:41.3543890Z Resolving deltas:  56% (1471/2626)
+2026-01-15T01:38:41.3553923Z Resolving deltas:  57% (1497/2626)
+2026-01-15T01:38:41.3560051Z Resolving deltas:  58% (1525/2626)
+2026-01-15T01:38:41.3573067Z Resolving deltas:  59% (1550/2626)
+2026-01-15T01:38:41.3576669Z Resolving deltas:  60% (1576/2626)
+2026-01-15T01:38:41.3578865Z Resolving deltas:  61% (1603/2626)
+2026-01-15T01:38:41.3580581Z Resolving deltas:  62% (1629/2626)
+2026-01-15T01:38:41.3581796Z Resolving deltas:  63% (1655/2626)
+2026-01-15T01:38:41.3583396Z Resolving deltas:  64% (1681/2626)
+2026-01-15T01:38:41.3584949Z Resolving deltas:  65% (1707/2626)
+2026-01-15T01:38:41.3587346Z Resolving deltas:  66% (1734/2626)
+2026-01-15T01:38:41.3588967Z Resolving deltas:  67% (1760/2626)
+2026-01-15T01:38:41.3596177Z Resolving deltas:  68% (1786/2626)
+2026-01-15T01:38:41.3602126Z Resolving deltas:  69% (1813/2626)
+2026-01-15T01:38:41.3607034Z Resolving deltas:  70% (1839/2626)
+2026-01-15T01:38:41.3613730Z Resolving deltas:  71% (1866/2626)
+2026-01-15T01:38:41.3620892Z Resolving deltas:  72% (1891/2626)
+2026-01-15T01:38:41.3627580Z Resolving deltas:  73% (1917/2626)
+2026-01-15T01:38:41.3634402Z Resolving deltas:  74% (1944/2626)
+2026-01-15T01:38:41.3639662Z Resolving deltas:  75% (1970/2626)
+2026-01-15T01:38:41.3644910Z Resolving deltas:  76% (1996/2626)
+2026-01-15T01:38:41.3654656Z Resolving deltas:  77% (2023/2626)
+2026-01-15T01:38:41.3660782Z Resolving deltas:  78% (2050/2626)
+2026-01-15T01:38:41.3663770Z Resolving deltas:  79% (2075/2626)
+2026-01-15T01:38:41.3672125Z Resolving deltas:  80% (2101/2626)
+2026-01-15T01:38:41.3680572Z Resolving deltas:  81% (2128/2626)
+2026-01-15T01:38:41.3685609Z Resolving deltas:  82% (2154/2626)
+2026-01-15T01:38:41.3689989Z Resolving deltas:  83% (2180/2626)
+2026-01-15T01:38:41.3696636Z Resolving deltas:  84% (2206/2626)
+2026-01-15T01:38:41.3702228Z Resolving deltas:  85% (2233/2626)
+2026-01-15T01:38:41.3706240Z Resolving deltas:  86% (2259/2626)
+2026-01-15T01:38:41.3707859Z Resolving deltas:  87% (2285/2626)
+2026-01-15T01:38:41.3713235Z Resolving deltas:  88% (2311/2626)
+2026-01-15T01:38:41.3717207Z Resolving deltas:  89% (2338/2626)
+2026-01-15T01:38:41.3720218Z Resolving deltas:  90% (2364/2626)
+2026-01-15T01:38:41.3724742Z Resolving deltas:  91% (2391/2626)
+2026-01-15T01:38:41.3733520Z Resolving deltas:  92% (2416/2626)
+2026-01-15T01:38:41.3740701Z Resolving deltas:  93% (2443/2626)
+2026-01-15T01:38:41.3749113Z Resolving deltas:  94% (2469/2626)
+2026-01-15T01:38:41.3757071Z Resolving deltas:  95% (2495/2626)
+2026-01-15T01:38:41.3760825Z Resolving deltas:  96% (2521/2626)
+2026-01-15T01:38:41.3766095Z Resolving deltas:  97% (2548/2626)
+2026-01-15T01:38:41.3771763Z Resolving deltas:  98% (2574/2626)
+2026-01-15T01:38:41.3780516Z Resolving deltas:  99% (2600/2626)
+2026-01-15T01:38:41.3781127Z Resolving deltas: 100% (2626/2626)
+2026-01-15T01:38:41.3781667Z Resolving deltas: 100% (2626/2626), done.
+2026-01-15T01:38:41.3926955Z From https://github.com/apache/incubator-seata
+2026-01-15T01:38:41.3927690Z  * [new ref]         fdbbbee6d424ebeb6a1c747a72ea4c69edbac386 -> origin/2.6.0
+2026-01-15T01:38:41.3965380Z ##[endgroup]
+2026-01-15T01:38:41.3965928Z ##[group]Determining the checkout info
+2026-01-15T01:38:41.3968734Z ##[endgroup]
+2026-01-15T01:38:41.3969253Z ##[group]Checking out the ref
+2026-01-15T01:38:41.3974575Z [command]/usr/bin/git checkout --progress --force -B 2.6.0 refs/remotes/origin/2.6.0
+2026-01-15T01:38:41.6929270Z Switched to a new branch '2.6.0'
+2026-01-15T01:38:41.6930987Z branch '2.6.0' set up to track 'origin/2.6.0'.
+2026-01-15T01:38:41.6948157Z ##[endgroup]
+2026-01-15T01:38:41.6985788Z [command]/usr/bin/git log -1 --format='%H'
+2026-01-15T01:38:41.7008831Z 'fdbbbee6d424ebeb6a1c747a72ea4c69edbac386'
+2026-01-15T01:38:41.7183448Z ##[group]Run actions/setup-python@v2
+2026-01-15T01:38:41.7183707Z with:
+2026-01-15T01:38:41.7183884Z   python-version: 3.12
+2026-01-15T01:38:41.7184422Z   token: ***
+2026-01-15T01:38:41.7184601Z ##[endgroup]
+2026-01-15T01:38:41.8394789Z Successfully setup CPython (3.12.12)
+2026-01-15T01:38:41.8589713Z ##[group]Run actions/setup-java@v3.12.0
+2026-01-15T01:38:41.8589981Z with:
+2026-01-15T01:38:41.8590156Z   distribution: zulu
+2026-01-15T01:38:41.8590349Z   java-version: 8
+2026-01-15T01:38:41.8590537Z   java-package: jdk
+2026-01-15T01:38:41.8590719Z   check-latest: false
+2026-01-15T01:38:41.8590911Z   server-id: github
+2026-01-15T01:38:41.8591098Z   server-username: GITHUB_ACTOR
+2026-01-15T01:38:41.8591326Z   server-password: GITHUB_TOKEN
+2026-01-15T01:38:41.8591546Z   overwrite-settings: true
+2026-01-15T01:38:41.8591753Z   job-status: success
+2026-01-15T01:38:41.8592082Z   token: ***
+2026-01-15T01:38:41.8592248Z env:
+2026-01-15T01:38:41.8592486Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.12/x64
+2026-01-15T01:38:41.8592857Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.12/x64/lib
+2026-01-15T01:38:41.8593153Z ##[endgroup]
+2026-01-15T01:38:42.0159551Z ##[group]Installed distributions
+2026-01-15T01:38:42.0183921Z Trying to resolve the latest version from remote
+2026-01-15T01:38:42.1970874Z Resolved latest version as 8.0.472+8
+2026-01-15T01:38:42.1971395Z Trying to download...
+2026-01-15T01:38:42.1972235Z Downloading Java 8.0.472+8 (Zulu) from https://cdn.azul.com/zulu/bin/zulu8.90.0.19-ca-jdk8.0.472-linux_x64.tar.gz ...
+2026-01-15T01:38:43.6039884Z Extracting Java archive...
+2026-01-15T01:38:43.6157064Z [command]/usr/bin/tar xz --warning=no-unknown-keyword -C /home/runner/work/_temp/027a702c-f24f-41d0-95d7-9da7df9f7ec5 -f /home/runner/work/_temp/8e67907d-8beb-4fbd-9aa8-0077d626980d
+2026-01-15T01:38:45.4087083Z Java 8.0.472+8 was downloaded
+2026-01-15T01:38:45.4087383Z Setting Java 8.0.472+8 as the default
+2026-01-15T01:38:45.4099799Z Creating toolchains.xml for JDK version 8 from zulu
+2026-01-15T01:38:45.4174418Z Writing to /home/runner/.m2/toolchains.xml
+2026-01-15T01:38:45.4174962Z 
+2026-01-15T01:38:45.4175102Z Java configuration:
+2026-01-15T01:38:45.4175483Z   Distribution: zulu
+2026-01-15T01:38:45.4175812Z   Version: 8.0.472+8
+2026-01-15T01:38:45.4176231Z   Path: /opt/hostedtoolcache/Java_Zulu_jdk/8.0.472-8/x64
+2026-01-15T01:38:45.4176602Z 
+2026-01-15T01:38:45.4177075Z ##[endgroup]
+2026-01-15T01:38:45.4190316Z Creating settings.xml with server-id: github
+2026-01-15T01:38:45.4195736Z Writing to /home/runner/.m2/settings.xml
+2026-01-15T01:38:45.4325434Z ##[group]Run ./mvnw -T 4C clean test -P args-for-client-test -Dspring-boot.version=2.6.15         -D spring-framework-bom.version=5.3.27 -e -B -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn;
+2026-01-15T01:38:45.4327097Z [36;1m./mvnw -T 4C clean test -P args-for-client-test -Dspring-boot.version=2.6.15         -D spring-framework-bom.version=5.3.27 -e -B -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn;[0m
+2026-01-15T01:38:45.4424786Z shell: /usr/bin/bash -e {0}
+2026-01-15T01:38:45.4425036Z env:
+2026-01-15T01:38:45.4425303Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.12/x64
+2026-01-15T01:38:45.4425702Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.12/x64/lib
+2026-01-15T01:38:45.4426145Z   JAVA_HOME: /opt/hostedtoolcache/Java_Zulu_jdk/8.0.472-8/x64
+2026-01-15T01:38:45.4426530Z   JAVA_HOME_8_X64: /opt/hostedtoolcache/Java_Zulu_jdk/8.0.472-8/x64
+2026-01-15T01:38:45.4426884Z ##[endgroup]
+2026-01-15T01:38:47.2063492Z [INFO] Error stacktraces are turned on.
+2026-01-15T01:38:47.2741737Z [INFO] Scanning for projects...
+2026-01-15T01:38:56.2789663Z [INFO] ------------------------------------------------------------------------
+2026-01-15T01:38:56.2790706Z [INFO] Detecting the operating system and CPU architecture
+2026-01-15T01:38:56.2791631Z [INFO] ------------------------------------------------------------------------
+2026-01-15T01:38:56.2792384Z [INFO] os.detected.name: linux
+2026-01-15T01:38:56.2792941Z [INFO] os.detected.arch: x86_64
+2026-01-15T01:38:56.2793718Z [INFO] os.detected.version: 6.11
+2026-01-15T01:38:56.2794786Z [INFO] os.detected.version.major: 6
+2026-01-15T01:38:56.2798742Z [INFO] os.detected.version.minor: 11
+2026-01-15T01:38:56.2799232Z [INFO] os.detected.release: ubuntu
+2026-01-15T01:38:56.2799681Z [INFO] os.detected.release.version: 24.04
+2026-01-15T01:38:56.2800185Z [INFO] os.detected.release.like.ubuntu: true
+2026-01-15T01:38:56.2800704Z [INFO] os.detected.release.like.debian: true
+2026-01-15T01:38:56.2811071Z [INFO] os.detected.classifier: linux-x86_64
+2026-01-15T01:38:56.3414081Z [INFO] ------------------------------------------------------------------------
+2026-01-15T01:38:56.3414736Z [INFO] Reactor Build Order:
+2026-01-15T01:38:56.3415099Z [INFO] 
+2026-01-15T01:38:56.3430191Z [INFO] Seata Build 2.6.0-SNAPSHOT                                         [pom]
+2026-01-15T01:38:56.3430933Z [INFO] Seata Parent POM 2.6.0-SNAPSHOT                                    [pom]
+2026-01-15T01:38:56.3431726Z [INFO] seata-common 2.6.0-SNAPSHOT                                        [jar]
+2026-01-15T01:38:56.3433088Z [INFO] seata-config 2.6.0-SNAPSHOT                                        [pom]
+2026-01-15T01:38:56.3434479Z [INFO] seata-config-core 2.6.0-SNAPSHOT                                   [jar]
+2026-01-15T01:38:56.3436993Z [INFO] seata-config-custom 2.6.0-SNAPSHOT                                 [jar]
+2026-01-15T01:38:56.3438771Z [INFO] seata-config-apollo 2.6.0-SNAPSHOT                                 [jar]
+2026-01-15T01:38:56.3440493Z [INFO] seata-config-nacos 2.6.0-SNAPSHOT                                  [jar]
+2026-01-15T01:38:56.3442482Z [INFO] seata-config-zk 2.6.0-SNAPSHOT                                     [jar]
+2026-01-15T01:38:56.3444072Z [INFO] seata-config-consul 2.6.0-SNAPSHOT                                 [jar]
+2026-01-15T01:38:56.3454863Z [INFO] seata-config-etcd3 2.6.0-SNAPSHOT                                  [jar]
+2026-01-15T01:38:56.3456159Z [INFO] seata-config-spring-cloud 2.6.0-SNAPSHOT                           [jar]
+2026-01-15T01:38:56.3457393Z [INFO] seata-discovery 2.6.0-SNAPSHOT                                     [pom]
+2026-01-15T01:38:56.3458885Z [INFO] seata-discovery-core 2.6.0-SNAPSHOT                                [jar]
+2026-01-15T01:38:56.3460449Z [INFO] seata-core 2.6.0-SNAPSHOT                                          [jar]
+2026-01-15T01:38:56.3461465Z [INFO] seata-discovery-custom 2.6.0-SNAPSHOT                              [jar]
+2026-01-15T01:38:56.3466156Z [INFO] seata-discovery-consul 2.6.0-SNAPSHOT                              [jar]
+2026-01-15T01:38:56.3467501Z [INFO] seata-discovery-eureka 2.6.0-SNAPSHOT                              [jar]
+2026-01-15T01:38:56.3468934Z [INFO] seata-discovery-nacos 2.6.0-SNAPSHOT                               [jar]
+2026-01-15T01:38:56.3470330Z [INFO] seata-discovery-redis 2.6.0-SNAPSHOT                               [jar]
+2026-01-15T01:38:56.3472241Z [INFO] seata-discovery-sofa 2.6.0-SNAPSHOT                                [jar]
+2026-01-15T01:38:56.3473078Z [INFO] seata-discovery-raft 2.6.0-SNAPSHOT                                [jar]
+2026-01-15T01:38:56.3473907Z [INFO] seata-discovery-zk 2.6.0-SNAPSHOT                                  [jar]
+2026-01-15T01:38:56.3474724Z [INFO] seata-discovery-etcd3 2.6.0-SNAPSHOT                               [jar]
+2026-01-15T01:38:56.3475584Z [INFO] seata-discovery-namingserver 2.6.0-SNAPSHOT                        [jar]
+2026-01-15T01:38:56.3476855Z [INFO] seata-tm 2.6.0-SNAPSHOT                                            [jar]
+2026-01-15T01:38:56.3478111Z [INFO] seata-extensions 2.6.0-SNAPSHOT                                    [pom]
+2026-01-15T01:38:56.3481187Z [INFO] seata-rpc 2.6.0-SNAPSHOT                                           [pom]
+2026-01-15T01:38:56.3481967Z [INFO] seata-rpc-core 2.6.0-SNAPSHOT                                      [jar]
+2026-01-15T01:38:56.3482742Z [INFO] seata-brpc 2.6.0-SNAPSHOT                                          [jar]
+2026-01-15T01:38:56.3483943Z [INFO] seata-http 2.6.0-SNAPSHOT                                          [jar]
+2026-01-15T01:38:56.3485096Z [INFO] seata-http-jakarta 2.6.0-SNAPSHOT                                  [jar]
+2026-01-15T01:38:56.3486700Z [INFO] seata-dubbo-alibaba 2.6.0-SNAPSHOT                                 [jar]
+2026-01-15T01:38:56.3487864Z [INFO] seata-sofa-rpc 2.6.0-SNAPSHOT                                      [jar]
+2026-01-15T01:38:56.3489053Z [INFO] seata-motan 2.6.0-SNAPSHOT                                         [jar]
+2026-01-15T01:38:56.3491315Z [INFO] seata-rm 2.6.0-SNAPSHOT                                            [jar]
+2026-01-15T01:38:56.3493140Z [INFO] seata-sqlparser 2.6.0-SNAPSHOT                                     [pom]
+2026-01-15T01:38:56.3495094Z [INFO] seata-sqlparser-core 2.6.0-SNAPSHOT                                [jar]
+2026-01-15T01:38:56.3497097Z [INFO] seata-compressor 2.6.0-SNAPSHOT                                    [pom]
+2026-01-15T01:38:56.3498253Z [INFO] seata-compressor-gzip 2.6.0-SNAPSHOT                               [jar]
+2026-01-15T01:38:56.3499952Z [INFO] seata-compressor-bzip2 2.6.0-SNAPSHOT                              [jar]
+2026-01-15T01:38:56.3501930Z [INFO] seata-compressor-zip 2.6.0-SNAPSHOT                                [jar]
+2026-01-15T01:38:56.3512387Z [INFO] seata-compressor-lz4 2.6.0-SNAPSHOT                                [jar]
+2026-01-15T01:38:56.3513955Z [INFO] seata-compressor-deflater 2.6.0-SNAPSHOT                           [jar]
+2026-01-15T01:38:56.3515437Z [INFO] seata-compressor-zstd 2.6.0-SNAPSHOT                               [jar]
+2026-01-15T01:38:56.3516963Z [INFO] seata-compressor-all 2.6.0-SNAPSHOT                                [jar]
+2026-01-15T01:38:56.3518319Z [INFO] seata-sqlparser-druid 2.6.0-SNAPSHOT                               [jar]
+2026-01-15T01:38:56.3519840Z [INFO] seata-rm-datasource 2.6.0-SNAPSHOT                                 [jar]
+2026-01-15T01:38:56.3521537Z [INFO] seata-serializer 2.6.0-SNAPSHOT                                    [pom]
+2026-01-15T01:38:56.3522791Z [INFO] seata-serializer-seata 2.6.0-SNAPSHOT                              [jar]
+2026-01-15T01:38:56.3524160Z [INFO] seata-serializer-protobuf 2.6.0-SNAPSHOT                           [jar]
+2026-01-15T01:38:56.3525410Z [INFO] seata-serializer-kryo 2.6.0-SNAPSHOT                               [jar]
+2026-01-15T01:38:56.3526775Z [INFO] seata-serializer-hessian 2.6.0-SNAPSHOT                            [jar]
+2026-01-15T01:38:56.3528277Z [INFO] seata-serializer-fastjson2 2.6.0-SNAPSHOT                          [jar]
+2026-01-15T01:38:56.3529850Z [INFO] seata-serializer-fory 2.6.0-SNAPSHOT                               [jar]
+2026-01-15T01:38:56.3531063Z [INFO] seata-serializer-all 2.6.0-SNAPSHOT                                [jar]
+2026-01-15T01:38:56.3532354Z [INFO] seata-integration-tx-api 2.6.0-SNAPSHOT                            [jar]
+2026-01-15T01:38:56.3533518Z [INFO] seata-tcc 2.6.0-SNAPSHOT                                           [jar]
+2026-01-15T01:38:56.3534841Z [INFO] seata-messaging 2.6.0-SNAPSHOT                                     [pom]
+2026-01-15T01:38:56.3537035Z [INFO] seata-rocketmq 2.6.0-SNAPSHOT                                      [jar]
+2026-01-15T01:38:56.3537885Z [INFO] seata-sqlparser-antlr 2.6.0-SNAPSHOT                               [jar]
+2026-01-15T01:38:56.3538853Z [INFO] seata-spring 2.6.0-SNAPSHOT                                        [jar]
+2026-01-15T01:38:56.3539606Z [INFO] seata-grpc 2.6.0-SNAPSHOT                                          [jar]
+2026-01-15T01:38:56.3540797Z [INFO] seata-hsf 2.6.0-SNAPSHOT                                           [jar]
+2026-01-15T01:38:56.3541948Z [INFO] seata-saga 2.6.0-SNAPSHOT                                          [pom]
+2026-01-15T01:38:56.3543277Z [INFO] seata-saga-processctrl 2.6.0-SNAPSHOT                              [jar]
+2026-01-15T01:38:56.3544496Z [INFO] seata-saga-statelang 2.6.0-SNAPSHOT                                [jar]
+2026-01-15T01:38:56.3545677Z [INFO] seata-saga-engine-store 2.6.0-SNAPSHOT                             [jar]
+2026-01-15T01:38:56.3548789Z [INFO] seata-saga-engine 2.6.0-SNAPSHOT                                   [jar]
+2026-01-15T01:38:56.3549949Z [INFO] seata-saga-rm 2.6.0-SNAPSHOT                                       [jar]
+2026-01-15T01:38:56.3550797Z [INFO] seata-saga-spring 2.6.0-SNAPSHOT                                   [jar]
+2026-01-15T01:38:56.3552245Z [INFO] seata-saga-annotation 2.6.0-SNAPSHOT                               [jar]
+2026-01-15T01:38:56.3553591Z [INFO] seata-metrics 2.6.0-SNAPSHOT                                       [pom]
+2026-01-15T01:38:56.3554858Z [INFO] seata-metrics-api 2.6.0-SNAPSHOT                                   [jar]
+2026-01-15T01:38:56.3556149Z [INFO] seata-all 2.6.0-SNAPSHOT                                           [jar]
+2026-01-15T01:38:56.3569789Z [INFO] Seata All-in-one 2.6.0-SNAPSHOT                                    [jar]
+2026-01-15T01:38:56.3570551Z [INFO] Seata bom 2.6.0-SNAPSHOT                                           [pom]
+2026-01-15T01:38:56.3571345Z [INFO] seata-config-all 2.6.0-SNAPSHOT                                    [jar]
+2026-01-15T01:38:56.3572150Z [INFO] Seata dependencies 2.6.0-SNAPSHOT                                  [pom]
+2026-01-15T01:38:56.3572993Z [INFO] seata-discovery-all 2.6.0-SNAPSHOT                                 [jar]
+2026-01-15T01:38:56.3573794Z [INFO] seata-dubbo 2.6.0-SNAPSHOT                                         [pom]
+2026-01-15T01:38:56.3574628Z [INFO] seata-spring-autoconfigure 2.6.0-SNAPSHOT                          [pom]
+2026-01-15T01:38:56.3575537Z [INFO] seata-spring-autoconfigure-core 2.6.0-SNAPSHOT                     [jar]
+2026-01-15T01:38:56.3576439Z [INFO] seata-spring-autoconfigure-server 2.6.0-SNAPSHOT                   [jar]
+2026-01-15T01:38:56.3577305Z [INFO] seata-metrics-core 2.6.0-SNAPSHOT                                  [jar]
+2026-01-15T01:38:56.3588043Z [INFO] seata-metrics-registry-compact 2.6.0-SNAPSHOT                      [jar]
+2026-01-15T01:38:56.3596559Z [INFO] seata-metrics-exporter-prometheus 2.6.0-SNAPSHOT                   [jar]
+2026-01-15T01:38:56.3597380Z [INFO] seata-metrics-all 2.6.0-SNAPSHOT                                   [jar]
+2026-01-15T01:38:56.3598174Z [INFO] seata-server 2.6.0-SNAPSHOT                                        [jar]
+2026-01-15T01:38:56.3599195Z [INFO] seata-apm 2.6.0-SNAPSHOT                                           [pom]
+2026-01-15T01:38:56.3600029Z [INFO] apm-seata-skywalking-plugin 2.6.0-SNAPSHOT                         [jar]
+2026-01-15T01:38:56.3601056Z [INFO] seata-mock-server 2.6.0-SNAPSHOT                                   [jar]
+2026-01-15T01:38:56.3601799Z [INFO] seata-spring-autoconfigure-client 2.6.0-SNAPSHOT                   [jar]
+2026-01-15T01:38:56.3603287Z [INFO] seata-spring-boot-starter 2.6.0-SNAPSHOT                           [jar]
+2026-01-15T01:38:56.3604430Z [INFO] seata-test 2.6.0-SNAPSHOT                                          [jar]
+2026-01-15T01:38:56.3605593Z [INFO] seata-test-old-version                                             [jar]
+2026-01-15T01:38:56.3606693Z [INFO] seata-distribution 2.6.0-SNAPSHOT                                  [pom]
+2026-01-15T01:38:56.3793251Z [INFO] 
+2026-01-15T01:38:56.3796500Z [INFO] Using the MultiThreadedBuilder implementation with a thread count of 16
+2026-01-15T01:38:56.3842994Z [INFO] 
+2026-01-15T01:38:56.3848618Z [INFO] --------------------< org.apache.seata:seata-build >--------------------
+2026-01-15T01:38:56.3849694Z [INFO] Building Seata Build 2.6.0-SNAPSHOT 2.6.0-SNAPSHOT                [1/97]
+2026-01-15T01:38:56.3869459Z [INFO] --------------------------------[ pom ]---------------------------------
+2026-01-15T01:38:57.8832597Z [INFO] 
+2026-01-15T01:38:57.8835095Z [INFO] --- maven-clean-plugin:3.1.0:clean (default-clean) @ seata-build ---
+2026-01-15T01:38:59.7619204Z [INFO] Deleting /home/runner/work/incubator-seata/incubator-seata/build (includes = [*-pom.xml, **/db_store/**, **/sessionStore/**, **/root.data], excludes = [])
+2026-01-15T01:38:59.7659580Z [INFO] 
+2026-01-15T01:38:59.7661523Z [INFO] --- maven-enforcer-plugin:3.0.0-M3:enforce (enforce-maven-version) @ seata-build ---
+2026-01-15T01:39:05.6260936Z [INFO] 
+2026-01-15T01:39:05.6264670Z [INFO] --- maven-enforcer-plugin:3.0.0-M3:enforce (enforce-maven) @ seata-build ---
+2026-01-15T01:39:05.6281733Z [INFO] 
+2026-01-15T01:39:05.6283363Z [INFO] --- git-commit-id-plugin:4.9.10:revision (get-the-git-infos) @ seata-build ---
+2026-01-15T01:39:07.7707225Z [INFO] skip is enabled, skipping execution!
+2026-01-15T01:39:07.7708170Z [INFO] 
+2026-01-15T01:39:07.7709364Z [INFO] --- maven-remote-resources-plugin:1.5:process (process-resource-bundles) @ seata-build ---
+2026-01-15T01:39:15.6161004Z [INFO] 
+2026-01-15T01:39:15.6171598Z [INFO] -------------------< org.apache.seata:seata-parent >--------------------
+2026-01-15T01:39:15.6174562Z [INFO] Building Seata Parent POM 2.6.0-SNAPSHOT 2.6.0-SNAPSHOT           [2/97]
+2026-01-15T01:39:15.6175392Z [INFO] --------------------------------[ pom ]---------------------------------
+2026-01-15T01:39:15.6175965Z [INFO] 
+2026-01-15T01:39:15.6176444Z [INFO] ---------------------< org.apache.seata:seata-bom >---------------------
+2026-01-15T01:39:15.6185136Z [INFO] Building Seata bom 2.6.0-SNAPSHOT 2.6.0-SNAPSHOT                  [3/97]
+2026-01-15T01:39:15.6186168Z [INFO] --------------------------------[ pom ]---------------------------------
+2026-01-15T01:39:15.6187620Z [INFO] 
+2026-01-15T01:39:15.6191561Z [INFO] ----------------< org.apache.seata:seata-dependencies >-----------------
+2026-01-15T01:39:15.6193371Z [INFO] Building Seata dependencies 2.6.0-SNAPSHOT 2.6.0-SNAPSHOT         [4/97]
+2026-01-15T01:39:15.6194151Z [INFO] --------------------------------[ pom ]---------------------------------
+2026-01-15T01:39:16.2295109Z [INFO] 
+2026-01-15T01:39:16.2295869Z [INFO] --- maven-clean-plugin:3.1.0:clean (default-clean) @ seata-bom ---
+2026-01-15T01:39:16.2343740Z [INFO] 
+2026-01-15T01:39:16.2344349Z [INFO] --- maven-clean-plugin:3.1.0:clean (default-clean) @ seata-dependencies ---
+2026-01-15T01:39:16.2372859Z [INFO] Deleting /home/runner/work/incubator-seata/incubator-seata/bom (includes = [*-pom.xml, **/db_store/**, **/sessionStore/**, **/root.data], excludes = [])
+2026-01-15T01:39:16.2383596Z [INFO] Deleting /home/runner/work/incubator-seata/incubator-seata/dependencies (includes = [*-pom.xml, **/db_store/**, **/sessionStore/**, **/root.data], excludes = [])
+2026-01-15T01:39:16.2384853Z [INFO] 
+2026-01-15T01:39:16.2385494Z [INFO] --- maven-enforcer-plugin:3.0.0-M3:enforce (enforce-maven-version) @ seata-dependencies ---
+2026-01-15T01:39:16.2392232Z [INFO] 
+2026-01-15T01:39:16.2396580Z [INFO] --- maven-enforcer-plugin:3.0.0-M3:enforce (enforce-maven-version) @ seata-bom ---
+2026-01-15T01:39:16.2399923Z [INFO] 
+2026-01-15T01:39:16.2400507Z [INFO] --- maven-enforcer-plugin:3.0.0-M3:enforce (enforce-maven) @ seata-dependencies ---
+2026-01-15T01:39:16.2405294Z [INFO] 
+2026-01-15T01:39:16.2417261Z [INFO] --- git-commit-id-plugin:4.9.10:revision (get-the-git-infos) @ seata-dependencies ---
+2026-01-15T01:39:16.2419603Z [INFO] 
+2026-01-15T01:39:16.2421928Z [INFO] --- maven-enforcer-plugin:3.0.0-M3:enforce (enforce-maven) @ seata-bom ---
+2026-01-15T01:39:16.2422615Z [INFO] 
+2026-01-15T01:39:16.2423131Z [INFO] --- git-commit-id-plugin:4.9.10:revision (get-the-git-infos) @ seata-bom ---
+2026-01-15T01:39:16.2499370Z [INFO] skip is enabled, skipping execution!
+2026-01-15T01:39:16.2500474Z [INFO] 
+2026-01-15T01:39:16.2501370Z [INFO] --- maven-remote-resources-plugin:1.5:process (process-resource-bundles) @ seata-bom ---
+2026-01-15T01:39:16.2502514Z [INFO] skip is enabled, skipping execution!
+2026-01-15T01:39:16.2503226Z [INFO] 
+2026-01-15T01:39:16.2504170Z [INFO] --- maven-remote-resources-plugin:1.5:process (process-resource-bundles) @ seata-dependencies ---
+2026-01-15T01:39:18.2252405Z [INFO] 
+2026-01-15T01:39:18.2254929Z [INFO] --- maven-clean-plugin:3.1.0:clean (default-clean) @ seata-parent ---
+2026-01-15T01:39:18.2420660Z [INFO] Deleting /home/runner/work/incubator-seata/incubator-seata (includes = [*-pom.xml, **/db_store/**, **/sessionStore/**, **/root.data], excludes = [])
+2026-01-15T01:39:18.3976375Z [INFO] 
+2026-01-15T01:39:18.3977486Z [INFO] --- maven-enforcer-plugin:3.0.0-M3:enforce (enforce-maven-version) @ seata-parent ---
+2026-01-15T01:39:18.4559827Z [INFO] 
+2026-01-15T01:39:18.4563999Z [INFO] --- maven-enforcer-plugin:3.0.0-M3:enforce (enforce-maven) @ seata-parent ---
+2026-01-15T01:39:18.4566235Z [INFO] 
+2026-01-15T01:39:18.4567988Z [INFO] >>> maven-pmd-plugin:3.8:check (pmd-check) > :pmd @ seata-parent >>>
+2026-01-15T01:39:18.8869406Z [INFO] 
+2026-01-15T01:39:18.8870548Z [INFO] --- maven-pmd-plugin:3.8:pmd (pmd) @ seata-parent ---
+2026-01-15T01:39:31.3250960Z [INFO] 
+2026-01-15T01:39:31.3252031Z [INFO] <<< maven-pmd-plugin:3.8:check (pmd-check) < :pmd @ seata-parent <<<
+2026-01-15T01:39:31.3253031Z [INFO] 
+2026-01-15T01:39:31.3259778Z [INFO] 
+2026-01-15T01:39:31.3260765Z [INFO] --- maven-pmd-plugin:3.8:check (pmd-check) @ seata-parent ---
+2026-01-15T01:39:31.3261903Z [INFO] 
+2026-01-15T01:39:31.3262838Z [INFO] --- git-commit-id-plugin:4.9.10:revision (get-the-git-infos) @ seata-parent ---
+2026-01-15T01:39:31.3588771Z [INFO] skip is enabled, skipping execution!
+2026-01-15T01:39:31.3589307Z [INFO] 
+2026-01-15T01:39:31.3589829Z [INFO] --- jacoco-maven-plugin:0.8.14:prepare-agent (default) @ seata-parent ---
+2026-01-15T01:39:32.8247229Z [INFO] argLine set to -javaagent:/home/runner/.m2/repository/org/jacoco/org.jacoco.agent/0.8.14/org.jacoco.agent-0.8.14-runtime.jar=destfile=/home/runner/work/incubator-seata/incubator-seata/target/jacoco.exec,excludes=**/test/**
+2026-01-15T01:39:32.8257928Z [INFO] 
+2026-01-15T01:39:32.8259092Z [INFO] --- maven-remote-resources-plugin:1.5:process (process-resource-bundles) @ seata-parent ---
+2026-01-15T01:39:32.9889342Z [INFO] 
+2026-01-15T01:39:32.9891995Z [INFO] --- jacoco-maven-plugin:0.8.14:report (report) @ seata-parent ---
+2026-01-15T01:39:32.9915092Z [INFO] Skipping JaCoCo execution due to missing execution data file.
+2026-01-15T01:39:32.9917131Z [INFO] 
+2026-01-15T01:39:32.9918044Z [INFO] --- jacoco-maven-plugin:0.8.14:report (report-aggregate) @ seata-parent ---
+2026-01-15T01:39:32.9927035Z [INFO] Skipping JaCoCo execution due to missing execution data file.
+2026-01-15T01:39:32.9927971Z [INFO] 
+2026-01-15T01:39:32.9929027Z [INFO] --- jacoco-maven-plugin:0.8.14:report-aggregate (report-aggregate) @ seata-parent ---
+2026-01-15T01:39:33.1032174Z [INFO] 
+2026-01-15T01:39:33.1032827Z [INFO] 
+2026-01-15T01:39:33.1033559Z [INFO] -------------------< org.apache.seata:seata-common >--------------------
+2026-01-15T01:39:33.1035551Z [INFO] Building seata-common 2.6.0-SNAPSHOT 2.6.0-SNAPSHOT               [5/97]
+2026-01-15T01:39:33.1038141Z [INFO] --------------------------------[ jar ]---------------------------------
+2026-01-15T01:39:33.1039115Z [INFO] -------------------< org.apache.seata:seata-config >--------------------
+2026-01-15T01:39:33.1039915Z [INFO] Building seata-config 2.6.0-SNAPSHOT 2.6.0-SNAPSHOT               [6/97]
+2026-01-15T01:39:33.1040802Z [INFO] --------------------------------[ pom ]---------------------------------
+2026-01-15T01:39:33.1050839Z [INFO] 
+2026-01-15T01:39:33.1061499Z [INFO] -----------------< org.apache.seata:seata-extensions >------------------
+2026-01-15T01:39:33.1064581Z [INFO] Building seata-extensions 2.6.0-SNAPSHOT 2.6.0-SNAPSHOT           [7/97]
+2026-01-15T01:39:33.1065569Z [INFO] --------------------------------[ pom ]---------------------------------
+2026-01-15T01:39:33.1067532Z [INFO] 
+2026-01-15T01:39:33.1068041Z [INFO] ------------------< org.apache.seata:seata-discovery >------------------
+2026-01-15T01:39:33.1069082Z [INFO] Building seata-discovery 2.6.0-SNAPSHOT 2.6.0-SNAPSHOT            [8/97]
+2026-01-15T01:39:33.1069856Z [INFO] --------------------------------[ pom ]---------------------------------
+2026-01-15T01:39:33.1070383Z [INFO] 
+2026-01-15T01:39:33.1070827Z [INFO] ------------------< org.apache.seata:seata-sqlparser >------------------
+2026-01-15T01:39:33.1071617Z [INFO] Building seata-sqlparser 2.6.0-SNAPSHOT 2.6.0-SNAPSHOT            [9/97]
+2026-01-15T01:39:33.1072382Z [INFO] --------------------------------[ pom ]---------------------------------
+2026-01-15T01:39:33.1077124Z [INFO] 
+2026-01-15T01:39:33.1098217Z [INFO] -----------------< org.apache.seata:seata-compressor >------------------
+2026-01-15T01:39:33.1099588Z [INFO] Building seata-compressor 2.6.0-SNAPSHOT 2.6.0-SNAPSHOT          [10/97]
+2026-01-15T01:39:33.1104872Z [INFO] --------------------------------[ pom ]---------------------------------
+2026-01-15T01:39:33.1105455Z [INFO] 
+2026-01-15T01:39:33.1105964Z [INFO] ----------------< org.apache.seata:seata-distribution >-----------------
+2026-01-15T01:39:33.1106813Z [INFO] Building seata-distribution 2.6.0-SNAPSHOT 2.6.0-SNAPSHOT        [11/97]
+2026-01-15T01:39:33.1107844Z [INFO] --------------------------------[ pom ]---------------------------------
+2026-01-15T01:39:33.1108688Z [INFO] 
+2026-01-15T01:39:33.1109260Z [INFO] -------------------< org.apache.seata:seata-metrics >-------------------
+2026-01-15T01:39:33.1110248Z [INFO] Building seata-metrics 2.6.0-SNAPSHOT 2.6.0-SNAPSHOT             [12/97]
+2026-01-15T01:39:33.1114599Z [INFO] --------------------------------[ pom ]---------------------------------
+2026-01-15T01:39:33.1183467Z [INFO] 
+2026-01-15T01:39:33.1185812Z [INFO] -----------------< org.apache.seata:seata-serializer >------------------
+2026-01-15T01:39:33.1186904Z [INFO] Building seata-serializer 2.6.0-SNAPSHOT 2.6.0-SNAPSHOT          [13/97]
+2026-01-15T01:39:33.1187946Z [INFO] --------------------------------[ pom ]---------------------------------
+2026-01-15T01:39:33.1197947Z [INFO] 
+2026-01-15T01:39:33.1199138Z [INFO] --- maven-clean-plugin:3.1.0:clean (default-clean) @ seata-metrics ---
+2026-01-15T01:39:33.1214377Z [INFO] 
+2026-01-15T01:39:33.1217977Z [INFO] --- maven-clean-plugin:3.1.0:clean (default-clean) @ seata-serializer ---
+2026-01-15T01:39:33.1236594Z [INFO] 
+2026-01-15T01:39:33.1237690Z [INFO] --- maven-clean-plugin:3.1.0:clean (default-clean) @ seata-compressor ---
+2026-01-15T01:39:33.9567521Z [INFO] Deleting /home/runner/work/incubator-seata/incubator-seata/serializer (includes = [*-pom.xml, **/db_store/**, **/sessionStore/**, **/root.data], excludes = [])
+2026-01-15T01:39:33.9590002Z [INFO] Deleting /home/runner/work/incubator-seata/incubator-seata/compressor (includes = [*-pom.xml, **/db_store/**, **/sessionStore/**, **/root.data], excludes = [])
+2026-01-15T01:39:33.9592469Z [INFO] Deleting /home/runner/work/incubator-seata/incubator-seata/metrics (includes = [*-pom.xml, **/db_store/**, **/sessionStore/**, **/root.data], excludes = [])
+2026-01-15T01:39:33.9658667Z [INFO] 
+2026-01-15T01:39:33.9659374Z [INFO] --- maven-enforcer-plugin:3.0.0-M3:enforce (enforce-maven-version) @ seata-compressor ---
+2026-01-15T01:39:33.9667464Z [INFO] 
+2026-01-15T01:39:33.9670627Z [INFO] --- maven-enforcer-plugin:3.0.0-M3:enforce (enforce-maven-version) @ seata-metrics ---
+2026-01-15T01:39:33.9673218Z [INFO] 
+2026-01-15T01:39:33.9674983Z [INFO] --- maven-enforcer-plugin:3.0.0-M3:enforce (enforce-maven-version) @ seata-serializer ---
+2026-01-15T01:39:34.2649451Z [INFO] 
+2026-01-15T01:39:34.2706416Z [INFO] --- maven-enforcer-plugin:3.0.0-M3:enforce (enforce-maven) @ seata-serializer ---
+2026-01-15T01:39:34.2707852Z [INFO] 
+2026-01-15T01:39:34.2710767Z [INFO] --- maven-enforcer-plugin:3.0.0-M3:enforce (enforce-maven) @ seata-metrics ---
+2026-01-15T01:39:34.2711498Z [INFO] 
+2026-01-15T01:39:34.2712014Z [INFO] --- maven-clean-plugin:3.1.0:clean (default-clean) @ seata-extensions ---
+2026-01-15T01:39:34.2712640Z [INFO] 
+2026-01-15T01:39:34.2713129Z [INFO] >>> maven-pmd-plugin:3.8:check (pmd-check) > :pmd @ seata-metrics >>>
+2026-01-15T01:39:34.2714503Z [INFO] Deleting /home/runner/work/incubator-seata/incubator-seata/extensions (includes = [*-pom.xml, **/db_store/**, **/sessionStore/**, **/root.data], excludes = [])
+2026-01-15T01:39:34.2715650Z [INFO] 
+2026-01-15T01:39:34.2957298Z [INFO] --- maven-enforcer-plugin:3.0.0-M3:enforce (enforce-maven) @ seata-compressor ---
+2026-01-15T01:39:34.2989763Z [INFO] 
+2026-01-15T01:39:34.2990346Z [INFO] --- maven-clean-plugin:3.1.0:clean (default-clean) @ seata-distribution ---
+2026-01-15T01:39:34.2991762Z [INFO] Deleting /home/runner/work/incubator-seata/incubator-seata/distribution (includes = [*-pom.xml, **/db_store/**, **/sessionStore/**, **/root.data], excludes = [])
+2026-01-15T01:39:34.3029281Z [INFO] 
+2026-01-15T01:39:34.3029746Z [INFO] --- maven-pmd-plugin:3.8:pmd (pmd) @ seata-metrics ---
+2026-01-15T01:39:34.3030286Z [INFO] 
+2026-01-15T01:39:34.3030820Z [INFO] --- maven-clean-plugin:3.1.0:clean (default-clean) @ seata-sqlparser ---
+2026-01-15T01:39:34.3048067Z [INFO] 
+2026-01-15T01:39:34.3048858Z [INFO] >>> maven-pmd-plugin:3.8:check (pmd-check) > :pmd @ seata-compressor >>>
+2026-01-15T01:39:34.3053491Z [INFO] 
+2026-01-15T01:39:34.3054281Z [INFO] >>> maven-pmd-plugin:3.8:check (pmd-check) > :pmd @ seata-serializer >>>
+2026-01-15T01:39:34.3085332Z [INFO] Deleting /home/runner/work/incubator-seata/incubator-seata/sqlparser (includes = [*-pom.xml, **/db_store/**, **/sessionStore/**, **/root.data], excludes = [])
+2026-01-15T01:39:34.3106898Z [INFO] 
+2026-01-15T01:39:34.3107390Z [INFO] 
+2026-01-15T01:39:34.3107914Z [INFO] <<< maven-pmd-plugin:3.8:check (pmd-check) < :pmd @ seata-metrics <<<
+2026-01-15T01:39:34.3108721Z [INFO] 
+2026-01-15T01:39:34.3108983Z [INFO] 
+2026-01-15T01:39:34.3109277Z [INFO] --- maven-pmd-plugin:3.8:check (pmd-check) @ seata-metrics ---
+2026-01-15T01:39:34.3109689Z [INFO] 
+2026-01-15T01:39:34.3110108Z [INFO] --- git-commit-id-plugin:4.9.10:revision (get-the-git-infos) @ seata-metrics ---
+2026-01-15T01:39:34.3169074Z [INFO] 
+2026-01-15T01:39:34.3170286Z [INFO] --- maven-clean-plugin:3.1.0:clean (default-clean) @ seata-discovery ---
+2026-01-15T01:39:34.3173449Z [INFO] Deleting /home/runner/work/incubator-seata/incubator-seata/discovery (includes = [*-pom.xml, **/db_store/**, **/sessionStore/**, **/root.data], excludes = [])
+2026-01-15T01:39:34.3177078Z [INFO] 
+2026-01-15T01:39:34.3177604Z [INFO] --- maven-clean-plugin:3.1.0:clean (default-clean) @ seata-config ---
+2026-01-15T01:39:34.3179208Z [INFO] Deleting /home/runner/work/incubator-seata/incubator-seata/config (includes = [*-pom.xml, **/db_store/**, **/sessionStore/**, **/root.data], excludes = [])
+2026-01-15T01:39:34.3185666Z [INFO] --- maven-enforcer-plugin:3.0.0-M3:enforce (enforce-maven-version) @ seata-distribution ---
+2026-01-15T01:39:34.3186369Z [INFO] 
+2026-01-15T01:39:34.3186881Z [INFO] --- maven-enforcer-plugin:3.0.0-M3:enforce (enforce-maven) @ seata-distribution ---
+2026-01-15T01:39:34.3187486Z [INFO] 
+2026-01-15T01:39:34.3229872Z [INFO] >>> maven-pmd-plugin:3.8:check (pmd-check) > :pmd @ seata-distribution >>>
+2026-01-15T01:39:34.3234143Z [INFO] 
+2026-01-15T01:39:34.3234838Z [INFO] --- maven-enforcer-plugin:3.0.0-M3:enforce (enforce-maven-version) @ seata-sqlparser ---
+2026-01-15T01:39:34.3235584Z [INFO] 
+2026-01-15T01:39:34.3236223Z [INFO] --- maven-enforcer-plugin:3.0.0-M3:enforce (enforce-maven-version) @ seata-extensions ---
+2026-01-15T01:39:34.3236950Z [INFO] 
+2026-01-15T01:39:34.3237461Z [INFO] --- maven-enforcer-plugin:3.0.0-M3:enforce (enforce-maven) @ seata-sqlparser ---
+2026-01-15T01:39:34.3238069Z [INFO] 
+2026-01-15T01:39:34.3270740Z [INFO] --- maven-enforcer-plugin:3.0.0-M3:enforce (enforce-maven) @ seata-extensions ---
+2026-01-15T01:39:34.3271518Z [INFO] 
+2026-01-15T01:39:34.3272034Z [INFO] >>> maven-pmd-plugin:3.8:check (pmd-check) > :pmd @ seata-sqlparser >>>
+2026-01-15T01:39:34.3272646Z [INFO] 
+2026-01-15T01:39:34.3273136Z [INFO] >>> maven-pmd-plugin:3.8:check (pmd-check) > :pmd @ seata-extensions >>>
+2026-01-15T01:39:34.3349989Z [INFO] skip is enabled, skipping execution!
+2026-01-15T01:39:34.3356218Z [INFO] 
+2026-01-15T01:39:34.3367918Z [INFO] --- jacoco-maven-plugin:0.8.14:prepare-agent (default) @ seata-metrics ---
+2026-01-15T01:39:34.3399565Z [INFO] 
+2026-01-15T01:39:34.3400606Z [INFO] --- maven-enforcer-plugin:3.0.0-M3:enforce (enforce-maven-version) @ seata-discovery ---
+2026-01-15T01:39:34.3401628Z [INFO] 
+2026-01-15T01:39:34.3402367Z [INFO] --- maven-enforcer-plugin:3.0.0-M3:enforce (enforce-maven) @ seata-discovery ---
+2026-01-15T01:39:34.3417870Z [INFO] 
+2026-01-15T01:39:34.3439846Z [INFO] >>> maven-pmd-plugin:3.8:check (pmd-check) > :pmd @ seata-discovery >>>
+2026-01-15T01:39:34.3458749Z [INFO] 
+2026-01-15T01:39:34.3459204Z [INFO] --- maven-pmd-plugin:3.8:pmd (pmd) @ seata-sqlparser ---
+2026-01-15T01:39:34.3505168Z [INFO] 
+2026-01-15T01:39:34.3515455Z [INFO] --- maven-enforcer-plugin:3.0.0-M3:enforce (enforce-maven-version) @ seata-config ---
+2026-01-15T01:39:34.3521369Z [INFO] argLine set to -javaagent:/home/runner/.m2/repository/org/jacoco/org.jacoco.agent/0.8.14/org.jacoco.agent-0.8.14-runtime.jar=destfile=/home/runner/work/incubator-seata/incubator-seata/metrics/target/jacoco.exec,excludes=**/test/**
+2026-01-15T01:39:34.3540365Z [INFO] 
+2026-01-15T01:39:34.3541046Z [INFO] --- maven-remote-resources-plugin:1.5:process (process-resource-bundles) @ seata-metrics ---
+2026-01-15T01:39:34.3541836Z [INFO] 
+2026-01-15T01:39:34.3542368Z [INFO] --- maven-enforcer-plugin:3.0.0-M3:enforce (enforce-maven) @ seata-config ---
+2026-01-15T01:39:34.3543021Z [INFO] 
+2026-01-15T01:39:34.3546170Z [INFO] >>> maven-pmd-plugin:3.8:check (pmd-check) > :pmd @ seata-config >>>
+2026-01-15T01:39:34.3589162Z [INFO] 
+2026-01-15T01:39:34.3589949Z [INFO] --- maven-pmd-plugin:3.8:pmd (pmd) @ seata-extensions ---
+2026-01-15T01:39:34.3597200Z [INFO] 
+2026-01-15T01:39:34.3598200Z [INFO] --- maven-pmd-plugin:3.8:pmd (pmd) @ seata-compressor ---
+2026-01-15T01:39:34.3609301Z [INFO] 
+2026-01-15T01:39:34.3610629Z [INFO] --- maven-pmd-plugin:3.8:pmd (pmd) @ seata-distribution ---
+2026-01-15T01:39:34.3620233Z [INFO] 
+2026-01-15T01:39:34.3630356Z [INFO] --- maven-pmd-plugin:3.8:pmd (pmd) @ seata-config ---
+2026-01-15T01:39:34.3646645Z [INFO] 
+2026-01-15T01:39:34.3647358Z [INFO] --- maven-pmd-plugin:3.8:pmd (pmd) @ seata-serializer ---
+2026-01-15T01:39:34.3701644Z [INFO] 
+2026-01-15T01:39:34.3729346Z [INFO] <<< maven-pmd-plugin:3.8:check (pmd-check) < :pmd @ seata-extensions <<<
+2026-01-15T01:39:34.3730270Z [INFO] 
+2026-01-15T01:39:34.3730721Z [INFO] 
+2026-01-15T01:39:34.3731397Z [INFO] --- maven-pmd-plugin:3.8:check (pmd-check) @ seata-extensions ---
+2026-01-15T01:39:34.3732143Z [INFO] 
+2026-01-15T01:39:34.3732882Z [INFO] --- git-commit-id-plugin:4.9.10:revision (get-the-git-infos) @ seata-extensions ---
+2026-01-15T01:39:34.3733725Z [INFO] 
+2026-01-15T01:39:34.3734368Z [INFO] <<< maven-pmd-plugin:3.8:check (pmd-check) < :pmd @ seata-serializer <<<
+2026-01-15T01:39:34.3735102Z [INFO] 
+2026-01-15T01:39:34.3735497Z [INFO] 
+2026-01-15T01:39:34.3736489Z [INFO] --- maven-pmd-plugin:3.8:check (pmd-check) @ seata-serializer ---
+2026-01-15T01:39:34.3737261Z [INFO] 
+2026-01-15T01:39:34.3737984Z [INFO] --- git-commit-id-plugin:4.9.10:revision (get-the-git-infos) @ seata-serializer ---
+2026-01-15T01:39:34.3739084Z [INFO] 
+2026-01-15T01:39:34.3739657Z [INFO] --- maven-pmd-plugin:3.8:pmd (pmd) @ seata-discovery ---
+2026-01-15T01:39:34.3740380Z [INFO] 
+2026-01-15T01:39:34.3741014Z [INFO] <<< maven-pmd-plugin:3.8:check (pmd-check) < :pmd @ seata-config <<<
+2026-01-15T01:39:34.3741795Z [INFO] 
+2026-01-15T01:39:34.3742215Z [INFO] 
+2026-01-15T01:39:34.3742803Z [INFO] --- maven-pmd-plugin:3.8:check (pmd-check) @ seata-config ---
+2026-01-15T01:39:34.3744149Z [INFO] 
+2026-01-15T01:39:34.3745006Z [INFO] --- git-commit-id-plugin:4.9.10:revision (get-the-git-infos) @ seata-config ---
+2026-01-15T01:39:34.3809650Z [INFO] 
+2026-01-15T01:39:34.3829414Z [INFO] <<< maven-pmd-plugin:3.8:check (pmd-check) < :pmd @ seata-discovery <<<
+2026-01-15T01:39:34.3830371Z [INFO] 
+2026-01-15T01:39:34.3830873Z [INFO] 
+2026-01-15T01:39:34.3831610Z [INFO] --- maven-pmd-plugin:3.8:check (pmd-check) @ seata-discovery ---
+2026-01-15T01:39:34.3832427Z [INFO] 
+2026-01-15T01:39:34.3833225Z [INFO] --- git-commit-id-plugin:4.9.10:revision (get-the-git-infos) @ seata-discovery ---
+2026-01-15T01:39:34.3834194Z [INFO] 
+2026-01-15T01:39:34.3835002Z [INFO] <<< maven-pmd-plugin:3.8:check (pmd-check) < :pmd @ seata-compressor <<<
+2026-01-15T01:39:34.3835792Z [INFO] 
+2026-01-15T01:39:34.3836230Z [INFO] 
+2026-01-15T01:39:34.3836937Z [INFO] --- maven-pmd-plugin:3.8:check (pmd-check) @ seata-compressor ---
+2026-01-15T01:39:34.3837779Z [INFO] 
+2026-01-15T01:39:34.3839127Z [INFO] --- git-commit-id-plugin:4.9.10:revision (get-the-git-infos) @ seata-compressor ---
+2026-01-15T01:39:34.3840248Z [INFO] skip is enabled, skipping execution!
+2026-01-15T01:39:34.3840905Z [INFO] 
+2026-01-15T01:39:34.3841613Z [INFO] --- jacoco-maven-plugin:0.8.14:prepare-agent (default) @ seata-serializer ---
+2026-01-15T01:39:34.3847560Z [INFO] 
+2026-01-15T01:39:34.3849570Z [INFO] <<< maven-pmd-plugin:3.8:check (pmd-check) < :pmd @ seata-sqlparser <<<
+2026-01-15T01:39:34.3850566Z [INFO] 
+2026-01-15T01:39:34.3852111Z [INFO] 
+2026-01-15T01:39:34.3852882Z [INFO] --- maven-pmd-plugin:3.8:check (pmd-check) @ seata-sqlparser ---
+2026-01-15T01:39:34.3854727Z [INFO] 
+2026-01-15T01:39:34.3857103Z [INFO] --- git-commit-id-plugin:4.9.10:revision (get-the-git-infos) @ seata-sqlparser ---
+2026-01-15T01:39:34.3890945Z [INFO] skip is enabled, skipping execution!
+2026-01-15T01:39:34.3891765Z [INFO] skip is enabled, skipping execution!
+2026-01-15T01:39:34.3893054Z [INFO] 
+2026-01-15T01:39:34.3893589Z [INFO] --- jacoco-maven-plugin:0.8.14:prepare-agent (default) @ seata-discovery ---
+2026-01-15T01:39:34.3904838Z [INFO] argLine set to -javaagent:/home/runner/.m2/repository/org/jacoco/org.jacoco.agent/0.8.14/org.jacoco.agent-0.8.14-runtime.jar=destfile=/home/runner/work/incubator-seata/incubator-seata/discovery/target/jacoco.exec,excludes=**/test/**
+2026-01-15T01:39:34.3907599Z [INFO] 
+2026-01-15T01:39:34.3908691Z [INFO] --- maven-remote-resources-plugin:1.5:process (process-resource-bundles) @ seata-discovery ---
+2026-01-15T01:39:34.3975408Z [INFO] skip is enabled, skipping execution!
+2026-01-15T01:39:34.4009627Z [INFO] 
+2026-01-15T01:39:34.4010259Z [INFO] --- jacoco-maven-plugin:0.8.14:prepare-agent (default) @ seata-compressor ---
+2026-01-15T01:39:34.4012216Z [INFO] argLine set to -javaagent:/home/runner/.m2/repository/org/jacoco/org.jacoco.agent/0.8.14/org.jacoco.agent-0.8.14-runtime.jar=destfile=/home/runner/work/incubator-seata/incubator-seata/compressor/target/jacoco.exec,excludes=**/test/**
+2026-01-15T01:39:34.4013962Z [INFO] 
+2026-01-15T01:39:34.4014646Z [INFO] --- maven-remote-resources-plugin:1.5:process (process-resource-bundles) @ seata-compressor ---
+2026-01-15T01:39:34.4017108Z [INFO] argLine set to -javaagent:/home/runner/.m2/repository/org/jacoco/org.jacoco.agent/0.8.14/org.jacoco.agent-0.8.14-runtime.jar=destfile=/home/runner/work/incubator-seata/incubator-seata/serializer/target/jacoco.exec,excludes=**/test/**
+2026-01-15T01:39:34.4018983Z [INFO] 
+2026-01-15T01:39:34.4019682Z [INFO] --- maven-remote-resources-plugin:1.5:process (process-resource-bundles) @ seata-serializer ---
+2026-01-15T01:39:34.4020504Z [INFO] 
+2026-01-15T01:39:34.4021002Z [INFO] <<< maven-pmd-plugin:3.8:check (pmd-check) < :pmd @ seata-distribution <<<
+2026-01-15T01:39:34.4021636Z [INFO] 
+2026-01-15T01:39:34.4021881Z [INFO] 
+2026-01-15T01:39:34.4022350Z [INFO] --- maven-pmd-plugin:3.8:check (pmd-check) @ seata-distribution ---
+2026-01-15T01:39:34.4022950Z [INFO] 
+2026-01-15T01:39:34.4023509Z [INFO] --- git-commit-id-plugin:4.9.10:revision (get-the-git-infos) @ seata-distribution ---
+2026-01-15T01:39:34.4024209Z [INFO] skip is enabled, skipping execution!
+2026-01-15T01:39:34.4024617Z [INFO] 
+2026-01-15T01:39:34.4025149Z [INFO] --- jacoco-maven-plugin:0.8.14:prepare-agent (default) @ seata-extensions ---
+2026-01-15T01:39:34.4027083Z [INFO] argLine set to -javaagent:/home/runner/.m2/repository/org/jacoco/org.jacoco.agent/0.8.14/org.jacoco.agent-0.8.14-runtime.jar=destfile=/home/runner/work/incubator-seata/incubator-seata/extensions/target/jacoco.exec,excludes=**/test/**
+2026-01-15T01:39:34.4028885Z [INFO] 
+2026-01-15T01:39:34.4029555Z [INFO] --- maven-remote-resources-plugin:1.5:process (process-resource-bundles) @ seata-extensions ---
+2026-01-15T01:39:34.4030423Z [INFO] skip is enabled, skipping execution!
+2026-01-15T01:39:34.4128834Z [INFO] 
+2026-01-15T01:39:34.4129599Z [INFO] --- jacoco-maven-plugin:0.8.14:prepare-agent (default) @ seata-sqlparser ---
+2026-01-15T01:39:34.4131968Z [INFO] argLine set to -javaagent:/home/runner/.m2/repository/org/jacoco/org.jacoco.agent/0.8.14/org.jacoco.agent-0.8.14-runtime.jar=destfile=/home/runner/work/incubator-seata/incubator-seata/sqlparser/target/jacoco.exec,excludes=**/test/**
+2026-01-15T01:39:34.4169459Z [INFO] skip is enabled, skipping execution!
+2026-01-15T01:39:34.4170163Z [INFO] 
+2026-01-15T01:39:34.4170844Z [INFO] --- jacoco-maven-plugin:0.8.14:prepare-agent (default) @ seata-distribution ---
+2026-01-15T01:39:34.4172864Z [INFO] argLine set to -javaagent:/home/runner/.m2/repository/org/jacoco/org.jacoco.agent/0.8.14/org.jacoco.agent-0.8.14-runtime.jar=destfile=/home/runner/work/incubator-seata/incubator-seata/distribution/target/jacoco.exec,excludes=**/test/**
+2026-01-15T01:39:34.4174562Z [INFO] 
+2026-01-15T01:39:34.4175274Z [INFO] --- maven-remote-resources-plugin:1.5:process (process-resource-bundles) @ seata-distribution ---
+2026-01-15T01:39:34.4176082Z [INFO] 
+2026-01-15T01:39:34.4176734Z [INFO] --- maven-remote-resources-plugin:1.5:process (process-resource-bundles) @ seata-sqlparser ---
+2026-01-15T01:39:34.4177543Z [INFO] 
+2026-01-15T01:39:34.4178045Z [INFO] --- jacoco-maven-plugin:0.8.14:prepare-agent (default) @ seata-config ---
+2026-01-15T01:39:34.4179027Z [INFO] 
+2026-01-15T01:39:34.4179486Z [INFO] --- jacoco-maven-plugin:0.8.14:report (report) @ seata-metrics ---
+2026-01-15T01:39:34.4181297Z [INFO] argLine set to -javaagent:/home/runner/.m2/repository/org/jacoco/org.jacoco.agent/0.8.14/org.jacoco.agent-0.8.14-runtime.jar=destfile=/home/runner/work/incubator-seata/incubator-seata/config/target/jacoco.exec,excludes=**/test/**
+2026-01-15T01:39:34.4182878Z [INFO] 
+2026-01-15T01:39:34.4183519Z [INFO] --- maven-remote-resources-plugin:1.5:process (process-resource-bundles) @ seata-config ---
+2026-01-15T01:39:34.4185125Z [INFO] Skipping JaCoCo execution due to missing execution data file.
+2026-01-15T01:39:34.4185694Z [INFO] 
+2026-01-15T01:39:34.4186224Z [INFO] --- jacoco-maven-plugin:0.8.14:report (report-aggregate) @ seata-metrics ---
+2026-01-15T01:39:34.4187041Z [INFO] Skipping JaCoCo execution due to missing execution data file.
+2026-01-15T01:39:34.4187608Z [INFO] 
+2026-01-15T01:39:34.4188154Z [INFO] --- jacoco-maven-plugin:0.8.14:report-aggregate (report-aggregate) @ seata-metrics ---
+2026-01-15T01:39:34.4475091Z [INFO] 
+2026-01-15T01:39:34.4476105Z [INFO] --- jacoco-maven-plugin:0.8.14:report (report) @ seata-config ---
+2026-01-15T01:39:34.4486674Z [INFO] Skipping JaCoCo execution due to missing execution data file.
+2026-01-15T01:39:34.4487637Z [INFO] 
+2026-01-15T01:39:34.4488607Z [INFO] --- jacoco-maven-plugin:0.8.14:report (report-aggregate) @ seata-config ---
+2026-01-15T01:39:34.4506214Z [INFO] 
+2026-01-15T01:39:34.4548802Z [INFO] --- jacoco-maven-plugin:0.8.14:report (report) @ seata-sqlparser ---
+2026-01-15T01:39:34.4549662Z [INFO] Skipping JaCoCo execution due to missing execution data file.
+2026-01-15T01:39:34.4550225Z [INFO] 
+2026-01-15T01:39:34.4550765Z [INFO] --- jacoco-maven-plugin:0.8.14:report (report-aggregate) @ seata-sqlparser ---
+2026-01-15T01:39:34.4619475Z [INFO] Skipping JaCoCo execution due to missing execution data file.
+2026-01-15T01:39:34.4620629Z [INFO] 
+2026-01-15T01:39:34.4621416Z [INFO] --- jacoco-maven-plugin:0.8.14:report-aggregate (report-aggregate) @ seata-config ---
+2026-01-15T01:39:34.4622544Z [INFO] Skipping JaCoCo execution due to missing execution data file.
+2026-01-15T01:39:34.4623404Z [INFO] 
+2026-01-15T01:39:34.4624197Z [INFO] --- jacoco-maven-plugin:0.8.14:report-aggregate (report-aggregate) @ seata-sqlparser ---
+2026-01-15T01:39:34.4709391Z [INFO] 
+2026-01-15T01:39:34.4710327Z [INFO] --- jacoco-maven-plugin:0.8.14:report (report) @ seata-serializer ---
+2026-01-15T01:39:34.4711236Z [INFO] 
+2026-01-15T01:39:34.4712035Z [INFO] --- jacoco-maven-plugin:0.8.14:report (report) @ seata-discovery ---
+2026-01-15T01:39:34.4713082Z [INFO] Skipping JaCoCo execution due to missing execution data file.
+2026-01-15T01:39:34.4713872Z [INFO] 
+2026-01-15T01:39:34.4714638Z [INFO] --- jacoco-maven-plugin:0.8.14:report (report-aggregate) @ seata-serializer ---
+2026-01-15T01:39:34.4716086Z [INFO] Skipping JaCoCo execution due to missing execution data file.
+2026-01-15T01:39:34.4716879Z [INFO] 
+2026-01-15T01:39:34.4717580Z [INFO] Skipping JaCoCo execution due to missing execution data file.
+2026-01-15T01:39:34.4718768Z [INFO] 
+2026-01-15T01:39:34.4719656Z [INFO] --- jacoco-maven-plugin:0.8.14:report-aggregate (report-aggregate) @ seata-serializer ---
+2026-01-15T01:39:34.4740102Z [INFO] 
+2026-01-15T01:39:34.4774364Z [INFO] 
+2026-01-15T01:39:34.4775112Z [INFO] --- jacoco-maven-plugin:0.8.14:report (report) @ seata-compressor ---
+2026-01-15T01:39:34.4776141Z [INFO] Skipping JaCoCo execution due to missing execution data file.
+2026-01-15T01:39:34.4777008Z [INFO] 
+2026-01-15T01:39:34.4777855Z [INFO] --- jacoco-maven-plugin:0.8.14:report (report-aggregate) @ seata-compressor ---
+2026-01-15T01:39:34.4778901Z [INFO] Skipping JaCoCo execution due to missing execution data file.
+2026-01-15T01:39:34.4779474Z [INFO] 
+2026-01-15T01:39:34.4780097Z [INFO] --- jacoco-maven-plugin:0.8.14:report-aggregate (report-aggregate) @ seata-compressor ---
+2026-01-15T01:39:34.4781095Z [INFO] --- jacoco-maven-plugin:0.8.14:report (report) @ seata-distribution ---
+2026-01-15T01:39:34.4799657Z [INFO] 
+2026-01-15T01:39:34.4801449Z [INFO] --- jacoco-maven-plugin:0.8.14:report (report-aggregate) @ seata-discovery ---
+2026-01-15T01:39:34.4829269Z [INFO] --- jacoco-maven-plugin:0.8.14:report (report) @ seata-extensions ---
+2026-01-15T01:39:34.4829945Z [INFO] 
+2026-01-15T01:39:34.4830422Z [INFO] -----------------< org.apache.seata:seata-metrics-api >-----------------
+2026-01-15T01:39:34.4831267Z [INFO] Building seata-metrics-api 2.6.0-SNAPSHOT 2.6.0-SNAPSHOT         [14/97]
+2026-01-15T01:39:34.4832038Z [INFO] --------------------------------[ jar ]---------------------------------
+2026-01-15T01:39:34.4832792Z [INFO] Skipping JaCoCo execution due to missing execution data file.
+2026-01-15T01:39:34.4833343Z [INFO] 
+2026-01-15T01:39:34.4833899Z [INFO] --- jacoco-maven-plugin:0.8.14:report (report-aggregate) @ seata-extensions ---
+2026-01-15T01:39:34.4834765Z [INFO] Skipping JaCoCo execution due to missing execution data file.
+2026-01-15T01:39:34.4835332Z [INFO] 
+2026-01-15T01:39:34.4835938Z [INFO] --- jacoco-maven-plugin:0.8.14:report-aggregate (report-aggregate) @ seata-extensions ---
+2026-01-15T01:39:34.4889334Z [INFO] Skipping JaCoCo execution due to missing execution data file.
+2026-01-15T01:39:34.4931931Z [INFO] 
+2026-01-15T01:39:34.4932779Z [INFO] --- jacoco-maven-plugin:0.8.14:report-aggregate (report-aggregate) @ seata-discovery ---
+2026-01-15T01:39:34.4933853Z [INFO] Skipping JaCoCo execution due to missing execution data file.
+2026-01-15T01:39:34.4934529Z [INFO] 
+2026-01-15T01:39:34.4935213Z [INFO] --- jacoco-maven-plugin:0.8.14:report (report-aggregate) @ seata-distribution ---
+2026-01-15T01:39:34.4936209Z [INFO] Skipping JaCoCo execution due to missing execution data file.
+2026-01-15T01:39:34.4936880Z [INFO] 
+2026-01-15T01:39:34.4937593Z [INFO] --- jacoco-maven-plugin:0.8.14:report-aggregate (report-aggregate) @ seata-distribution ---
+2026-01-15T01:39:34.5031923Z [INFO] 
+2026-01-15T01:39:34.5044796Z [INFO] --- maven-clean-plugin:3.1.0:clean (default-clean) @ seata-metrics-api ---
+2026-01-15T01:39:34.5080012Z [INFO] Deleting /home/runner/work/incubator-seata/incubator-seata/metrics/seata-metrics-api (includes = [*-pom.xml, **/db_store/**, **/sessionStore/**, **/root.data], excludes = [])
+2026-01-15T01:39:34.5131855Z [INFO] 
+2026-01-15T01:39:34.5136343Z [INFO] --- maven-enforcer-plugin:3.0.0-M3:enforce (enforce-maven-version) @ seata-metrics-api ---
+2026-01-15T01:39:34.5137439Z [INFO] 
+2026-01-15T01:39:34.5138319Z [INFO] --- maven-enforcer-plugin:3.0.0-M3:enforce (enforce-maven) @ seata-metrics-api ---
+2026-01-15T01:39:34.5144212Z [INFO] 
+2026-01-15T01:39:34.5146175Z [INFO] >>> maven-pmd-plugin:3.8:check (pmd-check) > :pmd @ seata-metrics-api >>>
+2026-01-15T01:39:34.5167551Z [INFO] 
+2026-01-15T01:39:34.5172303Z [INFO] ---------------------< org.apache.seata:seata-rpc >---------------------
+2026-01-15T01:39:34.5207078Z [INFO] Building seata-rpc 2.6.0-SNAPSHOT 2.6.0-SNAPSHOT                 [15/97]
+2026-01-15T01:39:34.5211005Z [INFO] 
+2026-01-15T01:39:34.5219783Z [INFO] ------------------< org.apache.seata:seata-messaging >------------------
+2026-01-15T01:39:34.5220693Z [INFO] Building seata-messaging 2.6.0-SNAPSHOT 2.6.0-SNAPSHOT           [16/97]
+2026-01-15T01:39:34.5221526Z [INFO] --------------------------------[ pom ]---------------------------------
+2026-01-15T01:39:34.5222265Z [INFO] --------------------------------[ pom ]---------------------------------
+2026-01-15T01:39:34.5222821Z [INFO] 
+2026-01-15T01:39:34.5223307Z [INFO] ---------------------< org.apache.seata:seata-apm >---------------------
+2026-01-15T01:39:34.5224138Z [INFO] Building seata-apm 2.6.0-SNAPSHOT 2.6.0-SNAPSHOT                 [17/97]
+2026-01-15T01:39:34.5224858Z [INFO] --------------------------------[ pom ]---------------------------------
+2026-01-15T01:39:34.5309767Z [INFO] 
+2026-01-15T01:39:34.5311717Z [INFO] --- maven-pmd-plugin:3.8:pmd (pmd) @ seata-metrics-api ---
+2026-01-15T01:39:34.5353719Z [INFO] 
+2026-01-15T01:39:34.5374412Z [INFO] <<< maven-pmd-plugin:3.8:check (pmd-check) < :pmd @ seata-metrics-api <<<
+2026-01-15T01:39:34.5376967Z [INFO] 
+2026-01-15T01:39:34.5379315Z [INFO] 
+2026-01-15T01:39:34.5380215Z [INFO] --- maven-pmd-plugin:3.8:check (pmd-check) @ seata-metrics-api ---
+2026-01-15T01:39:34.5383193Z [INFO] 
+2026-01-15T01:39:34.5384621Z [INFO] --- git-commit-id-plugin:4.9.10:revision (get-the-git-infos) @ seata-metrics-api ---
+2026-01-15T01:39:34.5392360Z [INFO] 
+2026-01-15T01:39:34.5394107Z [INFO] --- maven-clean-plugin:3.1.0:clean (default-clean) @ seata-rpc ---
+2026-01-15T01:39:34.5399896Z [INFO] 
+2026-01-15T01:39:34.5401987Z [INFO] --- maven-clean-plugin:3.1.0:clean (default-clean) @ seata-messaging ---
+2026-01-15T01:39:34.5445538Z [INFO] skip is enabled, skipping execution!
+2026-01-15T01:39:34.5446435Z [INFO] 
+2026-01-15T01:39:34.5446937Z [INFO] 
+2026-01-15T01:39:34.5447658Z [INFO] --- jacoco-maven-plugin:0.8.14:prepare-agent (default) @ seata-metrics-api ---
+2026-01-15T01:39:34.5450037Z [INFO] argLine set to -javaagent:/home/runner/.m2/repository/org/jacoco/org.jacoco.agent/0.8.14/org.jacoco.agent-0.8.14-runtime.jar=destfile=/home/runner/work/incubator-seata/incubator-seata/metrics/seata-metrics-api/target/jacoco.exec,excludes=**/test/**
+2026-01-15T01:39:34.5451880Z [INFO] 
+2026-01-15T01:39:34.5456479Z [INFO] --- maven-remote-resources-plugin:1.5:process (process-resource-bundles) @ seata-metrics-api ---
+2026-01-15T01:39:34.5458990Z [INFO] Deleting /home/runner/work/incubator-seata/incubator-seata/extensions/messaging (includes = [*-pom.xml, **/db_store/**, **/sessionStore/**, **/root.data], excludes = [])
+2026-01-15T01:39:34.5460289Z [INFO] --- maven-clean-plugin:3.1.0:clean (default-clean) @ seata-apm ---
+2026-01-15T01:39:34.5461524Z [INFO] Deleting /home/runner/work/incubator-seata/incubator-seata/extensions/rpc (includes = [*-pom.xml, **/db_store/**, **/sessionStore/**, **/root.data], excludes = [])
+2026-01-15T01:39:34.5463259Z [INFO] Deleting /home/runner/work/incubator-seata/incubator-seata/extensions/apm (includes = [*-pom.xml, **/db_store/**, **/sessionStore/**, **/root.data], excludes = [])
+2026-01-15T01:39:34.5486935Z [INFO] 
+2026-01-15T01:39:34.5487997Z [INFO] --- maven-enforcer-plugin:3.0.0-M3:enforce (enforce-maven-version) @ seata-messaging ---
+2026-01-15T01:39:34.5524468Z [INFO] 
+2026-01-15T01:39:34.5525262Z [INFO] --- maven-enforcer-plugin:3.0.0-M3:enforce (enforce-maven) @ seata-messaging ---
+2026-01-15T01:39:34.5526073Z [INFO] 
+2026-01-15T01:39:34.5526675Z [INFO] >>> maven-pmd-plugin:3.8:check (pmd-check) > :pmd @ seata-messaging >>>
+2026-01-15T01:39:34.5527411Z [INFO] 
+2026-01-15T01:39:34.5528055Z [INFO] --- maven-enforcer-plugin:3.0.0-M3:enforce (enforce-maven-version) @ seata-apm ---
+2026-01-15T01:39:34.5528981Z [INFO] 
+2026-01-15T01:39:34.5529578Z [INFO] --- maven-enforcer-plugin:3.0.0-M3:enforce (enforce-maven) @ seata-apm ---
+2026-01-15T01:39:34.5530276Z [INFO] 
+2026-01-15T01:39:34.5530806Z [INFO] >>> maven-pmd-plugin:3.8:check (pmd-check) > :pmd @ seata-apm >>>
+2026-01-15T01:39:34.5562488Z [INFO] 
+2026-01-15T01:39:34.5571119Z [INFO] --- maven-enforcer-plugin:3.0.0-M3:enforce (enforce-maven-version) @ seata-rpc ---
+2026-01-15T01:39:34.5619305Z [INFO] 
+2026-01-15T01:39:34.5619828Z [INFO] --- maven-enforcer-plugin:3.0.0-M3:enforce (enforce-maven) @ seata-rpc ---
+2026-01-15T01:39:34.5620463Z [INFO] 
+2026-01-15T01:39:34.5620874Z [INFO] >>> maven-pmd-plugin:3.8:check (pmd-check) > :pmd @ seata-rpc >>>
+2026-01-15T01:39:34.5641781Z [INFO] 
+2026-01-15T01:39:34.5645277Z [INFO] --- maven-pmd-plugin:3.8:pmd (pmd) @ seata-apm ---
+2026-01-15T01:39:34.5675009Z [INFO] 
+2026-01-15T01:39:34.5688108Z [INFO] --- maven-pmd-plugin:3.8:pmd (pmd) @ seata-messaging ---
+2026-01-15T01:39:34.5735059Z [INFO] 
+2026-01-15T01:39:34.5735572Z [INFO] --- maven-pmd-plugin:3.8:pmd (pmd) @ seata-rpc ---
+2026-01-15T01:39:34.5746560Z [INFO] 
+2026-01-15T01:39:34.5757615Z [INFO] --- maven-resources-plugin:3.2.0:resources (default-resources) @ seata-metrics-api ---
+2026-01-15T01:39:34.6145251Z [INFO] 
+2026-01-15T01:39:34.6188587Z [INFO] <<< maven-pmd-plugin:3.8:check (pmd-check) < :pmd @ seata-messaging <<<
+2026-01-15T01:39:34.6192261Z [INFO] 
+2026-01-15T01:39:34.6195292Z [INFO] 
+2026-01-15T01:39:34.6198058Z [INFO] <<< maven-pmd-plugin:3.8:check (pmd-check) < :pmd @ seata-apm <<<
+2026-01-15T01:39:34.6202847Z [INFO] 
+2026-01-15T01:39:34.6205219Z [INFO] 
+2026-01-15T01:39:34.6207213Z [INFO] --- maven-pmd-plugin:3.8:check (pmd-check) @ seata-apm ---
+2026-01-15T01:39:34.6216270Z [INFO] 
+2026-01-15T01:39:34.6216864Z [INFO] --- git-commit-id-plugin:4.9.10:revision (get-the-git-infos) @ seata-apm ---
+2026-01-15T01:39:34.6225191Z [INFO] 
+2026-01-15T01:39:34.6225483Z [INFO] 
+2026-01-15T01:39:34.6225951Z [INFO] <<< maven-pmd-plugin:3.8:check (pmd-check) < :pmd @ seata-rpc <<<
+2026-01-15T01:39:34.6226518Z [INFO] 
+2026-01-15T01:39:34.6226771Z [INFO] 
+2026-01-15T01:39:34.6227192Z [INFO] --- maven-pmd-plugin:3.8:check (pmd-check) @ seata-rpc ---
+2026-01-15T01:39:34.6227907Z [INFO] --- maven-pmd-plugin:3.8:check (pmd-check) @ seata-messaging ---
+2026-01-15T01:39:34.6228630Z [INFO] 
+2026-01-15T01:39:34.6229142Z [INFO] --- git-commit-id-plugin:4.9.10:revision (get-the-git-infos) @ seata-rpc ---
+2026-01-15T01:39:34.6230461Z [INFO] 
+2026-01-15T01:39:34.6231672Z [INFO] --- git-commit-id-plugin:4.9.10:revision (get-the-git-infos) @ seata-messaging ---
+2026-01-15T01:39:37.6037036Z [INFO] Using 'UTF-8' encoding to copy filtered resources.
+2026-01-15T01:39:37.6079293Z [INFO] skip is enabled, skipping execution!
+2026-01-15T01:39:37.6080153Z [INFO] skip is enabled, skipping execution!
+2026-01-15T01:39:37.6081081Z [INFO] Using 'UTF-8' encoding to copy filtered properties files.
+2026-01-15T01:39:37.6081836Z [INFO] skip is enabled, skipping execution!
+2026-01-15T01:39:37.6082895Z [INFO] skip non existing resourceDirectory /home/runner/work/incubator-seata/incubator-seata/metrics/seata-metrics-api/src/main/resources
+2026-01-15T01:39:37.6083890Z [INFO] 
+2026-01-15T01:39:37.6084370Z [INFO] --- jacoco-maven-plugin:0.8.14:prepare-agent (default) @ seata-rpc ---
+2026-01-15T01:39:37.6086310Z [INFO] argLine set to -javaagent:/home/runner/.m2/repository/org/jacoco/org.jacoco.agent/0.8.14/org.jacoco.agent-0.8.14-runtime.jar=destfile=/home/runner/work/incubator-seata/incubator-seata/extensions/rpc/target/jacoco.exec,excludes=**/test/**
+2026-01-15T01:39:37.6088026Z [INFO] 
+2026-01-15T01:39:37.6088863Z [INFO] --- maven-remote-resources-plugin:1.5:process (process-resource-bundles) @ seata-rpc ---
+2026-01-15T01:39:37.6096305Z [INFO] Copying 3 resources
+2026-01-15T01:39:37.6105311Z [INFO] 
+2026-01-15T01:39:37.6111514Z [INFO] --- jacoco-maven-plugin:0.8.14:prepare-agent (default) @ seata-messaging ---
+2026-01-15T01:39:37.6195322Z [INFO] 
+2026-01-15T01:39:37.6199149Z [INFO] --- jacoco-maven-plugin:0.8.14:prepare-agent (default) @ seata-apm ---
+2026-01-15T01:39:37.6201128Z [INFO] argLine set to -javaagent:/home/runner/.m2/repository/org/jacoco/org.jacoco.agent/0.8.14/org.jacoco.agent-0.8.14-runtime.jar=destfile=/home/runner/work/incubator-seata/incubator-seata/extensions/messaging/target/jacoco.exec,excludes=**/test/**
+2026-01-15T01:39:37.6203211Z [INFO] 
+2026-01-15T01:39:37.6203893Z [INFO] --- maven-remote-resources-plugin:1.5:process (process-resource-bundles) @ seata-messaging ---
+2026-01-15T01:39:37.6206019Z [INFO] argLine set to -javaagent:/home/runner/.m2/repository/org/jacoco/org.jacoco.agent/0.8.14/org.jacoco.agent-0.8.14-runtime.jar=destfile=/home/runner/work/incubator-seata/incubator-seata/extensions/apm/target/jacoco.exec,excludes=**/test/**
+2026-01-15T01:39:37.6207697Z [INFO] 
+2026-01-15T01:39:37.6208321Z [INFO] --- maven-remote-resources-plugin:1.5:process (process-resource-bundles) @ seata-apm ---
+2026-01-15T01:39:37.6284812Z [INFO] 
+2026-01-15T01:39:37.6296018Z [INFO] --- maven-compiler-plugin:3.14.0:compile (default-compile) @ seata-metrics-api ---
+2026-01-15T01:39:37.6397210Z [INFO] 
+2026-01-15T01:39:37.6399902Z [INFO] --- jacoco-maven-plugin:0.8.14:report (report) @ seata-messaging ---
+2026-01-15T01:39:37.6401916Z [INFO] 
+2026-01-15T01:39:37.6403677Z [INFO] --- jacoco-maven-plugin:0.8.14:report (report) @ seata-apm ---
+2026-01-15T01:39:37.6419899Z [INFO] 
+2026-01-15T01:39:37.6425775Z [INFO] --- jacoco-maven-plugin:0.8.14:report (report) @ seata-rpc ---
+2026-01-15T01:39:38.8776494Z [INFO] 
+2026-01-15T01:39:38.8777076Z [INFO] --- maven-clean-plugin:3.1.0:clean (default-clean) @ seata-common ---
+2026-01-15T01:39:39.5000789Z [INFO] Deleting /home/runner/work/incubator-seata/incubator-seata/common (includes = [*-pom.xml, **/db_store/**, **/sessionStore/**, **/root.data], excludes = [])
+2026-01-15T01:39:39.5008948Z [INFO] Skipping JaCoCo execution due to missing execution data file.
+2026-01-15T01:39:39.5009837Z [INFO] 
+2026-01-15T01:39:39.5010641Z [INFO] --- jacoco-maven-plugin:0.8.14:report (report-aggregate) @ seata-rpc ---
+2026-01-15T01:39:39.5018130Z [INFO] Skipping JaCoCo execution due to missing execution data file.
+2026-01-15T01:39:39.5019186Z [INFO] 
+2026-01-15T01:39:39.5020008Z [INFO] --- jacoco-maven-plugin:0.8.14:report-aggregate (report-aggregate) @ seata-rpc ---
+2026-01-15T01:39:39.5059631Z [INFO] 
+2026-01-15T01:39:39.5078054Z [INFO] --- maven-enforcer-plugin:3.0.0-M3:enforce (enforce-maven-version) @ seata-common ---
+2026-01-15T01:39:39.5079329Z [INFO] 
+2026-01-15T01:39:39.5080064Z [INFO] --- maven-enforcer-plugin:3.0.0-M3:enforce (enforce-maven) @ seata-common ---
+2026-01-15T01:39:39.5081454Z [INFO] 
+2026-01-15T01:39:39.5150025Z [INFO] Skipping JaCoCo execution due to missing execution data file.
+2026-01-15T01:39:39.5179368Z [INFO] 
+2026-01-15T01:39:39.5180296Z [INFO] --- jacoco-maven-plugin:0.8.14:report (report-aggregate) @ seata-apm ---
+2026-01-15T01:39:39.5181321Z [INFO] Skipping JaCoCo execution due to missing execution data file.
+2026-01-15T01:39:39.5182064Z [INFO] 
+2026-01-15T01:39:39.5182797Z [INFO] --- jacoco-maven-plugin:0.8.14:report-aggregate (report-aggregate) @ seata-apm ---
+2026-01-15T01:39:39.5183891Z [INFO] >>> maven-pmd-plugin:3.8:check (pmd-check) > :pmd @ seata-common >>>
+2026-01-15T01:39:39.5184900Z [INFO] Skipping JaCoCo execution due to missing execution data file.
+2026-01-15T01:39:39.5185620Z [INFO] 
+2026-01-15T01:39:39.5186273Z [INFO] --- jacoco-maven-plugin:0.8.14:report (report-aggregate) @ seata-messaging ---
+2026-01-15T01:39:39.5187273Z [INFO] Skipping JaCoCo execution due to missing execution data file.
+2026-01-15T01:39:39.5187978Z [INFO] 
+2026-01-15T01:39:39.5188917Z [INFO] --- jacoco-maven-plugin:0.8.14:report-aggregate (report-aggregate) @ seata-messaging ---
+2026-01-15T01:39:39.5270716Z [INFO] 
+2026-01-15T01:39:39.5271611Z [INFO] --------------------< org.apache.seata:seata-dubbo >--------------------
+2026-01-15T01:39:39.5329711Z [INFO] Building seata-dubbo 2.6.0-SNAPSHOT 2.6.0-SNAPSHOT               [18/97]
+2026-01-15T01:39:39.5330553Z [INFO] --------------------------------[ pom ]---------------------------------
+2026-01-15T01:39:39.5407472Z [INFO] 
+2026-01-15T01:39:39.5412345Z [INFO] --- maven-pmd-plugin:3.8:pmd (pmd) @ seata-common ---
+2026-01-15T01:39:39.5434612Z [INFO] 
+2026-01-15T01:39:39.5436703Z [INFO] <<< maven-pmd-plugin:3.8:check (pmd-check) < :pmd @ seata-common <<<
+2026-01-15T01:39:39.5438642Z [INFO] 
+2026-01-15T01:39:39.5443893Z [INFO] 
+2026-01-15T01:39:39.5445618Z [INFO] --- maven-pmd-plugin:3.8:check (pmd-check) @ seata-common ---
+2026-01-15T01:39:39.5447383Z [INFO] 
+2026-01-15T01:39:39.5449329Z [INFO] --- git-commit-id-plugin:4.9.10:revision (get-the-git-infos) @ seata-common ---
+2026-01-15T01:39:39.5464887Z [INFO] skip is enabled, skipping execution!
+2026-01-15T01:39:39.5519528Z [INFO] 
+2026-01-15T01:39:39.5520120Z [INFO] --- jacoco-maven-plugin:0.8.14:prepare-agent (default) @ seata-common ---
+2026-01-15T01:39:39.5522052Z [INFO] argLine set to -javaagent:/home/runner/.m2/repository/org/jacoco/org.jacoco.agent/0.8.14/org.jacoco.agent-0.8.14-runtime.jar=destfile=/home/runner/work/incubator-seata/incubator-seata/common/target/jacoco.exec,excludes=**/test/**
+2026-01-15T01:39:39.5523718Z [INFO] 
+2026-01-15T01:39:39.5524383Z [INFO] --- maven-remote-resources-plugin:1.5:process (process-resource-bundles) @ seata-common ---
+2026-01-15T01:39:39.5651004Z [INFO] Recompiling the module because of changed source code.
+2026-01-15T01:39:39.5765869Z [INFO] Compiling 12 source files with javac [debug parameters target 1.8] to target/classes
+2026-01-15T01:39:39.9974754Z [INFO] 
+2026-01-15T01:39:39.9975492Z [INFO] --- maven-resources-plugin:3.2.0:resources (default-resources) @ seata-common ---
+2026-01-15T01:39:39.9994359Z [INFO] Using 'UTF-8' encoding to copy filtered resources.
+2026-01-15T01:39:39.9995016Z [INFO] Using 'UTF-8' encoding to copy filtered properties files.
+2026-01-15T01:39:39.9995561Z [INFO] Copying 1 resource
+2026-01-15T01:39:40.0017220Z [INFO] Copying 3 resources
+2026-01-15T01:39:40.0017737Z [INFO] 
+2026-01-15T01:39:40.0018575Z [INFO] --- maven-compiler-plugin:3.14.0:compile (default-compile) @ seata-common ---
+2026-01-15T01:39:40.0204984Z [INFO] Recompiling the module because of changed dependency.
+2026-01-15T01:39:40.0205847Z [INFO] Compiling 90 source files with javac [debug parameters target 1.8] to target/classes
+2026-01-15T01:39:40.2078784Z [INFO] 
+2026-01-15T01:39:40.2079820Z [INFO] --- maven-resources-plugin:3.2.0:testResources (default-testResources) @ seata-metrics-api ---
+2026-01-15T01:39:40.2111415Z [INFO] Using 'UTF-8' encoding to copy filtered resources.
+2026-01-15T01:39:40.2112390Z [INFO] Using 'UTF-8' encoding to copy filtered properties files.
+2026-01-15T01:39:40.2113573Z [INFO] skip non existing resourceDirectory /home/runner/work/incubator-seata/incubator-seata/metrics/seata-metrics-api/src/test/resources
+2026-01-15T01:39:40.2116144Z [INFO] Copying 3 resources
+2026-01-15T01:39:40.2138962Z [INFO] 
+2026-01-15T01:39:40.2171031Z [INFO] --- maven-compiler-plugin:3.14.0:testCompile (default-testCompile) @ seata-metrics-api ---
+2026-01-15T01:39:40.2175298Z [INFO] Recompiling the module because of changed dependency.
+2026-01-15T01:39:40.2182659Z [INFO] Compiling 1 source file with javac [debug parameters target 1.8] to target/test-classes
+2026-01-15T01:39:40.2870157Z [INFO] 
+2026-01-15T01:39:40.2874424Z [INFO] --- maven-surefire-plugin:3.0.0-M5:test (default-test) @ seata-metrics-api ---
+2026-01-15T01:39:40.4034760Z [INFO] 
+2026-01-15T01:39:40.4039554Z [INFO] --- maven-clean-plugin:3.1.0:clean (default-clean) @ seata-dubbo ---
+2026-01-15T01:39:40.9824554Z [INFO] /home/runner/work/incubator-seata/incubator-seata/common/src/main/java/org/apache/seata/common/exception/FrameworkException.java: Some input files use or override a deprecated API.
+2026-01-15T01:39:40.9826838Z [INFO] /home/runner/work/incubator-seata/incubator-seata/common/src/main/java/org/apache/seata/common/exception/FrameworkException.java: Recompile with -Xlint:deprecation for details.
+2026-01-15T01:39:40.9829484Z [INFO] /home/runner/work/incubator-seata/incubator-seata/common/src/main/java/org/apache/seata/common/loader/EnhancedServiceLoader.java: Some input files use unchecked or unsafe operations.
+2026-01-15T01:39:40.9831658Z [INFO] /home/runner/work/incubator-seata/incubator-seata/common/src/main/java/org/apache/seata/common/loader/EnhancedServiceLoader.java: Recompile with -Xlint:unchecked for details.
+2026-01-15T01:39:40.9833395Z [INFO] Some messages have been simplified; recompile with -Xdiags:verbose to get full output
+2026-01-15T01:39:40.9834125Z [INFO] -------------------------------------------------------------
+2026-01-15T01:39:40.9870917Z [ERROR] COMPILATION ERROR : 
+2026-01-15T01:39:40.9871486Z [INFO] -------------------------------------------------------------
+2026-01-15T01:39:40.9873103Z [ERROR] /home/runner/work/incubator-seata/incubator-seata/common/src/main/java/org/apache/seata/common/util/HttpClientUtil.java:[108,30] no suitable method found for create(java.lang.String,okhttp3.MediaType)
+2026-01-15T01:39:40.9874938Z     method okhttp3.RequestBody.create(okhttp3.MediaType,java.lang.String) is not applicable
+2026-01-15T01:39:40.9875951Z       (argument mismatch; java.lang.String cannot be converted to okhttp3.MediaType)
+2026-01-15T01:39:40.9876932Z     method okhttp3.RequestBody.create(okhttp3.MediaType,okio.ByteString) is not applicable
+2026-01-15T01:39:40.9877918Z       (argument mismatch; java.lang.String cannot be converted to okhttp3.MediaType)
+2026-01-15T01:39:40.9878989Z     method okhttp3.RequestBody.create(okhttp3.MediaType,byte[]) is not applicable
+2026-01-15T01:39:40.9879901Z       (argument mismatch; java.lang.String cannot be converted to okhttp3.MediaType)
+2026-01-15T01:39:40.9880867Z     method okhttp3.RequestBody.create(okhttp3.MediaType,java.io.File) is not applicable
+2026-01-15T01:39:40.9881837Z       (argument mismatch; java.lang.String cannot be converted to okhttp3.MediaType)
+2026-01-15T01:39:40.9883495Z [ERROR] /home/runner/work/incubator-seata/incubator-seata/common/src/main/java/org/apache/seata/common/util/HttpClientUtil.java:[109,30] no suitable method found for create(byte[],okhttp3.MediaType)
+2026-01-15T01:39:40.9885238Z     method okhttp3.RequestBody.create(okhttp3.MediaType,java.lang.String) is not applicable
+2026-01-15T01:39:40.9886171Z       (argument mismatch; byte[] cannot be converted to okhttp3.MediaType)
+2026-01-15T01:39:40.9887093Z     method okhttp3.RequestBody.create(okhttp3.MediaType,okio.ByteString) is not applicable
+2026-01-15T01:39:40.9888012Z       (argument mismatch; byte[] cannot be converted to okhttp3.MediaType)
+2026-01-15T01:39:40.9888991Z     method okhttp3.RequestBody.create(okhttp3.MediaType,byte[]) is not applicable
+2026-01-15T01:39:40.9890109Z       (argument mismatch; byte[] cannot be converted to okhttp3.MediaType)
+2026-01-15T01:39:40.9891000Z     method okhttp3.RequestBody.create(okhttp3.MediaType,java.io.File) is not applicable
+2026-01-15T01:39:40.9891894Z       (argument mismatch; byte[] cannot be converted to okhttp3.MediaType)
+2026-01-15T01:39:40.9893572Z [ERROR] /home/runner/work/incubator-seata/incubator-seata/common/src/main/java/org/apache/seata/common/util/HttpClientUtil.java:[126,30] no suitable method found for create(java.lang.String,okhttp3.MediaType)
+2026-01-15T01:39:40.9895369Z     method okhttp3.RequestBody.create(okhttp3.MediaType,java.lang.String) is not applicable
+2026-01-15T01:39:40.9896371Z       (argument mismatch; java.lang.String cannot be converted to okhttp3.MediaType)
+2026-01-15T01:39:40.9897341Z     method okhttp3.RequestBody.create(okhttp3.MediaType,okio.ByteString) is not applicable
+2026-01-15T01:39:40.9898330Z       (argument mismatch; java.lang.String cannot be converted to okhttp3.MediaType)
+2026-01-15T01:39:40.9947785Z     method okhttp3.RequestBody.create(okhttp3.MediaType,byte[]) is not applicable
+2026-01-15T01:39:40.9948815Z       (argument mismatch; java.lang.String cannot be converted to okhttp3.MediaType)
+2026-01-15T01:39:40.9949647Z     method okhttp3.RequestBody.create(okhttp3.MediaType,java.io.File) is not applicable
+2026-01-15T01:39:40.9950510Z       (argument mismatch; java.lang.String cannot be converted to okhttp3.MediaType)
+2026-01-15T01:39:40.9951907Z [ERROR] /home/runner/work/incubator-seata/incubator-seata/common/src/main/java/org/apache/seata/common/util/HttpClientUtil.java:[127,30] no suitable method found for create(byte[],okhttp3.MediaType)
+2026-01-15T01:39:40.9953801Z     method okhttp3.RequestBody.create(okhttp3.MediaType,java.lang.String) is not applicable
+2026-01-15T01:39:40.9954701Z       (argument mismatch; byte[] cannot be converted to okhttp3.MediaType)
+2026-01-15T01:39:40.9955944Z     method okhttp3.RequestBody.create(okhttp3.MediaType,okio.ByteString) is not applicable
+2026-01-15T01:39:40.9956862Z       (argument mismatch; byte[] cannot be converted to okhttp3.MediaType)
+2026-01-15T01:39:40.9957697Z     method okhttp3.RequestBody.create(okhttp3.MediaType,byte[]) is not applicable
+2026-01-15T01:39:40.9958698Z       (argument mismatch; byte[] cannot be converted to okhttp3.MediaType)
+2026-01-15T01:39:40.9959621Z     method okhttp3.RequestBody.create(okhttp3.MediaType,java.io.File) is not applicable
+2026-01-15T01:39:40.9960529Z       (argument mismatch; byte[] cannot be converted to okhttp3.MediaType)
+2026-01-15T01:39:40.9962150Z [ERROR] /home/runner/work/incubator-seata/incubator-seata/common/src/main/java/org/apache/seata/common/util/HttpClientUtil.java:[168,30] no suitable method found for create(java.lang.String,okhttp3.MediaType)
+2026-01-15T01:39:40.9963921Z     method okhttp3.RequestBody.create(okhttp3.MediaType,java.lang.String) is not applicable
+2026-01-15T01:39:40.9964944Z       (argument mismatch; java.lang.String cannot be converted to okhttp3.MediaType)
+2026-01-15T01:39:40.9965878Z     method okhttp3.RequestBody.create(okhttp3.MediaType,okio.ByteString) is not applicable
+2026-01-15T01:39:40.9966879Z       (argument mismatch; java.lang.String cannot be converted to okhttp3.MediaType)
+2026-01-15T01:39:40.9967807Z     method okhttp3.RequestBody.create(okhttp3.MediaType,byte[]) is not applicable
+2026-01-15T01:39:40.9968939Z       (argument mismatch; java.lang.String cannot be converted to okhttp3.MediaType)
+2026-01-15T01:39:40.9969946Z     method okhttp3.RequestBody.create(okhttp3.MediaType,java.io.File) is not applicable
+2026-01-15T01:39:40.9970921Z       (argument mismatch; java.lang.String cannot be converted to okhttp3.MediaType)
+2026-01-15T01:39:40.9972628Z [ERROR] /home/runner/work/incubator-seata/incubator-seata/common/src/main/java/org/apache/seata/common/util/HttpClientUtil.java:[169,30] no suitable method found for create(byte[],okhttp3.MediaType)
+2026-01-15T01:39:40.9974693Z     method okhttp3.RequestBody.create(okhttp3.MediaType,java.lang.String) is not applicable
+2026-01-15T01:39:40.9975702Z       (argument mismatch; byte[] cannot be converted to okhttp3.MediaType)
+2026-01-15T01:39:40.9976652Z     method okhttp3.RequestBody.create(okhttp3.MediaType,okio.ByteString) is not applicable
+2026-01-15T01:39:40.9977467Z       (argument mismatch; byte[] cannot be converted to okhttp3.MediaType)
+2026-01-15T01:39:40.9978199Z     method okhttp3.RequestBody.create(okhttp3.MediaType,byte[]) is not applicable
+2026-01-15T01:39:40.9979157Z       (argument mismatch; byte[] cannot be converted to okhttp3.MediaType)
+2026-01-15T01:39:40.9979904Z     method okhttp3.RequestBody.create(okhttp3.MediaType,java.io.File) is not applicable
+2026-01-15T01:39:40.9980693Z       (argument mismatch; byte[] cannot be converted to okhttp3.MediaType)
+2026-01-15T01:39:40.9981953Z [ERROR] /home/runner/work/incubator-seata/incubator-seata/common/src/main/java/org/apache/seata/common/util/HttpClientUtil.java:[185,31] no suitable method found for create(byte[])
+2026-01-15T01:39:40.9983448Z     method okhttp3.RequestBody.create(okhttp3.MediaType,java.lang.String) is not applicable
+2026-01-15T01:39:40.9984008Z       (actual and formal argument lists differ in length)
+2026-01-15T01:39:40.9984451Z     method okhttp3.RequestBody.create(okhttp3.MediaType,okio.ByteString) is not applicable
+2026-01-15T01:39:40.9984907Z       (actual and formal argument lists differ in length)
+2026-01-15T01:39:40.9985305Z     method okhttp3.RequestBody.create(okhttp3.MediaType,byte[]) is not applicable
+2026-01-15T01:39:40.9985715Z       (actual and formal argument lists differ in length)
+2026-01-15T01:39:40.9986129Z     method okhttp3.RequestBody.create(okhttp3.MediaType,byte[],int,int) is not applicable
+2026-01-15T01:39:40.9986760Z       (actual and formal argument lists differ in length)
+2026-01-15T01:39:40.9987176Z     method okhttp3.RequestBody.create(okhttp3.MediaType,java.io.File) is not applicable
+2026-01-15T01:39:40.9987602Z       (actual and formal argument lists differ in length)
+2026-01-15T01:39:40.9988657Z [ERROR] /home/runner/work/incubator-seata/incubator-seata/common/src/main/java/org/apache/seata/common/util/HttpClientUtil.java:[196,31] no suitable method found for create(java.lang.String,okhttp3.MediaType)
+2026-01-15T01:39:40.9989693Z     method okhttp3.RequestBody.create(okhttp3.MediaType,java.lang.String) is not applicable
+2026-01-15T01:39:40.9990234Z       (argument mismatch; java.lang.String cannot be converted to okhttp3.MediaType)
+2026-01-15T01:39:40.9990788Z     method okhttp3.RequestBody.create(okhttp3.MediaType,okio.ByteString) is not applicable
+2026-01-15T01:39:40.9991326Z       (argument mismatch; java.lang.String cannot be converted to okhttp3.MediaType)
+2026-01-15T01:39:40.9991825Z     method okhttp3.RequestBody.create(okhttp3.MediaType,byte[]) is not applicable
+2026-01-15T01:39:40.9992315Z       (argument mismatch; java.lang.String cannot be converted to okhttp3.MediaType)
+2026-01-15T01:39:40.9992825Z     method okhttp3.RequestBody.create(okhttp3.MediaType,java.io.File) is not applicable
+2026-01-15T01:39:40.9993338Z       (argument mismatch; java.lang.String cannot be converted to okhttp3.MediaType)
+2026-01-15T01:39:40.9994233Z [ERROR] /home/runner/work/incubator-seata/incubator-seata/common/src/main/java/org/apache/seata/common/util/HttpClientUtil.java:[230,42] no suitable method found for create(byte[],okhttp3.MediaType)
+2026-01-15T01:39:40.9995219Z     method okhttp3.RequestBody.create(okhttp3.MediaType,java.lang.String) is not applicable
+2026-01-15T01:39:40.9995742Z       (argument mismatch; byte[] cannot be converted to okhttp3.MediaType)
+2026-01-15T01:39:40.9996242Z     method okhttp3.RequestBody.create(okhttp3.MediaType,okio.ByteString) is not applicable
+2026-01-15T01:39:40.9996744Z       (argument mismatch; byte[] cannot be converted to okhttp3.MediaType)
+2026-01-15T01:39:40.9997203Z     method okhttp3.RequestBody.create(okhttp3.MediaType,byte[]) is not applicable
+2026-01-15T01:39:40.9997661Z       (argument mismatch; byte[] cannot be converted to okhttp3.MediaType)
+2026-01-15T01:39:40.9998265Z     method okhttp3.RequestBody.create(okhttp3.MediaType,java.io.File) is not applicable
+2026-01-15T01:39:40.9998955Z       (argument mismatch; byte[] cannot be converted to okhttp3.MediaType)
+2026-01-15T01:39:40.9999280Z [INFO] 9 errors 
+2026-01-15T01:39:40.9999552Z [INFO] -------------------------------------------------------------
+2026-01-15T01:39:42.0830839Z [INFO] Deleting /home/runner/work/incubator-seata/incubator-seata/extensions/rpc/seata-dubbo (includes = [*-pom.xml, **/db_store/**, **/sessionStore/**, **/root.data], excludes = [])
+2026-01-15T01:39:42.0832763Z [INFO] 
+2026-01-15T01:39:42.0833603Z [INFO] --- maven-enforcer-plugin:3.0.0-M3:enforce (enforce-maven-version) @ seata-dubbo ---
+2026-01-15T01:39:42.0834532Z [INFO] 
+2026-01-15T01:39:42.0835153Z [INFO] --- maven-enforcer-plugin:3.0.0-M3:enforce (enforce-maven) @ seata-dubbo ---
+2026-01-15T01:39:42.0836785Z [INFO] 
+2026-01-15T01:39:42.0837265Z [INFO] >>> maven-pmd-plugin:3.8:check (pmd-check) > :pmd @ seata-dubbo >>>
+2026-01-15T01:39:42.0904681Z [INFO] 
+2026-01-15T01:39:42.0905446Z [INFO] --- maven-pmd-plugin:3.8:pmd (pmd) @ seata-dubbo ---
+2026-01-15T01:39:42.0988286Z [INFO] 
+2026-01-15T01:39:42.0990778Z [INFO] <<< maven-pmd-plugin:3.8:check (pmd-check) < :pmd @ seata-dubbo <<<
+2026-01-15T01:39:42.0991399Z [INFO] 
+2026-01-15T01:39:42.0991649Z [INFO] 
+2026-01-15T01:39:42.0992072Z [INFO] --- maven-pmd-plugin:3.8:check (pmd-check) @ seata-dubbo ---
+2026-01-15T01:39:42.0994488Z [INFO] 
+2026-01-15T01:39:42.0995892Z [INFO] --- git-commit-id-plugin:4.9.10:revision (get-the-git-infos) @ seata-dubbo ---
+2026-01-15T01:39:42.1010975Z [INFO] skip is enabled, skipping execution!
+2026-01-15T01:39:42.1012188Z [INFO] 
+2026-01-15T01:39:42.1013030Z [INFO] --- jacoco-maven-plugin:0.8.14:prepare-agent (default) @ seata-dubbo ---
+2026-01-15T01:39:42.1028292Z [INFO] argLine set to -javaagent:/home/runner/.m2/repository/org/jacoco/org.jacoco.agent/0.8.14/org.jacoco.agent-0.8.14-runtime.jar=destfile=/home/runner/work/incubator-seata/incubator-seata/extensions/rpc/seata-dubbo/target/jacoco.exec,excludes=**/test/**
+2026-01-15T01:39:42.1030937Z [INFO] 
+2026-01-15T01:39:42.1034706Z [INFO] --- maven-remote-resources-plugin:1.5:process (process-resource-bundles) @ seata-dubbo ---
+2026-01-15T01:39:42.1139938Z [INFO] Surefire report directory: /home/runner/work/incubator-seata/incubator-seata/metrics/seata-metrics-api/target/surefire-reports
+2026-01-15T01:39:42.1589681Z [INFO] 
+2026-01-15T01:39:42.1590617Z [INFO] --- jacoco-maven-plugin:0.8.14:report (report) @ seata-dubbo ---
+2026-01-15T01:39:42.1591669Z [INFO] Skipping JaCoCo execution due to missing execution data file.
+2026-01-15T01:39:42.1592433Z [INFO] 
+2026-01-15T01:39:42.1593110Z [INFO] --- jacoco-maven-plugin:0.8.14:report (report-aggregate) @ seata-dubbo ---
+2026-01-15T01:39:42.1594085Z [INFO] Skipping JaCoCo execution due to missing execution data file.
+2026-01-15T01:39:42.1594835Z [INFO] 
+2026-01-15T01:39:42.1609284Z [INFO] --- jacoco-maven-plugin:0.8.14:report-aggregate (report-aggregate) @ seata-dubbo ---
+2026-01-15T01:39:44.2396760Z [INFO] 
+2026-01-15T01:39:44.2397702Z [INFO] -------------------------------------------------------
+2026-01-15T01:39:44.2400218Z [INFO]  T E S T S
+2026-01-15T01:39:44.2401866Z [INFO] -------------------------------------------------------
+2026-01-15T01:39:45.1139885Z [INFO] Running org.apache.seata.metrics.IdTest
+2026-01-15T01:39:45.2167907Z [INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.104 s - in org.apache.seata.metrics.IdTest
+2026-01-15T01:39:45.2471000Z [INFO] 
+2026-01-15T01:39:45.2471331Z [INFO] Results:
+2026-01-15T01:39:45.2471643Z [INFO] 
+2026-01-15T01:39:45.2472073Z [INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0
+2026-01-15T01:39:45.2472507Z [INFO] 
+2026-01-15T01:39:45.2501935Z [INFO] 
+2026-01-15T01:39:45.2503046Z [INFO] --- jacoco-maven-plugin:0.8.14:report (report) @ seata-metrics-api ---
+2026-01-15T01:39:45.2512578Z [INFO] Loading execution data file /home/runner/work/incubator-seata/incubator-seata/metrics/seata-metrics-api/target/jacoco.exec
+2026-01-15T01:39:45.3135344Z [INFO] Analyzed bundle 'seata-metrics-api 2.6.0-SNAPSHOT' with 4 classes
+2026-01-15T01:39:45.3344525Z [INFO] 
+2026-01-15T01:39:45.3347396Z [INFO] --- jacoco-maven-plugin:0.8.14:report (report-aggregate) @ seata-metrics-api ---
+2026-01-15T01:39:45.3356747Z [INFO] Loading execution data file /home/runner/work/incubator-seata/incubator-seata/metrics/seata-metrics-api/target/jacoco.exec
+2026-01-15T01:39:45.3443683Z [INFO] Analyzed bundle 'seata-metrics-api 2.6.0-SNAPSHOT' with 4 classes
+2026-01-15T01:39:45.3586032Z [INFO] 
+2026-01-15T01:39:45.3587731Z [INFO] --- jacoco-maven-plugin:0.8.14:report-aggregate (report-aggregate) @ seata-metrics-api ---
+2026-01-15T01:39:45.3618540Z [INFO] Loading execution data file /home/runner/work/incubator-seata/incubator-seata/metrics/seata-metrics-api/target/jacoco.exec
+2026-01-15T01:39:45.3769784Z [INFO] ------------------------------------------------------------------------
+2026-01-15T01:39:45.3770876Z [INFO] Reactor Summary for Seata Parent POM 2.6.0-SNAPSHOT 2.6.0-SNAPSHOT:
+2026-01-15T01:39:45.3771475Z [INFO] 
+2026-01-15T01:39:45.3771915Z [INFO] Seata Build 2.6.0-SNAPSHOT ......................... SUCCESS [ 19.231 s]
+2026-01-15T01:39:45.3772708Z [INFO] Seata Parent POM 2.6.0-SNAPSHOT .................... SUCCESS [ 17.486 s]
+2026-01-15T01:39:45.3773475Z [INFO] seata-common 2.6.0-SNAPSHOT ........................ FAILURE [  7.892 s]
+2026-01-15T01:39:45.3774225Z [INFO] seata-config 2.6.0-SNAPSHOT ........................ SUCCESS [  1.385 s]
+2026-01-15T01:39:45.3774942Z [INFO] seata-config-core 2.6.0-SNAPSHOT ................... SKIPPED
+2026-01-15T01:39:45.3775620Z [INFO] seata-config-custom 2.6.0-SNAPSHOT ................. SKIPPED
+2026-01-15T01:39:45.3776622Z [INFO] seata-config-apollo 2.6.0-SNAPSHOT ................. SKIPPED
+2026-01-15T01:39:45.3777299Z [INFO] seata-config-nacos 2.6.0-SNAPSHOT .................. SKIPPED
+2026-01-15T01:39:45.3777961Z [INFO] seata-config-zk 2.6.0-SNAPSHOT ..................... SKIPPED
+2026-01-15T01:39:45.3778945Z [INFO] seata-config-consul 2.6.0-SNAPSHOT ................. SKIPPED
+2026-01-15T01:39:45.3779640Z [INFO] seata-config-etcd3 2.6.0-SNAPSHOT .................. SKIPPED
+2026-01-15T01:39:45.3780339Z [INFO] seata-config-spring-cloud 2.6.0-SNAPSHOT ........... SKIPPED
+2026-01-15T01:39:45.3781094Z [INFO] seata-discovery 2.6.0-SNAPSHOT ..................... SUCCESS [  1.451 s]
+2026-01-15T01:39:45.3781880Z [INFO] seata-discovery-core 2.6.0-SNAPSHOT ................ SKIPPED
+2026-01-15T01:39:45.3782571Z [INFO] seata-core 2.6.0-SNAPSHOT .......................... SKIPPED
+2026-01-15T01:39:45.3783252Z [INFO] seata-discovery-custom 2.6.0-SNAPSHOT .............. SKIPPED
+2026-01-15T01:39:45.3783970Z [INFO] seata-discovery-consul 2.6.0-SNAPSHOT .............. SKIPPED
+2026-01-15T01:39:45.3784656Z [INFO] seata-discovery-eureka 2.6.0-SNAPSHOT .............. SKIPPED
+2026-01-15T01:39:45.3785337Z [INFO] seata-discovery-nacos 2.6.0-SNAPSHOT ............... SKIPPED
+2026-01-15T01:39:45.3786012Z [INFO] seata-discovery-redis 2.6.0-SNAPSHOT ............... SKIPPED
+2026-01-15T01:39:45.3786687Z [INFO] seata-discovery-sofa 2.6.0-SNAPSHOT ................ SKIPPED
+2026-01-15T01:39:45.3787385Z [INFO] seata-discovery-raft 2.6.0-SNAPSHOT ................ SKIPPED
+2026-01-15T01:39:45.3788064Z [INFO] seata-discovery-zk 2.6.0-SNAPSHOT .................. SKIPPED
+2026-01-15T01:39:45.3789066Z [INFO] seata-discovery-etcd3 2.6.0-SNAPSHOT ............... SKIPPED
+2026-01-15T01:39:45.3793771Z [INFO] seata-discovery-namingserver 2.6.0-SNAPSHOT ........ SKIPPED
+2026-01-15T01:39:45.3797682Z [INFO] seata-tm 2.6.0-SNAPSHOT ............................ SKIPPED
+2026-01-15T01:39:45.3802269Z [INFO] seata-extensions 2.6.0-SNAPSHOT .................... SUCCESS [  1.409 s]
+2026-01-15T01:39:45.3806955Z [INFO] seata-rpc 2.6.0-SNAPSHOT ........................... SUCCESS [  5.010 s]
+2026-01-15T01:39:45.3823099Z [INFO] seata-rpc-core 2.6.0-SNAPSHOT ...................... SKIPPED
+2026-01-15T01:39:45.3823910Z [INFO] seata-brpc 2.6.0-SNAPSHOT .......................... SKIPPED
+2026-01-15T01:39:45.3824872Z [INFO] seata-http 2.6.0-SNAPSHOT .......................... SKIPPED
+2026-01-15T01:39:45.3825578Z [INFO] seata-http-jakarta 2.6.0-SNAPSHOT .................. SKIPPED
+2026-01-15T01:39:45.3826283Z [INFO] seata-dubbo-alibaba 2.6.0-SNAPSHOT ................. SKIPPED
+2026-01-15T01:39:45.3826968Z [INFO] seata-sofa-rpc 2.6.0-SNAPSHOT ...................... SKIPPED
+2026-01-15T01:39:45.3827645Z [INFO] seata-motan 2.6.0-SNAPSHOT ......................... SKIPPED
+2026-01-15T01:39:45.3828310Z [INFO] seata-rm 2.6.0-SNAPSHOT ............................ SKIPPED
+2026-01-15T01:39:45.3829301Z [INFO] seata-sqlparser 2.6.0-SNAPSHOT ..................... SUCCESS [  1.388 s]
+2026-01-15T01:39:45.3830100Z [INFO] seata-sqlparser-core 2.6.0-SNAPSHOT ................ SKIPPED
+2026-01-15T01:39:45.3830876Z [INFO] seata-compressor 2.6.0-SNAPSHOT .................... SUCCESS [  1.417 s]
+2026-01-15T01:39:45.3831661Z [INFO] seata-compressor-gzip 2.6.0-SNAPSHOT ............... SKIPPED
+2026-01-15T01:39:45.3832388Z [INFO] seata-compressor-bzip2 2.6.0-SNAPSHOT .............. SKIPPED
+2026-01-15T01:39:45.3833092Z [INFO] seata-compressor-zip 2.6.0-SNAPSHOT ................ SKIPPED
+2026-01-15T01:39:45.3833801Z [INFO] seata-compressor-lz4 2.6.0-SNAPSHOT ................ SKIPPED
+2026-01-15T01:39:45.3834496Z [INFO] seata-compressor-deflater 2.6.0-SNAPSHOT ........... SKIPPED
+2026-01-15T01:39:45.3836356Z [INFO] seata-compressor-zstd 2.6.0-SNAPSHOT ............... SKIPPED
+2026-01-15T01:39:45.3838316Z [INFO] seata-compressor-all 2.6.0-SNAPSHOT ................ SKIPPED
+2026-01-15T01:39:45.3839210Z [INFO] seata-sqlparser-druid 2.6.0-SNAPSHOT ............... SKIPPED
+2026-01-15T01:39:45.3840150Z [INFO] seata-rm-datasource 2.6.0-SNAPSHOT ................. SKIPPED
+2026-01-15T01:39:45.3841162Z [INFO] seata-serializer 2.6.0-SNAPSHOT .................... SUCCESS [  1.407 s]
+2026-01-15T01:39:45.3842181Z [INFO] seata-serializer-seata 2.6.0-SNAPSHOT .............. SKIPPED
+2026-01-15T01:39:45.3843098Z [INFO] seata-serializer-protobuf 2.6.0-SNAPSHOT ........... SKIPPED
+2026-01-15T01:39:45.3859801Z [INFO] seata-serializer-kryo 2.6.0-SNAPSHOT ............... SKIPPED
+2026-01-15T01:39:45.3860593Z [INFO] seata-serializer-hessian 2.6.0-SNAPSHOT ............ SKIPPED
+2026-01-15T01:39:45.3861332Z [INFO] seata-serializer-fastjson2 2.6.0-SNAPSHOT .......... SKIPPED
+2026-01-15T01:39:45.3862046Z [INFO] seata-serializer-fory 2.6.0-SNAPSHOT ............... SKIPPED
+2026-01-15T01:39:45.3862752Z [INFO] seata-serializer-all 2.6.0-SNAPSHOT ................ SKIPPED
+2026-01-15T01:39:45.3863462Z [INFO] seata-integration-tx-api 2.6.0-SNAPSHOT ............ SKIPPED
+2026-01-15T01:39:45.3864149Z [INFO] seata-tcc 2.6.0-SNAPSHOT ........................... SKIPPED
+2026-01-15T01:39:45.3864900Z [INFO] seata-messaging 2.6.0-SNAPSHOT ..................... SUCCESS [  5.020 s]
+2026-01-15T01:39:45.3865640Z [INFO] seata-rocketmq 2.6.0-SNAPSHOT ...................... SKIPPED
+2026-01-15T01:39:45.3866322Z [INFO] seata-sqlparser-antlr 2.6.0-SNAPSHOT ............... SKIPPED
+2026-01-15T01:39:45.3866989Z [INFO] seata-spring 2.6.0-SNAPSHOT ........................ SKIPPED
+2026-01-15T01:39:45.3867654Z [INFO] seata-grpc 2.6.0-SNAPSHOT .......................... SKIPPED
+2026-01-15T01:39:45.3868326Z [INFO] seata-hsf 2.6.0-SNAPSHOT ........................... SKIPPED
+2026-01-15T01:39:45.3869118Z [INFO] seata-saga 2.6.0-SNAPSHOT .......................... SKIPPED
+2026-01-15T01:39:45.3869823Z [INFO] seata-saga-processctrl 2.6.0-SNAPSHOT .............. SKIPPED
+2026-01-15T01:39:45.3870513Z [INFO] seata-saga-statelang 2.6.0-SNAPSHOT ................ SKIPPED
+2026-01-15T01:39:45.3873946Z [INFO] seata-saga-engine-store 2.6.0-SNAPSHOT ............. SKIPPED
+2026-01-15T01:39:45.3874638Z [INFO] seata-saga-engine 2.6.0-SNAPSHOT ................... SKIPPED
+2026-01-15T01:39:45.3875296Z [INFO] seata-saga-rm 2.6.0-SNAPSHOT ....................... SKIPPED
+2026-01-15T01:39:45.3875950Z [INFO] seata-saga-spring 2.6.0-SNAPSHOT ................... SKIPPED
+2026-01-15T01:39:45.3876827Z [INFO] seata-saga-annotation 2.6.0-SNAPSHOT ............... SKIPPED
+2026-01-15T01:39:45.3877566Z [INFO] seata-metrics 2.6.0-SNAPSHOT ....................... SUCCESS [  1.361 s]
+2026-01-15T01:39:45.3878690Z [INFO] seata-metrics-api 2.6.0-SNAPSHOT ................... SUCCESS [ 10.900 s]
+2026-01-15T01:39:45.3879558Z [INFO] seata-all 2.6.0-SNAPSHOT ........................... SKIPPED
+2026-01-15T01:39:45.3880428Z [INFO] Seata All-in-one 2.6.0-SNAPSHOT .................... SKIPPED
+2026-01-15T01:39:45.3881315Z [INFO] Seata bom 2.6.0-SNAPSHOT ........................... SUCCESS [  0.664 s]
+2026-01-15T01:39:45.3882197Z [INFO] seata-config-all 2.6.0-SNAPSHOT .................... SKIPPED
+2026-01-15T01:39:45.3883073Z [INFO] Seata dependencies 2.6.0-SNAPSHOT .................. SUCCESS [  0.662 s]
+2026-01-15T01:39:45.3885718Z [INFO] seata-discovery-all 2.6.0-SNAPSHOT ................. SKIPPED
+2026-01-15T01:39:45.3890199Z [INFO] seata-dubbo 2.6.0-SNAPSHOT ......................... SUCCESS [  2.645 s]
+2026-01-15T01:39:45.3892371Z [INFO] seata-spring-autoconfigure 2.6.0-SNAPSHOT .......... SKIPPED
+2026-01-15T01:39:45.3895187Z [INFO] seata-spring-autoconfigure-core 2.6.0-SNAPSHOT ..... SKIPPED
+2026-01-15T01:39:45.3895844Z [INFO] seata-spring-autoconfigure-server 2.6.0-SNAPSHOT ... SKIPPED
+2026-01-15T01:39:45.3896548Z [INFO] seata-metrics-core 2.6.0-SNAPSHOT .................. SKIPPED
+2026-01-15T01:39:45.3897265Z [INFO] seata-metrics-registry-compact 2.6.0-SNAPSHOT ...... SKIPPED
+2026-01-15T01:39:45.3898035Z [INFO] seata-metrics-exporter-prometheus 2.6.0-SNAPSHOT ... SKIPPED
+2026-01-15T01:39:45.3899152Z [INFO] seata-metrics-all 2.6.0-SNAPSHOT ................... SKIPPED
+2026-01-15T01:39:45.3905151Z [INFO] seata-server 2.6.0-SNAPSHOT ........................ SKIPPED
+2026-01-15T01:39:45.3912529Z [INFO] seata-apm 2.6.0-SNAPSHOT ........................... SUCCESS [  5.016 s]
+2026-01-15T01:39:45.3913336Z [INFO] apm-seata-skywalking-plugin 2.6.0-SNAPSHOT ......... SKIPPED
+2026-01-15T01:39:45.3914069Z [INFO] seata-mock-server 2.6.0-SNAPSHOT ................... SKIPPED
+2026-01-15T01:39:45.3914820Z [INFO] seata-spring-autoconfigure-client 2.6.0-SNAPSHOT ... SKIPPED
+2026-01-15T01:39:45.3915587Z [INFO] seata-spring-boot-starter 2.6.0-SNAPSHOT ........... SKIPPED
+2026-01-15T01:39:45.3916291Z [INFO] seata-test 2.6.0-SNAPSHOT .......................... SKIPPED
+2026-01-15T01:39:45.3916958Z [INFO] seata-test-old-version ............................. SKIPPED
+2026-01-15T01:39:45.3917731Z [INFO] seata-distribution 2.6.0-SNAPSHOT .................. SUCCESS [  1.439 s]
+2026-01-15T01:39:45.3919934Z [INFO] ------------------------------------------------------------------------
+2026-01-15T01:39:45.3920587Z [INFO] BUILD FAILURE
+2026-01-15T01:39:45.3921081Z [INFO] ------------------------------------------------------------------------
+2026-01-15T01:39:45.3921683Z [INFO] Total time:  58.133 s (Wall Clock)
+2026-01-15T01:39:45.3922157Z [INFO] Finished at: 2026-01-15T01:39:45Z
+2026-01-15T01:39:45.3922711Z [INFO] ------------------------------------------------------------------------
+2026-01-15T01:39:45.3936641Z [ERROR] Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.14.0:compile (default-compile) on project seata-common: Compilation failure: Compilation failure: 
+2026-01-15T01:39:45.3965112Z [ERROR] /home/runner/work/incubator-seata/incubator-seata/common/src/main/java/org/apache/seata/common/util/HttpClientUtil.java:[108,30] no suitable method found for create(java.lang.String,okhttp3.MediaType)
+2026-01-15T01:39:45.3969778Z [ERROR]     method okhttp3.RequestBody.create(okhttp3.MediaType,java.lang.String) is not applicable
+2026-01-15T01:39:45.3970878Z [ERROR]       (argument mismatch; java.lang.String cannot be converted to okhttp3.MediaType)
+2026-01-15T01:39:45.3971956Z [ERROR]     method okhttp3.RequestBody.create(okhttp3.MediaType,okio.ByteString) is not applicable
+2026-01-15T01:39:45.3972976Z [ERROR]       (argument mismatch; java.lang.String cannot be converted to okhttp3.MediaType)
+2026-01-15T01:39:45.3974242Z [ERROR]     method okhttp3.RequestBody.create(okhttp3.MediaType,byte[]) is not applicable
+2026-01-15T01:39:45.3975216Z [ERROR]       (argument mismatch; java.lang.String cannot be converted to okhttp3.MediaType)
+2026-01-15T01:39:45.3976261Z [ERROR]     method okhttp3.RequestBody.create(okhttp3.MediaType,java.io.File) is not applicable
+2026-01-15T01:39:45.3977271Z [ERROR]       (argument mismatch; java.lang.String cannot be converted to okhttp3.MediaType)
+2026-01-15T01:39:45.3979076Z [ERROR] /home/runner/work/incubator-seata/incubator-seata/common/src/main/java/org/apache/seata/common/util/HttpClientUtil.java:[109,30] no suitable method found for create(byte[],okhttp3.MediaType)
+2026-01-15T01:39:45.3980831Z [ERROR]     method okhttp3.RequestBody.create(okhttp3.MediaType,java.lang.String) is not applicable
+2026-01-15T01:39:45.3981810Z [ERROR]       (argument mismatch; byte[] cannot be converted to okhttp3.MediaType)
+2026-01-15T01:39:45.3982806Z [ERROR]     method okhttp3.RequestBody.create(okhttp3.MediaType,okio.ByteString) is not applicable
+2026-01-15T01:39:45.3983804Z [ERROR]       (argument mismatch; byte[] cannot be converted to okhttp3.MediaType)
+2026-01-15T01:39:45.3984746Z [ERROR]     method okhttp3.RequestBody.create(okhttp3.MediaType,byte[]) is not applicable
+2026-01-15T01:39:45.3988005Z [ERROR]       (argument mismatch; byte[] cannot be converted to okhttp3.MediaType)
+2026-01-15T01:39:45.3989110Z [ERROR]     method okhttp3.RequestBody.create(okhttp3.MediaType,java.io.File) is not applicable
+2026-01-15T01:39:45.3990078Z [ERROR]       (argument mismatch; byte[] cannot be converted to okhttp3.MediaType)
+2026-01-15T01:39:45.3991770Z [ERROR] /home/runner/work/incubator-seata/incubator-seata/common/src/main/java/org/apache/seata/common/util/HttpClientUtil.java:[126,30] no suitable method found for create(java.lang.String,okhttp3.MediaType)
+2026-01-15T01:39:45.3995852Z [ERROR]     method okhttp3.RequestBody.create(okhttp3.MediaType,java.lang.String) is not applicable
+2026-01-15T01:39:45.3998162Z [ERROR]       (argument mismatch; java.lang.String cannot be converted to okhttp3.MediaType)
+2026-01-15T01:39:45.3999313Z [ERROR]     method okhttp3.RequestBody.create(okhttp3.MediaType,okio.ByteString) is not applicable
+2026-01-15T01:39:45.4000212Z [ERROR]       (argument mismatch; java.lang.String cannot be converted to okhttp3.MediaType)
+2026-01-15T01:39:45.4001046Z [ERROR]     method okhttp3.RequestBody.create(okhttp3.MediaType,byte[]) is not applicable
+2026-01-15T01:39:45.4001873Z [ERROR]       (argument mismatch; java.lang.String cannot be converted to okhttp3.MediaType)
+2026-01-15T01:39:45.4002744Z [ERROR]     method okhttp3.RequestBody.create(okhttp3.MediaType,java.io.File) is not applicable
+2026-01-15T01:39:45.4003633Z [ERROR]       (argument mismatch; java.lang.String cannot be converted to okhttp3.MediaType)
+2026-01-15T01:39:45.4009781Z [ERROR] /home/runner/work/incubator-seata/incubator-seata/common/src/main/java/org/apache/seata/common/util/HttpClientUtil.java:[127,30] no suitable method found for create(byte[],okhttp3.MediaType)
+2026-01-15T01:39:45.4015825Z [ERROR]     method okhttp3.RequestBody.create(okhttp3.MediaType,java.lang.String) is not applicable
+2026-01-15T01:39:45.4016801Z [ERROR]       (argument mismatch; byte[] cannot be converted to okhttp3.MediaType)
+2026-01-15T01:39:45.4017720Z [ERROR]     method okhttp3.RequestBody.create(okhttp3.MediaType,okio.ByteString) is not applicable
+2026-01-15T01:39:45.4018833Z [ERROR]       (argument mismatch; byte[] cannot be converted to okhttp3.MediaType)
+2026-01-15T01:39:45.4019671Z [ERROR]     method okhttp3.RequestBody.create(okhttp3.MediaType,byte[]) is not applicable
+2026-01-15T01:39:45.4020536Z [ERROR]       (argument mismatch; byte[] cannot be converted to okhttp3.MediaType)
+2026-01-15T01:39:45.4021436Z [ERROR]     method okhttp3.RequestBody.create(okhttp3.MediaType,java.io.File) is not applicable
+2026-01-15T01:39:45.4022308Z [ERROR]       (argument mismatch; byte[] cannot be converted to okhttp3.MediaType)
+2026-01-15T01:39:45.4025964Z [ERROR] /home/runner/work/incubator-seata/incubator-seata/common/src/main/java/org/apache/seata/common/util/HttpClientUtil.java:[168,30] no suitable method found for create(java.lang.String,okhttp3.MediaType)
+2026-01-15T01:39:45.4029240Z [ERROR]     method okhttp3.RequestBody.create(okhttp3.MediaType,java.lang.String) is not applicable
+2026-01-15T01:39:45.4030171Z [ERROR]       (argument mismatch; java.lang.String cannot be converted to okhttp3.MediaType)
+2026-01-15T01:39:45.4031087Z [ERROR]     method okhttp3.RequestBody.create(okhttp3.MediaType,okio.ByteString) is not applicable
+2026-01-15T01:39:45.4031977Z [ERROR]       (argument mismatch; java.lang.String cannot be converted to okhttp3.MediaType)
+2026-01-15T01:39:45.4032882Z [ERROR]     method okhttp3.RequestBody.create(okhttp3.MediaType,byte[]) is not applicable
+2026-01-15T01:39:45.4033754Z [ERROR]       (argument mismatch; java.lang.String cannot be converted to okhttp3.MediaType)
+2026-01-15T01:39:45.4034633Z [ERROR]     method okhttp3.RequestBody.create(okhttp3.MediaType,java.io.File) is not applicable
+2026-01-15T01:39:45.4035506Z [ERROR]       (argument mismatch; java.lang.String cannot be converted to okhttp3.MediaType)
+2026-01-15T01:39:45.4036930Z [ERROR] /home/runner/work/incubator-seata/incubator-seata/common/src/main/java/org/apache/seata/common/util/HttpClientUtil.java:[169,30] no suitable method found for create(byte[],okhttp3.MediaType)
+2026-01-15T01:39:45.4038744Z [ERROR]     method okhttp3.RequestBody.create(okhttp3.MediaType,java.lang.String) is not applicable
+2026-01-15T01:39:45.4039667Z [ERROR]       (argument mismatch; byte[] cannot be converted to okhttp3.MediaType)
+2026-01-15T01:39:45.4053778Z [ERROR]     method okhttp3.RequestBody.create(okhttp3.MediaType,okio.ByteString) is not applicable
+2026-01-15T01:39:45.4055057Z [ERROR]       (argument mismatch; byte[] cannot be converted to okhttp3.MediaType)
+2026-01-15T01:39:45.4055910Z [ERROR]     method okhttp3.RequestBody.create(okhttp3.MediaType,byte[]) is not applicable
+2026-01-15T01:39:45.4056763Z [ERROR]       (argument mismatch; byte[] cannot be converted to okhttp3.MediaType)
+2026-01-15T01:39:45.4057685Z [ERROR]     method okhttp3.RequestBody.create(okhttp3.MediaType,java.io.File) is not applicable
+2026-01-15T01:39:45.4058785Z [ERROR]       (argument mismatch; byte[] cannot be converted to okhttp3.MediaType)
+2026-01-15T01:39:45.4063519Z [ERROR] /home/runner/work/incubator-seata/incubator-seata/common/src/main/java/org/apache/seata/common/util/HttpClientUtil.java:[185,31] no suitable method found for create(byte[])
+2026-01-15T01:39:45.4065094Z [ERROR]     method okhttp3.RequestBody.create(okhttp3.MediaType,java.lang.String) is not applicable
+2026-01-15T01:39:45.4068688Z [ERROR]       (actual and formal argument lists differ in length)
+2026-01-15T01:39:45.4069566Z [ERROR]     method okhttp3.RequestBody.create(okhttp3.MediaType,okio.ByteString) is not applicable
+2026-01-15T01:39:45.4070416Z [ERROR]       (actual and formal argument lists differ in length)
+2026-01-15T01:39:45.4071204Z [ERROR]     method okhttp3.RequestBody.create(okhttp3.MediaType,byte[]) is not applicable
+2026-01-15T01:39:45.4072011Z [ERROR]       (actual and formal argument lists differ in length)
+2026-01-15T01:39:45.4072815Z [ERROR]     method okhttp3.RequestBody.create(okhttp3.MediaType,byte[],int,int) is not applicable
+2026-01-15T01:39:45.4073652Z [ERROR]       (actual and formal argument lists differ in length)
+2026-01-15T01:39:45.4074476Z [ERROR]     method okhttp3.RequestBody.create(okhttp3.MediaType,java.io.File) is not applicable
+2026-01-15T01:39:45.4075318Z [ERROR]       (actual and formal argument lists differ in length)
+2026-01-15T01:39:45.4079182Z [ERROR] /home/runner/work/incubator-seata/incubator-seata/common/src/main/java/org/apache/seata/common/util/HttpClientUtil.java:[196,31] no suitable method found for create(java.lang.String,okhttp3.MediaType)
+2026-01-15T01:39:45.4084792Z [ERROR]     method okhttp3.RequestBody.create(okhttp3.MediaType,java.lang.String) is not applicable
+2026-01-15T01:39:45.4085836Z [ERROR]       (argument mismatch; java.lang.String cannot be converted to okhttp3.MediaType)
+2026-01-15T01:39:45.4087061Z [ERROR]     method okhttp3.RequestBody.create(okhttp3.MediaType,okio.ByteString) is not applicable
+2026-01-15T01:39:45.4088103Z [ERROR]       (argument mismatch; java.lang.String cannot be converted to okhttp3.MediaType)
+2026-01-15T01:39:45.4089292Z [ERROR]     method okhttp3.RequestBody.create(okhttp3.MediaType,byte[]) is not applicable
+2026-01-15T01:39:45.4090229Z [ERROR]       (argument mismatch; java.lang.String cannot be converted to okhttp3.MediaType)
+2026-01-15T01:39:45.4091222Z [ERROR]     method okhttp3.RequestBody.create(okhttp3.MediaType,java.io.File) is not applicable
+2026-01-15T01:39:45.4092209Z [ERROR]       (argument mismatch; java.lang.String cannot be converted to okhttp3.MediaType)
+2026-01-15T01:39:45.4093784Z [ERROR] /home/runner/work/incubator-seata/incubator-seata/common/src/main/java/org/apache/seata/common/util/HttpClientUtil.java:[230,42] no suitable method found for create(byte[],okhttp3.MediaType)
+2026-01-15T01:39:45.4095449Z [ERROR]     method okhttp3.RequestBody.create(okhttp3.MediaType,java.lang.String) is not applicable
+2026-01-15T01:39:45.4096425Z [ERROR]       (argument mismatch; byte[] cannot be converted to okhttp3.MediaType)
+2026-01-15T01:39:45.4099045Z [ERROR]     method okhttp3.RequestBody.create(okhttp3.MediaType,okio.ByteString) is not applicable
+2026-01-15T01:39:45.4100244Z [ERROR]       (argument mismatch; byte[] cannot be converted to okhttp3.MediaType)
+2026-01-15T01:39:45.4103034Z [ERROR]     method okhttp3.RequestBody.create(okhttp3.MediaType,byte[]) is not applicable
+2026-01-15T01:39:45.4103953Z [ERROR]       (argument mismatch; byte[] cannot be converted to okhttp3.MediaType)
+2026-01-15T01:39:45.4105145Z [ERROR]     method okhttp3.RequestBody.create(okhttp3.MediaType,java.io.File) is not applicable
+2026-01-15T01:39:45.4106102Z [ERROR]       (argument mismatch; byte[] cannot be converted to okhttp3.MediaType)
+2026-01-15T01:39:45.4106713Z [ERROR] -> [Help 1]
+2026-01-15T01:39:45.4108087Z org.apache.maven.lifecycle.LifecycleExecutionException: Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.14.0:compile (default-compile) on project seata-common: Compilation failure
+2026-01-15T01:39:45.4110063Z     at org.apache.maven.lifecycle.internal.MojoExecutor.execute (MojoExecutor.java:215)
+2026-01-15T01:39:45.4111088Z     at org.apache.maven.lifecycle.internal.MojoExecutor.execute (MojoExecutor.java:156)
+2026-01-15T01:39:45.4112105Z     at org.apache.maven.lifecycle.internal.MojoExecutor.execute (MojoExecutor.java:148)
+2026-01-15T01:39:45.4113354Z     at org.apache.maven.lifecycle.internal.LifecycleModuleBuilder.buildProject (LifecycleModuleBuilder.java:117)
+2026-01-15T01:39:45.4115219Z     at org.apache.maven.lifecycle.internal.builder.multithreaded.MultiThreadedBuilder$1.call (MultiThreadedBuilder.java:190)
+2026-01-15T01:39:45.4116985Z     at org.apache.maven.lifecycle.internal.builder.multithreaded.MultiThreadedBuilder$1.call (MultiThreadedBuilder.java:186)
+2026-01-15T01:39:45.4118275Z     at java.util.concurrent.FutureTask.run (FutureTask.java:266)
+2026-01-15T01:39:45.4119338Z     at java.util.concurrent.Executors$RunnableAdapter.call (Executors.java:511)
+2026-01-15T01:39:45.4120251Z     at java.util.concurrent.FutureTask.run (FutureTask.java:266)
+2026-01-15T01:39:45.4121235Z     at java.util.concurrent.ThreadPoolExecutor.runWorker (ThreadPoolExecutor.java:1149)
+2026-01-15T01:39:45.4122381Z     at java.util.concurrent.ThreadPoolExecutor$Worker.run (ThreadPoolExecutor.java:624)
+2026-01-15T01:39:45.4123258Z     at java.lang.Thread.run (Thread.java:750)
+2026-01-15T01:39:45.4124184Z Caused by: org.apache.maven.plugin.compiler.CompilationFailureException: Compilation failure
+2026-01-15T01:39:45.4125537Z     at org.apache.maven.plugin.compiler.AbstractCompilerMojo.execute (AbstractCompilerMojo.java:1309)
+2026-01-15T01:39:45.4126770Z     at org.apache.maven.plugin.compiler.CompilerMojo.execute (CompilerMojo.java:225)
+2026-01-15T01:39:45.4128022Z     at org.apache.maven.plugin.DefaultBuildPluginManager.executeMojo (DefaultBuildPluginManager.java:137)
+2026-01-15T01:39:45.4129742Z     at org.apache.maven.lifecycle.internal.MojoExecutor.execute (MojoExecutor.java:210)
+2026-01-15T01:39:45.4130886Z     at org.apache.maven.lifecycle.internal.MojoExecutor.execute (MojoExecutor.java:156)
+2026-01-15T01:39:45.4131910Z     at org.apache.maven.lifecycle.internal.MojoExecutor.execute (MojoExecutor.java:148)
+2026-01-15T01:39:45.4147888Z     at org.apache.maven.lifecycle.internal.LifecycleModuleBuilder.buildProject (LifecycleModuleBuilder.java:117)
+2026-01-15T01:39:45.4149435Z     at org.apache.maven.lifecycle.internal.builder.multithreaded.MultiThreadedBuilder$1.call (MultiThreadedBuilder.java:190)
+2026-01-15T01:39:45.4150873Z     at org.apache.maven.lifecycle.internal.builder.multithreaded.MultiThreadedBuilder$1.call (MultiThreadedBuilder.java:186)
+2026-01-15T01:39:45.4151886Z     at java.util.concurrent.FutureTask.run (FutureTask.java:266)
+2026-01-15T01:39:45.4152556Z     at java.util.concurrent.Executors$RunnableAdapter.call (Executors.java:511)
+2026-01-15T01:39:45.4155572Z     at java.util.concurrent.FutureTask.run (FutureTask.java:266)
+2026-01-15T01:39:45.4156311Z     at java.util.concurrent.ThreadPoolExecutor.runWorker (ThreadPoolExecutor.java:1149)
+2026-01-15T01:39:45.4157174Z     at java.util.concurrent.ThreadPoolExecutor$Worker.run (ThreadPoolExecutor.java:624)
+2026-01-15T01:39:45.4157822Z     at java.lang.Thread.run (Thread.java:750)
+2026-01-15T01:39:45.4158183Z [ERROR] 
+2026-01-15T01:39:45.4158721Z [ERROR] Re-run Maven using the -X switch to enable full debug logging.
+2026-01-15T01:39:45.4159202Z [ERROR] 
+2026-01-15T01:39:45.4159775Z [ERROR] For more information about the errors and possible solutions, please read the following articles:
+2026-01-15T01:39:45.4161036Z [ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException
+2026-01-15T01:39:45.4161658Z [ERROR] 
+2026-01-15T01:39:45.4162136Z [ERROR] After correcting the problems, you can resume the build with the command
+2026-01-15T01:39:45.4164700Z [ERROR]   mvn <args> -rf :seata-common
+2026-01-15T01:39:45.4516182Z ##[error]Process completed with exit code 1.
+2026-01-15T01:39:45.4593873Z Post job cleanup.
+2026-01-15T01:39:45.5963881Z Post job cleanup.
+2026-01-15T01:39:45.6707661Z [command]/usr/bin/git version
+2026-01-15T01:39:45.6744741Z git version 2.52.0
+2026-01-15T01:39:45.6787442Z Temporarily overriding HOME='/home/runner/work/_temp/0fa1cb30-5298-45f6-a8be-6fdaec4d2dab' before making global git config changes
+2026-01-15T01:39:45.6788352Z Adding repository directory to the temporary git global config as a safe directory
+2026-01-15T01:39:45.6792135Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/incubator-seata/incubator-seata
+2026-01-15T01:39:45.6825238Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-01-15T01:39:45.6855123Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-01-15T01:39:45.7104437Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-01-15T01:39:45.7125811Z http.https://github.com/.extraheader
+2026-01-15T01:39:45.7136979Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-01-15T01:39:45.7167986Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-01-15T01:39:45.7491643Z Print service container logs: 74dd9609d72d4101af6458193f4cf99d_redis72_d76686
+2026-01-15T01:39:45.7496255Z ##[command]/usr/bin/docker logs --details 6bef17286bbed987fba16f09bff9b314fb44ce771e1d9432deeea70fed0c09d9
+2026-01-15T01:39:45.7624944Z  1:C 15 Jan 2026 01:38:14.397 # WARNING Memory overcommit must be enabled! Without it, a background save or replication may fail under low memory condition. Being disabled, it can also cause failures without low memory condition, see https://github.com/jemalloc/jemalloc/issues/1328. To fix this issue add 'vm.overcommit_memory = 1' to /etc/sysctl.conf and then reboot or run the command 'sysctl vm.overcommit_memory=1' for this to take effect.
+2026-01-15T01:39:45.7627927Z  1:C 15 Jan 2026 01:38:14.397 * oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+2026-01-15T01:39:45.7628990Z  1:C 15 Jan 2026 01:38:14.397 * Redis version=7.2.12, bits=64, commit=00000000, modified=0, pid=1, just started
+2026-01-15T01:39:45.7630406Z  1:C 15 Jan 2026 01:38:14.397 # Warning: no config file specified, using the default config. In order to specify a config file use redis-server /path/to/redis.conf
+2026-01-15T01:39:45.7631471Z  1:M 15 Jan 2026 01:38:14.397 * monotonic clock: POSIX clock_gettime
+2026-01-15T01:39:45.7632087Z  1:M 15 Jan 2026 01:38:14.398 * Running mode=standalone, port=6379.
+2026-01-15T01:39:45.7632655Z  1:M 15 Jan 2026 01:38:14.398 * Server initialized
+2026-01-15T01:39:45.7633172Z  1:M 15 Jan 2026 01:38:14.398 * Ready to accept connections tcp
+2026-01-15T01:39:45.7646077Z Stop and remove container: 74dd9609d72d4101af6458193f4cf99d_redis72_d76686
+2026-01-15T01:39:45.7651652Z ##[command]/usr/bin/docker rm --force 6bef17286bbed987fba16f09bff9b314fb44ce771e1d9432deeea70fed0c09d9
+2026-01-15T01:39:45.9064053Z 6bef17286bbed987fba16f09bff9b314fb44ce771e1d9432deeea70fed0c09d9
+2026-01-15T01:39:45.9085909Z Print service container logs: 84ecd86782a342219d2ffa8518f583b9_nacosnacosserverv242_e4e80b
+2026-01-15T01:39:45.9087149Z ##[command]/usr/bin/docker logs --details 4ca1ad6fb36111728382fffe5bcb0df44e9ecf164774262781a06453f94e4881
+2026-01-15T01:39:45.9214707Z  + export 'CUSTOM_SEARCH_NAMES=application'
+2026-01-15T01:39:45.9215772Z  + export 'CUSTOM_SEARCH_LOCATIONS=file:/home/nacos/conf/'
+2026-01-15T01:39:45.9216308Z  + export 'MEMBER_LIST='
+2026-01-15T01:39:45.9216737Z  + PLUGINS_DIR=/home/nacos/plugins/peer-finder
+2026-01-15T01:39:45.9218637Z  + JAVA_OPT=' -XX:+UseConcMarkSweepGC -XX:+UseCMSCompactAtFullCollection -XX:CMSInitiatingOccupancyFraction=70 -XX:+CMSParallelRemarkEnabled -XX:SoftRefLRUPolicyMSPerMB=0 -XX:+CMSClassUnloadingEnabled -XX:SurvivorRatio=8 '
+2026-01-15T01:39:45.9224263Z  Nacos is starting, you can docker logs your container
+2026-01-15T01:39:45.9224720Z  
+2026-01-15T01:39:45.9224962Z           ,--.
+2026-01-15T01:39:45.9225218Z         ,--.'|
+2026-01-15T01:39:45.9225535Z     ,--,:  : |                                           Nacos 2.4.2
+2026-01-15T01:39:45.9226179Z  ,`--.'`|  ' :                       ,---.               Running in stand alone mode, All function modules
+2026-01-15T01:39:45.9226797Z  |   :  :  | |                      '   ,'\   .--.--.    Port: 8848
+2026-01-15T01:39:45.9227277Z  :   |   \ | :  ,--.--.     ,---.  /   /   | /  /    '   Pid: 1
+2026-01-15T01:39:45.9227883Z  |   : '  '; | /       \   /     \.   ; ,. :|  :  /`./   Console: http://172.18.0.3:8848/nacos/index.html
+2026-01-15T01:39:45.9228637Z  '   ' ;.    ;.--.  .-. | /    / ''   | |: :|  :  ;_
+2026-01-15T01:39:45.9229122Z  |   | | \   | \__\/: . ..    ' / '   | .; : \  \    `.      https://nacos.io
+2026-01-15T01:39:45.9229622Z  '   : |  ; .' ," .--.; |'   ; :__|   :    |  `----.   \
+2026-01-15T01:39:45.9230042Z  |   | '`--'  /  /  ,.  |'   | '.'|\   \  /  /  /`--'  /
+2026-01-15T01:39:45.9230469Z  '   : |     ;  :   .'   \   :    : `----'  '--'.     /
+2026-01-15T01:39:45.9230896Z  ;   |.'     |  ,     .-./\   \  /            `--'---'
+2026-01-15T01:39:45.9231295Z  '---'        `--`---'     `----'
+2026-01-15T01:39:45.9231629Z  
+2026-01-15T01:39:45.9232391Z  2026-01-15 09:38:23,887 INFO Tomcat initialized with port(s): 8848 (http)
+2026-01-15T01:39:45.9232936Z  
+2026-01-15T01:39:45.9233453Z  2026-01-15 09:38:23,982 INFO Root WebApplicationContext: initialization completed in 3251 ms
+2026-01-15T01:39:45.9234113Z  
+2026-01-15T01:39:45.9240845Z  2026-01-15 09:38:28,490 INFO Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@42f9c19a, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@64bfd6fd, org.springframework.security.web.context.SecurityContextPersistenceFilter@3104f7bd, org.springframework.security.web.header.HeaderWriterFilter@719843e5, org.springframework.security.web.csrf.CsrfFilter@37c2eacb, org.springframework.security.web.authentication.logout.LogoutFilter@5a67e962, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@377008df, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@22bb5646, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@2ab2710, org.springframework.security.web.session.SessionManagementFilter@58112bc4, org.springframework.security.web.access.ExceptionTranslationFilter@73044cdf]
+2026-01-15T01:39:45.9247240Z  
+2026-01-15T01:39:45.9247560Z  2026-01-15 09:38:28,837 INFO Adding welcome page: class path resource [static/index.html]
+2026-01-15T01:39:45.9247931Z  
+2026-01-15T01:39:45.9248214Z  2026-01-15 09:38:29,282 INFO Exposing 1 endpoint(s) beneath base path '/actuator'
+2026-01-15T01:39:45.9248841Z  
+2026-01-15T01:39:45.9249474Z  2026-01-15 09:38:29,301 WARN You are asking Spring Security to ignore Ant [pattern='/**']. This is not recommended -- please use permitAll via HttpSecurity#authorizeHttpRequests instead.
+2026-01-15T01:39:45.9250141Z  
+2026-01-15T01:39:45.9250356Z  2026-01-15 09:38:29,302 INFO Will not secure Ant [pattern='/**']
+2026-01-15T01:39:45.9250664Z  
+2026-01-15T01:39:45.9251332Z  2026-01-15 09:38:29,302 WARN You are asking Spring Security to ignore Mvc [pattern='/prometheus']. This is not recommended -- please use permitAll via HttpSecurity#authorizeHttpRequests instead.
+2026-01-15T01:39:45.9252306Z  
+2026-01-15T01:39:45.9252567Z  2026-01-15 09:38:29,302 INFO Will not secure Mvc [pattern='/prometheus']
+2026-01-15T01:39:45.9252904Z  
+2026-01-15T01:39:45.9253635Z  2026-01-15 09:38:29,303 WARN You are asking Spring Security to ignore Mvc [pattern='/prometheus/namespaceId/{namespaceId}']. This is not recommended -- please use permitAll via HttpSecurity#authorizeHttpRequests instead.
+2026-01-15T01:39:45.9254417Z  
+2026-01-15T01:39:45.9254730Z  2026-01-15 09:38:29,303 INFO Will not secure Mvc [pattern='/prometheus/namespaceId/{namespaceId}']
+2026-01-15T01:39:45.9255129Z  
+2026-01-15T01:39:45.9255902Z  2026-01-15 09:38:29,303 WARN You are asking Spring Security to ignore Mvc [pattern='/prometheus/namespaceId/{namespaceId}/service/{service}']. This is not recommended -- please use permitAll via HttpSecurity#authorizeHttpRequests instead.
+2026-01-15T01:39:45.9256765Z  
+2026-01-15T01:39:45.9257143Z  2026-01-15 09:38:29,303 INFO Will not secure Mvc [pattern='/prometheus/namespaceId/{namespaceId}/service/{service}']
+2026-01-15T01:39:45.9257726Z  
+2026-01-15T01:39:45.9257913Z  + '[[' standalone '==' standalone ]]
+2026-01-15T01:39:45.9259183Z  + JAVA_OPT=' -XX:+UseConcMarkSweepGC -XX:+UseCMSCompactAtFullCollection -XX:CMSInitiatingOccupancyFraction=70 -XX:+CMSParallelRemarkEnabled -XX:SoftRefLRUPolicyMSPerMB=0 -XX:+CMSClassUnloadingEnabled -XX:SurvivorRatio=8  -Xms1g -Xmx1g -Xmn512m'
+2026-01-15T01:39:45.9261375Z  + JAVA_OPT=' -XX:+UseConcMarkSweepGC -XX:+UseCMSCompactAtFullCollection -XX:CMSInitiatingOccupancyFraction=70 -XX:+CMSParallelRemarkEnabled -XX:SoftRefLRUPolicyMSPerMB=0 -XX:+CMSClassUnloadingEnabled -XX:SurvivorRatio=8  -Xms1g -Xmx1g -Xmn512m -Dnacos.standalone=true'
+2026-01-15T01:39:45.9262652Z  + '[[' all '==' config ]]
+2026-01-15T01:39:45.9262856Z  + '[[' all '==' naming ]]
+2026-01-15T01:39:45.9263142Z  + '[[' '!' -z  ]]
+2026-01-15T01:39:45.9263321Z  + '[[' '!' -z  ]]
+2026-01-15T01:39:45.9263800Z  + '[[' '!' -z  ]]
+2026-01-15T01:39:45.9264146Z  + '[[' '!' -z  ]]
+2026-01-15T01:39:45.9264459Z  + '[[' '!' -z  ]]
+2026-01-15T01:39:45.9264790Z  + '[[' ip '==' hostname ]]
+2026-01-15T01:39:45.9266515Z  + JAVA_OPT=' -XX:+UseConcMarkSweepGC -XX:+UseCMSCompactAtFullCollection -XX:CMSInitiatingOccupancyFraction=70 -XX:+CMSParallelRemarkEnabled -XX:SoftRefLRUPolicyMSPerMB=0 -XX:+CMSClassUnloadingEnabled -XX:SurvivorRatio=8  -Xms1g -Xmx1g -Xmn512m -Dnacos.standalone=true -Dnacos.member.list='
+2026-01-15T01:39:45.9267695Z  + /usr/lib/jvm/java-1.8-openjdk/bin/java -version
+2026-01-15T01:39:45.9267997Z  + sed -E -n 's/.* version "([0-9]*).*$/\1/p'
+2026-01-15T01:39:45.9268243Z  + JAVA_MAJOR_VERSION=1
+2026-01-15T01:39:45.9268690Z  + '[[' 1 -ge 9 ]]
+2026-01-15T01:39:45.9269108Z  + JAVA_OPT_EXT_FIX='-Djava.ext.dirs=/usr/lib/jvm/java-1.8-openjdk/jre/lib/ext:/usr/lib/jvm/java-1.8-openjdk/lib/ext'
+2026-01-15T01:39:45.9271111Z  + JAVA_OPT=' -XX:+UseConcMarkSweepGC -XX:+UseCMSCompactAtFullCollection -XX:CMSInitiatingOccupancyFraction=70 -XX:+CMSParallelRemarkEnabled -XX:SoftRefLRUPolicyMSPerMB=0 -XX:+CMSClassUnloadingEnabled -XX:SurvivorRatio=8  -Xms1g -Xmx1g -Xmn512m -Dnacos.standalone=true -Dnacos.member.list= -Xloggc:/home/nacos/logs/nacos_gc.log -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintGCTimeStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=10 -XX:GCLogFileSize=100M'
+2026-01-15T01:39:45.9274701Z  + JAVA_OPT=' -XX:+UseConcMarkSweepGC -XX:+UseCMSCompactAtFullCollection -XX:CMSInitiatingOccupancyFraction=70 -XX:+CMSParallelRemarkEnabled -XX:SoftRefLRUPolicyMSPerMB=0 -XX:+CMSClassUnloadingEnabled -XX:SurvivorRatio=8  -Xms1g -Xmx1g -Xmn512m -Dnacos.standalone=true -Dnacos.member.list= -Xloggc:/home/nacos/logs/nacos_gc.log -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintGCTimeStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=10 -XX:GCLogFileSize=100M -Dloader.path=/home/nacos/plugins,/home/nacos/plugins/health,/home/nacos/plugins/cmdb,/home/nacos/plugins/selector'
+2026-01-15T01:39:45.9278921Z  + JAVA_OPT=' -XX:+UseConcMarkSweepGC -XX:+UseCMSCompactAtFullCollection -XX:CMSInitiatingOccupancyFraction=70 -XX:+CMSParallelRemarkEnabled -XX:SoftRefLRUPolicyMSPerMB=0 -XX:+CMSClassUnloadingEnabled -XX:SurvivorRatio=8  -Xms1g -Xmx1g -Xmn512m -Dnacos.standalone=true -Dnacos.member.list= -Xloggc:/home/nacos/logs/nacos_gc.log -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintGCTimeStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=10 -XX:GCLogFileSize=100M -Dloader.path=/home/nacos/plugins,/home/nacos/plugins/health,/home/nacos/plugins/cmdb,/home/nacos/plugins/selector -Dnacos.home=/home/nacos'
+2026-01-15T01:39:45.9283424Z  + JAVA_OPT=' -XX:+UseConcMarkSweepGC -XX:+UseCMSCompactAtFullCollection -XX:CMSInitiatingOccupancyFraction=70 -XX:+CMSParallelRemarkEnabled -XX:SoftRefLRUPolicyMSPerMB=0 -XX:+CMSClassUnloadingEnabled -XX:SurvivorRatio=8  -Xms1g -Xmx1g -Xmn512m -Dnacos.standalone=true -Dnacos.member.list= -Xloggc:/home/nacos/logs/nacos_gc.log -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintGCTimeStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=10 -XX:GCLogFileSize=100M -Dloader.path=/home/nacos/plugins,/home/nacos/plugins/health,/home/nacos/plugins/cmdb,/home/nacos/plugins/selector -Dnacos.home=/home/nacos -jar /home/nacos/target/nacos-server.jar'
+2026-01-15T01:39:45.9287817Z  + JAVA_OPT=' -XX:+UseConcMarkSweepGC -XX:+UseCMSCompactAtFullCollection -XX:CMSInitiatingOccupancyFraction=70 -XX:+CMSParallelRemarkEnabled -XX:SoftRefLRUPolicyMSPerMB=0 -XX:+CMSClassUnloadingEnabled -XX:SurvivorRatio=8  -Xms1g -Xmx1g -Xmn512m -Dnacos.standalone=true -Dnacos.member.list= -Xloggc:/home/nacos/logs/nacos_gc.log -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintGCTimeStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=10 -XX:GCLogFileSize=100M -Dloader.path=/home/nacos/plugins,/home/nacos/plugins/health,/home/nacos/plugins/cmdb,/home/nacos/plugins/selector -Dnacos.home=/home/nacos -jar /home/nacos/target/nacos-server.jar '
+2026-01-15T01:39:45.9292848Z  + JAVA_OPT=' -XX:+UseConcMarkSweepGC -XX:+UseCMSCompactAtFullCollection -XX:CMSInitiatingOccupancyFraction=70 -XX:+CMSParallelRemarkEnabled -XX:SoftRefLRUPolicyMSPerMB=0 -XX:+CMSClassUnloadingEnabled -XX:SurvivorRatio=8  -Xms1g -Xmx1g -Xmn512m -Dnacos.standalone=true -Dnacos.member.list= -Xloggc:/home/nacos/logs/nacos_gc.log -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintGCTimeStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=10 -XX:GCLogFileSize=100M -Dloader.path=/home/nacos/plugins,/home/nacos/plugins/health,/home/nacos/plugins/cmdb,/home/nacos/plugins/selector -Dnacos.home=/home/nacos -jar /home/nacos/target/nacos-server.jar  --spring.config.additional-location=file:/home/nacos/conf/'
+2026-01-15T01:39:45.9297846Z  + JAVA_OPT=' -XX:+UseConcMarkSweepGC -XX:+UseCMSCompactAtFullCollection -XX:CMSInitiatingOccupancyFraction=70 -XX:+CMSParallelRemarkEnabled -XX:SoftRefLRUPolicyMSPerMB=0 -XX:+CMSClassUnloadingEnabled -XX:SurvivorRatio=8  -Xms1g -Xmx1g -Xmn512m -Dnacos.standalone=true -Dnacos.member.list= -Xloggc:/home/nacos/logs/nacos_gc.log -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintGCTimeStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=10 -XX:GCLogFileSize=100M -Dloader.path=/home/nacos/plugins,/home/nacos/plugins/health,/home/nacos/plugins/cmdb,/home/nacos/plugins/selector -Dnacos.home=/home/nacos -jar /home/nacos/target/nacos-server.jar  --spring.config.additional-location=file:/home/nacos/conf/ --spring.config.name=application'
+2026-01-15T01:39:45.9303320Z  + JAVA_OPT=' -XX:+UseConcMarkSweepGC -XX:+UseCMSCompactAtFullCollection -XX:CMSInitiatingOccupancyFraction=70 -XX:+CMSParallelRemarkEnabled -XX:SoftRefLRUPolicyMSPerMB=0 -XX:+CMSClassUnloadingEnabled -XX:SurvivorRatio=8  -Xms1g -Xmx1g -Xmn512m -Dnacos.standalone=true -Dnacos.member.list= -Xloggc:/home/nacos/logs/nacos_gc.log -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintGCTimeStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=10 -XX:GCLogFileSize=100M -Dloader.path=/home/nacos/plugins,/home/nacos/plugins/health,/home/nacos/plugins/cmdb,/home/nacos/plugins/selector -Dnacos.home=/home/nacos -jar /home/nacos/target/nacos-server.jar  --spring.config.additional-location=file:/home/nacos/conf/ --spring.config.name=application --logging.config=/home/nacos/conf/nacos-logback.xml'
+2026-01-15T01:39:45.9309330Z  + JAVA_OPT=' -XX:+UseConcMarkSweepGC -XX:+UseCMSCompactAtFullCollection -XX:CMSInitiatingOccupancyFraction=70 -XX:+CMSParallelRemarkEnabled -XX:SoftRefLRUPolicyMSPerMB=0 -XX:+CMSClassUnloadingEnabled -XX:SurvivorRatio=8  -Xms1g -Xmx1g -Xmn512m -Dnacos.standalone=true -Dnacos.member.list= -Xloggc:/home/nacos/logs/nacos_gc.log -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintGCTimeStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=10 -XX:GCLogFileSize=100M -Dloader.path=/home/nacos/plugins,/home/nacos/plugins/health,/home/nacos/plugins/cmdb,/home/nacos/plugins/selector -Dnacos.home=/home/nacos -jar /home/nacos/target/nacos-server.jar  --spring.config.additional-location=file:/home/nacos/conf/ --spring.config.name=application --logging.config=/home/nacos/conf/nacos-logback.xml --server.max-http-header-size=524288'
+2026-01-15T01:39:45.9312365Z  + echo 'Nacos is starting, you can docker logs your container'
+2026-01-15T01:39:45.9315675Z  + exec /usr/lib/jvm/java-1.8-openjdk/bin/java -XX:+UseConcMarkSweepGC -XX:+UseCMSCompactAtFullCollection '-XX:CMSInitiatingOccupancyFraction=70' -XX:+CMSParallelRemarkEnabled '-XX:SoftRefLRUPolicyMSPerMB=0' -XX:+CMSClassUnloadingEnabled '-XX:SurvivorRatio=8' -Xms1g -Xmx1g -Xmn512m '-Dnacos.standalone=true' '-Dnacos.member.list=' -Xloggc:/home/nacos/logs/nacos_gc.log -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintGCTimeStamps -XX:+UseGCLogFileRotation '-XX:NumberOfGCLogFiles=10' '-XX:GCLogFileSize=100M' '-Dloader.path=/home/nacos/plugins,/home/nacos/plugins/health,/home/nacos/plugins/cmdb,/home/nacos/plugins/selector' '-Dnacos.home=/home/nacos' -jar /home/nacos/target/nacos-server.jar '--spring.config.additional-location=file:/home/nacos/conf/' '--spring.config.name=application' '--logging.config=/home/nacos/conf/nacos-logback.xml' '--server.max-http-header-size=524288'
+2026-01-15T01:39:45.9319290Z  OpenJDK 64-Bit Server VM warning: UseCMSCompactAtFullCollection is deprecated and will likely be removed in a future release.
+2026-01-15T01:39:45.9319980Z  2026-01-15 09:38:29,379 INFO Tomcat started on port(s): 8848 (http) with context path '/nacos'
+2026-01-15T01:39:45.9320362Z  
+2026-01-15T01:39:45.9320728Z  2026-01-15 09:38:29,397 INFO No TaskScheduler/ScheduledExecutorService bean found for scheduled processing
+2026-01-15T01:39:45.9321170Z  
+2026-01-15T01:39:45.9321481Z  2026-01-15 09:38:29,418 INFO Nacos started successfully in stand alone mode. use embedded storage
+2026-01-15T01:39:45.9321870Z  
+2026-01-15T01:39:45.9322864Z Stop and remove container: 84ecd86782a342219d2ffa8518f583b9_nacosnacosserverv242_e4e80b
+2026-01-15T01:39:45.9323908Z ##[command]/usr/bin/docker rm --force 4ca1ad6fb36111728382fffe5bcb0df44e9ecf164774262781a06453f94e4881
+2026-01-15T01:39:46.0888614Z 4ca1ad6fb36111728382fffe5bcb0df44e9ecf164774262781a06453f94e4881
+2026-01-15T01:39:46.0915712Z Remove container network: github_network_dea50a9e993144bc9fb1f50519613ecd
+2026-01-15T01:39:46.0920692Z ##[command]/usr/bin/docker network rm github_network_dea50a9e993144bc9fb1f50519613ecd
+2026-01-15T01:39:46.2279739Z github_network_dea50a9e993144bc9fb1f50519613ecd
+2026-01-15T01:39:46.2340944Z Cleaning up orphan processes

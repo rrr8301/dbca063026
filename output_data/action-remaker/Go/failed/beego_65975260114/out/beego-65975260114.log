@@ -1,0 +1,1414 @@
+﻿2026-03-06T03:30:00.7035953Z Current runner version: '2.332.0'
+2026-03-06T03:30:00.7060592Z ##[group]Runner Image Provisioner
+2026-03-06T03:30:00.7061493Z Hosted Compute Agent
+2026-03-06T03:30:00.7062121Z Version: 20260213.493
+2026-03-06T03:30:00.7062678Z Commit: 5c115507f6dd24b8de37d8bbe0bb4509d0cc0fa3
+2026-03-06T03:30:00.7063540Z Build Date: 2026-02-13T00:28:41Z
+2026-03-06T03:30:00.7064181Z Worker ID: {030aee8f-c685-496a-bb2b-d653aae13d4c}
+2026-03-06T03:30:00.7064873Z Azure Region: northcentralus
+2026-03-06T03:30:00.7065396Z ##[endgroup]
+2026-03-06T03:30:00.7066960Z ##[group]Operating System
+2026-03-06T03:30:00.7067757Z Ubuntu
+2026-03-06T03:30:00.7068169Z 24.04.3
+2026-03-06T03:30:00.7068775Z LTS
+2026-03-06T03:30:00.7069201Z ##[endgroup]
+2026-03-06T03:30:00.7069717Z ##[group]Runner Image
+2026-03-06T03:30:00.7070386Z Image: ubuntu-24.04
+2026-03-06T03:30:00.7070897Z Version: 20260302.42.1
+2026-03-06T03:30:00.7072177Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260302.42/images/ubuntu/Ubuntu2404-Readme.md
+2026-03-06T03:30:00.7073602Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260302.42
+2026-03-06T03:30:00.7074512Z ##[endgroup]
+2026-03-06T03:30:00.7075851Z ##[group]GITHUB_TOKEN Permissions
+2026-03-06T03:30:00.7078120Z Contents: read
+2026-03-06T03:30:00.7078758Z Metadata: read
+2026-03-06T03:30:00.7079285Z ##[endgroup]
+2026-03-06T03:30:00.7081294Z Secret source: None
+2026-03-06T03:30:00.7082295Z Prepare workflow directory
+2026-03-06T03:30:00.7523654Z Prepare all required actions
+2026-03-06T03:30:00.7560890Z Getting action download info
+2026-03-06T03:30:01.0907424Z Download action repository 'actions/setup-go@v5' (SHA:40f1582b2485089dde7abd97c1529aa768e1baff)
+2026-03-06T03:30:01.6369836Z Download action repository 'actions/checkout@v2' (SHA:ee0669bd1cc54295c223e0bb666b733df41de1c5)
+2026-03-06T03:30:02.0826572Z Complete job name: test (1.22)
+2026-03-06T03:30:02.1415972Z ##[group]Checking docker version
+2026-03-06T03:30:02.1430045Z ##[command]/usr/bin/docker version --format '{{.Server.APIVersion}}'
+2026-03-06T03:30:02.2267433Z '1.48'
+2026-03-06T03:30:02.2281776Z Docker daemon API version: '1.48'
+2026-03-06T03:30:02.2283363Z ##[command]/usr/bin/docker version --format '{{.Client.APIVersion}}'
+2026-03-06T03:30:02.2470664Z '1.48'
+2026-03-06T03:30:02.2485853Z Docker client API version: '1.48'
+2026-03-06T03:30:02.2492732Z ##[endgroup]
+2026-03-06T03:30:02.2496406Z ##[group]Clean up resources from previous jobs
+2026-03-06T03:30:02.2502903Z ##[command]/usr/bin/docker ps --all --quiet --no-trunc --filter "label=76c255"
+2026-03-06T03:30:02.2659480Z ##[command]/usr/bin/docker network prune --force --filter "label=76c255"
+2026-03-06T03:30:02.2809642Z ##[endgroup]
+2026-03-06T03:30:02.2810624Z ##[group]Create local container network
+2026-03-06T03:30:02.2822203Z ##[command]/usr/bin/docker network create --label 76c255 github_network_6f8eadb69e1d4cb1b3acb662f855eb19
+2026-03-06T03:30:02.3350800Z 8ce4eec37f5467f1a010688a865b3df5657e1cf7adf13500f9c54f9f5c09fe82
+2026-03-06T03:30:02.3371779Z ##[endgroup]
+2026-03-06T03:30:02.3398011Z ##[group]Starting redis service container
+2026-03-06T03:30:02.3420649Z ##[command]/usr/bin/docker pull redis:latest
+2026-03-06T03:30:02.7422313Z latest: Pulling from library/redis
+2026-03-06T03:30:02.8675974Z 206356c42440: Pulling fs layer
+2026-03-06T03:30:02.8680687Z 214ecf6e5c87: Pulling fs layer
+2026-03-06T03:30:02.8682282Z 89b1b12d7109: Pulling fs layer
+2026-03-06T03:30:02.8683826Z f25f5c85b90d: Pulling fs layer
+2026-03-06T03:30:02.8685379Z ae77945b0371: Pulling fs layer
+2026-03-06T03:30:02.8686515Z 4f4fb700ef54: Pulling fs layer
+2026-03-06T03:30:02.8687712Z 141e1fc22067: Pulling fs layer
+2026-03-06T03:30:02.8688653Z f25f5c85b90d: Waiting
+2026-03-06T03:30:02.8689490Z ae77945b0371: Waiting
+2026-03-06T03:30:02.8690293Z 4f4fb700ef54: Waiting
+2026-03-06T03:30:02.8691101Z 141e1fc22067: Waiting
+2026-03-06T03:30:02.9709620Z 214ecf6e5c87: Verifying Checksum
+2026-03-06T03:30:02.9711942Z 214ecf6e5c87: Download complete
+2026-03-06T03:30:02.9829626Z 89b1b12d7109: Verifying Checksum
+2026-03-06T03:30:02.9838063Z 89b1b12d7109: Download complete
+2026-03-06T03:30:03.0930892Z 206356c42440: Verifying Checksum
+2026-03-06T03:30:03.0932648Z 206356c42440: Download complete
+2026-03-06T03:30:03.1050106Z ae77945b0371: Verifying Checksum
+2026-03-06T03:30:03.1889073Z ae77945b0371: Download complete
+2026-03-06T03:30:03.1892729Z 4f4fb700ef54: Verifying Checksum
+2026-03-06T03:30:03.1894081Z 4f4fb700ef54: Download complete
+2026-03-06T03:30:03.2098992Z 141e1fc22067: Verifying Checksum
+2026-03-06T03:30:03.2112056Z 141e1fc22067: Download complete
+2026-03-06T03:30:03.2781169Z f25f5c85b90d: Verifying Checksum
+2026-03-06T03:30:03.2782905Z f25f5c85b90d: Download complete
+2026-03-06T03:30:04.1909168Z 206356c42440: Pull complete
+2026-03-06T03:30:04.2796909Z 214ecf6e5c87: Pull complete
+2026-03-06T03:30:04.2949681Z 89b1b12d7109: Pull complete
+2026-03-06T03:30:04.6315796Z f25f5c85b90d: Pull complete
+2026-03-06T03:30:04.6411816Z ae77945b0371: Pull complete
+2026-03-06T03:30:04.6500380Z 4f4fb700ef54: Pull complete
+2026-03-06T03:30:04.6629386Z 141e1fc22067: Pull complete
+2026-03-06T03:30:04.6673619Z Digest: sha256:1c054d54ecd1597bba52f4304bca5afbc5565ebe614c5b3d7dc5b7f8a0cd768d
+2026-03-06T03:30:04.6687462Z Status: Downloaded newer image for redis:latest
+2026-03-06T03:30:04.6696837Z docker.io/library/redis:latest
+2026-03-06T03:30:04.6736205Z ##[command]/usr/bin/docker create --name 03a2921c14064da597b047d3a2fe2d31_redislatest_db5293 --label 76c255 --network github_network_6f8eadb69e1d4cb1b3acb662f855eb19 --network-alias redis -p 6379:6379  -e GITHUB_ACTIONS=true -e CI=true redis:latest
+2026-03-06T03:30:04.6983738Z 8abf9b32c4929e349d5eb2ddd2b79e0ccade218da002d94229dc3d8488bea3d5
+2026-03-06T03:30:04.7006517Z ##[command]/usr/bin/docker start 8abf9b32c4929e349d5eb2ddd2b79e0ccade218da002d94229dc3d8488bea3d5
+2026-03-06T03:30:04.9020745Z 8abf9b32c4929e349d5eb2ddd2b79e0ccade218da002d94229dc3d8488bea3d5
+2026-03-06T03:30:04.9040756Z ##[command]/usr/bin/docker ps --all --filter id=8abf9b32c4929e349d5eb2ddd2b79e0ccade218da002d94229dc3d8488bea3d5 --filter status=running --no-trunc --format "{{.ID}} {{.Status}}"
+2026-03-06T03:30:04.9187944Z 8abf9b32c4929e349d5eb2ddd2b79e0ccade218da002d94229dc3d8488bea3d5 Up Less than a second
+2026-03-06T03:30:04.9219696Z ##[command]/usr/bin/docker port 8abf9b32c4929e349d5eb2ddd2b79e0ccade218da002d94229dc3d8488bea3d5
+2026-03-06T03:30:04.9355718Z 6379/tcp -> 0.0.0.0:6379
+2026-03-06T03:30:04.9356333Z 6379/tcp -> [::]:6379
+2026-03-06T03:30:04.9411835Z ##[endgroup]
+2026-03-06T03:30:04.9412761Z ##[group]Starting memcached service container
+2026-03-06T03:30:04.9414502Z ##[command]/usr/bin/docker pull memcached:latest
+2026-03-06T03:30:05.3265103Z latest: Pulling from library/memcached
+2026-03-06T03:30:05.4413751Z 206356c42440: Already exists
+2026-03-06T03:30:05.4428372Z 36056d8f6cc2: Pulling fs layer
+2026-03-06T03:30:05.4428848Z 185bddc36e29: Pulling fs layer
+2026-03-06T03:30:05.4432937Z e9f8366e7d29: Pulling fs layer
+2026-03-06T03:30:05.4433763Z cfd467f5caa7: Pulling fs layer
+2026-03-06T03:30:05.4435389Z 8d6a0854d419: Pulling fs layer
+2026-03-06T03:30:05.4435964Z cfd467f5caa7: Waiting
+2026-03-06T03:30:05.4438495Z 8d6a0854d419: Waiting
+2026-03-06T03:30:05.5475542Z 36056d8f6cc2: Download complete
+2026-03-06T03:30:05.5596951Z 185bddc36e29: Verifying Checksum
+2026-03-06T03:30:05.5597557Z 185bddc36e29: Download complete
+2026-03-06T03:30:05.5606332Z 36056d8f6cc2: Pull complete
+2026-03-06T03:30:05.5807660Z e9f8366e7d29: Verifying Checksum
+2026-03-06T03:30:05.5808249Z e9f8366e7d29: Download complete
+2026-03-06T03:30:05.5975581Z 185bddc36e29: Pull complete
+2026-03-06T03:30:05.6463256Z cfd467f5caa7: Download complete
+2026-03-06T03:30:05.6645596Z 8d6a0854d419: Download complete
+2026-03-06T03:30:05.6698827Z e9f8366e7d29: Pull complete
+2026-03-06T03:30:05.6815914Z cfd467f5caa7: Pull complete
+2026-03-06T03:30:05.6919344Z 8d6a0854d419: Pull complete
+2026-03-06T03:30:05.6955943Z Digest: sha256:572b011ce33954ee809066d8cecbeb3ec98912109ee3be3663a3197425fd81ac
+2026-03-06T03:30:05.6969126Z Status: Downloaded newer image for memcached:latest
+2026-03-06T03:30:05.6977162Z docker.io/library/memcached:latest
+2026-03-06T03:30:05.6993047Z ##[command]/usr/bin/docker create --name 787d2f3ade0d47caa85a15571bceb98b_memcachedlatest_a74445 --label 76c255 --network github_network_6f8eadb69e1d4cb1b3acb662f855eb19 --network-alias memcached -p 11211:11211  -e GITHUB_ACTIONS=true -e CI=true memcached:latest
+2026-03-06T03:30:05.7240392Z e25fb768995feaf70bc2b6de112c4b644090501e5882c284f66fe50fe2ab92bf
+2026-03-06T03:30:05.7254857Z ##[command]/usr/bin/docker start e25fb768995feaf70bc2b6de112c4b644090501e5882c284f66fe50fe2ab92bf
+2026-03-06T03:30:05.8641497Z e25fb768995feaf70bc2b6de112c4b644090501e5882c284f66fe50fe2ab92bf
+2026-03-06T03:30:05.8659365Z ##[command]/usr/bin/docker ps --all --filter id=e25fb768995feaf70bc2b6de112c4b644090501e5882c284f66fe50fe2ab92bf --filter status=running --no-trunc --format "{{.ID}} {{.Status}}"
+2026-03-06T03:30:05.8795092Z e25fb768995feaf70bc2b6de112c4b644090501e5882c284f66fe50fe2ab92bf Up Less than a second
+2026-03-06T03:30:05.8810490Z ##[command]/usr/bin/docker port e25fb768995feaf70bc2b6de112c4b644090501e5882c284f66fe50fe2ab92bf
+2026-03-06T03:30:05.8926366Z 11211/tcp -> 0.0.0.0:11211
+2026-03-06T03:30:05.8926884Z 11211/tcp -> [::]:11211
+2026-03-06T03:30:05.8940034Z ##[endgroup]
+2026-03-06T03:30:05.8941330Z ##[group]Starting ssdb service container
+2026-03-06T03:30:05.8942485Z ##[command]/usr/bin/docker pull tsl0922/ssdb
+2026-03-06T03:30:05.9044847Z Using default tag: latest
+2026-03-06T03:30:06.3115951Z latest: Pulling from tsl0922/ssdb
+2026-03-06T03:30:06.3116642Z 6bbedd9b76a4: Pulling fs layer
+2026-03-06T03:30:06.3117846Z fc19d60a83f1: Pulling fs layer
+2026-03-06T03:30:06.3118485Z de413bb911fd: Pulling fs layer
+2026-03-06T03:30:06.3119106Z 2879a7ad3144: Pulling fs layer
+2026-03-06T03:30:06.3119756Z 668604fde02e: Pulling fs layer
+2026-03-06T03:30:06.3121045Z de00a866e05a: Pulling fs layer
+2026-03-06T03:30:06.3122069Z 8e439dc8ff20: Pulling fs layer
+2026-03-06T03:30:06.3122835Z dc3d4d908b43: Pulling fs layer
+2026-03-06T03:30:06.3123510Z de00a866e05a: Waiting
+2026-03-06T03:30:06.3123985Z 8e439dc8ff20: Waiting
+2026-03-06T03:30:06.3124767Z dc3d4d908b43: Waiting
+2026-03-06T03:30:06.3125259Z 2879a7ad3144: Waiting
+2026-03-06T03:30:06.3127181Z 668604fde02e: Waiting
+2026-03-06T03:30:06.4111132Z de413bb911fd: Verifying Checksum
+2026-03-06T03:30:06.4111910Z de413bb911fd: Download complete
+2026-03-06T03:30:06.4336465Z fc19d60a83f1: Verifying Checksum
+2026-03-06T03:30:06.4337162Z fc19d60a83f1: Download complete
+2026-03-06T03:30:06.5014819Z 2879a7ad3144: Download complete
+2026-03-06T03:30:06.5594662Z 668604fde02e: Verifying Checksum
+2026-03-06T03:30:06.5596312Z 668604fde02e: Download complete
+2026-03-06T03:30:06.6578315Z 8e439dc8ff20: Verifying Checksum
+2026-03-06T03:30:06.6581302Z 8e439dc8ff20: Download complete
+2026-03-06T03:30:06.7938037Z dc3d4d908b43: Verifying Checksum
+2026-03-06T03:30:06.8825525Z de00a866e05a: Verifying Checksum
+2026-03-06T03:30:06.8826721Z de00a866e05a: Download complete
+2026-03-06T03:30:07.1109705Z 6bbedd9b76a4: Verifying Checksum
+2026-03-06T03:30:07.1110622Z 6bbedd9b76a4: Download complete
+2026-03-06T03:30:09.1933553Z 6bbedd9b76a4: Pull complete
+2026-03-06T03:30:09.3550805Z fc19d60a83f1: Pull complete
+2026-03-06T03:30:09.3821542Z de413bb911fd: Pull complete
+2026-03-06T03:30:09.3960935Z 2879a7ad3144: Pull complete
+2026-03-06T03:30:09.4061779Z 668604fde02e: Pull complete
+2026-03-06T03:30:10.5136953Z de00a866e05a: Pull complete
+2026-03-06T03:30:10.5259687Z 8e439dc8ff20: Pull complete
+2026-03-06T03:30:10.5346063Z dc3d4d908b43: Pull complete
+2026-03-06T03:30:10.5376714Z Digest: sha256:5fcf8c75cb2195f2cf18e1eea735608927ecb57c87a92d2735a8ca0b8b7b0a41
+2026-03-06T03:30:10.5386991Z Status: Downloaded newer image for tsl0922/ssdb:latest
+2026-03-06T03:30:10.5394918Z docker.io/tsl0922/ssdb:latest
+2026-03-06T03:30:10.5439838Z ##[command]/usr/bin/docker create --name 627a6f88f85548d28767d377ccf8f287_tsl0922ssdb_adeb58 --label 76c255 --network github_network_6f8eadb69e1d4cb1b3acb662f855eb19 --network-alias ssdb -p 8888:8888  -e "SSDB_PORT=8888" -e GITHUB_ACTIONS=true -e CI=true tsl0922/ssdb
+2026-03-06T03:30:10.5664200Z 72e6d41733bc287a7a51cc4f9886552f5ea33a285f08e545f3bcc049dfc6ade1
+2026-03-06T03:30:10.5677060Z ##[command]/usr/bin/docker start 72e6d41733bc287a7a51cc4f9886552f5ea33a285f08e545f3bcc049dfc6ade1
+2026-03-06T03:30:10.7045901Z 72e6d41733bc287a7a51cc4f9886552f5ea33a285f08e545f3bcc049dfc6ade1
+2026-03-06T03:30:10.7060794Z ##[command]/usr/bin/docker ps --all --filter id=72e6d41733bc287a7a51cc4f9886552f5ea33a285f08e545f3bcc049dfc6ade1 --filter status=running --no-trunc --format "{{.ID}} {{.Status}}"
+2026-03-06T03:30:10.7187831Z 72e6d41733bc287a7a51cc4f9886552f5ea33a285f08e545f3bcc049dfc6ade1 Up Less than a second
+2026-03-06T03:30:10.7200878Z ##[command]/usr/bin/docker port 72e6d41733bc287a7a51cc4f9886552f5ea33a285f08e545f3bcc049dfc6ade1
+2026-03-06T03:30:10.7316561Z 8888/tcp -> 0.0.0.0:8888
+2026-03-06T03:30:10.7317160Z 8888/tcp -> [::]:8888
+2026-03-06T03:30:10.7330062Z ##[endgroup]
+2026-03-06T03:30:10.7331443Z ##[group]Starting postgres service container
+2026-03-06T03:30:10.7332325Z ##[command]/usr/bin/docker pull postgres:latest
+2026-03-06T03:30:11.1225268Z latest: Pulling from library/postgres
+2026-03-06T03:30:11.2334077Z 206356c42440: Already exists
+2026-03-06T03:30:11.2346482Z 967e70a4ad93: Pulling fs layer
+2026-03-06T03:30:11.2348698Z 1b030cb6bea0: Pulling fs layer
+2026-03-06T03:30:11.2349298Z 70f3de31936a: Pulling fs layer
+2026-03-06T03:30:11.2349726Z 358db71ef364: Pulling fs layer
+2026-03-06T03:30:11.2350174Z 3859b312d253: Pulling fs layer
+2026-03-06T03:30:11.2350642Z 56a239f8dc77: Pulling fs layer
+2026-03-06T03:30:11.2351071Z 4e2113a73362: Pulling fs layer
+2026-03-06T03:30:11.2351610Z e232269e9149: Pulling fs layer
+2026-03-06T03:30:11.2352328Z eea32e6f70e8: Pulling fs layer
+2026-03-06T03:30:11.2352878Z be4ad6e904ed: Pulling fs layer
+2026-03-06T03:30:11.2353351Z e7dee01ee448: Pulling fs layer
+2026-03-06T03:30:11.2354158Z 0480b5ae6db9: Pulling fs layer
+2026-03-06T03:30:11.2354981Z 358db71ef364: Waiting
+2026-03-06T03:30:11.2355396Z 3859b312d253: Waiting
+2026-03-06T03:30:11.2355846Z 56a239f8dc77: Waiting
+2026-03-06T03:30:11.2356473Z 4e2113a73362: Waiting
+2026-03-06T03:30:11.2357013Z e232269e9149: Waiting
+2026-03-06T03:30:11.2357629Z eea32e6f70e8: Waiting
+2026-03-06T03:30:11.2358291Z be4ad6e904ed: Waiting
+2026-03-06T03:30:11.2358783Z e7dee01ee448: Waiting
+2026-03-06T03:30:11.2359216Z 0480b5ae6db9: Waiting
+2026-03-06T03:30:11.3395419Z 967e70a4ad93: Download complete
+2026-03-06T03:30:11.3521080Z 70f3de31936a: Download complete
+2026-03-06T03:30:11.3586870Z 967e70a4ad93: Pull complete
+2026-03-06T03:30:11.3750388Z 1b030cb6bea0: Verifying Checksum
+2026-03-06T03:30:11.3753647Z 1b030cb6bea0: Download complete
+2026-03-06T03:30:11.4633205Z 3859b312d253: Verifying Checksum
+2026-03-06T03:30:11.4634832Z 3859b312d253: Download complete
+2026-03-06T03:30:11.4676296Z 56a239f8dc77: Verifying Checksum
+2026-03-06T03:30:11.4772290Z 56a239f8dc77: Download complete
+2026-03-06T03:30:11.4921127Z 358db71ef364: Verifying Checksum
+2026-03-06T03:30:11.4921631Z 358db71ef364: Download complete
+2026-03-06T03:30:11.5672035Z 4e2113a73362: Download complete
+2026-03-06T03:30:11.5695971Z 1b030cb6bea0: Pull complete
+2026-03-06T03:30:11.5942003Z eea32e6f70e8: Download complete
+2026-03-06T03:30:11.6225926Z 70f3de31936a: Pull complete
+2026-03-06T03:30:11.6635447Z be4ad6e904ed: Verifying Checksum
+2026-03-06T03:30:11.6635965Z be4ad6e904ed: Download complete
+2026-03-06T03:30:11.7340600Z e7dee01ee448: Verifying Checksum
+2026-03-06T03:30:11.7341110Z e7dee01ee448: Download complete
+2026-03-06T03:30:11.7730655Z 0480b5ae6db9: Verifying Checksum
+2026-03-06T03:30:11.7731117Z 0480b5ae6db9: Download complete
+2026-03-06T03:30:12.0331967Z 358db71ef364: Pull complete
+2026-03-06T03:30:12.0675400Z e232269e9149: Verifying Checksum
+2026-03-06T03:30:12.0675880Z e232269e9149: Download complete
+2026-03-06T03:30:12.1151723Z 3859b312d253: Pull complete
+2026-03-06T03:30:12.1262609Z 56a239f8dc77: Pull complete
+2026-03-06T03:30:12.1359570Z 4e2113a73362: Pull complete
+2026-03-06T03:30:15.3463698Z e232269e9149: Pull complete
+2026-03-06T03:30:15.3624427Z eea32e6f70e8: Pull complete
+2026-03-06T03:30:15.3718491Z be4ad6e904ed: Pull complete
+2026-03-06T03:30:15.3816390Z e7dee01ee448: Pull complete
+2026-03-06T03:30:15.3903906Z 0480b5ae6db9: Pull complete
+2026-03-06T03:30:15.3940740Z Digest: sha256:69e8582b781cb44fa4557b98ed586fe68361e320d9b12f9707494335634f4f3d
+2026-03-06T03:30:15.3951408Z Status: Downloaded newer image for postgres:latest
+2026-03-06T03:30:15.3959501Z docker.io/library/postgres:latest
+2026-03-06T03:30:15.3975963Z ##[command]/usr/bin/docker create --name 92e26b3f00b24ab6999550b859187e8c_postgreslatest_621b21 --label 76c255 --network github_network_6f8eadb69e1d4cb1b3acb662f855eb19 --network-alias postgres -p 5432/tcp --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5 -e "POSTGRES_USER=postgres" -e "POSTGRES_PASSWORD=postgres" -e "POSTGRES_DB=orm_test" -e GITHUB_ACTIONS=true -e CI=true postgres:latest
+2026-03-06T03:30:15.4210163Z 027330661c662d918d069a8b99dad72afc9185ce7b8993e7cf9ffca85bca4748
+2026-03-06T03:30:15.4224378Z ##[command]/usr/bin/docker start 027330661c662d918d069a8b99dad72afc9185ce7b8993e7cf9ffca85bca4748
+2026-03-06T03:30:15.5618079Z 027330661c662d918d069a8b99dad72afc9185ce7b8993e7cf9ffca85bca4748
+2026-03-06T03:30:15.5637170Z ##[command]/usr/bin/docker ps --all --filter id=027330661c662d918d069a8b99dad72afc9185ce7b8993e7cf9ffca85bca4748 --filter status=running --no-trunc --format "{{.ID}} {{.Status}}"
+2026-03-06T03:30:15.5774915Z 027330661c662d918d069a8b99dad72afc9185ce7b8993e7cf9ffca85bca4748 Up Less than a second (health: starting)
+2026-03-06T03:30:15.5788066Z ##[command]/usr/bin/docker port 027330661c662d918d069a8b99dad72afc9185ce7b8993e7cf9ffca85bca4748
+2026-03-06T03:30:15.5922907Z 5432/tcp -> 0.0.0.0:32768
+2026-03-06T03:30:15.5924445Z 5432/tcp -> [::]:32768
+2026-03-06T03:30:15.5936354Z ##[endgroup]
+2026-03-06T03:30:15.5947884Z ##[group]Waiting for all services to be ready
+2026-03-06T03:30:15.5961685Z ##[command]/usr/bin/docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" 8abf9b32c4929e349d5eb2ddd2b79e0ccade218da002d94229dc3d8488bea3d5
+2026-03-06T03:30:15.6127080Z redis service is healthy.
+2026-03-06T03:30:15.6128592Z ##[command]/usr/bin/docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" e25fb768995feaf70bc2b6de112c4b644090501e5882c284f66fe50fe2ab92bf
+2026-03-06T03:30:15.6280209Z memcached service is healthy.
+2026-03-06T03:30:15.6281495Z ##[command]/usr/bin/docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" 72e6d41733bc287a7a51cc4f9886552f5ea33a285f08e545f3bcc049dfc6ade1
+2026-03-06T03:30:15.6427739Z ssdb service is healthy.
+2026-03-06T03:30:15.6428550Z ##[command]/usr/bin/docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" 027330661c662d918d069a8b99dad72afc9185ce7b8993e7cf9ffca85bca4748
+2026-03-06T03:30:15.6566576Z starting
+2026-03-06T03:30:15.6584084Z postgres service is starting, waiting 2 seconds before checking again.
+2026-03-06T03:30:17.6587598Z ##[command]/usr/bin/docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" 027330661c662d918d069a8b99dad72afc9185ce7b8993e7cf9ffca85bca4748
+2026-03-06T03:30:17.6717127Z starting
+2026-03-06T03:30:17.6730419Z postgres service is starting, waiting 3 seconds before checking again.
+2026-03-06T03:30:21.4472902Z ##[command]/usr/bin/docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" 027330661c662d918d069a8b99dad72afc9185ce7b8993e7cf9ffca85bca4748
+2026-03-06T03:30:21.4606080Z starting
+2026-03-06T03:30:21.4620439Z postgres service is starting, waiting 7 seconds before checking again.
+2026-03-06T03:30:28.7990724Z ##[command]/usr/bin/docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" 027330661c662d918d069a8b99dad72afc9185ce7b8993e7cf9ffca85bca4748
+2026-03-06T03:30:28.8130101Z healthy
+2026-03-06T03:30:28.8144703Z postgres service is healthy.
+2026-03-06T03:30:28.8146417Z ##[endgroup]
+2026-03-06T03:30:28.8412191Z ##[group]Run actions/setup-go@v5
+2026-03-06T03:30:28.8412728Z with:
+2026-03-06T03:30:28.8412915Z   go-version: 1.22
+2026-03-06T03:30:28.8413105Z   check-latest: false
+2026-03-06T03:30:28.8413442Z   token: ***
+2026-03-06T03:30:28.8413611Z   cache: true
+2026-03-06T03:30:28.8413960Z ##[endgroup]
+2026-03-06T03:30:29.0184946Z Setup go version spec 1.22
+2026-03-06T03:30:29.0610895Z Found in cache @ /opt/hostedtoolcache/go/1.22.12/x64
+2026-03-06T03:30:29.0617168Z Added go to the path
+2026-03-06T03:30:29.0622179Z Successfully set up Go version 1.22
+2026-03-06T03:30:29.6312801Z [command]/opt/hostedtoolcache/go/1.22.12/x64/bin/go env GOMODCACHE
+2026-03-06T03:30:29.6345260Z [command]/opt/hostedtoolcache/go/1.22.12/x64/bin/go env GOCACHE
+2026-03-06T03:30:29.6450783Z /home/runner/.cache/go-build
+2026-03-06T03:30:29.6453563Z /home/runner/go/pkg/mod
+2026-03-06T03:30:29.6503302Z ##[warning]Restore cache failed: Dependencies file is not found in /home/runner/work/beego/beego. Supported file pattern: go.sum
+2026-03-06T03:30:29.6607891Z go version go1.22.12 linux/amd64
+2026-03-06T03:30:29.6608095Z 
+2026-03-06T03:30:29.6609400Z ##[group]go env
+2026-03-06T03:30:29.8130022Z GO111MODULE=''
+2026-03-06T03:30:29.8130405Z GOARCH='amd64'
+2026-03-06T03:30:29.8130695Z GOBIN=''
+2026-03-06T03:30:29.8131002Z GOCACHE='/home/runner/.cache/go-build'
+2026-03-06T03:30:29.8131305Z GOENV='/home/runner/.config/go/env'
+2026-03-06T03:30:29.8131545Z GOEXE=''
+2026-03-06T03:30:29.8131717Z GOEXPERIMENT=''
+2026-03-06T03:30:29.8131907Z GOFLAGS=''
+2026-03-06T03:30:29.8132082Z GOHOSTARCH='amd64'
+2026-03-06T03:30:29.8132265Z GOHOSTOS='linux'
+2026-03-06T03:30:29.8132449Z GOINSECURE=''
+2026-03-06T03:30:29.8132652Z GOMODCACHE='/home/runner/go/pkg/mod'
+2026-03-06T03:30:29.8132909Z GONOPROXY=''
+2026-03-06T03:30:29.8133120Z GONOSUMDB=''
+2026-03-06T03:30:29.8133306Z GOOS='linux'
+2026-03-06T03:30:29.8133510Z GOPATH='/home/runner/go'
+2026-03-06T03:30:29.8133733Z GOPRIVATE=''
+2026-03-06T03:30:29.8134017Z GOPROXY='https://proxy.golang.org,direct'
+2026-03-06T03:30:29.8134352Z GOROOT='/opt/hostedtoolcache/go/1.22.12/x64'
+2026-03-06T03:30:29.8134636Z GOSUMDB='sum.golang.org'
+2026-03-06T03:30:29.8134837Z GOTMPDIR=''
+2026-03-06T03:30:29.8135023Z GOTOOLCHAIN='auto'
+2026-03-06T03:30:29.8135321Z GOTOOLDIR='/opt/hostedtoolcache/go/1.22.12/x64/pkg/tool/linux_amd64'
+2026-03-06T03:30:29.8135697Z GOVCS=''
+2026-03-06T03:30:29.8135867Z GOVERSION='go1.22.12'
+2026-03-06T03:30:29.8136065Z GCCGO='gccgo'
+2026-03-06T03:30:29.8136248Z GOAMD64='v1'
+2026-03-06T03:30:29.8136417Z AR='ar'
+2026-03-06T03:30:29.8136569Z CC='gcc'
+2026-03-06T03:30:29.8136725Z CXX='g++'
+2026-03-06T03:30:29.8136894Z CGO_ENABLED='1'
+2026-03-06T03:30:29.8137070Z GOMOD='/dev/null'
+2026-03-06T03:30:29.8137592Z GOWORK=''
+2026-03-06T03:30:29.8138089Z CGO_CFLAGS='-O2 -g'
+2026-03-06T03:30:29.8138326Z CGO_CPPFLAGS=''
+2026-03-06T03:30:29.8138510Z CGO_CXXFLAGS='-O2 -g'
+2026-03-06T03:30:29.8138709Z CGO_FFLAGS='-O2 -g'
+2026-03-06T03:30:29.8138892Z CGO_LDFLAGS='-O2 -g'
+2026-03-06T03:30:29.8139113Z PKG_CONFIG='pkg-config'
+2026-03-06T03:30:29.8139794Z GOGCCFLAGS='-fPIC -m64 -pthread -Wl,--no-gc-sections -fmessage-length=0 -ffile-prefix-map=/tmp/go-build4059132759=/tmp/go-build -gno-record-gcc-switches'
+2026-03-06T03:30:29.8140372Z 
+2026-03-06T03:30:29.8140976Z ##[endgroup]
+2026-03-06T03:30:29.8318481Z ##[group]Run actions/checkout@v2
+2026-03-06T03:30:29.8318750Z with:
+2026-03-06T03:30:29.8318925Z   fetch-depth: 0
+2026-03-06T03:30:29.8319125Z   repository: beego/beego
+2026-03-06T03:30:29.8319446Z   token: ***
+2026-03-06T03:30:29.8319626Z   ssh-strict: true
+2026-03-06T03:30:29.8319818Z   persist-credentials: true
+2026-03-06T03:30:29.8320043Z   clean: true
+2026-03-06T03:30:29.8320206Z   lfs: false
+2026-03-06T03:30:29.8320374Z   submodules: false
+2026-03-06T03:30:29.8320564Z   set-safe-directory: true
+2026-03-06T03:30:29.8320770Z ##[endgroup]
+2026-03-06T03:30:29.9229781Z Syncing repository: beego/beego
+2026-03-06T03:30:29.9230949Z ##[group]Getting Git version info
+2026-03-06T03:30:29.9231714Z Working directory is '/home/runner/work/beego/beego'
+2026-03-06T03:30:29.9276384Z [command]/usr/bin/git version
+2026-03-06T03:30:29.9384995Z git version 2.53.0
+2026-03-06T03:30:29.9410130Z ##[endgroup]
+2026-03-06T03:30:29.9427887Z Temporarily overriding HOME='/home/runner/work/_temp/b282b7f8-8a24-4d38-8bfb-363805558b8e' before making global git config changes
+2026-03-06T03:30:29.9429257Z Adding repository directory to the temporary git global config as a safe directory
+2026-03-06T03:30:29.9433324Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/beego/beego
+2026-03-06T03:30:29.9477733Z Deleting the contents of '/home/runner/work/beego/beego'
+2026-03-06T03:30:29.9481633Z ##[group]Initializing the repository
+2026-03-06T03:30:29.9485553Z [command]/usr/bin/git init /home/runner/work/beego/beego
+2026-03-06T03:30:29.9593346Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-03-06T03:30:29.9594468Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-03-06T03:30:29.9595147Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-03-06T03:30:29.9595618Z hint: call:
+2026-03-06T03:30:29.9595825Z hint:
+2026-03-06T03:30:29.9596126Z hint: 	git config --global init.defaultBranch <name>
+2026-03-06T03:30:29.9596630Z hint:
+2026-03-06T03:30:29.9597494Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-03-06T03:30:29.9598442Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-03-06T03:30:29.9598955Z hint:
+2026-03-06T03:30:29.9599266Z hint: 	git branch -m <name>
+2026-03-06T03:30:29.9599730Z hint:
+2026-03-06T03:30:29.9600544Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-03-06T03:30:29.9601968Z Initialized empty Git repository in /home/runner/work/beego/beego/.git/
+2026-03-06T03:30:29.9609294Z [command]/usr/bin/git remote add origin https://github.com/beego/beego
+2026-03-06T03:30:29.9645538Z ##[endgroup]
+2026-03-06T03:30:29.9646222Z ##[group]Disabling automatic garbage collection
+2026-03-06T03:30:29.9650086Z [command]/usr/bin/git config --local gc.auto 0
+2026-03-06T03:30:29.9678986Z ##[endgroup]
+2026-03-06T03:30:29.9679593Z ##[group]Setting up auth
+2026-03-06T03:30:29.9685805Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-03-06T03:30:29.9715735Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-03-06T03:30:30.0082720Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-03-06T03:30:30.0113795Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-03-06T03:30:30.0351685Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-03-06T03:30:30.0391770Z ##[endgroup]
+2026-03-06T03:30:30.0392491Z ##[group]Fetching the repository
+2026-03-06T03:30:30.0401616Z [command]/usr/bin/git -c protocol.version=2 fetch --prune --progress --no-recurse-submodules origin +refs/heads/*:refs/remotes/origin/* +refs/tags/*:refs/tags/* +72802c79fb1361e9f3c29dc8522c0d459975ace7:refs/remotes/pull/5879/merge
+2026-03-06T03:30:30.3054504Z remote: Enumerating objects: 25769, done.        
+2026-03-06T03:30:30.3057525Z remote: Counting objects:   0% (1/238)        
+2026-03-06T03:30:30.3061919Z remote: Counting objects:   1% (3/238)        
+2026-03-06T03:30:30.3065811Z remote: Counting objects:   2% (5/238)        
+2026-03-06T03:30:30.3066390Z remote: Counting objects:   3% (8/238)        
+2026-03-06T03:30:30.3066949Z remote: Counting objects:   4% (10/238)        
+2026-03-06T03:30:30.3067699Z remote: Counting objects:   5% (12/238)        
+2026-03-06T03:30:30.3068250Z remote: Counting objects:   6% (15/238)        
+2026-03-06T03:30:30.3068823Z remote: Counting objects:   7% (17/238)        
+2026-03-06T03:30:30.3080286Z remote: Counting objects:   8% (20/238)        
+2026-03-06T03:30:30.3081047Z remote: Counting objects:   9% (22/238)        
+2026-03-06T03:30:30.3081849Z remote: Counting objects:  10% (24/238)        
+2026-03-06T03:30:30.3091054Z remote: Counting objects:  11% (27/238)        
+2026-03-06T03:30:30.3091783Z remote: Counting objects:  12% (29/238)        
+2026-03-06T03:30:30.3100469Z remote: Counting objects:  13% (31/238)        
+2026-03-06T03:30:30.3101227Z remote: Counting objects:  14% (34/238)        
+2026-03-06T03:30:30.3101916Z remote: Counting objects:  15% (36/238)        
+2026-03-06T03:30:30.3102589Z remote: Counting objects:  16% (39/238)        
+2026-03-06T03:30:30.3112550Z remote: Counting objects:  17% (41/238)        
+2026-03-06T03:30:30.3113141Z remote: Counting objects:  18% (43/238)        
+2026-03-06T03:30:30.3121884Z remote: Counting objects:  19% (46/238)        
+2026-03-06T03:30:30.3122775Z remote: Counting objects:  20% (48/238)        
+2026-03-06T03:30:30.3124668Z remote: Counting objects:  21% (50/238)        
+2026-03-06T03:30:30.3125349Z remote: Counting objects:  22% (53/238)        
+2026-03-06T03:30:30.3125985Z remote: Counting objects:  23% (55/238)        
+2026-03-06T03:30:30.3126608Z remote: Counting objects:  24% (58/238)        
+2026-03-06T03:30:30.3127203Z remote: Counting objects:  25% (60/238)        
+2026-03-06T03:30:30.3128033Z remote: Counting objects:  26% (62/238)        
+2026-03-06T03:30:30.3128659Z remote: Counting objects:  27% (65/238)        
+2026-03-06T03:30:30.3129263Z remote: Counting objects:  28% (67/238)        
+2026-03-06T03:30:30.3129797Z remote: Counting objects:  29% (70/238)        
+2026-03-06T03:30:30.3130370Z remote: Counting objects:  30% (72/238)        
+2026-03-06T03:30:30.3130903Z remote: Counting objects:  31% (74/238)        
+2026-03-06T03:30:30.3131420Z remote: Counting objects:  32% (77/238)        
+2026-03-06T03:30:30.3131956Z remote: Counting objects:  33% (79/238)        
+2026-03-06T03:30:30.3132475Z remote: Counting objects:  34% (81/238)        
+2026-03-06T03:30:30.3132981Z remote: Counting objects:  35% (84/238)        
+2026-03-06T03:30:30.3133491Z remote: Counting objects:  36% (86/238)        
+2026-03-06T03:30:30.3134016Z remote: Counting objects:  37% (89/238)        
+2026-03-06T03:30:30.3134525Z remote: Counting objects:  38% (91/238)        
+2026-03-06T03:30:30.3135058Z remote: Counting objects:  39% (93/238)        
+2026-03-06T03:30:30.3135652Z remote: Counting objects:  40% (96/238)        
+2026-03-06T03:30:30.3136203Z remote: Counting objects:  41% (98/238)        
+2026-03-06T03:30:30.3136752Z remote: Counting objects:  42% (100/238)        
+2026-03-06T03:30:30.3137571Z remote: Counting objects:  43% (103/238)        
+2026-03-06T03:30:30.3138142Z remote: Counting objects:  44% (105/238)        
+2026-03-06T03:30:30.3138673Z remote: Counting objects:  45% (108/238)        
+2026-03-06T03:30:30.3139222Z remote: Counting objects:  46% (110/238)        
+2026-03-06T03:30:30.3139770Z remote: Counting objects:  47% (112/238)        
+2026-03-06T03:30:30.3140304Z remote: Counting objects:  48% (115/238)        
+2026-03-06T03:30:30.3140861Z remote: Counting objects:  49% (117/238)        
+2026-03-06T03:30:30.3141810Z remote: Counting objects:  50% (119/238)        
+2026-03-06T03:30:30.3142394Z remote: Counting objects:  51% (122/238)        
+2026-03-06T03:30:30.3142916Z remote: Counting objects:  52% (124/238)        
+2026-03-06T03:30:30.3143455Z remote: Counting objects:  53% (127/238)        
+2026-03-06T03:30:30.3143982Z remote: Counting objects:  54% (129/238)        
+2026-03-06T03:30:30.3144512Z remote: Counting objects:  55% (131/238)        
+2026-03-06T03:30:30.3145046Z remote: Counting objects:  56% (134/238)        
+2026-03-06T03:30:30.3145578Z remote: Counting objects:  57% (136/238)        
+2026-03-06T03:30:30.3146115Z remote: Counting objects:  58% (139/238)        
+2026-03-06T03:30:30.3146649Z remote: Counting objects:  59% (141/238)        
+2026-03-06T03:30:30.3147213Z remote: Counting objects:  60% (143/238)        
+2026-03-06T03:30:30.3148307Z remote: Counting objects:  61% (146/238)        
+2026-03-06T03:30:30.3148866Z remote: Counting objects:  62% (148/238)        
+2026-03-06T03:30:30.3149424Z remote: Counting objects:  63% (150/238)        
+2026-03-06T03:30:30.3149993Z remote: Counting objects:  64% (153/238)        
+2026-03-06T03:30:30.3150562Z remote: Counting objects:  65% (155/238)        
+2026-03-06T03:30:30.3151112Z remote: Counting objects:  66% (158/238)        
+2026-03-06T03:30:30.3151646Z remote: Counting objects:  67% (160/238)        
+2026-03-06T03:30:30.3152203Z remote: Counting objects:  68% (162/238)        
+2026-03-06T03:30:30.3152747Z remote: Counting objects:  69% (165/238)        
+2026-03-06T03:30:30.3153293Z remote: Counting objects:  70% (167/238)        
+2026-03-06T03:30:30.3153823Z remote: Counting objects:  71% (169/238)        
+2026-03-06T03:30:30.3154364Z remote: Counting objects:  72% (172/238)        
+2026-03-06T03:30:30.3154918Z remote: Counting objects:  73% (174/238)        
+2026-03-06T03:30:30.3155487Z remote: Counting objects:  74% (177/238)        
+2026-03-06T03:30:30.3156053Z remote: Counting objects:  75% (179/238)        
+2026-03-06T03:30:30.3156670Z remote: Counting objects:  76% (181/238)        
+2026-03-06T03:30:30.3157433Z remote: Counting objects:  77% (184/238)        
+2026-03-06T03:30:30.3157961Z remote: Counting objects:  78% (186/238)        
+2026-03-06T03:30:30.3158511Z remote: Counting objects:  79% (189/238)        
+2026-03-06T03:30:30.3159040Z remote: Counting objects:  80% (191/238)        
+2026-03-06T03:30:30.3159580Z remote: Counting objects:  81% (193/238)        
+2026-03-06T03:30:30.3160128Z remote: Counting objects:  82% (196/238)        
+2026-03-06T03:30:30.3160671Z remote: Counting objects:  83% (198/238)        
+2026-03-06T03:30:30.3161213Z remote: Counting objects:  84% (200/238)        
+2026-03-06T03:30:30.3161727Z remote: Counting objects:  85% (203/238)        
+2026-03-06T03:30:30.3162315Z remote: Counting objects:  86% (205/238)        
+2026-03-06T03:30:30.3162821Z remote: Counting objects:  87% (208/238)        
+2026-03-06T03:30:30.3163327Z remote: Counting objects:  88% (210/238)        
+2026-03-06T03:30:30.3163855Z remote: Counting objects:  89% (212/238)        
+2026-03-06T03:30:30.3164393Z remote: Counting objects:  90% (215/238)        
+2026-03-06T03:30:30.3164951Z remote: Counting objects:  91% (217/238)        
+2026-03-06T03:30:30.3165487Z remote: Counting objects:  92% (219/238)        
+2026-03-06T03:30:30.3166026Z remote: Counting objects:  93% (222/238)        
+2026-03-06T03:30:30.3166546Z remote: Counting objects:  94% (224/238)        
+2026-03-06T03:30:30.3167068Z remote: Counting objects:  95% (227/238)        
+2026-03-06T03:30:30.3167886Z remote: Counting objects:  96% (229/238)        
+2026-03-06T03:30:30.3168406Z remote: Counting objects:  97% (231/238)        
+2026-03-06T03:30:30.3168928Z remote: Counting objects:  98% (234/238)        
+2026-03-06T03:30:30.3169444Z remote: Counting objects:  99% (236/238)        
+2026-03-06T03:30:30.3169983Z remote: Counting objects: 100% (238/238)        
+2026-03-06T03:30:30.3170554Z remote: Counting objects: 100% (238/238), done.        
+2026-03-06T03:30:30.3171382Z remote: Compressing objects:   0% (1/177)        
+2026-03-06T03:30:30.3171985Z remote: Compressing objects:   1% (2/177)        
+2026-03-06T03:30:30.3204655Z remote: Compressing objects:   2% (4/177)        
+2026-03-06T03:30:30.3205287Z remote: Compressing objects:   3% (6/177)        
+2026-03-06T03:30:30.3205849Z remote: Compressing objects:   4% (8/177)        
+2026-03-06T03:30:30.3206402Z remote: Compressing objects:   5% (9/177)        
+2026-03-06T03:30:30.3206967Z remote: Compressing objects:   6% (11/177)        
+2026-03-06T03:30:30.3207847Z remote: Compressing objects:   7% (13/177)        
+2026-03-06T03:30:30.3208430Z remote: Compressing objects:   8% (15/177)        
+2026-03-06T03:30:30.3208976Z remote: Compressing objects:   9% (16/177)        
+2026-03-06T03:30:30.3209541Z remote: Compressing objects:  10% (18/177)        
+2026-03-06T03:30:30.3210373Z remote: Compressing objects:  11% (20/177)        
+2026-03-06T03:30:30.3210930Z remote: Compressing objects:  12% (22/177)        
+2026-03-06T03:30:30.3211484Z remote: Compressing objects:  13% (24/177)        
+2026-03-06T03:30:30.3212035Z remote: Compressing objects:  14% (25/177)        
+2026-03-06T03:30:30.3212646Z remote: Compressing objects:  15% (27/177)        
+2026-03-06T03:30:30.3219853Z remote: Compressing objects:  16% (29/177)        
+2026-03-06T03:30:30.3224300Z remote: Compressing objects:  17% (31/177)        
+2026-03-06T03:30:30.3243987Z remote: Compressing objects:  18% (32/177)        
+2026-03-06T03:30:30.3277007Z remote: Compressing objects:  19% (34/177)        
+2026-03-06T03:30:30.3301624Z remote: Compressing objects:  20% (36/177)        
+2026-03-06T03:30:30.3312990Z remote: Compressing objects:  21% (38/177)        
+2026-03-06T03:30:30.3323711Z remote: Compressing objects:  22% (39/177)        
+2026-03-06T03:30:30.3337808Z remote: Compressing objects:  23% (41/177)        
+2026-03-06T03:30:30.3355965Z remote: Compressing objects:  24% (43/177)        
+2026-03-06T03:30:30.3381373Z remote: Compressing objects:  25% (45/177)        
+2026-03-06T03:30:30.3382045Z remote: Compressing objects:  26% (47/177)        
+2026-03-06T03:30:30.3388727Z remote: Compressing objects:  27% (48/177)        
+2026-03-06T03:30:30.3402771Z remote: Compressing objects:  28% (50/177)        
+2026-03-06T03:30:30.3414799Z remote: Compressing objects:  29% (52/177)        
+2026-03-06T03:30:30.3415416Z remote: Compressing objects:  30% (54/177)        
+2026-03-06T03:30:30.3419804Z remote: Compressing objects:  31% (55/177)        
+2026-03-06T03:30:30.3430452Z remote: Compressing objects:  32% (57/177)        
+2026-03-06T03:30:30.3439343Z remote: Compressing objects:  33% (59/177)        
+2026-03-06T03:30:30.3443063Z remote: Compressing objects:  34% (61/177)        
+2026-03-06T03:30:30.3451070Z remote: Compressing objects:  35% (62/177)        
+2026-03-06T03:30:30.3455198Z remote: Compressing objects:  36% (64/177)        
+2026-03-06T03:30:30.3457461Z remote: Compressing objects:  37% (66/177)        
+2026-03-06T03:30:30.3460598Z remote: Compressing objects:  38% (68/177)        
+2026-03-06T03:30:30.3463622Z remote: Compressing objects:  39% (70/177)        
+2026-03-06T03:30:30.3467907Z remote: Compressing objects:  40% (71/177)        
+2026-03-06T03:30:30.3471386Z remote: Compressing objects:  41% (73/177)        
+2026-03-06T03:30:30.3473935Z remote: Compressing objects:  42% (75/177)        
+2026-03-06T03:30:30.3478545Z remote: Compressing objects:  43% (77/177)        
+2026-03-06T03:30:30.3510141Z remote: Compressing objects:  44% (78/177)        
+2026-03-06T03:30:30.3510785Z remote: Compressing objects:  45% (80/177)        
+2026-03-06T03:30:30.3511350Z remote: Compressing objects:  46% (82/177)        
+2026-03-06T03:30:30.3511914Z remote: Compressing objects:  47% (84/177)        
+2026-03-06T03:30:30.3512495Z remote: Compressing objects:  48% (85/177)        
+2026-03-06T03:30:30.3513058Z remote: Compressing objects:  49% (87/177)        
+2026-03-06T03:30:30.3513617Z remote: Compressing objects:  50% (89/177)        
+2026-03-06T03:30:30.3514148Z remote: Compressing objects:  51% (91/177)        
+2026-03-06T03:30:30.3515134Z remote: Compressing objects:  52% (93/177)        
+2026-03-06T03:30:30.3515712Z remote: Compressing objects:  53% (94/177)        
+2026-03-06T03:30:30.3516263Z remote: Compressing objects:  54% (96/177)        
+2026-03-06T03:30:30.3516855Z remote: Compressing objects:  55% (98/177)        
+2026-03-06T03:30:30.3517668Z remote: Compressing objects:  56% (100/177)        
+2026-03-06T03:30:30.3518269Z remote: Compressing objects:  57% (101/177)        
+2026-03-06T03:30:30.3518826Z remote: Compressing objects:  58% (103/177)        
+2026-03-06T03:30:30.3519415Z remote: Compressing objects:  59% (105/177)        
+2026-03-06T03:30:30.3519994Z remote: Compressing objects:  60% (107/177)        
+2026-03-06T03:30:30.3520575Z remote: Compressing objects:  61% (108/177)        
+2026-03-06T03:30:30.3521430Z remote: Compressing objects:  62% (110/177)        
+2026-03-06T03:30:30.3535703Z remote: Compressing objects:  63% (112/177)        
+2026-03-06T03:30:30.3536676Z remote: Compressing objects:  64% (114/177)        
+2026-03-06T03:30:30.3537527Z remote: Compressing objects:  65% (116/177)        
+2026-03-06T03:30:30.3538187Z remote: Compressing objects:  66% (117/177)        
+2026-03-06T03:30:30.3538817Z remote: Compressing objects:  67% (119/177)        
+2026-03-06T03:30:30.3539260Z remote: Compressing objects:  68% (121/177)        
+2026-03-06T03:30:30.3539659Z remote: Compressing objects:  69% (123/177)        
+2026-03-06T03:30:30.3540051Z remote: Compressing objects:  70% (124/177)        
+2026-03-06T03:30:30.3540441Z remote: Compressing objects:  71% (126/177)        
+2026-03-06T03:30:30.3540862Z remote: Compressing objects:  72% (128/177)        
+2026-03-06T03:30:30.3541274Z remote: Compressing objects:  73% (130/177)        
+2026-03-06T03:30:30.3541672Z remote: Compressing objects:  74% (131/177)        
+2026-03-06T03:30:30.3542069Z remote: Compressing objects:  75% (133/177)        
+2026-03-06T03:30:30.3542479Z remote: Compressing objects:  76% (135/177)        
+2026-03-06T03:30:30.3542878Z remote: Compressing objects:  77% (137/177)        
+2026-03-06T03:30:30.3543276Z remote: Compressing objects:  78% (139/177)        
+2026-03-06T03:30:30.3543666Z remote: Compressing objects:  79% (140/177)        
+2026-03-06T03:30:30.3544059Z remote: Compressing objects:  80% (142/177)        
+2026-03-06T03:30:30.3544456Z remote: Compressing objects:  81% (144/177)        
+2026-03-06T03:30:30.3544841Z remote: Compressing objects:  82% (146/177)        
+2026-03-06T03:30:30.3545242Z remote: Compressing objects:  83% (147/177)        
+2026-03-06T03:30:30.3545628Z remote: Compressing objects:  84% (149/177)        
+2026-03-06T03:30:30.3546029Z remote: Compressing objects:  85% (151/177)        
+2026-03-06T03:30:30.3546411Z remote: Compressing objects:  86% (153/177)        
+2026-03-06T03:30:30.3546810Z remote: Compressing objects:  87% (154/177)        
+2026-03-06T03:30:30.3547131Z remote: Compressing objects:  88% (156/177)        
+2026-03-06T03:30:30.3547725Z remote: Compressing objects:  89% (158/177)        
+2026-03-06T03:30:30.3548069Z remote: Compressing objects:  90% (160/177)        
+2026-03-06T03:30:30.3548374Z remote: Compressing objects:  91% (162/177)        
+2026-03-06T03:30:30.3548675Z remote: Compressing objects:  92% (163/177)        
+2026-03-06T03:30:30.3548981Z remote: Compressing objects:  93% (165/177)        
+2026-03-06T03:30:30.3549273Z remote: Compressing objects:  94% (167/177)        
+2026-03-06T03:30:30.3549579Z remote: Compressing objects:  95% (169/177)        
+2026-03-06T03:30:30.3549880Z remote: Compressing objects:  96% (170/177)        
+2026-03-06T03:30:30.3550178Z remote: Compressing objects:  97% (172/177)        
+2026-03-06T03:30:30.3550488Z remote: Compressing objects:  98% (174/177)        
+2026-03-06T03:30:30.3550789Z remote: Compressing objects:  99% (176/177)        
+2026-03-06T03:30:30.3551098Z remote: Compressing objects: 100% (177/177)        
+2026-03-06T03:30:30.3551424Z remote: Compressing objects: 100% (177/177), done.        
+2026-03-06T03:30:30.3794488Z Receiving objects:   0% (1/25769)
+2026-03-06T03:30:30.3950753Z Receiving objects:   1% (258/25769)
+2026-03-06T03:30:30.3978055Z Receiving objects:   2% (516/25769)
+2026-03-06T03:30:30.4019957Z Receiving objects:   3% (774/25769)
+2026-03-06T03:30:30.4069189Z Receiving objects:   4% (1031/25769)
+2026-03-06T03:30:30.4101915Z Receiving objects:   5% (1289/25769)
+2026-03-06T03:30:30.4128360Z Receiving objects:   6% (1547/25769)
+2026-03-06T03:30:30.4178306Z Receiving objects:   7% (1804/25769)
+2026-03-06T03:30:30.4200627Z Receiving objects:   8% (2062/25769)
+2026-03-06T03:30:30.4224945Z Receiving objects:   9% (2320/25769)
+2026-03-06T03:30:30.4241173Z Receiving objects:  10% (2577/25769)
+2026-03-06T03:30:30.4258241Z Receiving objects:  11% (2835/25769)
+2026-03-06T03:30:30.4276098Z Receiving objects:  12% (3093/25769)
+2026-03-06T03:30:30.4293497Z Receiving objects:  13% (3350/25769)
+2026-03-06T03:30:30.4315702Z Receiving objects:  14% (3608/25769)
+2026-03-06T03:30:30.4338220Z Receiving objects:  15% (3866/25769)
+2026-03-06T03:30:30.4355441Z Receiving objects:  16% (4124/25769)
+2026-03-06T03:30:30.4373920Z Receiving objects:  17% (4381/25769)
+2026-03-06T03:30:30.4392867Z Receiving objects:  18% (4639/25769)
+2026-03-06T03:30:30.4441901Z Receiving objects:  19% (4897/25769)
+2026-03-06T03:30:30.4537707Z Receiving objects:  20% (5154/25769)
+2026-03-06T03:30:30.4588829Z Receiving objects:  21% (5412/25769)
+2026-03-06T03:30:30.4673234Z Receiving objects:  22% (5670/25769)
+2026-03-06T03:30:30.4693323Z Receiving objects:  23% (5927/25769)
+2026-03-06T03:30:30.4722460Z Receiving objects:  24% (6185/25769)
+2026-03-06T03:30:30.4751218Z Receiving objects:  25% (6443/25769)
+2026-03-06T03:30:30.4841117Z Receiving objects:  26% (6700/25769)
+2026-03-06T03:30:30.4894827Z Receiving objects:  27% (6958/25769)
+2026-03-06T03:30:30.4944693Z Receiving objects:  28% (7216/25769)
+2026-03-06T03:30:30.5005664Z Receiving objects:  29% (7474/25769)
+2026-03-06T03:30:30.5057787Z Receiving objects:  30% (7731/25769)
+2026-03-06T03:30:30.5079290Z Receiving objects:  31% (7989/25769)
+2026-03-06T03:30:30.5207786Z Receiving objects:  32% (8247/25769)
+2026-03-06T03:30:30.5262876Z Receiving objects:  33% (8504/25769)
+2026-03-06T03:30:30.5311201Z Receiving objects:  34% (8762/25769)
+2026-03-06T03:30:30.5399316Z Receiving objects:  35% (9020/25769)
+2026-03-06T03:30:30.6177048Z Receiving objects:  36% (9277/25769)
+2026-03-06T03:30:30.6253886Z Receiving objects:  37% (9535/25769)
+2026-03-06T03:30:30.6289811Z Receiving objects:  38% (9793/25769)
+2026-03-06T03:30:30.6335554Z Receiving objects:  39% (10050/25769)
+2026-03-06T03:30:30.6373473Z Receiving objects:  40% (10308/25769)
+2026-03-06T03:30:30.6418396Z Receiving objects:  41% (10566/25769)
+2026-03-06T03:30:30.6446154Z Receiving objects:  42% (10823/25769)
+2026-03-06T03:30:30.6468838Z Receiving objects:  43% (11081/25769)
+2026-03-06T03:30:30.6490046Z Receiving objects:  44% (11339/25769)
+2026-03-06T03:30:30.6505918Z Receiving objects:  45% (11597/25769)
+2026-03-06T03:30:30.6519599Z Receiving objects:  46% (11854/25769)
+2026-03-06T03:30:30.6534862Z Receiving objects:  47% (12112/25769)
+2026-03-06T03:30:30.6549966Z Receiving objects:  48% (12370/25769)
+2026-03-06T03:30:30.6558587Z Receiving objects:  49% (12627/25769)
+2026-03-06T03:30:30.6570955Z Receiving objects:  50% (12885/25769)
+2026-03-06T03:30:30.6582922Z Receiving objects:  51% (13143/25769)
+2026-03-06T03:30:30.6590089Z Receiving objects:  52% (13400/25769)
+2026-03-06T03:30:30.6598728Z Receiving objects:  53% (13658/25769)
+2026-03-06T03:30:30.6605747Z Receiving objects:  54% (13916/25769)
+2026-03-06T03:30:30.6612728Z Receiving objects:  55% (14173/25769)
+2026-03-06T03:30:30.6620310Z Receiving objects:  56% (14431/25769)
+2026-03-06T03:30:30.6635975Z Receiving objects:  57% (14689/25769)
+2026-03-06T03:30:30.6656015Z Receiving objects:  58% (14947/25769)
+2026-03-06T03:30:30.6669216Z Receiving objects:  59% (15204/25769)
+2026-03-06T03:30:30.6682014Z Receiving objects:  60% (15462/25769)
+2026-03-06T03:30:30.6693279Z Receiving objects:  61% (15720/25769)
+2026-03-06T03:30:30.6703795Z Receiving objects:  62% (15977/25769)
+2026-03-06T03:30:30.6709052Z Receiving objects:  63% (16235/25769)
+2026-03-06T03:30:30.6720646Z Receiving objects:  64% (16493/25769)
+2026-03-06T03:30:30.6727827Z Receiving objects:  65% (16750/25769)
+2026-03-06T03:30:30.6738730Z Receiving objects:  66% (17008/25769)
+2026-03-06T03:30:30.6753240Z Receiving objects:  67% (17266/25769)
+2026-03-06T03:30:30.6777201Z Receiving objects:  68% (17523/25769)
+2026-03-06T03:30:30.6829498Z Receiving objects:  69% (17781/25769)
+2026-03-06T03:30:30.6844034Z Receiving objects:  70% (18039/25769)
+2026-03-06T03:30:30.6854429Z Receiving objects:  71% (18296/25769)
+2026-03-06T03:30:30.6865017Z Receiving objects:  72% (18554/25769)
+2026-03-06T03:30:30.6893249Z Receiving objects:  73% (18812/25769)
+2026-03-06T03:30:30.6914180Z Receiving objects:  74% (19070/25769)
+2026-03-06T03:30:30.6922645Z Receiving objects:  75% (19327/25769)
+2026-03-06T03:30:30.6930978Z Receiving objects:  76% (19585/25769)
+2026-03-06T03:30:30.6938628Z Receiving objects:  77% (19843/25769)
+2026-03-06T03:30:30.6947039Z Receiving objects:  78% (20100/25769)
+2026-03-06T03:30:30.6962617Z Receiving objects:  79% (20358/25769)
+2026-03-06T03:30:30.6980644Z Receiving objects:  80% (20616/25769)
+2026-03-06T03:30:30.6992643Z Receiving objects:  81% (20873/25769)
+2026-03-06T03:30:30.7004891Z Receiving objects:  82% (21131/25769)
+2026-03-06T03:30:30.7018030Z Receiving objects:  83% (21389/25769)
+2026-03-06T03:30:30.7044684Z Receiving objects:  84% (21646/25769)
+2026-03-06T03:30:30.7054259Z Receiving objects:  85% (21904/25769)
+2026-03-06T03:30:30.7076225Z Receiving objects:  86% (22162/25769)
+2026-03-06T03:30:30.7086091Z Receiving objects:  87% (22420/25769)
+2026-03-06T03:30:30.7101590Z Receiving objects:  88% (22677/25769)
+2026-03-06T03:30:30.7119324Z Receiving objects:  89% (22935/25769)
+2026-03-06T03:30:30.7138283Z Receiving objects:  90% (23193/25769)
+2026-03-06T03:30:30.7154280Z Receiving objects:  91% (23450/25769)
+2026-03-06T03:30:30.7165965Z Receiving objects:  92% (23708/25769)
+2026-03-06T03:30:30.7185080Z Receiving objects:  93% (23966/25769)
+2026-03-06T03:30:30.7221613Z Receiving objects:  94% (24223/25769)
+2026-03-06T03:30:30.7240378Z Receiving objects:  95% (24481/25769)
+2026-03-06T03:30:30.7253427Z Receiving objects:  96% (24739/25769)
+2026-03-06T03:30:30.7268643Z Receiving objects:  97% (24996/25769)
+2026-03-06T03:30:30.7339178Z Receiving objects:  98% (25254/25769)
+2026-03-06T03:30:30.7376352Z Receiving objects:  99% (25512/25769)
+2026-03-06T03:30:30.7377465Z remote: Total 25769 (delta 146), reused 63 (delta 60), pack-reused 25531 (from 4)        
+2026-03-06T03:30:30.7394899Z Receiving objects: 100% (25769/25769)
+2026-03-06T03:30:30.7395528Z Receiving objects: 100% (25769/25769), 11.82 MiB | 31.04 MiB/s, done.
+2026-03-06T03:30:30.7448367Z Resolving deltas:   0% (0/16006)
+2026-03-06T03:30:30.7469966Z Resolving deltas:   1% (161/16006)
+2026-03-06T03:30:30.7493477Z Resolving deltas:   2% (321/16006)
+2026-03-06T03:30:30.7525880Z Resolving deltas:   3% (481/16006)
+2026-03-06T03:30:30.7561163Z Resolving deltas:   4% (641/16006)
+2026-03-06T03:30:30.7592586Z Resolving deltas:   5% (801/16006)
+2026-03-06T03:30:30.7621943Z Resolving deltas:   6% (961/16006)
+2026-03-06T03:30:30.7704443Z Resolving deltas:   7% (1121/16006)
+2026-03-06T03:30:30.7731114Z Resolving deltas:   8% (1281/16006)
+2026-03-06T03:30:30.7754384Z Resolving deltas:   9% (1441/16006)
+2026-03-06T03:30:30.7775074Z Resolving deltas:  10% (1601/16006)
+2026-03-06T03:30:30.7801868Z Resolving deltas:  11% (1761/16006)
+2026-03-06T03:30:30.7833991Z Resolving deltas:  12% (1921/16006)
+2026-03-06T03:30:30.7860774Z Resolving deltas:  13% (2081/16006)
+2026-03-06T03:30:30.7894285Z Resolving deltas:  14% (2241/16006)
+2026-03-06T03:30:30.7925291Z Resolving deltas:  15% (2401/16006)
+2026-03-06T03:30:30.7950323Z Resolving deltas:  16% (2561/16006)
+2026-03-06T03:30:30.7978493Z Resolving deltas:  17% (2722/16006)
+2026-03-06T03:30:30.8003112Z Resolving deltas:  18% (2882/16006)
+2026-03-06T03:30:30.8027721Z Resolving deltas:  19% (3043/16006)
+2026-03-06T03:30:30.8054090Z Resolving deltas:  20% (3202/16006)
+2026-03-06T03:30:30.8096261Z Resolving deltas:  21% (3362/16006)
+2026-03-06T03:30:30.8130609Z Resolving deltas:  22% (3522/16006)
+2026-03-06T03:30:30.8150941Z Resolving deltas:  23% (3682/16006)
+2026-03-06T03:30:30.8180808Z Resolving deltas:  24% (3842/16006)
+2026-03-06T03:30:30.8211743Z Resolving deltas:  25% (4002/16006)
+2026-03-06T03:30:30.8231896Z Resolving deltas:  26% (4162/16006)
+2026-03-06T03:30:30.8278248Z Resolving deltas:  27% (4322/16006)
+2026-03-06T03:30:30.8312272Z Resolving deltas:  28% (4482/16006)
+2026-03-06T03:30:30.8343873Z Resolving deltas:  29% (4642/16006)
+2026-03-06T03:30:30.8394081Z Resolving deltas:  30% (4802/16006)
+2026-03-06T03:30:30.8410607Z Resolving deltas:  31% (4962/16006)
+2026-03-06T03:30:30.8430792Z Resolving deltas:  32% (5122/16006)
+2026-03-06T03:30:30.8475672Z Resolving deltas:  33% (5282/16006)
+2026-03-06T03:30:30.8506051Z Resolving deltas:  34% (5443/16006)
+2026-03-06T03:30:30.8531338Z Resolving deltas:  35% (5603/16006)
+2026-03-06T03:30:30.8576634Z Resolving deltas:  36% (5763/16006)
+2026-03-06T03:30:30.8630814Z Resolving deltas:  37% (5923/16006)
+2026-03-06T03:30:30.8731113Z Resolving deltas:  38% (6083/16006)
+2026-03-06T03:30:30.8758409Z Resolving deltas:  39% (6243/16006)
+2026-03-06T03:30:30.8782791Z Resolving deltas:  40% (6403/16006)
+2026-03-06T03:30:30.8811017Z Resolving deltas:  41% (6563/16006)
+2026-03-06T03:30:30.8839603Z Resolving deltas:  42% (6723/16006)
+2026-03-06T03:30:30.8863562Z Resolving deltas:  43% (6883/16006)
+2026-03-06T03:30:30.8880848Z Resolving deltas:  44% (7043/16006)
+2026-03-06T03:30:30.8904538Z Resolving deltas:  45% (7203/16006)
+2026-03-06T03:30:30.8938733Z Resolving deltas:  46% (7363/16006)
+2026-03-06T03:30:30.8965488Z Resolving deltas:  47% (7523/16006)
+2026-03-06T03:30:30.8981275Z Resolving deltas:  48% (7683/16006)
+2026-03-06T03:30:30.8998499Z Resolving deltas:  49% (7843/16006)
+2026-03-06T03:30:30.9058725Z Resolving deltas:  50% (8003/16006)
+2026-03-06T03:30:30.9085012Z Resolving deltas:  51% (8165/16006)
+2026-03-06T03:30:30.9109106Z Resolving deltas:  52% (8324/16006)
+2026-03-06T03:30:30.9138068Z Resolving deltas:  53% (8484/16006)
+2026-03-06T03:30:30.9175731Z Resolving deltas:  54% (8644/16006)
+2026-03-06T03:30:30.9195014Z Resolving deltas:  55% (8804/16006)
+2026-03-06T03:30:30.9233492Z Resolving deltas:  56% (8964/16006)
+2026-03-06T03:30:30.9305811Z Resolving deltas:  57% (9124/16006)
+2026-03-06T03:30:30.9323606Z Resolving deltas:  58% (9284/16006)
+2026-03-06T03:30:30.9356835Z Resolving deltas:  59% (9444/16006)
+2026-03-06T03:30:30.9384979Z Resolving deltas:  60% (9604/16006)
+2026-03-06T03:30:30.9430031Z Resolving deltas:  61% (9764/16006)
+2026-03-06T03:30:30.9489004Z Resolving deltas:  62% (9924/16006)
+2026-03-06T03:30:30.9510388Z Resolving deltas:  63% (10084/16006)
+2026-03-06T03:30:30.9531735Z Resolving deltas:  64% (10244/16006)
+2026-03-06T03:30:30.9547645Z Resolving deltas:  65% (10404/16006)
+2026-03-06T03:30:30.9558546Z Resolving deltas:  66% (10564/16006)
+2026-03-06T03:30:30.9787684Z Resolving deltas:  67% (10725/16006)
+2026-03-06T03:30:30.9822884Z Resolving deltas:  68% (10885/16006)
+2026-03-06T03:30:30.9842424Z Resolving deltas:  69% (11046/16006)
+2026-03-06T03:30:30.9856134Z Resolving deltas:  70% (11205/16006)
+2026-03-06T03:30:30.9868210Z Resolving deltas:  71% (11365/16006)
+2026-03-06T03:30:30.9879520Z Resolving deltas:  72% (11525/16006)
+2026-03-06T03:30:30.9900821Z Resolving deltas:  73% (11686/16006)
+2026-03-06T03:30:30.9915729Z Resolving deltas:  74% (11845/16006)
+2026-03-06T03:30:30.9928285Z Resolving deltas:  75% (12005/16006)
+2026-03-06T03:30:30.9936728Z Resolving deltas:  76% (12165/16006)
+2026-03-06T03:30:30.9952749Z Resolving deltas:  77% (12325/16006)
+2026-03-06T03:30:30.9962261Z Resolving deltas:  78% (12485/16006)
+2026-03-06T03:30:30.9972570Z Resolving deltas:  79% (12645/16006)
+2026-03-06T03:30:30.9984026Z Resolving deltas:  80% (12805/16006)
+2026-03-06T03:30:30.9997456Z Resolving deltas:  81% (12965/16006)
+2026-03-06T03:30:31.0010824Z Resolving deltas:  82% (13125/16006)
+2026-03-06T03:30:31.0021135Z Resolving deltas:  83% (13285/16006)
+2026-03-06T03:30:31.0035782Z Resolving deltas:  84% (13446/16006)
+2026-03-06T03:30:31.0051453Z Resolving deltas:  85% (13606/16006)
+2026-03-06T03:30:31.0064282Z Resolving deltas:  86% (13766/16006)
+2026-03-06T03:30:31.0076343Z Resolving deltas:  87% (13926/16006)
+2026-03-06T03:30:31.0087916Z Resolving deltas:  88% (14086/16006)
+2026-03-06T03:30:31.0099143Z Resolving deltas:  89% (14246/16006)
+2026-03-06T03:30:31.0111788Z Resolving deltas:  90% (14406/16006)
+2026-03-06T03:30:31.0124275Z Resolving deltas:  91% (14566/16006)
+2026-03-06T03:30:31.0137769Z Resolving deltas:  92% (14726/16006)
+2026-03-06T03:30:31.0154611Z Resolving deltas:  93% (14886/16006)
+2026-03-06T03:30:31.0171228Z Resolving deltas:  94% (15046/16006)
+2026-03-06T03:30:31.0189498Z Resolving deltas:  95% (15206/16006)
+2026-03-06T03:30:31.0203601Z Resolving deltas:  96% (15366/16006)
+2026-03-06T03:30:31.0229052Z Resolving deltas:  97% (15526/16006)
+2026-03-06T03:30:31.0242179Z Resolving deltas:  98% (15687/16006)
+2026-03-06T03:30:31.0287859Z Resolving deltas:  99% (15846/16006)
+2026-03-06T03:30:31.0288443Z Resolving deltas: 100% (16006/16006)
+2026-03-06T03:30:31.0288943Z Resolving deltas: 100% (16006/16006), done.
+2026-03-06T03:30:31.1084674Z From https://github.com/beego/beego
+2026-03-06T03:30:31.1086388Z  * [new branch]        dependabot/go_modules/filippo.io/edwards25519-1.1.1 -> origin/dependabot/go_modules/filippo.io/edwards25519-1.1.1
+2026-03-06T03:30:31.1089900Z  * [new branch]        dependabot/go_modules/github.com/bits-and-blooms/bloom/v3-3.7.1 -> origin/dependabot/go_modules/github.com/bits-and-blooms/bloom/v3-3.7.1
+2026-03-06T03:30:31.1093204Z  * [new branch]        dependabot/go_modules/github.com/mattn/go-sqlite3-1.14.33 -> origin/dependabot/go_modules/github.com/mattn/go-sqlite3-1.14.33
+2026-03-06T03:30:31.1096292Z  * [new branch]        dependabot/go_modules/github.com/redis/go-redis/v9-9.17.2 -> origin/dependabot/go_modules/github.com/redis/go-redis/v9-9.17.2
+2026-03-06T03:30:31.1099473Z  * [new branch]        dependabot/go_modules/go.etcd.io/etcd/client/v3-3.6.7 -> origin/dependabot/go_modules/go.etcd.io/etcd/client/v3-3.6.7
+2026-03-06T03:30:31.1101570Z  * [new branch]        dependabot/go_modules/go.opentelemetry.io/otel-1.39.0 -> origin/dependabot/go_modules/go.opentelemetry.io/otel-1.39.0
+2026-03-06T03:30:31.1103362Z  * [new branch]        dependabot/go_modules/go.opentelemetry.io/otel/sdk-1.39.0 -> origin/dependabot/go_modules/go.opentelemetry.io/otel/sdk-1.39.0
+2026-03-06T03:30:31.1105221Z  * [new branch]        dependabot/go_modules/go.opentelemetry.io/otel/sdk-1.40.0 -> origin/dependabot/go_modules/go.opentelemetry.io/otel/sdk-1.40.0
+2026-03-06T03:30:31.1106941Z  * [new branch]        dependabot/go_modules/golang.org/x/crypto-0.45.0 -> origin/dependabot/go_modules/golang.org/x/crypto-0.45.0
+2026-03-06T03:30:31.1108604Z  * [new branch]        dependabot/go_modules/golang.org/x/crypto-0.46.0 -> origin/dependabot/go_modules/golang.org/x/crypto-0.46.0
+2026-03-06T03:30:31.1110210Z  * [new branch]        dependabot/go_modules/google.golang.org/grpc-1.78.0 -> origin/dependabot/go_modules/google.golang.org/grpc-1.78.0
+2026-03-06T03:30:31.1111899Z  * [new branch]        dependabot/go_modules/google.golang.org/protobuf-1.36.11 -> origin/dependabot/go_modules/google.golang.org/protobuf-1.36.11
+2026-03-06T03:30:31.1113030Z  * [new branch]        develop       -> origin/develop
+2026-03-06T03:30:31.1113631Z  * [new branch]        develop-1.x   -> origin/develop-1.x
+2026-03-06T03:30:31.1114227Z  * [new branch]        master        -> origin/master
+2026-03-06T03:30:31.1114824Z  * [new branch]        orm-refactor  -> origin/orm-refactor
+2026-03-06T03:30:31.1115421Z  * [new branch]        warp          -> origin/warp
+2026-03-06T03:30:31.1115949Z  * [new tag]           v0.6.0        -> v0.6.0
+2026-03-06T03:30:31.1116410Z  * [new tag]           v0.7.0        -> v0.7.0
+2026-03-06T03:30:31.1116861Z  * [new tag]           v0.8.0        -> v0.8.0
+2026-03-06T03:30:31.1117863Z  * [new tag]           v0.9.0        -> v0.9.0
+2026-03-06T03:30:31.1118375Z  * [new tag]           v1.0.1        -> v1.0.1
+2026-03-06T03:30:31.1118863Z  * [new tag]           v1.10.0       -> v1.10.0
+2026-03-06T03:30:31.1119370Z  * [new tag]           v1.10.1       -> v1.10.1
+2026-03-06T03:30:31.1119869Z  * [new tag]           v1.11.0       -> v1.11.0
+2026-03-06T03:30:31.1120342Z  * [new tag]           v1.11.1       -> v1.11.1
+2026-03-06T03:30:31.1120867Z  * [new tag]           v1.12.0       -> v1.12.0
+2026-03-06T03:30:31.1121362Z  * [new tag]           v1.12.1       -> v1.12.1
+2026-03-06T03:30:31.1121864Z  * [new tag]           v1.12.10      -> v1.12.10
+2026-03-06T03:30:31.1122376Z  * [new tag]           v1.12.11      -> v1.12.11
+2026-03-06T03:30:31.1122876Z  * [new tag]           v1.12.12      -> v1.12.12
+2026-03-06T03:30:31.1123627Z  * [new tag]           v1.12.13      -> v1.12.13
+2026-03-06T03:30:31.1124125Z  * [new tag]           v1.12.14      -> v1.12.14
+2026-03-06T03:30:31.1124633Z  * [new tag]           v1.12.2       -> v1.12.2
+2026-03-06T03:30:31.1125128Z  * [new tag]           v1.12.3       -> v1.12.3
+2026-03-06T03:30:31.1125621Z  * [new tag]           v1.12.4       -> v1.12.4
+2026-03-06T03:30:31.1126098Z  * [new tag]           v1.12.6       -> v1.12.6
+2026-03-06T03:30:31.1126600Z  * [new tag]           v1.12.7       -> v1.12.7
+2026-03-06T03:30:31.1127100Z  * [new tag]           v1.12.8       -> v1.12.8
+2026-03-06T03:30:31.1127809Z  * [new tag]           v1.12.9       -> v1.12.9
+2026-03-06T03:30:31.1128322Z  * [new tag]           v1.2.0        -> v1.2.0
+2026-03-06T03:30:31.1128812Z  * [new tag]           v1.3.0        -> v1.3.0
+2026-03-06T03:30:31.1129304Z  * [new tag]           v1.4.0        -> v1.4.0
+2026-03-06T03:30:31.1129784Z  * [new tag]           v1.4.1        -> v1.4.1
+2026-03-06T03:30:31.1130283Z  * [new tag]           v1.4.2        -> v1.4.2
+2026-03-06T03:30:31.1130768Z  * [new tag]           v1.4.3        -> v1.4.3
+2026-03-06T03:30:31.1131251Z  * [new tag]           v1.5.0        -> v1.5.0
+2026-03-06T03:30:31.1131749Z  * [new tag]           v1.6.0        -> v1.6.0
+2026-03-06T03:30:31.1132226Z  * [new tag]           v1.6.1        -> v1.6.1
+2026-03-06T03:30:31.1132714Z  * [new tag]           v1.7.0        -> v1.7.0
+2026-03-06T03:30:31.1133188Z  * [new tag]           v1.7.1        -> v1.7.1
+2026-03-06T03:30:31.1133679Z  * [new tag]           v1.7.2        -> v1.7.2
+2026-03-06T03:30:31.1134171Z  * [new tag]           v1.8.0        -> v1.8.0
+2026-03-06T03:30:31.1134648Z  * [new tag]           v1.8.1        -> v1.8.1
+2026-03-06T03:30:31.1135138Z  * [new tag]           v1.8.2        -> v1.8.2
+2026-03-06T03:30:31.1135620Z  * [new tag]           v1.8.3        -> v1.8.3
+2026-03-06T03:30:31.1136103Z  * [new tag]           v1.9.0        -> v1.9.0
+2026-03-06T03:30:31.1136580Z  * [new tag]           v1.9.2        -> v1.9.2
+2026-03-06T03:30:31.1137076Z  * [new tag]           v2.0.0        -> v2.0.0
+2026-03-06T03:30:31.1137771Z  * [new tag]           v2.0.0-beta   -> v2.0.0-beta
+2026-03-06T03:30:31.1138306Z  * [new tag]           v2.0.1        -> v2.0.1
+2026-03-06T03:30:31.1138788Z  * [new tag]           v2.0.2        -> v2.0.2
+2026-03-06T03:30:31.1139295Z  * [new tag]           v2.0.2-beta.1 -> v2.0.2-beta.1
+2026-03-06T03:30:31.1139816Z  * [new tag]           v2.0.3        -> v2.0.3
+2026-03-06T03:30:31.1140299Z  * [new tag]           v2.0.4        -> v2.0.4
+2026-03-06T03:30:31.1140872Z  * [new tag]           v2.0.5        -> v2.0.5
+2026-03-06T03:30:31.1141348Z  * [new tag]           v2.0.6        -> v2.0.6
+2026-03-06T03:30:31.1141830Z  * [new tag]           v2.0.7        -> v2.0.7
+2026-03-06T03:30:31.1142308Z  * [new tag]           v2.1.0        -> v2.1.0
+2026-03-06T03:30:31.1142787Z  * [new tag]           v2.1.1        -> v2.1.1
+2026-03-06T03:30:31.1143268Z  * [new tag]           v2.1.2        -> v2.1.2
+2026-03-06T03:30:31.1143751Z  * [new tag]           v2.1.3        -> v2.1.3
+2026-03-06T03:30:31.1144235Z  * [new tag]           v2.1.4        -> v2.1.4
+2026-03-06T03:30:31.1144708Z  * [new tag]           v2.1.5        -> v2.1.5
+2026-03-06T03:30:31.1145359Z  * [new tag]           v2.1.6        -> v2.1.6
+2026-03-06T03:30:31.1145842Z  * [new tag]           v2.2.0        -> v2.2.0
+2026-03-06T03:30:31.1146325Z  * [new tag]           v2.2.1        -> v2.2.1
+2026-03-06T03:30:31.1146802Z  * [new tag]           v2.2.2        -> v2.2.2
+2026-03-06T03:30:31.1147472Z  * [new tag]           v2.3.0        -> v2.3.0
+2026-03-06T03:30:31.1147977Z  * [new tag]           v2.3.1        -> v2.3.1
+2026-03-06T03:30:31.1148450Z  * [new tag]           v2.3.2        -> v2.3.2
+2026-03-06T03:30:31.1148935Z  * [new tag]           v2.3.3        -> v2.3.3
+2026-03-06T03:30:31.1149404Z  * [new tag]           v2.3.4        -> v2.3.4
+2026-03-06T03:30:31.1149886Z  * [new tag]           v2.3.5        -> v2.3.5
+2026-03-06T03:30:31.1150640Z  * [new tag]           v2.3.6        -> v2.3.6
+2026-03-06T03:30:31.1151153Z  * [new tag]           v2.3.7        -> v2.3.7
+2026-03-06T03:30:31.1151654Z  * [new tag]           v2.3.8        -> v2.3.8
+2026-03-06T03:30:31.1152319Z  * [new ref]           72802c79fb1361e9f3c29dc8522c0d459975ace7 -> pull/5879/merge
+2026-03-06T03:30:31.1244105Z ##[endgroup]
+2026-03-06T03:30:31.1244732Z ##[group]Determining the checkout info
+2026-03-06T03:30:31.1245390Z ##[endgroup]
+2026-03-06T03:30:31.1245936Z ##[group]Checking out the ref
+2026-03-06T03:30:31.1249129Z [command]/usr/bin/git checkout --progress --force refs/remotes/pull/5879/merge
+2026-03-06T03:30:31.1592310Z Note: switching to 'refs/remotes/pull/5879/merge'.
+2026-03-06T03:30:31.1592789Z 
+2026-03-06T03:30:31.1593135Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-03-06T03:30:31.1593950Z changes and commit them, and you can discard any commits you make in this
+2026-03-06T03:30:31.1594714Z state without impacting any branches by switching back to a branch.
+2026-03-06T03:30:31.1595195Z 
+2026-03-06T03:30:31.1595531Z If you want to create a new branch to retain commits you create, you may
+2026-03-06T03:30:31.1596308Z do so (now or later) by using -c with the switch command. Example:
+2026-03-06T03:30:31.1596742Z 
+2026-03-06T03:30:31.1596932Z   git switch -c <new-branch-name>
+2026-03-06T03:30:31.1597203Z 
+2026-03-06T03:30:31.1597600Z Or undo this operation with:
+2026-03-06T03:30:31.1597848Z 
+2026-03-06T03:30:31.1598006Z   git switch -
+2026-03-06T03:30:31.1598204Z 
+2026-03-06T03:30:31.1598596Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-03-06T03:30:31.1599137Z 
+2026-03-06T03:30:31.1599843Z HEAD is now at 72802c79 Merge 8a51d2a0560a6aa5523ad40ee458d3c267bfc485 into dc42795fefddd0c3e6fef39564d5f1007369df91
+2026-03-06T03:30:31.1605284Z ##[endgroup]
+2026-03-06T03:30:31.1647424Z [command]/usr/bin/git log -1 --format='%H'
+2026-03-06T03:30:31.1672880Z '72802c79fb1361e9f3c29dc8522c0d459975ace7'
+2026-03-06T03:30:31.1826481Z ##[group]Run rm -rf /tmp/etcd-data.tmp
+2026-03-06T03:30:31.1826848Z [36;1mrm -rf /tmp/etcd-data.tmp[0m
+2026-03-06T03:30:31.1827113Z [36;1mmkdir -p /tmp/etcd-data.tmp[0m
+2026-03-06T03:30:31.1827724Z [36;1mdocker rmi gcr.io/etcd-development/etcd:${ETCD_VERSION} || true && \[0m
+2026-03-06T03:30:31.1828103Z [36;1mdocker run -d \[0m
+2026-03-06T03:30:31.1828310Z [36;1m  -p 2379:2379 \[0m
+2026-03-06T03:30:31.1828528Z [36;1m  -p 2380:2380 \[0m
+2026-03-06T03:30:31.1828855Z [36;1m  --mount type=bind,source=/tmp/etcd-data.tmp,destination=/etcd-data \[0m
+2026-03-06T03:30:31.1829253Z [36;1m  --name etcd-gcr-${ETCD_VERSION} \[0m
+2026-03-06T03:30:31.1829555Z [36;1m  gcr.io/etcd-development/etcd:${ETCD_VERSION} \[0m
+2026-03-06T03:30:31.1829880Z [36;1m  /usr/local/bin/etcd \[0m
+2026-03-06T03:30:31.1830119Z [36;1m  --name s1 \[0m
+2026-03-06T03:30:31.1830332Z [36;1m  --data-dir /etcd-data \[0m
+2026-03-06T03:30:31.1830664Z [36;1m  --listen-client-urls http://0.0.0.0:2379 \[0m
+2026-03-06T03:30:31.1831020Z [36;1m  --advertise-client-urls http://0.0.0.0:2379 \[0m
+2026-03-06T03:30:31.1831347Z [36;1m  --listen-peer-urls http://0.0.0.0:2380 \[0m
+2026-03-06T03:30:31.1831693Z [36;1m  --initial-advertise-peer-urls http://0.0.0.0:2380 \[0m
+2026-03-06T03:30:31.1832047Z [36;1m  --initial-cluster s1=http://0.0.0.0:2380 \[0m
+2026-03-06T03:30:31.1832337Z [36;1m  --initial-cluster-token tkn \[0m
+2026-03-06T03:30:31.1832605Z [36;1m  --initial-cluster-state new[0m
+2026-03-06T03:30:31.1833096Z [36;1mdocker exec etcd-gcr-${ETCD_VERSION} /bin/sh -c "ETCDCTL_API=3 /usr/local/bin/etcdctl put current.float 1.23"[0m
+2026-03-06T03:30:31.1833817Z [36;1mdocker exec etcd-gcr-${ETCD_VERSION} /bin/sh -c "ETCDCTL_API=3 /usr/local/bin/etcdctl put current.bool true"[0m
+2026-03-06T03:30:31.1834524Z [36;1mdocker exec etcd-gcr-${ETCD_VERSION} /bin/sh -c "ETCDCTL_API=3 /usr/local/bin/etcdctl put current.int 11"[0m
+2026-03-06T03:30:31.1835230Z [36;1mdocker exec etcd-gcr-${ETCD_VERSION} /bin/sh -c "ETCDCTL_API=3 /usr/local/bin/etcdctl put current.string hello"[0m
+2026-03-06T03:30:31.1836231Z [36;1mdocker exec etcd-gcr-${ETCD_VERSION} /bin/sh -c "ETCDCTL_API=3 /usr/local/bin/etcdctl put current.serialize.name test"[0m
+2026-03-06T03:30:31.1837011Z [36;1mdocker exec etcd-gcr-${ETCD_VERSION} /bin/sh -c "ETCDCTL_API=3 /usr/local/bin/etcdctl put sub.sub.key1 sub.sub.key"[0m
+2026-03-06T03:30:31.1891996Z shell: /usr/bin/bash -e {0}
+2026-03-06T03:30:31.1892230Z env:
+2026-03-06T03:30:31.1892410Z   ETCD_VERSION: v3.4.16
+2026-03-06T03:30:31.1892610Z ##[endgroup]
+2026-03-06T03:30:31.2130973Z Error response from daemon: No such image: gcr.io/etcd-development/etcd:v3.4.16
+2026-03-06T03:30:31.2267471Z Unable to find image 'gcr.io/etcd-development/etcd:v3.4.16' locally
+2026-03-06T03:30:32.1926434Z v3.4.16: Pulling from etcd-development/etcd
+2026-03-06T03:30:32.1927390Z 39fafc05754f: Pulling fs layer
+2026-03-06T03:30:32.1927992Z 6f4d54e2f543: Pulling fs layer
+2026-03-06T03:30:32.1928618Z 0304e75162bf: Pulling fs layer
+2026-03-06T03:30:32.1929207Z 96ddb7a539fb: Pulling fs layer
+2026-03-06T03:30:32.1929784Z 3dd1215212d5: Pulling fs layer
+2026-03-06T03:30:32.1930352Z fd7b697039e2: Pulling fs layer
+2026-03-06T03:30:32.1930897Z 96ddb7a539fb: Waiting
+2026-03-06T03:30:32.1931296Z 3dd1215212d5: Waiting
+2026-03-06T03:30:32.1931604Z fd7b697039e2: Waiting
+2026-03-06T03:30:32.8570974Z 39fafc05754f: Verifying Checksum
+2026-03-06T03:30:32.8576359Z 39fafc05754f: Download complete
+2026-03-06T03:30:32.8749236Z 6f4d54e2f543: Verifying Checksum
+2026-03-06T03:30:32.8751637Z 6f4d54e2f543: Download complete
+2026-03-06T03:30:32.9874556Z 0304e75162bf: Verifying Checksum
+2026-03-06T03:30:32.9875092Z 0304e75162bf: Download complete
+2026-03-06T03:30:33.1365560Z 96ddb7a539fb: Verifying Checksum
+2026-03-06T03:30:33.1366079Z 96ddb7a539fb: Download complete
+2026-03-06T03:30:33.1727392Z 3dd1215212d5: Verifying Checksum
+2026-03-06T03:30:33.1728118Z 3dd1215212d5: Download complete
+2026-03-06T03:30:33.3314873Z fd7b697039e2: Download complete
+2026-03-06T03:30:33.4824167Z 39fafc05754f: Pull complete
+2026-03-06T03:30:33.6519226Z 6f4d54e2f543: Pull complete
+2026-03-06T03:30:33.7479309Z 0304e75162bf: Pull complete
+2026-03-06T03:30:33.7569596Z 96ddb7a539fb: Pull complete
+2026-03-06T03:30:33.7674009Z 3dd1215212d5: Pull complete
+2026-03-06T03:30:33.7753691Z fd7b697039e2: Pull complete
+2026-03-06T03:30:33.7781667Z Digest: sha256:ea7bb56278ab95708e955f5143c64b5aa90a15aa29d646d1371ea87e30af0e8c
+2026-03-06T03:30:33.7792465Z Status: Downloaded newer image for gcr.io/etcd-development/etcd:v3.4.16
+2026-03-06T03:30:33.7906573Z 75ccab011a3a2d94378f39578b716e991736512fc62930fb2df81abc2c2dd931
+2026-03-06T03:30:34.3372965Z OK
+2026-03-06T03:30:34.3998824Z OK
+2026-03-06T03:30:34.4614340Z OK
+2026-03-06T03:30:34.5278287Z OK
+2026-03-06T03:30:34.5893800Z OK
+2026-03-06T03:30:34.6529574Z OK
+2026-03-06T03:30:34.6602096Z ##[group]Run mkdir -p /tmp/sqlite3 && touch /tmp/sqlite3/orm_test.db
+2026-03-06T03:30:34.6602569Z [36;1mmkdir -p /tmp/sqlite3 && touch /tmp/sqlite3/orm_test.db[0m
+2026-03-06T03:30:34.6603116Z [36;1mgo test -coverprofile=coverage_sqlite3.txt -covermode=atomic $(go list ./... | grep client/orm)[0m
+2026-03-06T03:30:34.6654115Z shell: /usr/bin/bash -e {0}
+2026-03-06T03:30:34.6654355Z env:
+2026-03-06T03:30:34.6654528Z   GOPATH: /home/runner/go
+2026-03-06T03:30:34.6654749Z   ORM_DRIVER: sqlite3
+2026-03-06T03:30:34.6654957Z   ORM_SOURCE: /tmp/sqlite3/orm_test.db
+2026-03-06T03:30:34.6655203Z ##[endgroup]
+2026-03-06T03:30:34.8001617Z go: downloading github.com/bradfitz/gomemcache v0.0.0-20190913173617-a41fca850d0b
+2026-03-06T03:30:34.9764041Z go: downloading golang.org/x/sync v0.7.0
+2026-03-06T03:30:35.0163410Z go: downloading github.com/gomodule/redigo v1.8.8
+2026-03-06T03:30:35.3637208Z go: downloading gopkg.in/yaml.v3 v3.0.1
+2026-03-06T03:30:35.4862623Z go: downloading go.opentelemetry.io/otel v1.11.2
+2026-03-06T03:30:35.5404145Z go: downloading go.opentelemetry.io/otel/trace v1.11.2
+2026-03-06T03:30:35.5405127Z go: downloading github.com/go-kit/kit v0.12.1-0.20220826005032-a7ba4fa4e289
+2026-03-06T03:30:35.5406597Z go: downloading github.com/go-kit/log v0.2.1
+2026-03-06T03:30:35.5556294Z go: downloading github.com/opentracing/opentracing-go v1.2.0
+2026-03-06T03:30:35.5679373Z go: downloading github.com/prometheus/client_golang v1.19.0
+2026-03-06T03:30:35.6325351Z go: downloading github.com/ssdb/gossdb v0.0.0-20180723034631-88f6b59b84ec
+2026-03-06T03:30:35.7138480Z go: downloading github.com/valyala/bytebufferpool v1.0.0
+2026-03-06T03:30:35.7141684Z go: downloading github.com/hashicorp/golang-lru v0.5.4
+2026-03-06T03:30:35.7724724Z go: downloading github.com/mattn/go-sqlite3 v1.14.22
+2026-03-06T03:30:35.9456741Z go: downloading github.com/mitchellh/mapstructure v1.5.0
+2026-03-06T03:30:35.9549571Z go: downloading github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
+2026-03-06T03:30:35.9597592Z go: downloading github.com/pelletier/go-toml v1.9.2
+2026-03-06T03:30:35.9598495Z go: downloading go.etcd.io/etcd/client/v3 v3.5.9
+2026-03-06T03:30:35.9662396Z go: downloading github.com/beego/x2j v0.0.0-20131220205130-a0352aadc542
+2026-03-06T03:30:35.9847452Z go: downloading google.golang.org/grpc v1.63.0
+2026-03-06T03:30:36.1278604Z go: downloading github.com/shiena/ansicolor v0.0.0-20200904210342-c7312218db18
+2026-03-06T03:30:36.1367063Z go: downloading github.com/elastic/go-elasticsearch/v6 v6.8.10
+2026-03-06T03:30:36.2808715Z go: downloading github.com/cloudflare/golz4 v0.0.0-20150217214814-ef862a3cdc58
+2026-03-06T03:30:36.3290935Z go: downloading github.com/gogo/protobuf v1.3.2
+2026-03-06T03:30:36.5791788Z go: downloading golang.org/x/crypto v0.24.0
+2026-03-06T03:30:36.6940957Z go: downloading google.golang.org/protobuf v1.34.2
+2026-03-06T03:30:36.7388139Z go: downloading github.com/casbin/casbin v1.9.1
+2026-03-06T03:30:37.5769093Z go: downloading github.com/go-logr/logr v1.2.3
+2026-03-06T03:30:37.5913392Z go: downloading github.com/go-logfmt/logfmt v0.5.1
+2026-03-06T03:30:37.6120521Z go: downloading github.com/beorn7/perks v1.0.1
+2026-03-06T03:30:37.6201140Z go: downloading github.com/cespare/xxhash/v2 v2.2.0
+2026-03-06T03:30:37.6294968Z go: downloading github.com/prometheus/client_model v0.5.0
+2026-03-06T03:30:37.6374218Z go: downloading github.com/prometheus/common v0.48.0
+2026-03-06T03:30:37.6670813Z go: downloading github.com/prometheus/procfs v0.12.0
+2026-03-06T03:30:37.7601291Z go: downloading github.com/google/uuid v1.6.0
+2026-03-06T03:30:37.7728971Z go: downloading github.com/couchbase/go-couchbase v0.1.0
+2026-03-06T03:30:37.7743237Z go: downloading github.com/ledisdb/ledisdb v0.0.0-20200510135210-d35789ec47e6
+2026-03-06T03:30:37.9343001Z go: downloading github.com/go-sql-driver/mysql v1.8.1
+2026-03-06T03:30:37.9344468Z go: downloading github.com/lib/pq v1.10.5
+2026-03-06T03:30:38.0410634Z go: downloading github.com/redis/go-redis/v9 v9.5.1
+2026-03-06T03:30:38.0418937Z go: downloading golang.org/x/net v0.23.0
+2026-03-06T03:30:38.0445976Z go: downloading go.etcd.io/etcd/api/v3 v3.5.9
+2026-03-06T03:30:38.0695962Z go: downloading go.etcd.io/etcd/client/pkg/v3 v3.5.9
+2026-03-06T03:30:38.0846132Z go: downloading go.uber.org/zap v1.19.1
+2026-03-06T03:30:38.1260068Z go: downloading github.com/elazarl/go-bindata-assetfs v1.0.1
+2026-03-06T03:30:38.1573431Z go: downloading github.com/Knetic/govaluate v3.0.1-0.20171022003610-9aa49832a739+incompatible
+2026-03-06T03:30:38.3028928Z go: downloading github.com/go-logr/stdr v1.2.2
+2026-03-06T03:30:38.3245570Z go: downloading golang.org/x/sys v0.21.0
+2026-03-06T03:30:38.3606172Z go: downloading github.com/couchbase/gomemcached v0.1.3
+2026-03-06T03:30:38.4194385Z go: downloading github.com/couchbase/goutils v0.1.0
+2026-03-06T03:30:38.4580942Z go: downloading github.com/siddontang/go v0.0.0-20170517070808-cb568a3e5cc0
+2026-03-06T03:30:38.5249288Z go: downloading github.com/siddontang/rdb v0.0.0-20150307021120-fc89ed2e418d
+2026-03-06T03:30:38.5250110Z go: downloading filippo.io/edwards25519 v1.1.0
+2026-03-06T03:30:38.5341685Z go: downloading google.golang.org/genproto/googleapis/rpc v0.0.0-20240227224415-6ceb2ff114de
+2026-03-06T03:30:38.5373029Z go: downloading github.com/golang/protobuf v1.5.4
+2026-03-06T03:30:38.5380270Z go: downloading google.golang.org/genproto/googleapis/api v0.0.0-20240227224415-6ceb2ff114de
+2026-03-06T03:30:38.5426702Z go: downloading google.golang.org/genproto v0.0.0-20240227224415-6ceb2ff114de
+2026-03-06T03:30:38.5453454Z go: downloading github.com/coreos/go-semver v0.3.0
+2026-03-06T03:30:38.5555523Z go: downloading github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f
+2026-03-06T03:30:38.5637657Z go: downloading github.com/coreos/go-systemd/v22 v22.3.2
+2026-03-06T03:30:38.5761952Z go: downloading go.uber.org/atomic v1.9.0
+2026-03-06T03:30:38.5915699Z go: downloading go.uber.org/multierr v1.7.0
+2026-03-06T03:30:38.5978312Z go: downloading golang.org/x/text v0.16.0
+2026-03-06T03:30:39.1864988Z go: downloading github.com/pkg/errors v0.9.1
+2026-03-06T03:30:39.1872257Z go: downloading github.com/edsrzf/mmap-go v1.0.0
+2026-03-06T03:30:39.1932624Z go: downloading github.com/syndtr/goleveldb v0.0.0-20160425020131-cfa635847112
+2026-03-06T03:30:39.1945194Z go: downloading github.com/cupcake/rdb v0.0.0-20161107195141-43ba34106c76
+2026-03-06T03:30:39.3347947Z go: downloading github.com/golang/snappy v0.0.0-20180518054509-2e65f85255db
+2026-03-06T03:30:39.6779149Z go: downloading github.com/stretchr/testify v1.9.0
+2026-03-06T03:30:39.6782291Z go: downloading go.opentelemetry.io/otel/exporters/stdout/stdouttrace v1.11.2
+2026-03-06T03:30:39.6785340Z go: downloading go.opentelemetry.io/otel/sdk v1.11.2
+2026-03-06T03:30:39.6892668Z go: downloading github.com/DATA-DOG/go-sqlmock v1.5.1
+2026-03-06T03:30:39.7641712Z go: downloading github.com/pmezard/go-difflib v1.0.0
+2026-03-06T03:30:39.7644267Z go: downloading github.com/davecgh/go-spew v1.1.1
+2026-03-06T03:31:25.5655155Z ?   	github.com/beego/beego/v2/client/orm/clauses	[no test files]
+2026-03-06T03:31:25.9367624Z ok  	github.com/beego/beego/v2/client/orm	0.366s	coverage: 70.4% of statements
+2026-03-06T03:31:25.9368705Z ok  	github.com/beego/beego/v2/client/orm/clauses/order_clause	0.004s	coverage: 100.0% of statements
+2026-03-06T03:31:25.9372670Z ok  	github.com/beego/beego/v2/client/orm/filter/bean	0.007s	coverage: 37.4% of statements
+2026-03-06T03:31:27.3278891Z ok  	github.com/beego/beego/v2/client/orm/filter/opentelemetry	0.008s	coverage: 23.3% of statements
+2026-03-06T03:31:27.3288573Z ok  	github.com/beego/beego/v2/client/orm/filter/opentracing	0.005s	coverage: 19.1% of statements
+2026-03-06T03:31:29.8955579Z ok  	github.com/beego/beego/v2/client/orm/filter/prometheus	0.052s	coverage: 19.4% of statements
+2026-03-06T03:31:29.8956395Z ok  	github.com/beego/beego/v2/client/orm/hints	0.052s	coverage: 100.0% of statements
+2026-03-06T03:31:30.0530427Z 	github.com/beego/beego/v2/client/orm/internal/logs		coverage: 0.0% of statements
+2026-03-06T03:31:30.0535870Z 	github.com/beego/beego/v2/client/orm/internal/buffers		coverage: 0.0% of statements
+2026-03-06T03:31:30.2984671Z 	github.com/beego/beego/v2/client/orm/internal/utils		coverage: 0.0% of statements
+2026-03-06T03:31:30.3015388Z 	github.com/beego/beego/v2/client/orm/migration		coverage: 0.0% of statements
+2026-03-06T03:31:30.3060854Z ok  	github.com/beego/beego/v2/client/orm/internal/models	0.011s	coverage: 25.6% of statements
+2026-03-06T03:31:30.7900135Z ok  	github.com/beego/beego/v2/client/orm/mock	0.006s	coverage: 52.4% of statements
+2026-03-06T03:31:31.0984429Z 	github.com/beego/beego/v2/client/orm/qb/errs		coverage: 0.0% of statements
+2026-03-06T03:31:31.1038036Z ok  	github.com/beego/beego/v2/client/orm/qb	0.005s	coverage: 23.1% of statements
+2026-03-06T03:31:31.1986361Z ##[group]Run go test -coverprofile=coverage_postgres.txt -covermode=atomic $(go list ./... | grep client/orm)
+2026-03-06T03:31:31.1987633Z [36;1mgo test -coverprofile=coverage_postgres.txt -covermode=atomic $(go list ./... | grep client/orm)[0m
+2026-03-06T03:31:31.2036606Z shell: /usr/bin/bash -e {0}
+2026-03-06T03:31:31.2036836Z env:
+2026-03-06T03:31:31.2037012Z   GOPATH: /home/runner/go
+2026-03-06T03:31:31.2037466Z   ORM_DRIVER: postgres
+2026-03-06T03:31:31.2038158Z   ORM_SOURCE: host=localhost port=32768 user=postgres *** dbname=orm_test sslmode=disable
+2026-03-06T03:31:31.2038770Z ##[endgroup]
+2026-03-06T03:31:31.9738939Z ?   	github.com/beego/beego/v2/client/orm/clauses	[no test files]
+2026-03-06T03:31:32.4271580Z ok  	github.com/beego/beego/v2/client/orm	0.448s	coverage: 72.6% of statements
+2026-03-06T03:31:32.4277866Z ok  	github.com/beego/beego/v2/client/orm/clauses/order_clause	0.006s	coverage: 100.0% of statements
+2026-03-06T03:31:32.4279033Z ok  	github.com/beego/beego/v2/client/orm/filter/bean	0.006s	coverage: 37.4% of statements
+2026-03-06T03:31:32.4280063Z ok  	github.com/beego/beego/v2/client/orm/filter/opentelemetry	0.007s	coverage: 23.3% of statements
+2026-03-06T03:31:32.4281130Z ok  	github.com/beego/beego/v2/client/orm/filter/opentracing	0.007s	coverage: 19.1% of statements
+2026-03-06T03:31:32.4359764Z ok  	github.com/beego/beego/v2/client/orm/filter/prometheus	0.005s	coverage: 19.4% of statements
+2026-03-06T03:31:32.5036592Z 	github.com/beego/beego/v2/client/orm/internal/buffers		coverage: 0.0% of statements
+2026-03-06T03:31:32.5038964Z 	github.com/beego/beego/v2/client/orm/internal/logs		coverage: 0.0% of statements
+2026-03-06T03:31:32.5056244Z ok  	github.com/beego/beego/v2/client/orm/hints	0.005s	coverage: 100.0% of statements
+2026-03-06T03:31:32.6095438Z 	github.com/beego/beego/v2/client/orm/migration		coverage: 0.0% of statements
+2026-03-06T03:31:32.6108288Z 	github.com/beego/beego/v2/client/orm/internal/utils		coverage: 0.0% of statements
+2026-03-06T03:31:32.6160206Z ok  	github.com/beego/beego/v2/client/orm/internal/models	0.008s	coverage: 25.6% of statements
+2026-03-06T03:31:32.9778731Z ok  	github.com/beego/beego/v2/client/orm/mock	0.006s	coverage: 52.4% of statements
+2026-03-06T03:31:32.9972578Z 	github.com/beego/beego/v2/client/orm/qb/errs		coverage: 0.0% of statements
+2026-03-06T03:31:33.0026414Z ok  	github.com/beego/beego/v2/client/orm/qb	0.005s	coverage: 23.1% of statements
+2026-03-06T03:31:33.0188377Z ##[group]Run sudo systemctl start mysql
+2026-03-06T03:31:33.0188766Z [36;1msudo systemctl start mysql[0m
+2026-03-06T03:31:33.0189105Z [36;1mmysql -u root -proot -e 'create database orm_test;'[0m
+2026-03-06T03:31:33.0189518Z [36;1mgo test -coverprofile=coverage.txt -covermode=atomic ./...[0m
+2026-03-06T03:31:33.0238469Z shell: /usr/bin/bash -e {0}
+2026-03-06T03:31:33.0238715Z env:
+2026-03-06T03:31:33.0238903Z   GOPATH: /home/runner/go
+2026-03-06T03:31:33.0239117Z   ORM_DRIVER: mysql
+2026-03-06T03:31:33.0239343Z   ORM_SOURCE: root:root@/orm_test?charset=utf8
+2026-03-06T03:31:33.0239606Z ##[endgroup]
+2026-03-06T03:31:38.3346182Z mysql: [Warning] Using a password on the command line interface can be insecure.
+2026-03-06T03:31:38.4481792Z go: downloading github.com/bits-and-blooms/bloom/v3 v3.6.0
+2026-03-06T03:31:38.4977800Z go: downloading github.com/bits-and-blooms/bitset v1.10.0
+2026-03-06T03:31:38.6874837Z ?   	github.com/beego/beego/v2	[no test files]
+2026-03-06T03:31:46.0382334Z 	github.com/beego/beego/v2/client/httplib/testing		coverage: 0.0% of statements
+2026-03-06T03:31:46.6100260Z ?   	github.com/beego/beego/v2/client/orm/clauses	[no test files]
+2026-03-06T03:31:47.5575605Z 	github.com/beego/beego/v2/client/orm/internal/buffers		coverage: 0.0% of statements
+2026-03-06T03:31:47.5609819Z 	github.com/beego/beego/v2/client/orm/internal/logs		coverage: 0.0% of statements
+2026-03-06T03:31:47.7031270Z 	github.com/beego/beego/v2/client/orm/internal/utils		coverage: 0.0% of statements
+2026-03-06T03:31:47.7329393Z 	github.com/beego/beego/v2/client/orm/migration		coverage: 0.0% of statements
+2026-03-06T03:31:48.1609013Z 	github.com/beego/beego/v2/client/orm/qb/errs		coverage: 0.0% of statements
+2026-03-06T03:31:58.3149482Z ok  	github.com/beego/beego/v2/client/cache	18.058s	coverage: 91.3% of statements
+2026-03-06T03:31:58.3150509Z ok  	github.com/beego/beego/v2/client/cache/memcache	11.031s	coverage: 90.2% of statements
+2026-03-06T03:31:58.3151536Z ok  	github.com/beego/beego/v2/client/cache/redis	6.048s	coverage: 84.2% of statements
+2026-03-06T03:31:58.3165652Z ok  	github.com/beego/beego/v2/client/cache/ssdb	0.013s	coverage: 82.2% of statements
+2026-03-06T03:31:58.3166967Z ok  	github.com/beego/beego/v2/client/httplib	2.822s	coverage: 65.4% of statements
+2026-03-06T03:31:58.3168136Z ok  	github.com/beego/beego/v2/client/httplib/filter/log	0.104s	coverage: 74.4% of statements
+2026-03-06T03:31:58.3169262Z ok  	github.com/beego/beego/v2/client/httplib/filter/opentelemetry	0.104s	coverage: 88.9% of statements
+2026-03-06T03:31:58.3170436Z ok  	github.com/beego/beego/v2/client/httplib/filter/opentracing	0.104s	coverage: 89.3% of statements
+2026-03-06T03:31:58.3171589Z ok  	github.com/beego/beego/v2/client/httplib/filter/prometheus	0.105s	coverage: 100.0% of statements
+2026-03-06T03:31:58.3172662Z ok  	github.com/beego/beego/v2/client/httplib/mock	0.005s	coverage: 90.1% of statements
+2026-03-06T03:31:58.3173573Z ok  	github.com/beego/beego/v2/client/orm	0.679s	coverage: 72.2% of statements
+2026-03-06T03:31:58.3174565Z ok  	github.com/beego/beego/v2/client/orm/clauses/order_clause	0.003s	coverage: 100.0% of statements
+2026-03-06T03:31:58.3175590Z ok  	github.com/beego/beego/v2/client/orm/filter/bean	0.005s	coverage: 37.4% of statements
+2026-03-06T03:31:58.3176611Z ok  	github.com/beego/beego/v2/client/orm/filter/opentelemetry	0.005s	coverage: 23.3% of statements
+2026-03-06T03:31:58.3178100Z ok  	github.com/beego/beego/v2/client/orm/filter/opentracing	0.003s	coverage: 19.1% of statements
+2026-03-06T03:31:58.3179177Z ok  	github.com/beego/beego/v2/client/orm/filter/prometheus	0.005s	coverage: 19.4% of statements
+2026-03-06T03:31:58.3180180Z ok  	github.com/beego/beego/v2/client/orm/hints	0.004s	coverage: 100.0% of statements
+2026-03-06T03:31:58.3181238Z ok  	github.com/beego/beego/v2/client/orm/internal/models	0.006s	coverage: 25.6% of statements
+2026-03-06T03:31:58.3182210Z ok  	github.com/beego/beego/v2/client/orm/mock	0.006s	coverage: 52.4% of statements
+2026-03-06T03:31:58.3183389Z ok  	github.com/beego/beego/v2/client/orm/qb	0.006s	coverage: 23.1% of statements
+2026-03-06T03:31:58.3184302Z ok  	github.com/beego/beego/v2/core/admin	0.008s	coverage: 31.5% of statements
+2026-03-06T03:31:58.3185135Z ok  	github.com/beego/beego/v2/core/bean	0.004s	coverage: 72.8% of statements
+2026-03-06T03:31:58.3185943Z ok  	github.com/beego/beego/v2/core/berror	0.003s	coverage: 88.6% of statements
+2026-03-06T03:31:58.3186737Z ok  	github.com/beego/beego/v2/core/config	0.006s	coverage: 65.8% of statements
+2026-03-06T03:31:58.3195746Z ok  	github.com/beego/beego/v2/core/config/env	0.003s	coverage: 70.0% of statements
+2026-03-06T03:31:58.3196856Z ok  	github.com/beego/beego/v2/core/config/etcd	0.026s	coverage: 70.0% of statements
+2026-03-06T03:31:58.3239784Z ok  	github.com/beego/beego/v2/core/config/json	0.005s	coverage: 64.0% of statements
+2026-03-06T03:31:58.3240942Z ok  	github.com/beego/beego/v2/core/config/toml	0.006s	coverage: 81.7% of statements
+2026-03-06T03:31:58.3241888Z ok  	github.com/beego/beego/v2/core/config/xml	0.005s	coverage: 51.1% of statements
+2026-03-06T03:31:58.3242733Z ok  	github.com/beego/beego/v2/core/config/yaml	0.006s	coverage: 80.4% of statements
+2026-03-06T03:32:03.4004483Z 	github.com/beego/beego/v2/core/logs/alils		coverage: 0.0% of statements
+2026-03-06T03:32:03.6793653Z 	github.com/beego/beego/v2/core/utils/pagination		coverage: 0.0% of statements
+2026-03-06T03:32:08.0498874Z 	github.com/beego/beego/v2/server/web/filter/auth		coverage: 0.0% of statements
+2026-03-06T03:32:09.8295949Z 	github.com/beego/beego/v2/server/web/grace		coverage: 0.0% of statements
+2026-03-06T03:32:10.2612591Z 	github.com/beego/beego/v2/server/web/pagination		coverage: 0.0% of statements
+2026-03-06T03:32:13.2321076Z 	github.com/beego/beego/v2/server/web/session/memcache		coverage: 0.0% of statements
+2026-03-06T03:32:13.2322514Z 	github.com/beego/beego/v2/server/web/session/mysql		coverage: 0.0% of statements
+2026-03-06T03:32:13.3423254Z 	github.com/beego/beego/v2/server/web/session/postgres		coverage: 0.0% of statements
+2026-03-06T03:32:17.8748610Z ?   	github.com/beego/beego/v2/server/web/swagger	[no test files]
+2026-03-06T03:32:18.1611507Z 	github.com/beego/beego/v2/test		coverage: 0.0% of statements
+2026-03-06T03:32:49.1678594Z  - - [19/Sep/2020 09:21:21] " 0 0" 0.000000  
+2026-03-06T03:32:49.1680395Z 2026/03/06 03:31:57.341 [1;37m[M][0m  {"remote_addr":"","request_time":"2020-09-19T21:21:21.000000011Z","request_method":"","request":"","server_protocol":"","host":"","status":0,"body_bytes_sent":0,"elapsed_time":0,"http_referrer":"","http_user_agent":"","remote_user":""}
+2026-03-06T03:32:49.1682364Z unable to WriteMsg to adapter:conn,error:dial tcp :7020: connect: connection refused
+2026-03-06T03:32:49.1683134Z --- FAIL: TestReconnect (0.00s)
+2026-03-06T03:32:49.1683723Z     conn_test.go:80: Did not reconnect
+2026-03-06T03:32:49.1684484Z 2026/03/06 03:31:57.343 [1;37m[M][0m [console_test.go:42]  emergency
+2026-03-06T03:32:49.1685301Z 2026/03/06 03:31:57.345 [1;36m[A][0m [console_test.go:42]  alert
+2026-03-06T03:32:49.1686225Z 2026/03/06 03:31:57.345 [1;35m[C][0m [console_test.go:42]  critical
+2026-03-06T03:32:49.1686766Z 2026/03/06 03:31:57.345 [1;31m[E][0m [console_test.go:42]  error
+2026-03-06T03:32:49.1687497Z 2026/03/06 03:31:57.345 [1;33m[W][0m [console_test.go:42]  warning
+2026-03-06T03:32:49.1688036Z 2026/03/06 03:31:57.345 [1;32m[N][0m [console_test.go:42]  notice
+2026-03-06T03:32:49.1688569Z 2026/03/06 03:31:57.345 [1;34m[I][0m [console_test.go:42]  informational
+2026-03-06T03:32:49.1689048Z 2026/03/06 03:31:57.345 [1;44m[D][0m [console_test.go:42]  debug
+2026-03-06T03:32:49.1689406Z 2026/03/06 03:31:57.345 [1;37m[M][0m  emergency
+2026-03-06T03:32:49.1689730Z 2026/03/06 03:31:57.345 [1;36m[A][0m  alert
+2026-03-06T03:32:49.1690037Z 2026/03/06 03:31:57.345 [1;35m[C][0m  critical
+2026-03-06T03:32:49.1690335Z 2026/03/06 03:31:57.345 [1;31m[E][0m  error
+2026-03-06T03:32:49.1690583Z 2026/03/06 03:31:57.345 [M]  emergency
+2026-03-06T03:32:49.1690809Z 2026/03/06 03:31:57.345 [A]  alert
+2026-03-06T03:32:49.1691270Z 2026/03/06 03:31:57.345 [C]  critical
+2026-03-06T03:32:49.1691500Z 2026/03/06 03:31:57.345 [E]  error
+2026-03-06T03:32:49.1691717Z 2026/03/06 03:31:57.345 [W]  warning
+2026-03-06T03:32:49.1691930Z 2026/03/06 03:31:57.345 [N]  notice
+2026-03-06T03:32:49.1692159Z 2026/03/06 03:31:57.345 [I]  informational
+2026-03-06T03:32:49.1692394Z 2026/03/06 03:31:57.345 [D]  debug
+2026-03-06T03:32:49.1692678Z 2026/03/06 03:31:57.345 [1;37m[M][0m  emergency
+2026-03-06T03:32:49.1692984Z 2026/03/06 03:31:57.345 [1;36m[A][0m  alert
+2026-03-06T03:32:49.1693624Z 2026/03/06 03:31:57.345 [1;35m[C][0m  critical
+2026-03-06T03:32:49.1693931Z 2026/03/06 03:31:57.345 [1;31m[E][0m  error
+2026-03-06T03:32:49.1694228Z 2026/03/06 03:31:57.345 [1;33m[W][0m  warning
+2026-03-06T03:32:49.1694531Z 2026/03/06 03:31:57.345 [1;32m[N][0m  notice
+2026-03-06T03:32:49.1694854Z 2026/03/06 03:31:57.345 [1;34m[I][0m  informational
+2026-03-06T03:32:49.1695164Z 2026/03/06 03:31:57.345 [1;44m[D][0m  debug
+2026-03-06T03:32:49.1695499Z 2020/09/19 20:12:37.000 [1;44m[D][0m Cus Hello, world
+2026-03-06T03:32:49.1695871Z 2026/03/06 03:32:01.357 [1;37m[M][0m  [MY-CUS] hello
+2026-03-06T03:32:49.1696189Z 2026/03/06 03:32:01.357 [1;37m[M][0m  hello
+2026-03-06T03:32:49.1696485Z 2026/03/06 03:32:01.357 [1;34m[I][0m aaa hello
+2026-03-06T03:32:49.1696998Z unable to WriteMsg to adapter:smtp,error:535 5.7.8 Username and Password not accepted. For more information, go to
+2026-03-06T03:32:49.1697980Z 5.7.8  https://support.google.com/mail/?p=BadCredentials 6a1803df08f44-89a3140eea4sm2373266d6.4 - gsmtp
+2026-03-06T03:32:49.1698429Z FAIL
+2026-03-06T03:32:49.1698605Z coverage: 66.8% of statements
+2026-03-06T03:32:49.1698863Z FAIL	github.com/beego/beego/v2/core/logs	51.828s
+2026-03-06T03:32:49.1699263Z ok  	github.com/beego/beego/v2/core/logs/es	0.004s	coverage: 5.4% of statements
+2026-03-06T03:32:49.1699737Z ok  	github.com/beego/beego/v2/core/utils	0.549s	coverage: 43.1% of statements
+2026-03-06T03:32:49.1700234Z ok  	github.com/beego/beego/v2/core/validation	0.007s	coverage: 75.1% of statements
+2026-03-06T03:32:49.1700731Z ok  	github.com/beego/beego/v2/server/web	1.091s	coverage: 52.8% of statements
+2026-03-06T03:32:49.1701434Z ok  	github.com/beego/beego/v2/server/web/captcha	0.008s	coverage: 22.4% of statements
+2026-03-06T03:32:49.1701959Z ok  	github.com/beego/beego/v2/server/web/context	0.220s	coverage: 34.3% of statements
+2026-03-06T03:32:49.1702504Z ok  	github.com/beego/beego/v2/server/web/context/param	0.005s	coverage: 46.8% of statements
+2026-03-06T03:32:49.1703086Z ok  	github.com/beego/beego/v2/server/web/filter/apiauth	0.007s	coverage: 9.1% of statements
+2026-03-06T03:32:49.1703652Z ok  	github.com/beego/beego/v2/server/web/filter/authz	0.011s	coverage: 13.0% of statements
+2026-03-06T03:32:49.1704204Z ok  	github.com/beego/beego/v2/server/web/filter/cors	0.010s	coverage: 23.7% of statements
+2026-03-06T03:32:49.1704787Z ok  	github.com/beego/beego/v2/server/web/filter/opentracing	0.008s	coverage: 14.0% of statements
+2026-03-06T03:32:49.1705394Z ok  	github.com/beego/beego/v2/server/web/filter/prometheus	1.011s	coverage: 12.0% of statements
+2026-03-06T03:32:49.1706000Z ok  	github.com/beego/beego/v2/server/web/filter/ratelimit	0.011s	coverage: 24.9% of statements
+2026-03-06T03:32:49.1706578Z ok  	github.com/beego/beego/v2/server/web/filter/session	0.009s	coverage: 4.8% of statements
+2026-03-06T03:32:49.1707102Z ok  	github.com/beego/beego/v2/server/web/mock	0.006s	coverage: 9.0% of statements
+2026-03-06T03:32:49.1708189Z ok  	github.com/beego/beego/v2/server/web/session	2.148s	coverage: 64.4% of statements
+2026-03-06T03:32:49.1708758Z ok  	github.com/beego/beego/v2/server/web/session/couchbase	0.007s	coverage: 15.1% of statements
+2026-03-06T03:32:49.1709346Z ok  	github.com/beego/beego/v2/server/web/session/ledis	0.018s	coverage: 30.1% of statements
+2026-03-06T03:32:49.1709906Z ok  	github.com/beego/beego/v2/server/web/session/redis	0.008s	coverage: 75.8% of statements
+2026-03-06T03:32:49.1710651Z ok  	github.com/beego/beego/v2/server/web/session/redis_cluster	0.004s	coverage: 11.1% of statements
+2026-03-06T03:32:49.1711293Z ok  	github.com/beego/beego/v2/server/web/session/redis_sentinel	0.008s	coverage: 31.7% of statements
+2026-03-06T03:32:49.1711898Z ok  	github.com/beego/beego/v2/server/web/session/ssdb	0.006s	coverage: 18.9% of statements
+2026-03-06T03:33:27.0045649Z ok  	github.com/beego/beego/v2/task	68.845s	coverage: 80.1% of statements
+2026-03-06T03:33:27.0046292Z FAIL
+2026-03-06T03:33:27.1160000Z ##[error]Process completed with exit code 1.
+2026-03-06T03:33:27.1220342Z Post job cleanup.
+2026-03-06T03:33:27.2166570Z [command]/usr/bin/git version
+2026-03-06T03:33:27.2205507Z git version 2.53.0
+2026-03-06T03:33:27.2257209Z Temporarily overriding HOME='/home/runner/work/_temp/e3c4487e-4116-4600-b735-005ea855bc7e' before making global git config changes
+2026-03-06T03:33:27.2258779Z Adding repository directory to the temporary git global config as a safe directory
+2026-03-06T03:33:27.2261997Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/beego/beego
+2026-03-06T03:33:27.2295751Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-03-06T03:33:27.2327074Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-03-06T03:33:27.2571484Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-03-06T03:33:27.2595457Z http.https://github.com/.extraheader
+2026-03-06T03:33:27.2606134Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-03-06T03:33:27.2638802Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-03-06T03:33:27.2991715Z Print service container logs: 03a2921c14064da597b047d3a2fe2d31_redislatest_db5293
+2026-03-06T03:33:27.2996121Z ##[command]/usr/bin/docker logs --details 8abf9b32c4929e349d5eb2ddd2b79e0ccade218da002d94229dc3d8488bea3d5
+2026-03-06T03:33:27.3158609Z  Starting Redis Server
+2026-03-06T03:33:27.3161869Z  1:C 06 Mar 2026 03:30:04.930 # WARNING Memory overcommit must be enabled! Without it, a background save or replication may fail under low memory condition. Being disabled, it can also cause failures without low memory condition, see https://github.com/jemalloc/jemalloc/issues/1328. To fix this issue add 'vm.overcommit_memory = 1' to /etc/sysctl.conf and then reboot or run the command 'sysctl vm.overcommit_memory=1' for this to take effect.
+2026-03-06T03:33:27.3164689Z  1:C 06 Mar 2026 03:30:04.930 * oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+2026-03-06T03:33:27.3165540Z  1:C 06 Mar 2026 03:30:04.930 * Redis version=8.6.1, bits=64, commit=00000000, modified=1, pid=1, just started
+2026-03-06T03:33:27.3166359Z  1:C 06 Mar 2026 03:30:04.930 * Configuration loaded
+2026-03-06T03:33:27.3166907Z  1:M 06 Mar 2026 03:30:04.931 * monotonic clock: POSIX clock_gettime
+2026-03-06T03:33:27.3167754Z  1:M 06 Mar 2026 03:30:04.931 * Running mode=standalone, port=6379.
+2026-03-06T03:33:27.3168404Z  1:M 06 Mar 2026 03:30:04.932 * <bf> RedisBloom version 8.6.0 (Git=unknown)
+2026-03-06T03:33:27.3169024Z  1:M 06 Mar 2026 03:30:04.932 * <bf> Registering configuration options: [
+2026-03-06T03:33:27.3169428Z  1:M 06 Mar 2026 03:30:04.932 * <bf> 	{ bf-error-rate       :      0.01 }
+2026-03-06T03:33:27.3169806Z  1:M 06 Mar 2026 03:30:04.932 * <bf> 	{ bf-initial-size     :       100 }
+2026-03-06T03:33:27.3170189Z  1:M 06 Mar 2026 03:30:04.932 * <bf> 	{ bf-expansion-factor :         2 }
+2026-03-06T03:33:27.3170556Z  1:M 06 Mar 2026 03:30:04.932 * <bf> 	{ cf-bucket-size      :         2 }
+2026-03-06T03:33:27.3170911Z  1:M 06 Mar 2026 03:30:04.932 * <bf> 	{ cf-initial-size     :      1024 }
+2026-03-06T03:33:27.3171270Z  1:M 06 Mar 2026 03:30:04.932 * <bf> 	{ cf-max-iterations   :        20 }
+2026-03-06T03:33:27.3171668Z  1:M 06 Mar 2026 03:30:04.932 * <bf> 	{ cf-expansion-factor :         1 }
+2026-03-06T03:33:27.3172034Z  1:M 06 Mar 2026 03:30:04.932 * <bf> 	{ cf-max-expansions   :        32 }
+2026-03-06T03:33:27.3172336Z  1:M 06 Mar 2026 03:30:04.932 * <bf> ]
+2026-03-06T03:33:27.3172721Z  1:M 06 Mar 2026 03:30:04.932 * Module 'bf' loaded from /usr/local/lib/redis/modules//redisbloom.so
+2026-03-06T03:33:27.3173240Z  1:M 06 Mar 2026 03:30:04.935 * <search> Redis version found by RedisSearch : 8.6.1 - oss
+2026-03-06T03:33:27.3173732Z  1:M 06 Mar 2026 03:30:04.935 * <search> RediSearch version 8.6.0 (Git=7782b97)
+2026-03-06T03:33:27.3174181Z  1:M 06 Mar 2026 03:30:04.935 * <search> Low level api version 1 initialized successfully
+2026-03-06T03:33:27.3175432Z  1:M 06 Mar 2026 03:30:04.935 * <search> gc: ON, prefix min length: 2, min word length to stem: 4, prefix max expansions: 200, query timeout (ms): 500, timeout policy: return, oom policy: return, cursor read size: 1000, cursor max idle (ms): 300000, max doctable size: 1000000, max number of search results:  1000000, default scorer: BM25STD, 
+2026-03-06T03:33:27.3176634Z  1:M 06 Mar 2026 03:30:04.935 * <search> Initialized thread pools!
+2026-03-06T03:33:27.3177028Z  1:M 06 Mar 2026 03:30:04.935 * <search> Disabled workers threadpool of size 0
+2026-03-06T03:33:27.3177671Z  1:M 06 Mar 2026 03:30:04.935 * <search> Subscribe to config changes
+2026-03-06T03:33:27.3178074Z  1:M 06 Mar 2026 03:30:04.936 * <search> Subscribe to cluster slot migration events
+2026-03-06T03:33:27.3178486Z  1:M 06 Mar 2026 03:30:04.936 * <search> Enabled role change notification
+2026-03-06T03:33:27.3179001Z  1:M 06 Mar 2026 03:30:04.936 * <search> Cluster configuration: AUTO partitions, type: 0, coordinator timeout: 0ms
+2026-03-06T03:33:27.3179652Z  1:M 06 Mar 2026 03:30:04.936 * Module 'search' loaded from /usr/local/lib/redis/modules//redisearch.so
+2026-03-06T03:33:27.3180616Z  1:M 06 Mar 2026 03:30:04.936 * <timeseries> RedisTimeSeries version 80600, git_sha=05fd355db748676861dc4c17d19c8c1ca74c0154
+2026-03-06T03:33:27.3181271Z  1:M 06 Mar 2026 03:30:04.936 * <timeseries> Redis version found by RedisTimeSeries : 8.6.1 - oss
+2026-03-06T03:33:27.3181950Z  1:M 06 Mar 2026 03:30:04.936 * <timeseries> Registering configuration options: [
+2026-03-06T03:33:27.3182400Z  1:M 06 Mar 2026 03:30:04.936 * <timeseries> 	{ ts-compaction-policy   :              }
+2026-03-06T03:33:27.3182838Z  1:M 06 Mar 2026 03:30:04.936 * <timeseries> 	{ ts-num-threads         :            3 }
+2026-03-06T03:33:27.3183269Z  1:M 06 Mar 2026 03:30:04.936 * <timeseries> 	{ ts-retention-policy    :            0 }
+2026-03-06T03:33:27.3183704Z  1:M 06 Mar 2026 03:30:04.936 * <timeseries> 	{ ts-duplicate-policy    :        block }
+2026-03-06T03:33:27.3184128Z  1:M 06 Mar 2026 03:30:04.936 * <timeseries> 	{ ts-chunk-size-bytes    :         4096 }
+2026-03-06T03:33:27.3184580Z  1:M 06 Mar 2026 03:30:04.936 * <timeseries> 	{ ts-encoding            :   compressed }
+2026-03-06T03:33:27.3185023Z  1:M 06 Mar 2026 03:30:04.936 * <timeseries> 	{ ts-ignore-max-time-diff:            0 }
+2026-03-06T03:33:27.3185451Z  1:M 06 Mar 2026 03:30:04.936 * <timeseries> 	{ ts-ignore-max-val-diff :     0.000000 }
+2026-03-06T03:33:27.3185813Z  1:M 06 Mar 2026 03:30:04.936 * <timeseries> ]
+2026-03-06T03:33:27.3186106Z  1:M 06 Mar 2026 03:30:04.936 * <timeseries> Detected redis oss
+2026-03-06T03:33:27.3186580Z  1:M 06 Mar 2026 03:30:04.937 * <timeseries> Subscribe to ASM events
+2026-03-06T03:33:27.3187452Z  1:M 06 Mar 2026 03:30:04.937 * <timeseries> Enabled diskless replication
+2026-03-06T03:33:27.3188315Z  1:M 06 Mar 2026 03:30:04.937 * Module 'timeseries' loaded from /usr/local/lib/redis/modules//redistimeseries.so
+2026-03-06T03:33:27.3189076Z  1:M 06 Mar 2026 03:30:04.937 * <ReJSON> Created new data type 'ReJSON-RL'
+2026-03-06T03:33:27.3189719Z  1:M 06 Mar 2026 03:30:04.937 * <ReJSON> version: 80600 git sha: unknown branch: unknown
+2026-03-06T03:33:27.3190420Z  1:M 06 Mar 2026 03:30:04.937 * <ReJSON> Exported RedisJSON_V1 API
+2026-03-06T03:33:27.3190972Z  1:M 06 Mar 2026 03:30:04.937 * <ReJSON> Exported RedisJSON_V2 API
+2026-03-06T03:33:27.3191494Z  1:M 06 Mar 2026 03:30:04.938 * <ReJSON> Exported RedisJSON_V3 API
+2026-03-06T03:33:27.3192016Z  1:M 06 Mar 2026 03:30:04.938 * <ReJSON> Exported RedisJSON_V4 API
+2026-03-06T03:33:27.3192539Z  1:M 06 Mar 2026 03:30:04.938 * <ReJSON> Exported RedisJSON_V5 API
+2026-03-06T03:33:27.3193053Z  1:M 06 Mar 2026 03:30:04.938 * <ReJSON> Exported RedisJSON_V6 API
+2026-03-06T03:33:27.3193681Z  1:M 06 Mar 2026 03:30:04.938 * <ReJSON> Enabled diskless replication
+2026-03-06T03:33:27.3194369Z  1:M 06 Mar 2026 03:30:04.938 * <ReJSON> Initialized shared string cache, thread safe: true.
+2026-03-06T03:33:27.3195326Z  1:M 06 Mar 2026 03:30:04.938 * Module 'ReJSON' loaded from /usr/local/lib/redis/modules//rejson.so
+2026-03-06T03:33:27.3196103Z  1:M 06 Mar 2026 03:30:04.938 * <search> Acquired RedisJSON_V6 API
+2026-03-06T03:33:27.3196606Z  1:M 06 Mar 2026 03:30:04.938 * Server initialized
+2026-03-06T03:33:27.3196913Z  1:M 06 Mar 2026 03:30:04.938 * Ready to accept connections tcp
+2026-03-06T03:33:27.3197908Z  1:M 06 Mar 2026 03:30:04.938 # WARNING: Redis does not require authentication and is not protected by network restrictions. Redis will accept connections from any IP address on any network interface.
+2026-03-06T03:33:27.3204262Z Stop and remove container: 03a2921c14064da597b047d3a2fe2d31_redislatest_db5293
+2026-03-06T03:33:27.3209917Z ##[command]/usr/bin/docker rm --force 8abf9b32c4929e349d5eb2ddd2b79e0ccade218da002d94229dc3d8488bea3d5
+2026-03-06T03:33:27.4556016Z 8abf9b32c4929e349d5eb2ddd2b79e0ccade218da002d94229dc3d8488bea3d5
+2026-03-06T03:33:27.4584330Z Print service container logs: 787d2f3ade0d47caa85a15571bceb98b_memcachedlatest_a74445
+2026-03-06T03:33:27.4586166Z ##[command]/usr/bin/docker logs --details e25fb768995feaf70bc2b6de112c4b644090501e5882c284f66fe50fe2ab92bf
+2026-03-06T03:33:27.4725648Z Stop and remove container: 787d2f3ade0d47caa85a15571bceb98b_memcachedlatest_a74445
+2026-03-06T03:33:27.4726420Z ##[command]/usr/bin/docker rm --force e25fb768995feaf70bc2b6de112c4b644090501e5882c284f66fe50fe2ab92bf
+2026-03-06T03:33:27.5981497Z e25fb768995feaf70bc2b6de112c4b644090501e5882c284f66fe50fe2ab92bf
+2026-03-06T03:33:27.5997942Z Print service container logs: 627a6f88f85548d28767d377ccf8f287_tsl0922ssdb_adeb58
+2026-03-06T03:33:27.5999051Z ##[command]/usr/bin/docker logs --details 72e6d41733bc287a7a51cc4f9886552f5ea33a285f08e545f3bcc049dfc6ade1
+2026-03-06T03:33:27.6125873Z  ssdb-server 1.9.4
+2026-03-06T03:33:27.6126142Z  Copyright (c) 2012-2015 ssdb.io
+2026-03-06T03:33:27.6126393Z  
+2026-03-06T03:33:27.6137997Z Stop and remove container: 627a6f88f85548d28767d377ccf8f287_tsl0922ssdb_adeb58
+2026-03-06T03:33:27.6138696Z ##[command]/usr/bin/docker rm --force 72e6d41733bc287a7a51cc4f9886552f5ea33a285f08e545f3bcc049dfc6ade1
+2026-03-06T03:33:27.7433141Z 72e6d41733bc287a7a51cc4f9886552f5ea33a285f08e545f3bcc049dfc6ade1
+2026-03-06T03:33:27.7454068Z Print service container logs: 92e26b3f00b24ab6999550b859187e8c_postgreslatest_621b21
+2026-03-06T03:33:27.7455237Z ##[command]/usr/bin/docker logs --details 027330661c662d918d069a8b99dad72afc9185ce7b8993e7cf9ffca85bca4748
+2026-03-06T03:33:27.7608306Z  The files belonging to this database system will be owned by user "postgres".
+2026-03-06T03:33:27.7609056Z  This user must also own the server process.
+2026-03-06T03:33:27.7609490Z  
+2026-03-06T03:33:27.7609916Z  The database cluster will be initialized with locale "en_US.utf8".
+2026-03-06T03:33:27.7610618Z  The default database encoding has accordingly been set to "UTF8".
+2026-03-06T03:33:27.7611304Z  The default text search configuration will be set to "english".
+2026-03-06T03:33:27.7611817Z  
+2026-03-06T03:33:27.7612084Z  Data page checksums are enabled.
+2026-03-06T03:33:27.7612452Z  
+2026-03-06T03:33:27.7612934Z  fixing permissions on existing directory /var/lib/postgresql/18/docker ... ok
+2026-03-06T03:33:27.7613605Z  creating subdirectories ... ok
+2026-03-06T03:33:27.7614130Z  selecting dynamic shared memory implementation ... posix
+2026-03-06T03:33:27.7614853Z  initdb: warning: enabling "trust" authentication for local connections
+2026-03-06T03:33:27.7616033Z  initdb: hint: You can change this by editing pg_hba.conf or using the option -A, or --auth-local and --auth-host, the next time you run initdb.
+2026-03-06T03:33:27.7617043Z  selecting default "max_connections" ... 100
+2026-03-06T03:33:27.7617821Z  selecting default "shared_buffers" ... 128MB
+2026-03-06T03:33:27.7618274Z  selecting default time zone ... Etc/UTC
+2026-03-06T03:33:27.7618703Z  creating configuration files ... ok
+2026-03-06T03:33:27.7619112Z  running bootstrap script ... ok
+2026-03-06T03:33:27.7619562Z  performing post-bootstrap initialization ... ok
+2026-03-06T03:33:27.7620029Z  syncing data to disk ... ok
+2026-03-06T03:33:27.7621366Z  
+2026-03-06T03:33:27.7621614Z  
+2026-03-06T03:33:27.7621953Z  Success. You can now start the database server using:
+2026-03-06T03:33:27.7622245Z  
+2026-03-06T03:33:27.7622480Z      pg_ctl -D /var/lib/postgresql/18/docker -l logfile start
+2026-03-06T03:33:27.7622956Z  
+2026-03-06T03:33:27.7623949Z  waiting for server to start....2026-03-06 03:30:16.254 UTC [51] LOG:  starting PostgreSQL 18.3 (Debian 18.3-1.pgdg13+1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit
+2026-03-06T03:33:27.7625414Z  2026-03-06 03:30:16.254 UTC [51] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+2026-03-06T03:33:27.7626184Z  2026-03-06 03:30:16.258 UTC [57] LOG:  database system was shut down at 2026-03-06 03:30:16 UTC
+2026-03-06T03:33:27.7626679Z  2026-03-06 03:30:16.261 UTC [51] LOG:  database system is ready to accept connections
+2026-03-06T03:33:27.7627681Z  2026-03-06 03:30:16.584 UTC [1] LOG:  starting PostgreSQL 18.3 (Debian 18.3-1.pgdg13+1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit
+2026-03-06T03:33:27.7628374Z  2026-03-06 03:30:16.584 UTC [1] LOG:  listening on IPv4 address "0.0.0.0", port 5432
+2026-03-06T03:33:27.7629056Z  2026-03-06 03:30:16.584 UTC [1] LOG:  listening on IPv6 address "::", port 5432
+2026-03-06T03:33:27.7629563Z  2026-03-06 03:30:16.585 UTC [1] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+2026-03-06T03:33:27.7630229Z  2026-03-06 03:30:16.589 UTC [73] LOG:  database system was shut down at 2026-03-06 03:30:16 UTC
+2026-03-06T03:33:27.7630720Z  2026-03-06 03:30:16.592 UTC [1] LOG:  database system is ready to accept connections
+2026-03-06T03:33:27.7631147Z  2026-03-06 03:30:25.626 UTC [84] FATAL:  role "root" does not exist
+2026-03-06T03:33:27.7631509Z  2026-03-06 03:30:35.704 UTC [92] FATAL:  role "root" does not exist
+2026-03-06T03:33:27.7631870Z  2026-03-06 03:30:45.836 UTC [101] FATAL:  role "root" does not exist
+2026-03-06T03:33:27.7632224Z  2026-03-06 03:30:55.933 UTC [110] FATAL:  role "root" does not exist
+2026-03-06T03:33:27.7632586Z  2026-03-06 03:31:06.007 UTC [118] FATAL:  role "root" does not exist
+2026-03-06T03:33:27.7632988Z  2026-03-06 03:31:16.075 UTC [126] FATAL:  role "root" does not exist
+2026-03-06T03:33:27.7633340Z  2026-03-06 03:31:26.184 UTC [135] FATAL:  role "root" does not exist
+2026-03-06T03:33:27.7633757Z  2026-03-06 03:31:32.356 UTC [143] LOG:  PID 142 in cancel request did not match any process
+2026-03-06T03:33:27.7634348Z  2026-03-06 03:31:32.390 UTC [136] ERROR:  duplicate key value violates unique constraint "user_user_name_key"
+2026-03-06T03:33:27.7634878Z  2026-03-06 03:31:32.390 UTC [136] DETAIL:  Key (user_name)=(slene) already exists.
+2026-03-06T03:33:27.7635882Z  2026-03-06 03:31:32.390 UTC [136] STATEMENT:  INSERT INTO "user" ("user_name", "email", "password", "Status", "is_staff", "is_active", "unexported_bool", "created", "updated", "profile_id", "nums", "langs", "extra") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING "id"
+2026-03-06T03:33:27.7637406Z  2026-03-06 03:31:32.391 UTC [136] ERROR:  duplicate key value violates unique constraint "user_user_name_key"
+2026-03-06T03:33:27.7638380Z  2026-03-06 03:31:32.391 UTC [136] DETAIL:  Key (user_name)=(slene) already exists.
+2026-03-06T03:33:27.7640095Z  2026-03-06 03:31:32.391 UTC [136] STATEMENT:  INSERT INTO "user" ("user_name", "email", "password", "Status", "is_staff", "is_active", "unexported_bool", "created", "updated", "profile_id", "nums", "langs", "extra") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING "id"
+2026-03-06T03:33:27.7641451Z  2026-03-06 03:31:32.392 UTC [136] ERROR:  syntax error at or near "`" at character 15
+2026-03-06T03:33:27.7641887Z  2026-03-06 03:31:32.392 UTC [136] STATEMENT:  SELECT * FROM `test_model`;
+2026-03-06T03:33:27.7642265Z  2026-03-06 03:31:36.254 UTC [151] FATAL:  role "root" does not exist
+2026-03-06T03:33:27.7642630Z  2026-03-06 03:31:46.346 UTC [159] FATAL:  role "root" does not exist
+2026-03-06T03:33:27.7643011Z  2026-03-06 03:31:56.426 UTC [168] FATAL:  role "root" does not exist
+2026-03-06T03:33:27.7643356Z  2026-03-06 03:32:06.539 UTC [177] FATAL:  role "root" does not exist
+2026-03-06T03:33:27.7643719Z  2026-03-06 03:32:16.616 UTC [186] FATAL:  role "root" does not exist
+2026-03-06T03:33:27.7644087Z  2026-03-06 03:32:26.687 UTC [195] FATAL:  role "root" does not exist
+2026-03-06T03:33:27.7644448Z  2026-03-06 03:32:36.751 UTC [203] FATAL:  role "root" does not exist
+2026-03-06T03:33:27.7644830Z  2026-03-06 03:32:46.813 UTC [212] FATAL:  role "root" does not exist
+2026-03-06T03:33:27.7645187Z  2026-03-06 03:32:56.878 UTC [220] FATAL:  role "root" does not exist
+2026-03-06T03:33:27.7645543Z  2026-03-06 03:33:06.942 UTC [229] FATAL:  role "root" does not exist
+2026-03-06T03:33:27.7645896Z  2026-03-06 03:33:17.007 UTC [237] FATAL:  role "root" does not exist
+2026-03-06T03:33:27.7646245Z  2026-03-06 03:33:27.096 UTC [246] FATAL:  role "root" does not exist
+2026-03-06T03:33:27.7646541Z   done
+2026-03-06T03:33:27.7646711Z  server started
+2026-03-06T03:33:27.7646880Z  CREATE DATABASE
+2026-03-06T03:33:27.7647051Z  
+2026-03-06T03:33:27.7647190Z  
+2026-03-06T03:33:27.7647871Z  /usr/local/bin/docker-entrypoint.sh: ignoring /docker-entrypoint-initdb.d/*
+2026-03-06T03:33:27.7648245Z  
+2026-03-06T03:33:27.7662299Z  waiting for server to shut down...2026-03-06 03:30:16.461 UTC [51] LOG:  received fast shutdown request
+2026-03-06T03:33:27.7663341Z  .2026-03-06 03:30:16.462 UTC [51] LOG:  aborting any active transactions
+2026-03-06T03:33:27.7664058Z  2026-03-06 03:30:16.464 UTC [51] LOG:  background worker "logical replication launcher" (PID 60) exited with exit code 1
+2026-03-06T03:33:27.7664590Z  2026-03-06 03:30:16.464 UTC [55] LOG:  shutting down
+2026-03-06T03:33:27.7664961Z  2026-03-06 03:30:16.465 UTC [55] LOG:  checkpoint starting: shutdown immediate
+2026-03-06T03:33:27.7666099Z  2026-03-06 03:30:16.483 UTC [55] LOG:  checkpoint complete: wrote 943 buffers (5.8%), wrote 3 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.016 s, sync=0.003 s, total=0.020 s; sync files=303, longest=0.001 s, average=0.001 s; distance=4352 kB, estimate=4352 kB; lsn=0/1B9FBB0, redo lsn=0/1B9FBB0
+2026-03-06T03:33:27.7667189Z  2026-03-06 03:30:16.494 UTC [51] LOG:  database system is shut down
+2026-03-06T03:33:27.7667767Z   done
+2026-03-06T03:33:27.7667935Z  server stopped
+2026-03-06T03:33:27.7668102Z  
+2026-03-06T03:33:27.7668324Z  PostgreSQL init process complete; ready for start up.
+2026-03-06T03:33:27.7668598Z  
+2026-03-06T03:33:27.7669396Z Stop and remove container: 92e26b3f00b24ab6999550b859187e8c_postgreslatest_621b21
+2026-03-06T03:33:27.7670028Z ##[command]/usr/bin/docker rm --force 027330661c662d918d069a8b99dad72afc9185ce7b8993e7cf9ffca85bca4748
+2026-03-06T03:33:27.8959939Z 027330661c662d918d069a8b99dad72afc9185ce7b8993e7cf9ffca85bca4748
+2026-03-06T03:33:27.8990804Z Remove container network: github_network_6f8eadb69e1d4cb1b3acb662f855eb19
+2026-03-06T03:33:27.8997118Z ##[command]/usr/bin/docker network rm github_network_6f8eadb69e1d4cb1b3acb662f855eb19
+2026-03-06T03:33:28.0375001Z github_network_6f8eadb69e1d4cb1b3acb662f855eb19
+2026-03-06T03:33:28.0434937Z Cleaning up orphan processes

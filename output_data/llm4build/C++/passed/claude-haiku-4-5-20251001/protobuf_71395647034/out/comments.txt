@@ -1,0 +1,51 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          5
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      C++ / Linux GCC 9.1
+  Test command(s) run in original CI:
+    $ protocolbuffers/protobuf-ci/checkout@v5
+    $ actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+    $ echo "value=$(echo us-docker.pkg.dev/protobuf-build/containers/test/linux/gcc:8.0.1-9.1-e78301df86b3e4c46ec9ac4d98be00e19305d8f3 | md5sum | cut -f1 -d' ')" >> $GITHUB_OUTPUT
+    $ echo "BAZEL_FLAGS=--keep_going --test_output=errors --test_timeout=600" >> $GITHUB_ENV
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ cmake --version
+  $ cmake -DCMAKE_C_COMPILER=gcc-9 -DCMAKE_CXX_COMPILER=g++-9 \
+  $ -DCMAKE_BUILD_TYPE=Release \
+  $ -G "Unix Makefiles" \
+  $ make -j$(nproc)
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in original but missing in LLM: Bazel
+  - Framework(s) in LLM but not in original: CTest, GTest
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > (no errors from Bazel — Bazel not installed; LLM used CMake+CTest instead)
+
+  [Root cause classification]
+  - The original CI runs protobuf's C++ test suite using Bazel (`bazel test //...`), invoked inside a proprietary Docker container (`us-docker.pkg.dev/protobuf-build/containers/test/linux/gcc:8.0.1-9.1-...`) that has Bazel pre-installed and GCC 9.1. The CI sets `BAZEL_FLAGS=--keep_going --test_output=errors --test_timeout=600` and runs Bazel targets producing 115 test results. The LLM did not install Bazel and instead ran `cmake -DCMAKE_C_COMPILER=gcc-9 -DCMAKE_CXX_COMPILER=g++-9` which uses CMake's `make`-based build system — a completely different build system that registers 1308 CTest targets instead.
+
+  - The LLM's cmake build runs 1308 CTest tests (1307 passed, 1 failed) — this is a superset of what Bazel's 115 targets test, but organized differently. The 1 CMake test failure and the 1 GTest failure are likely a test that assumes Bazel-specific flag behavior or a dependency not available without the proprietary container. The original CI's GCC 9.1 is available in Ubuntu 22.04 via `apt install gcc-9 g++-9`, so the compiler is reproducible; the irreproducibility is entirely from the Bazel vs. CMake test framework difference.
+
+--- Test Statistics Comparison ---
+  [Bazel]
+    Original: 115 run, 114 passed, 0 failed, 1 skipped
+    LLM:      (not present)
+  [CTest]
+    Original: (not present)
+    LLM:      1308 run, 1307 passed, 1 failed, 0 skipped
+  [GTest]
+    Original: (not present)
+    LLM:      2 run, 1 passed, 1 failed, 0 skipped

@@ -1,0 +1,39 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          20
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT TESTS NOT REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      test (ubuntu-latest)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    7
+
+--- LLM run.sh Test Command(s) ---
+  $ npx hereby test
+  $ npx hereby baseline-accept
+
+--- Test Reproducibility Gap ---
+  Original ran 145056 test(s) across [GoRace].
+  LLM build produced no test results (empty llm_log_stats).
+
+--- Root Cause ---
+  Reason type: Test runner executed but produced no parseable output
+  Last log output before stopping:
+    go: downloading go1.26 (linux/amd64)
+    go: download go1.26 for linux/amd64: toolchain not available
+    [01:58:43.333] [0] ✘ Command failed with exit code 1: go test ./...
+    [01:58:43.335] [0] ✘ (done in 490ms)
+    Error in test in 496ms
+    ExecaError: Command failed with exit code 1: go test ./...
+    Completed test with errors in 497ms
+    Failed tasks: test
+
+--- Original Test Statistics (not reproduced) ---
+  [GoRace] 145056 run, 142504 passed, 3 failed, 2549 skipped

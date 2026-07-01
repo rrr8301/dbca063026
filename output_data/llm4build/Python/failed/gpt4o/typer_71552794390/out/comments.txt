@@ -1,0 +1,39 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          N/A
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      test (ubuntu-latest, 3.10, lowest-direct)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    4
+
+Note: Original had test failures; LLM build passed all — failed build has passed.
+
+--- Reason(s) for Non-Reproducibility ---
+  - [pytest] Test passed mismatch: original=1161, LLM=1164
+  - [pytest] Test failed mismatch: original=3, LLM=0
+  - [pytest] 3 test(s) failed in original but passed in LLM: tests/test_tutorial/test_exceptions/test_tutorial001.py, tests/test_tutorial/test_exceptions/test_tutorial002.py, tests/test_tutorial/test_exceptions/test_tutorial003.py
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > (LLM run passed all 1164 tests; original CI failures shown below from typer-71552794390.log)
+    > FAILED test_traceback_rich — assert 'return get_command(self)(*args, **kwargs)' not in result.stderr
+    > E   'return get_command...f)(*args, **kwargs)' is contained here: (Rich traceback leaking internal click frames)
+    > TypeError: can only concatenate str (not "int") to str  (intentional error in tutorial docs_src)
+    > 3 failed, 1161 passed, 2 xfailed in 79.50s
+
+  [Root cause classification]
+  - The original CI ran with UV_RESOLUTION=lowest-direct, pinning dependencies to their lowest allowed versions. Under lowest-direct, an older version of Rich renders exception tracebacks differently — it includes internal Click/Typer call stack frames (e.g. `return get_command(self)(*args, **kwargs)`) in stderr that the test asserts should be absent. The LLM Dockerfile installs the latest versions of Rich and Click, which suppress those internal frames, making all three test_traceback_rich tests pass. The failures are version-sensitive to Rich's traceback rendering behavior under lowest-direct dependency resolution.
+
+--- Test Statistics Comparison ---
+  [pytest]
+    Original: 1166 run, 1161 passed, 3 failed, 0 skipped
+    LLM:      1166 run, 1164 passed, 0 failed, 0 skipped

@@ -1,0 +1,34 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          20
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT TESTS NOT REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-22.04
+  CI job name:      linux-test
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    6
+
+--- Test Reproducibility Gap ---
+  Original ran 15977 test(s) across [radare2-r2r].
+  LLM build produced no test results (empty llm_log_stats).
+
+--- Root Cause ---
+  [Actual error from LLM log.txt]
+    > Makefile:365: libr/config.mk: No such file or directory
+    > make: *** No rule to make target 'libr/config.mk'.  Stop.
+    > Build failed
+
+  [Root cause classification: Incorrect build sequence — make invoked before configure generates libr/config.mk]
+  - radare2's build system requires running `./configure` (or `./sys/install.sh`) to generate `libr/config.mk` before any `make` target can be invoked; the LLM's run.sh calls `make clean` followed by `./configure` and then `make all`, but the log shows configure completes yet `libr/config.mk` is still absent, indicating the LLM used an incorrect or unsupported configure invocation path that skipped the meson/ninja sub-step that writes the file.
+  - Because the build fails before any binary is produced, the `make tests` step is never reached, yielding no test output and an empty llm_log_stats against the original's 15977 r2r tests.
+  - After 20 attempts the build consistently fails at the same point, confirming the root issue is a missing generated intermediate build file rather than a transient environment problem.
+
+--- Original Test Statistics (not reproduced) ---
+  [radare2-r2r] 15977 run, 14964 passed, 0 failed, 0 skipped

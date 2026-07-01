@@ -1,0 +1,42 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          7
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      Test - ubuntu-latest - Node v25.x, Webpack latest, DevServer latest
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    6
+
+--- LLM run.sh Test Command(s) ---
+  $ pnpm add -D typescript @types/node @types/jest
+  $ pnpm add -D jest-cli
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoDefault] Test run mismatch: original=2, LLM=26
+  - [GoDefault] Test failed mismatch: original=2, LLM=20
+  - [GoDefault] 9 test(s) failed in LLM but not in original: test/build/config/error-commonjs/config-error.test.js, test/build/config/error-mjs/config-error.test.js, test/build/error/invalid-schema/invalid-schema.test.js, test/configtest/with-config-path/with-config-path.test.js, test/create-webpack-app/init/init.test.js ... (+4 more)
+  - [jest] Test passed mismatch: original=681, LLM=636
+  - [jest] Test failed mismatch: original=1, LLM=46
+  - [jest] 1 test(s) failed in original but passed in LLM: test/build/config-format/typescript-cjs/typescript.test.mjs (14.079 s)
+  - [jest] 1 test(s) failed in LLM but not in original: test/create-webpack-app/init/init.test.js (149.635 s)
+
+--- Root Cause Analysis ---
+  - [GoDefault] LLM ran 24 more tests than original — LLM likely used a broader test scope or included extra test suites.
+  - [GoDefault] 9 test(s) failed in LLM but not original: test/build/config/error-commonjs/config-error.test.js, test/build/config/error-mjs/config-error.test.js, test/build/error/invalid-schema/invalid-schema.test.js, test/configtest/with-config-path/with-config-path.test.js, test/create-webpack-app/init/init.test.js ... (+4 more)
+  - [jest] 1 test(s) failed in LLM but not original: test/create-webpack-app/init/init.test.js (149.635 s)
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 2 run, 0 passed, 2 failed, 0 skipped
+    LLM:      26 run, 0 passed, 20 failed, 0 skipped
+  [jest]
+    Original: 683 run, 681 passed, 1 failed, 1 skipped
+    LLM:      683 run, 636 passed, 46 failed, 1 skipped

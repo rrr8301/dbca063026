@@ -1,0 +1,44 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      build (ubuntu-latest, mbedtls)
+  Test command(s) run in original CI:
+    $ ctest
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ ctest
+
+--- Reason(s) for Non-Reproducibility ---
+  - [CTest] Test passed mismatch: original=7, LLM=0
+  - [CTest] Test failed mismatch: original=4, LLM=11
+  - [CTest] 7 test(s) failed in LLM but not in original: datatypes_driver, rdbx_driver, replay_driver, roc_driver, rtpw_test ... (+2 more)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > Note: switching to 'mbedtls-4.0.0'.
+    > /workspace/crypto/include/aes_gcm.h:95:10: fatal error: psa/crypto.h: No such file or directory
+    >   95 | #include <psa/crypto.h>
+    > Could not find executable datatypes_driver
+    > Could not find executable cipher_driver
+
+  [Root cause classification]
+  - The LLM run.sh clones and builds mbedTLS 4.0.0 (the latest release), but libsrtp's crypto layer uses the PSA Cryptography API (psa/crypto.h) which underwent a significant restructuring between mbedTLS 2.x/3.x and 4.0. In mbedTLS 4.0, the PSA Crypto API was moved to a separate TF-PSA-Crypto submodule and the include path changed, so the compilation of libsrtp's AES-GCM module fails with "fatal error: psa/crypto.h: No such file or directory".
+  - Because the compilation fails, 9 of the 11 test binaries (datatypes_driver, cipher_driver, kernel_driver, rdbx_driver, replay_driver, roc_driver, srtp_driver, srtp_driver_not_in_place_io, test_srtp) are never built, so CTest reports them as "Not Run". The original CI uses a stable mbedTLS version (likely 2.x or 3.x via ubuntu-24.04 apt packages or an older git tag) where psa/crypto.h is available at the expected path.
+  - This is an mbedTLS API breaking change issue: the LLM incorrectly assumed that the latest mbedTLS release would be compatible with libsrtp's crypto layer, but mbedTLS 4.0's PSA Crypto reorganization introduced headers that libsrtp's build system does not locate, causing a complete build failure of the cryptographic test executables.
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 11 run, 7 passed, 4 failed, 0 skipped
+    LLM:      11 run, 0 passed, 11 failed, 0 skipped

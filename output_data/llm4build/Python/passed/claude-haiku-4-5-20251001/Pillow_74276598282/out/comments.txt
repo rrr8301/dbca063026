@@ -1,0 +1,72 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          13
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      ubuntu-latest Python 3.12
+  Test command(s) run in original CI:
+    $ actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+    $ .ci/build.sh
+      (internally: runs install.sh to install system deps and optional libraries,
+       then builds Pillow from source, then runs test.sh via xvfb-run)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    6
+
+--- LLM run.sh Test Command(s) ---
+  $ .ci/install.sh
+  $ .ci/build.sh
+  $ python3 -m pip install --no-cache-dir ... pytest-reverse
+  $ xvfb-run -s '-screen 0 1024x768x24' bash -c '.ci/test.sh' || exit_code=$?
+
+--- Reason(s) for Non-Reproducibility ---
+  - [pytest] Test run mismatch: original=5274, LLM=566
+  - [pytest] Test passed mismatch: original=5228, LLM=550
+  - [pytest] Test failed mismatch: original=0, LLM=1
+  - [pytest] 1 test(s) failed in LLM but not in original:
+    TestImageGrab::test_grabclipboard_wl_clipboard_errors[--clear] (Tests/test_imagegrab.py)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > Tests/test_imagegrab.py::TestImageGrab::test_grabclipboard_wl_clipboard_errors[--clear] FAILED
+    > E               NotImplementedError: wl-paste or xclip is required for ImageGrab.grabclipboard() on Linux
+    > FAILED Tests/test_imagegrab.py::TestImageGrab::test_grabclipboard_wl_clipboard_errors[--clear]
+    >   NotImplementedError: wl-paste or xclip is required for ImageGrab.grabclipboard() on Linux
+    > !!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  [Root cause classification]
+  Two combined effects:
+
+  (1) Missing clipboard utility (xclip/wl-paste) -- test_grabclipboard_wl_clipboard_errors fails
+    `TestImageGrab::test_grabclipboard_wl_clipboard_errors[--clear]` tests the error-handling
+    path when a Wayland clipboard tool is invoked with the `--clear` flag. The test requires
+    either `wl-paste` (Wayland clipboard) or `xclip` (X11 clipboard) to be installed.
+    The LLM Dockerfile installs Wayland/X11 development libraries (libwayland-dev, libxcb1-dev)
+    but does NOT install the `xclip` or `wl-paste` clipboard binaries. In the Pillow source,
+    `ImageGrab.grabclipboard()` checks:
+      `elif shutil.which("xclip") and session_type in ("x11", None):`
+    Since neither `xclip` nor `wl-paste` are on PATH, Pillow raises:
+    `NotImplementedError: wl-paste or xclip is required for ImageGrab.grabclipboard() on Linux`
+    On the GitHub Actions runner (ubuntu-latest), `xclip` is pre-installed and the test
+    proceeds to test the `--clear` error path, which passes correctly.
+
+  (2) pytest stopped at first failure (5274 - 566 = 4708 tests not run)
+    The `.ci/test.sh` script invokes pytest with the `-x` (stop-at-first-failure) flag.
+    Additionally, the run.sh sets `REVERSE=--reverse` (pytest-reverse plugin), which runs
+    tests in reversed collection order vs normal alphabetical order. With reversed ordering,
+    `Tests/test_imagegrab.py` runs early in the sequence (around the 10% mark). When this
+    test fails, pytest immediately stops the run with `stopping after 1 failures`. As a
+    result, only 566 tests execute (roughly the first 10% of the full suite in reversed order),
+    while the original CI completes all 5274 tests. Both builds collected the same 5272 items,
+    but the failure aborts the LLM run early.
+
+--- Test Statistics Comparison ---
+  [pytest]
+    Original: 5274 run, 5228 passed, 0 failed, 43 skipped (full run completed)
+    LLM:      566 run, 550 passed, 1 failed, 15 skipped (run aborted at first failure)

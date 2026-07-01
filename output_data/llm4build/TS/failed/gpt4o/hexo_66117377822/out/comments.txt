@@ -1,0 +1,35 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      tester (ubuntu-latest, 24)
+  Test command(s) run in original CI:
+    $ npm test -- --no-parallel
+
+--- LLM-Generated Dockerfile ---
+  Base image:   node:24-bullseye-slim
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ npm test -- --no-parallel || true
+
+--- Reason(s) for Non-Reproducibility ---
+  - [mocha] Test passed mismatch: original=1240, LLM=1236
+  - [mocha] Test failed mismatch: original=1, LLM=5
+  - [mocha] 4 test(s) failed in LLM but not in original: asset > page - type: create - exist:, asset > page - type: create - exist: > should generate all files when bail option is set to true and no errors: > page - type: update:, asset > page - type: update:} to not exist > page - type: delete:, asset} to not exist > page - type: update:
+
+--- Root Cause Analysis ---
+  - [mocha] 4 test(s) failed in LLM but not original: asset > page - type: create - exist:, asset > page - type: create - exist: > should generate all files when bail option is set to true and no errors: > page - type: update:, asset > page - type: update:} to not exist > page - type: delete:, asset} to not exist > page - type: update:
+  - Test command differences detected — original CI vs LLM run.sh may use different flags or test selection.
+
+--- Test Statistics Comparison ---
+  [mocha]
+    Original: 1246 run, 1240 passed, 1 failed, 5 skipped
+    LLM:      1246 run, 1236 passed, 5 failed, 5 skipped

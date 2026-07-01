@@ -1,0 +1,33 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          20
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT TESTS NOT REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      Go SDK / OS: (ubuntu-latest), key-queues: true, db: postgres / split: 4
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    6
+
+--- Test Reproducibility Gap ---
+  Original ran 29 test(s) across [GoDefault].
+  LLM build produced no test results (empty llm_log_stats).
+
+--- Root Cause ---
+  Reason type: Test runner executed but produced no parseable output
+  Last log output before stopping:
+    Creating example documentation file
+    * Starting PostgreSQL 14 database server
+    ...done.
+    Waiting for PostgreSQL to be ready
+    PostgreSQL is ready
+    psql: error: connection to server on socket "/var/run/postgresql/.s.PGSQL.5432" failed: FATAL:  Peer authentication failed for user "postgres"
+
+--- Original Test Statistics (not reproduced) ---
+  [GoDefault] 29 run, 27 passed, 1 failed, 0 skipped

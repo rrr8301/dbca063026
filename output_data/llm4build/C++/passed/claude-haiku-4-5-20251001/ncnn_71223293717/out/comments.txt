@@ -1,0 +1,50 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      linux-gcc
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ mkdir build && cd build
+    $ cd build && ctest --output-on-failure -j $(nproc)
+    $ mkdir build-nosse && cd build-nosse
+    $ cd build-nosse && ctest --output-on-failure -j $(nproc)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ cmake -DCMAKE_TOOLCHAIN_FILE=../toolchains/host.gcc-m32.toolchain.cmake \
+  $ -DNCNN_BUILD_TESTS=ON \
+  $ cmake --build . -j $(nproc)
+  $ ctest --output-on-failure -j $(nproc) || OVERALL_STATUS=$?
+  $ cmake -DCMAKE_TOOLCHAIN_FILE=../toolchains/host.gcc-m32.toolchain.cmake \
+
+--- Reason(s) for Non-Reproducibility ---
+  - [CTest] Test result mismatch (same count 486): original=(486p/0f/0s), LLM=(485p/1f/0s)
+  - [CTest] Tests failed in LLM but passed in original: test_multiheadattention_1
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > value not match at c:0 d:0 h:36 w:19    expect 0.433716 but got 0.537259
+    > output blob 0 not match
+    > test_layer_cpu failed
+    > test_layer MultiHeadAttention failed pack=0 fp16p=0 fp16s=0 fp16a=0 bf16p=0 bf16s=0 sgemm=1 winograd=1
+    > test_multiheadattention_int8 failed q=(64 128) k=(64 128) v=(64 128)
+
+  [Root cause classification]
+  - `test_multiheadattention_1` tests the int8-quantized multi-head attention layer using sgemm (sparse/optimized matrix multiply) with Winograd convolution. The numerical mismatch (`expect 0.433716 but got 0.537259`) is a floating-point precision divergence in the int8 quantized attention computation. ncnn's sgemm implementation selects different SIMD code paths based on available CPU instructions (AVX512VNNI, AVX2VNNI, AVX512BF16, NEON for ARM). On the GitHub Actions runner's CPU, the specific SIMD path chosen for int8 matrix multiply produces results within the tolerance threshold; in the Docker virtual CPU environment, a different (or degraded) SIMD path is selected, producing slightly different results that exceed the float comparison tolerance.
+
+  - The test also shows `fixme: skip bf16 test for MultiHeadAttention` — bfloat16 is not supported on the LLM's virtual CPU. This confirms that the Docker CPU has fewer advanced SIMD capabilities than the GitHub Actions runner. The int8 quantized path that relies on AVX512VNNI or similar instructions falls back to a different code path in Docker, changing the numerical result of the accumulated dot products in the attention mechanism beyond ncnn's tolerance. All other 485 CTest tests pass identically.
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 486 run, 486 passed, 0 failed, 0 skipped
+    LLM:      486 run, 485 passed, 1 failed, 0 skipped

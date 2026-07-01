@@ -1,0 +1,36 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          10
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      Test (ubuntu-latest, 22.x)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    5
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in LLM but not in original: GoDefault
+  - [vitest] Test run mismatch: original=12710, LLM=12647
+  - [vitest] Test passed mismatch: original=12699, LLM=12627
+  - [vitest] Test failed mismatch: original=0, LLM=7
+  - [vitest] Test skipped mismatch: original=11, LLM=13
+  - [vitest] 2 test(s) failed in LLM but not in original: src/skills/skill-activation.test.ts, src/ui/themes/detect-terminal-theme.test.ts
+
+--- Root Cause Analysis ---
+  - [vitest] LLM ran 63 fewer tests than original — LLM likely used a narrower test scope or missed some test suites.
+  - [vitest] 2 test(s) failed in LLM but not original: src/skills/skill-activation.test.ts, src/ui/themes/detect-terminal-theme.test.ts
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: (not present)
+    LLM:      7 run, 0 passed, 7 failed, 0 skipped
+  [vitest]
+    Original: 12710 run, 12699 passed, 0 failed, 11 skipped
+    LLM:      12647 run, 12627 passed, 7 failed, 13 skipped

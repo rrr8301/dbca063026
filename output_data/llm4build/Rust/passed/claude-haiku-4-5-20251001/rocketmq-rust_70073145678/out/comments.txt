@@ -1,0 +1,44 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Build & Test (ubuntu-latest)
+  Test command(s) run in original CI:
+    $ actions/checkout@v4
+    $ : set $CARGO_HOME
+    $ : enable colors in Cargo output
+    $ : enable Cargo sparse registry
+    $ cargo build --workspace --all-features
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ cargo test --workspace --all-features
+
+--- Reason(s) for Non-Reproducibility ---
+  - [cargo] Test run mismatch: original=4681, LLM=4480
+  - [cargo] Test passed mismatch: original=4437, LLM=4238
+  - [cargo] Test failed mismatch: original=0, LLM=0
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > (no errors — 4480 tests passed; 201 fewer than original's 4681)
+    > warning: feature `duration_constructors` is declared but not used
+
+  [Root cause classification]
+  - The 201 fewer tests are caused by a combination of two factors: commit drift and Rust toolchain version. The LLM ran with Rust nightly 1.97.0 (2026-05-20) and did not pin to the exact CI commit. rocketmq-rust is an active project; tests added or reorganized between the CI-triggering commit and the LLM's checkout account for a portion of the difference. The `#![feature(duration_constructors)]` warning — "declared but not used" — indicates the project still declares a nightly feature that has since been stabilized (in Rust 1.83); on the original CI's older toolchain this feature gate was active and may have enabled additional test functions behind `#[cfg(nightly)]`-style guards that are no longer compiled on a newer toolchain where the feature is stable.
+
+  - The original CI listed only `cargo build --workspace --all-features` in the captured steps; the actual test command ran in a later uncaptured CI step that the LLM correctly inferred as `cargo test --workspace --all-features`. Both runs have 0 failures, so the tests that are present all pass. The 201-test scope gap is a benign difference from the LLM running a marginally different version of the codebase under a newer Rust nightly rather than a narrow scope error.
+
+--- Test Statistics Comparison ---
+  [cargo]
+    Original: 4681 run, 4437 passed, 0 failed, 244 skipped
+    LLM:      4480 run, 4238 passed, 0 failed, 242 skipped

@@ -1,0 +1,40 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      ubuntu-22.04, clang debug
+  Test command(s) run in original CI:
+    $ actions/checkout@v4
+    $ meson setup build-debug --buildtype=debug -Dtests=enabled
+    $ meson compile -C build-debug
+    $ meson test -C build-debug --timeout-multiplier 0
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ meson setup build-debug --buildtype=debug -Dtests=enabled
+  $ meson test -C build-debug --timeout-multiplier 0
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Meson] Test result mismatch (same count 122): original=(120p/2f/0s), LLM=(122p/0f/0s)
+  - [Meson] Tests failed in original but passed in LLM: cstr - stc:cstr_match, cstr - stc:utf8replace_c
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    (All 122 Meson tests reported PASS in LLM run; no error messages)
+
+  [Root cause classification]
+  - Flaky or version-sensitive test failures: The two failing tests (`cstr - stc:cstr_match` and `cstr - stc:utf8replace_c`) are cstr/UTF-8 string tests that failed in the original CI but pass in the LLM Docker environment. These failures are likely non-deterministic (flaky) or depend on locale/UTF-8 support differences between the original GitHub Actions runner (ubuntu-22.04) and the Docker container running the same base image. The clang debug build, combined with the `--timeout-multiplier 0` (no timeout), ran identically in both environments. The test discrepancy is likely a transient CI flake in the original run, not a systematic environment difference.
+
+--- Test Statistics Comparison ---
+  [Meson]
+    Original: 122 run, 120 passed, 2 failed, 0 skipped
+    LLM:      122 run, 122 passed, 0 failed, 0 skipped

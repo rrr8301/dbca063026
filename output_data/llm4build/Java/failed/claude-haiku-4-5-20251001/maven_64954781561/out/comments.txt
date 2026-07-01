@@ -1,0 +1,66 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          3
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      integration-tests (ubuntu-latest, 21)
+  Test command(s) run in original CI:
+    $ actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+    $ actions/setup-java@v4 (java-version: 21)
+    $ mvn install -e -B -V -Prun-its,mimir
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ mvn install -e -B -V -Prun-its,mimir -Drat.skip=true -Dlicense.skip=true
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Maven] Test run mismatch: original=2323, LLM=1581
+  - [Maven] Test passed mismatch: original=2307, LLM=1573
+  - [Maven] Test failed mismatch: original=0, LLM=2
+  - [Maven] 2 tests fail in LLM but not in original:
+    testPluginInjection(org.apache.maven.plugin.PluginParameterExpressionEvaluatorTest)
+    testPluginInjection(org.apache.maven.plugin.PluginParameterExpressionEvaluatorV4Test)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    ERROR PluginParameterExpressionEvaluatorTest.testPluginInjection:451
+      java.nio.file.InvalidPath:
+        Malformed input or input contains unmappable characters: rép➜α
+      at org.apache.maven.plugin.PluginParameterExpressionEvaluatorTest.testPluginInjection
+        (PluginParameterExpressionEvaluatorTest.java:451)
+
+    ERROR PluginParameterExpressionEvaluatorV4Test.testPluginInjection:461
+      java.nio.file.InvalidPath:
+        Malformed input or input contains unmappable characters: rép➜α
+      at org.apache.maven.plugin.PluginParameterExpressionEvaluatorV4Test.testPluginInjection
+        (PluginParameterExpressionEvaluatorV4Test.java:461)
+
+    Tests run: 541, Failures: 0, Errors: 2, Skipped: 1
+    [ERROR] Failed to execute goal ...maven-surefire-plugin:3.5.4:test on maven-core
+
+  [Root cause classification]
+  - No LANG/locale set in Docker → JVM file.encoding defaults to ANSI_X3.4-1968 (ASCII)
+    → file path with non-ASCII characters fails: `testPluginInjection` constructs a Maven
+    project in a temp directory whose path contains the non-ASCII string `rép➜α` (accented
+    letters and a Unicode arrow/symbol). The test calls `java.nio.file.Paths.get()` or
+    `Files.createDirectories()` with this multi-byte path; on a UTF-8 system, this works
+    because the JVM's default file encoding is UTF-8 (`file.encoding=UTF-8`). In Docker
+    without `LANG` set, the JVM falls back to `ANSI_X3.4-1968` (ASCII), which cannot
+    represent multi-byte code points; `java.nio.file.InvalidPath: Malformed input or input
+    contains unmappable characters: rép➜α` is thrown. Maven stops at `maven-core` (the
+    module containing this test) without the `-fae` flag, leaving 742 tests from subsequent
+    modules unexecuted (1581 vs 2323). The original CI uses a GitHub Actions runner with
+    `LANG=en_US.UTF-8`, so all non-ASCII paths work correctly.
+
+--- Test Statistics Comparison ---
+  [Maven]
+    Original: 2323 run, 2307 passed, 0 failed, 16 skipped
+    LLM:      1581 run, 1573 passed, 2 failed, 6 skipped

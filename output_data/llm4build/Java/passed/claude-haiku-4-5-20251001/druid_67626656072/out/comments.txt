@@ -1,0 +1,75 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          3
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      unit tests / unit tests(main) (21, D*,H*,L*) / test-jdk21-[D*,H*,L*]
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ .github/scripts/run_unit-tests -Dtest=!QTest,'D*,H*,L*' -Dmaven.test.failure.ignore=true
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ bash ./.github/scripts/run_unit-tests \
+      -Dtest='!QTest,D*,H*,L*' \
+      -Dmaven.test.failure.ignore=true
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Maven] Test run mismatch: original=23534, LLM=20542
+  - [Maven] Test passed mismatch: original=23036, LLM=20347
+  - [Maven] Test failed mismatch: original=0, LLM=0
+  - [Maven] Several tests fail in LLM runs (retried as flakes due to -Dmaven.test.failure.ignore=true):
+    testPushCannotCreateDirectory(org.apache.druid.segment.loading.LocalDataSegmentPusherTest)
+    testPushZipCannotCreateDirectory(org.apache.druid.segment.loading.LocalDataSegmentPusherTest)
+    testIOExceptionDuringLookupPersist(org.apache.druid.query.lookup.LookupSnapshotTakerTest)
+    testInitializeCompactSegmentsDutyWhenCustomDutyGroupDoesNotContainsCompactSegments(org.apache.druid.server.coordinator.DruidCoordinatorTest)
+    test_startWorker(org.apache.druid.msq.dart.worker.DartWorkerRunnerTest)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    ERROR org.apache.druid.segment.loading.LocalDataSegmentPusherTest.testPushCannotCreateDirectory
+    java.lang.AssertionError: Expected test to throw
+      (an instance of java.io.IOException and exception with message a string containing "Cannot create directory")
+
+    ERROR org.apache.druid.query.lookup.LookupSnapshotTakerTest.testIOExceptionDuringLookupPersist
+    (similar: expected IOException when directory is not writable)
+
+    ERROR org.apache.druid.server.coordinator.DruidCoordinatorTest.testInitializeCompactSegmentsDutyWhenCustomDutyGroupDoesNotContainsCompactSegments
+    expected:<4> but was:<0>
+
+    ERROR org.apache.druid.msq.dart.worker.DartWorkerRunnerTest.test_startWorker
+    expected: not <null>
+
+  [Root cause classification]
+  - Two distinct Docker environment issues cause test failures:
+    (1) Docker runs as root → file/directory permission tests fail. `testPushCannotCreateDirectory`,
+    `testPushZipCannotCreateDirectory`, and `testIOExceptionDuringLookupPersist` all create a
+    directory/file and then call `setWritable(false)` (or `chmod 000` equivalent) to make it
+    non-writable, then expect the production code to throw `IOException`. When running as root,
+    all permission bits are ignored, so the code successfully creates directories/writes files
+    without throwing, and the tests fail their `assertThrows()` expectation.
+    (2) Other environmental differences → `testInitializeCompactSegmentsDutyWhenCustomDutyGroupDoesNotContainsCompactSegments`
+    (expected 4 duties, got 0) and `test_startWorker` (expected non-null worker) fail due to
+    differences in classpath scanning, JVM configuration, or available resources in Docker vs
+    GitHub Actions. These are likely sensitive to thread availability, CPU count, or classpath
+    ordering.
+    The test count mismatch (23534 vs 20542 = 2992 fewer tests) is because the Docker build
+    terminates early (BUILD FAILURE after 18:51 min) when some modules cannot complete, stopping
+    before all test modules finish. `-Dmaven.test.failure.ignore=true` keeps Maven running past
+    individual test failures (which are counted as flakes and retried), but a broader build
+    error stops everything.
+
+--- Test Statistics Comparison ---
+  [Maven]
+    Original: 23534 run, 23036 passed, 0 failed, 498 skipped
+    LLM:      20542 run, 20347 passed, 0 failed, 195 skipped
+    (Note: both show 0 failed because -Dmaven.test.failure.ignore=true causes retried tests
+     to be reported as flakes; individual test runs that failed are still tracked)

@@ -1,0 +1,58 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      java (11, mock-maker-inline, member-accessor-module)
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ actions/setup-java@v5 (java-version: 17)
+    $ ./gradlew -Pmockito.test.java=11 build --stacktrace --scan
+    $ ./gradlew -Pmockito.test.java=11 coverageReport --stacktrace --scan
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ ./gradlew -Pmockito.test.java=11 build --stacktrace --scan
+  $ ./gradlew -Pmockito.test.java=11 coverageReport --stacktrace --scan
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Gradle] Test run mismatch: original=2598, LLM=2589
+  - [Gradle] Test passed mismatch: original=2503, LLM=2494
+  (no test failures in either run)
+  - [mocha] Test run mismatch: original=210, LLM=140
+  - [mocha] Test passed mismatch: original=115, LLM=45
+
+--- Root Cause Analysis ---
+  [Root cause classification]
+  - Two minor environmental differences cause both test count gaps, with no failures in either
+    build:
+    (1) JDK distribution difference → 9 Gradle tests shifted. The original CI sets up Temurin
+    JDK 17 via `actions/setup-java` (for Gradle) and uses `-Pmockito.test.java=11` to select
+    a secondary JDK 11 for test execution. The LLM uses system Ubuntu OpenJDK 17 for Gradle
+    and OpenJDK 11 for tests. Minor differences between the Temurin distribution and Ubuntu's
+    OpenJDK 11 (e.g., in available API features, security configurations, or supported
+    reflection operations) cause 9 tests to run differently (likely shifted to "skipped" or not
+    counted in one distribution), accounting for the 9-test Gradle gap.
+    (2) Node.js/npm environment differences → 70 mocha tests not run. Mockito's Gradle build
+    includes mocha JavaScript integration tests as part of the build lifecycle. These run via
+    a Gradle task that invokes Node.js/mocha. The LLM Dockerfile does not install Node.js or
+    npm, so when Gradle attempts to run mocha-based suites, some suites either fail to start or
+    produce fewer results (70 fewer tests executed, same 95 skipped/pending in both). The
+    original CI (GitHub Actions runner) has Node.js 20 pre-installed, allowing the full set of
+    mocha suites to run (210 total).
+
+--- Test Statistics Comparison ---
+  [Gradle]
+    Original: 2598 run, 2503 passed, 0 failed, 95 skipped
+    LLM:      2589 run, 2494 passed, 0 failed, 95 skipped
+  [mocha]
+    Original: 210 run, 115 passed, 0 failed, 95 skipped
+    LLM:      140 run,  45 passed, 0 failed, 95 skipped

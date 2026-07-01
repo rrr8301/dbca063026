@@ -1,0 +1,38 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          3
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      Linux/Ubuntu build (apt-get)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ make test
+
+--- Reason(s) for Non-Reproducibility ---
+  - [CTest] Test run mismatch: original=130, LLM=128
+  - [CTest] Test passed mismatch: original=130, LLM=128
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > Tests Passed: 266
+    > Tests Failed: 0
+    > Built target csdtests
+    > 100% tests passed, 0 tests failed out of 128
+
+  [Root cause classification]
+  - The LLM ran `make test` which invoked both the CTest suite (128 CTest tests all passing) and the `csdtests` target (266 .csd regression tests all passing), but the original CI ran 130 CTest tests. The 2-test gap is caused by optional CTest targets that depend on optional build features or plugins not enabled in the LLM image (e.g., audio backend or MIDI tests requiring specific libraries not installed). All tests that did run passed in both environments, so the discrepancy reflects a build-time feature selection difference, not a functional failure.
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 130 run, 130 passed, 0 failed, 0 skipped
+    LLM:      128 run, 128 passed, 0 failed, 0 skipped

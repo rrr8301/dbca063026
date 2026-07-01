@@ -1,0 +1,52 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Test (ubuntu-latest, 22.x)
+  Test command(s) run in original CI:
+    $ actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
+    $ npm config set fetch-retry-mintimeout 20000
+    $ npm ci --prefer-offline --no-audit --progress=false
+    $ npm run build
+    $ npm run test:ci
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ npm run build
+  $ npm run test:ci
+
+--- Reason(s) for Non-Reproducibility ---
+  - [vitest] Test run mismatch: original=12710, LLM=12873
+  - [vitest] Test passed mismatch: original=12699, LLM=12856
+  - [vitest] Test failed mismatch: original=0, LLM=4
+  - [vitest] 2 test(s) failed in LLM but not in original: src/skills/skill-activation.test.ts, src/ui/themes/detect-terminal-theme.test.ts
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    1109: ❯ src/skills/skill-activation.test.ts (20 tests | 1 failed) 8285ms
+    1172: FAIL  src/skills/skill-activation.test.ts > extractToolFilePaths → SkillActivationRegistry integration > activates a skill keyed on src/**/*.ts from glob({ path: "src", pattern: "**/*.ts" })
+    1173-Error: Test timed out in 5000ms.
+    1174-If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+    688: ❯ src/ui/themes/detect-terminal-theme.test.ts (29 tests | 3 failed) 39642ms
+    691-If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+    727: FAIL  src/ui/themes/detect-terminal-theme.test.ts > detectTerminalTheme > parseOscRgb > should parse rgb:RRRR/GGGG/BBBB format
+    728-Error: Test timed out in 5000ms.
+
+  [Root cause classification]
+  - Permission denied on executable/script — fake compiler or test helper script lacks execute permission in Docker container.
+  - Missing file or path not found — test data, certificate, or resource file absent in the Docker environment.
+  - Test timed out — likely due to slower execution in Docker container or a blocking service call that never returns.
+
+--- Test Statistics Comparison ---
+  [vitest]
+    Original: 12710 run, 12699 passed, 0 failed, 11 skipped
+    LLM:      12873 run, 12856 passed, 4 failed, 13 skipped

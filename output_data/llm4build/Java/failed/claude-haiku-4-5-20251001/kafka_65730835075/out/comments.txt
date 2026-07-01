@@ -1,0 +1,79 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          3
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      build / JUnit tests Java 23
+  Test command(s) run in original CI:
+    $ actions/checkout@v4
+    $ ./.github/actions/setup-gradle
+    $ ./gradlew --build-cache --continue --no-scan \
+        -PtestLoggingEvents=started,passed,skipped,failed \
+        -PmaxParallelForks=8 -PmaxTestRetries=1 -PmaxTestRetryFailures=3 \
+        -PmaxQuarantineTestRetries=3 -PmaxQuarantineTestRetryFailures=0 \
+        -Pkafka.test.catalog.file=<specific catalog file> \
+        test
+
+--- LLM-Generated Dockerfile ---
+  Base image:   eclipse-temurin:23-jdk-noble
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ ./gradlew ... -Pkafka.test.catalog.file= -PmaxParallelForks=2 quarantinedTest
+  $ ./gradlew ... -Pkafka.test.catalog.file= -PmaxParallelForks=2 test
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Gradle] Test run mismatch: original=36265, LLM=58056
+  - [Gradle] Test passed mismatch: original=36222, LLM=57944
+  - [Gradle] Test failed mismatch: original=8, LLM=42
+  - [Gradle] 19+ tests fail in LLM but not in original (root permission + extra scope):
+    FormatterTest.testFormatterFailsOnUnwritableDirectory()
+    ConnectPluginPathTest.testSyncManifestsDryRunReadOnlyManifest()
+    ConnectPluginPathTest.testSyncManifestsDryRunReadOnlyServices()
+    ConnectPluginPathTest.testSyncManifestsDryRunReadOnlyMetaInf()
+    MetaPropertiesEnsembleTest.testMetaPropertiesEnsembleLoadError()
+    GlobalStateManagerImplTest.shouldLogWarningMessageWhenIOExceptionInCheckPoint()
+    ConfigurationUtilsTest.testFileUnreadable()
+    LogManagerTest.testInvalidLogDirNotFailLogManager()
+    (+11 more read-only / permission-related tests)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    FAILED FormatterTest.testFormatterFailsOnUnwritableDirectory()
+      (expected formatter to throw IOException on unwritable directory,
+       but Docker root ignores chmod 000)
+
+    FAILED ConnectPluginPathTest.testSyncManifestsDryRunReadOnlyManifest()
+      org.opentest4j.AssertionFailedError: expected: <2> but was: <0>
+      (expected 2 errors for read-only manifest paths, root bypasses read-only)
+
+    FAILED MetaPropertiesEnsembleTest.testMetaPropertiesEnsembleLoadError()
+      org.opentest4j.AssertionFailedError: expected: <1> but was: <0>
+      (expected load error count 1 for unreadable dir, root can read it anyway)
+
+    FAILED GlobalStateManagerImplTest.shouldLogWarningMessageWhenIOExceptionInCheckPoint()
+      (expected IOException in checkpoint log dir, root bypasses permissions)
+
+  [Root cause classification]
+  - Two issues: (1) LLM passes `-Pkafka.test.catalog.file=` (empty string) to both
+    `quarantinedTest` and `test` tasks, while the original CI passes a specific catalog
+    file that restricts which test subset runs in this CI job. An empty catalog file means
+    "no filter" — Kafka runs all tests, producing 58056 vs 36265 (approximately 1.6x more).
+    The `quarantinedTest` task alone contributes extra tests not present in the original CI's
+    `test`-only run. (2) Docker runs as root, so the 19 extra failures are all tests that
+    call `Files.setPosixFilePermissions()`, `chmod 000`, or `setReadable(false)` on
+    directories or files and then expect an `IOException` to be thrown. Root ignores all
+    file permission bits, so the I/O operations succeed, the expected exception is never
+    thrown, and the assertions fail (`expected: <1> but was: <0>`, `expected: <2> but was: <0>`).
+    The original CI's 8 failures are timing/flakiness-related tests and are not caused by
+    permissions.
+
+--- Test Statistics Comparison ---
+  [Gradle]
+    Original: 36265 run, 36222 passed, 8 failed, 35 skipped
+    LLM:      58056 run, 57944 passed, 42 failed, 70 skipped

@@ -1,0 +1,37 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      build
+  Docker image pulled: postgres
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    5
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in LLM but not in original: GoDefault
+  - [jest] Test run mismatch: original=3023, LLM=2928
+  - [jest] Test passed mismatch: original=3023, LLM=2828
+  - [jest] Test failed mismatch: original=0, LLM=100
+  - [jest] 1 test(s) failed in original but passed in LLM: Unknown
+  - [jest] 1 test(s) failed in LLM but not in original: tests/base.test.ts (6.547 s)
+
+--- Root Cause Analysis ---
+  - [jest] LLM ran 95 fewer tests than original — LLM likely used a narrower test scope or missed some test suites.
+  - [jest] 1 test(s) failed in LLM but not original: tests/base.test.ts (6.547 s)
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: (not present)
+    LLM:      21 run, 0 passed, 19 failed, 0 skipped
+  [jest]
+    Original: 3023 run, 3023 passed, 0 failed, 0 skipped
+    LLM:      2928 run, 2828 passed, 100 failed, 0 skipped

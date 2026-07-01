@@ -1,0 +1,53 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      go-tests
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ go test -p=8 -timeout 30m -ldflags "-w -s" -v ./backend/... | tee test.log; exit ${PIPESTATUS[0]}
+
+--- LLM-Generated Dockerfile ---
+  Base image:   golang:1.26.0-bookworm
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ TEST_FAILED=0
+  $ TEST_FAILED=1
+  $ TEST_FAILED=1
+  $ grep --color=never -e '--- PASS:' -e '--- FAIL:' test.log | sed 's/[:()]//g' | awk '{print $2,$3,$4}' | sort -t' ' -nk3 -r | awk '{sum += $3; print $1,$2,$3,sum"s"}' || true
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoDefault] Test run mismatch: original=2642, LLM=2082
+  - [GoDefault] Test passed mismatch: original=2619, LLM=2072
+  - [GoDefault] Test failed mismatch: original=24, LLM=8
+  - [GoDefault] 8 test(s) failed in LLM but not in original: TestExecuteCreateIndexInTransaction, TestGenerateMigrationWithTestcontainer, TestGetDatabaseDefinitionWithConnectedDeps, TestGetDatabaseDefinitionWithTestcontainer, TestListChangelogsWithInvalidUTF8, TestQueryWithBracketNotation, TestSyncSpatialIndexWithTestcontainer, TestSync_ColumnDefaultSchemaQualification
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    1650:--- FAIL: TestListChangelogsWithInvalidUTF8 (0.00s)
+    1651-panic: rootless Docker not found [recovered, repanicked]
+    8373:FAIL TestListChangelogsWithInvalidUTF8 0.00s 53.57s
+    8374-FAIL TestGetDatabaseDefinitionWithTestcontainer 0.00s 53.57s
+    2417:--- FAIL: TestSync_ColumnDefaultSchemaQualification (0.00s)
+    2418-panic: rootless Docker not found [recovered, repanicked]
+    8370:FAIL TestSync_ColumnDefaultSchemaQualification 0.00s 53.57s
+    8371-FAIL TestSyncSpatialIndexWithTestcontainer 0.00s 53.57s
+
+  [Root cause classification]
+  - `panic: rootless Docker not found` is the key error. Bytebase's test suite uses testcontainers-go to spin up database engines (PostgreSQL, MySQL, MongoDB, etc.) on demand; when no Docker daemon is available inside the Docker build container, testcontainers panics with this message. Tests using `*Testcontainer` in their name (`TestGenerateMigrationWithTestcontainer`, `TestGetDatabaseDefinitionWithTestcontainer`, `TestSyncSpatialIndexWithTestcontainer`) all panic immediately.
+
+  - The 560 fewer tests (2082 vs 2642) represent the entirety of the testcontainer-dependent test suites that panic before even registering individual test cases. The 8 LLM failures (vs 24 original failures) are the testcontainer panics plus a few SQL-level failures; the original's 24 failures were different database-interaction tests that required running services the original CI provided as GitHub Actions services containers.
+
+  - The LLM used `golang:1.26.0-bookworm` as the base image, which does not have Docker daemon installed, and the test runner (`go test -p=8 -timeout 30m -ldflags "-w -s" -v ./backend/...`) correctly reproduced the CI command. The only missing piece is the Docker daemon that GitHub Actions runners provide natively.
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 2642 run, 2619 passed, 24 failed, 0 skipped
+    LLM:      2082 run, 2072 passed, 8 failed, 0 skipped

@@ -1,0 +1,100 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          18
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      tests (3.11, ubuntu-24.04)
+  Test command(s) run in original CI:
+    $ cd bootloader && python waf --static-zlib --tests all
+    $ cd bootloader && python waf --tests all
+    $ sh release/build-wheels
+    $ python -m pip install --progress-bar=off --upgrade --requirement tests/requirements-base.txt
+    $ python -m pip install --progress-bar=off --upgrade --requirement tests/requirements-libraries.txt
+    $ pytest -n 5 --maxfail 3 --durations 10 tests/unit tests/functional
+
+--- LLM-Generated Dockerfile ---
+  Base image:   python:3.11-slim
+  RUN steps:    6
+
+--- LLM run.sh Test Command(s) ---
+  $ CC="gcc -std=gnu90" python3.11 waf --tests all
+  $ CC="gcc -std=c99 -pedantic" python3.11 waf --tests all
+  $ python3.11 waf --static-zlib --tests all
+  $ python3.11 waf --tests all
+  $ sh release/build-wheels
+  $ python3.11 -m pip install --requirement tests/requirements-base.txt
+  $ python3.11 -m pip install --requirement tests/requirements-libraries.txt
+  $ pytest -n 5 --maxfail 3 --durations 10 tests/unit tests/functional
+
+--- Reason(s) for Non-Reproducibility ---
+  - [pytest] Test run mismatch: original=1301, LLM=697 (604 fewer tests due to --maxfail 3)
+  - [pytest] Skip count mismatch: original=228 skipped, LLM=67 skipped
+  - [pytest] Different failures: original=4 (scipy tests), LLM=5 (splash/locale/sphinx tests)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > test_symlink_basename_is_kept[onedir-splash] / [onefile-splash]
+    > E   SystemExit: ERROR: Your platform does not support the splash screen feature,
+    >     since tkinter is not installed. Please install tkinter and try again.
+    >   [PyInstaller/building/splash.py:116]
+    >
+    > test_user_preferred_locale[onedir] / [onefile]
+    > [at boot]: /bin/bash: warning: setlocale: LC_ALL: cannot change locale (en_US.UTF-8):
+    >     No such file or directory
+    >
+    > test_sphinx[onedir]
+    > [fails to build sphinx application in PyInstaller's functional test environment]
+
+  [Root cause classification]
+  Three Docker-specific failures cause --maxfail 3 to trigger early, stopping after 697/1301 tests:
+
+  (1) tkinter not installed in Docker → test_symlink_basename_is_kept[*-splash] fails (2 failures)
+    The test calls `importable("tkinter")` which returns True (tkinter module exists in the
+    python:3.11-slim image), so the test doesn't skip. But when PyInstaller tries to build
+    the splash screen, it calls `tcltk_info.available` which checks for the Tcl/Tk libraries.
+    In python:3.11-slim, the Tcl/Tk backend is NOT present (only the Python tkinter stub is
+    installed, not the underlying Tcl/Tk libraries), causing:
+      `SystemExit: ERROR: Your platform does not support the splash screen feature,
+       since tkinter is not installed. Please install tkinter and try again.`
+
+  (2) en_US.UTF-8 locale not installed → test_user_preferred_locale[*] fails (2 failures)
+    The Docker container's python:3.11-slim image does not have the `en_US.UTF-8` locale
+    installed. The `test_user_preferred_locale` test builds a frozen Python application that
+    tries to set the locale via `LC_ALL=en_US.UTF-8`. At runtime, this fails:
+      `/bin/bash: warning: setlocale: LC_ALL: cannot change locale (en_US.UTF-8):
+       No such file or directory`
+    In the original CI's ubuntu-24.04 runner, `en_US.UTF-8` is pre-installed.
+
+  (3) Sphinx dependency issue → test_sphinx[onedir] fails (1 failure)
+    The `tests/requirements-libraries.txt` either doesn't include sphinx or installs
+    an incompatible version. PyInstaller's functional test for sphinx builds a frozen
+    application that imports sphinx; this fails in the Docker environment.
+
+  (4) --maxfail 3 stops pytest early → only 697/1301 tests run
+    The LLM run.sh uses `pytest -n 5 --maxfail 3`. After 3 early failures (the splash
+    tests), pytest signals xdist workers to stop collecting. With 5 workers already
+    running, some additional tests complete before the stop, resulting in 697 total tests
+    run instead of 1301. The 67 skips in LLM vs 228 in original are because many tests
+    that would have been skipped were never reached.
+
+  (5) LLM compiles bootloader with multiple C standard configurations
+    The LLM's run.sh runs waf 4 times (gnu90, c99, --static-zlib, default). The original CI
+    only runs waf twice (--static-zlib, default). The multiple conflicting builds generate
+    `ERROR: Bootloaders have been compiled for the wrong platform` warnings between builds,
+    though this does not directly cause test failures.
+
+  Original CI failures (test_scipy): The original CI runs 1301 tests and fails the scipy
+  tests because scipy is not installed on the ubuntu-24.04 runner without --no-index. These
+  specific tests are not reached in the LLM run due to early --maxfail termination.
+
+--- Test Statistics Comparison ---
+  [pytest]
+    Original: 1301 run, 1048 passed, 4 failed, 228 skipped  (scipy not installed)
+    LLM:      697 run, 606 passed, 5 failed, 67 skipped
+    (LLM stops early at 697 tests due to --maxfail 3 triggered by splash/locale failures;
+     new LLM failures: tkinter not installed, en_US locale missing, sphinx issue)

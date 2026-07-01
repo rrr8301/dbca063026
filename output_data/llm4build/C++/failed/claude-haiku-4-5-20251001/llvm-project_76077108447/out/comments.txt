@@ -1,0 +1,46 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          19
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      stage1 (generic-cxx26, clang-23, clang++-23)
+  Test command(s) run in original CI:
+    $ actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    6
+
+--- LLM run.sh Test Command(s) ---
+  $ pip install -r /workspace/libcxx/test/requirements.txt
+
+--- Reason(s) for Non-Reproducibility ---
+  - [LLVMLit] Test run mismatch: original=11371, LLM=11370
+  - [LLVMLit] Test passed mismatch: original=10422, LLM=10244
+  - [LLVMLit] Test failed mismatch: original=2, LLM=30
+  - [LLVMLit] 28 test(s) failed in LLM but not in original: std/input.output/filesystems/class.directory_entry/directory_entry.cons/path.pass.cpp, std/input.output/filesystems/class.directory_entry/directory_entry.mods/assign.pass.cpp, std/input.output/filesystems/class.directory_entry/directory_entry.mods/refresh.pass.cpp, std/input.output/filesystems/class.directory_entry/directory_entry.mods/replace_filename.pass.cpp, std/input.output/filesystems/class.directory_entry/directory_entry.obs/file_size.pass.cpp, std/input.output/filesystems/class.directory_entry/directory_entry.obs/file_type_obs.pass.cpp, std/input.output/filesystems/class.directory_entry/directory_entry.obs/hard_link_count.pass.cpp, std/input.output/filesystems/class.directory_entry/directory_entry.obs/last_write_time.pass.cpp (+20 more)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    2954:FAIL: llvm-libc++-shared.cfg.in :: std/input.output/filesystems/fs.op.funcs/fs.op.is_fifo/is_fifo.pass.cpp (5755 of 11370)
+    2955:******************** TEST 'llvm-libc++-shared.cfg.in :: std/input.output/filesystems/fs.op.funcs/fs.op.is_fifo/is_fifo.pass.cpp' FAILED ********************
+    2961:/usr/bin/clang++-23 /workspace/libcxx/test/std/input.output/filesystems/fs.op.funcs/fs.op.is_fifo/is_fifo.pass.cpp -pthread --target=x86_64-unknown-linux-gnu -nostdinc++ -I /workspace/build/gener
+    2962:# executed command: /usr/bin/clang++-23 /workspace/libcxx/test/std/input.output/filesystems/fs.op.funcs/fs.op.is_fifo/is_fifo.pass.cpp -pthread --target=x86_64-unknown-linux-gnu -nostdinc++ -I /w
+    2668:FAIL: llvm-libc++-shared.cfg.in :: std/input.output/filesystems/class.directory_iterator/directory_iterator.members/ctor.pass.cpp (5635 of 11370)
+    2669:******************** TEST 'llvm-libc++-shared.cfg.in :: std/input.output/filesystems/class.directory_iterator/directory_iterator.members/ctor.pass.cpp' FAILED ********************
+    2675:/usr/bin/clang++-23 /workspace/libcxx/test/std/input.output/filesystems/class.directory_iterator/directory_iterator.members/ctor.pass.cpp -pthread --target=x86_64-unknown-linux-gnu -nostdinc++ -I
+    2676:# executed command: /usr/bin/clang++-23 /workspace/libcxx/test/std/input.output/filesystems/class.directory_iterator/directory_iterator.members/ctor.pass.cpp -pthread --target=x86_64-unknown-linu
+
+  [Root cause classification]
+  - Permission denied on executable/script — fake compiler or test helper script lacks execute permission in Docker container.
+  - Test timed out — likely due to slower execution in Docker container or a blocking service call that never returns.
+
+--- Test Statistics Comparison ---
+  [LLVMLit]
+    Original: 11371 run, 10422 passed, 2 failed, 947 skipped
+    LLM:      11370 run, 10244 passed, 30 failed, 1096 skipped

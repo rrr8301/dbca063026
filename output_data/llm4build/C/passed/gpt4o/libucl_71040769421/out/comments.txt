@@ -1,0 +1,41 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      build (ubuntu-latest, Release, gcc)
+  Test command(s) run in original CI:
+    $ ctest --progress --output-on-failure --build-config Release
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ ctest --progress --output-on-failure --build-config Release
+
+--- Reason(s) for Non-Reproducibility ---
+  - [CTest] Test passed mismatch: original=8, LLM=7
+  - [CTest] Test failed mismatch: original=0, LLM=1
+  - [CTest] 1 test(s) failed in LLM but not in original: test_speed
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > sh: 1: xz: not found
+    > Unpacking /app/tests/rcl_test.json.xz...
+    > /app/tests/speed.test: 9: xz: not found
+    > mmap failed: Invalid argument
+
+  [Root cause classification]
+  - The `test_speed` benchmark test unpacks a compressed JSON fixture file using `xz`, but the `xz` utility was not installed in the LLM's ubuntu:22.04 image. The speed test script calls `xz` to decompress `rcl_test.json.xz`; when `xz` is not found the decompression fails and the subsequent `mmap` of the non-existent file returns "Invalid argument", causing the test to fail. The original CI (ubuntu-24.04) had `xz-utils` available by default in the runner environment. All other 7 tests, which do not rely on this compressed fixture, passed identically in both environments.
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 8 run, 8 passed, 0 failed, 0 skipped
+    LLM:      8 run, 7 passed, 1 failed, 0 skipped

@@ -1,0 +1,1296 @@
+# command: act pull_request -W .github/workflows/rust.yml --directory project_path/qdrant -j rust-tests --matrix os:ubuntu-latest
+
+time="2026-05-10T14:56:03-07:00" level=info msg="Using docker host 'unix:///var/run/docker.sock', and daemon socket 'unix:///var/run/docker.sock'"
+[Rust tests/rust-tests] ⭐ Run Set up job
+[Rust tests/rust-tests] 🚀  Start image=catthehacker/ubuntu:act-latest
+[Rust tests/rust-tests]   🐳  docker pull image=catthehacker/ubuntu:act-latest platform= username= forcePull=true
+[Rust tests/rust-tests] using DockerAuthConfig authentication for docker pull
+[Rust tests/rust-tests]   🐳  docker create image=catthehacker/ubuntu:act-latest platform= entrypoint=["tail" "-f" "/dev/null"] cmd=[] network="host"
+[Rust tests/rust-tests]   🐳  docker run image=catthehacker/ubuntu:act-latest platform= entrypoint=["tail" "-f" "/dev/null"] cmd=[] network="host"
+[Rust tests/rust-tests]   🐳  docker exec cmd=[node --no-warnings -e console.log(process.execPath)] user= workdir=
+[Rust tests/rust-tests]   ✅  Success - Set up job
+[Rust tests/rust-tests]   ☁  git clone 'https://github.com/dtolnay/rust-toolchain' # ref=stable
+[Rust tests/rust-tests] ⭐ Run Pre Install minimal stable
+[Rust tests/rust-tests]   ✅  Success - Pre Install minimal stable [47.87132ms]
+[Rust tests/rust-tests]   ☁  git clone 'https://github.com/Swatinem/rust-cache' # ref=v2
+[Rust tests/rust-tests]   ☁  git clone 'https://github.com/arduino/setup-protoc' # ref=v3
+[Rust tests/rust-tests]   ☁  git clone 'https://github.com/rui314/setup-mold' # ref=v1
+[Rust tests/rust-tests] ⭐ Run Pre Install mold
+[Rust tests/rust-tests]   ✅  Success - Pre Install mold [47.90833ms]
+[Rust tests/rust-tests]   ☁  git clone 'https://github.com/taiki-e/install-action' # ref=nextest
+[Rust tests/rust-tests] ⭐ Run Pre Install nextest
+[Rust tests/rust-tests]   ✅  Success - Pre Install nextest [45.015787ms]
+[Rust tests/rust-tests]   ☁  git clone 'https://github.com/actions/upload-artifact' # ref=v7
+[Rust tests/rust-tests] 🧪  Matrix: map[os:ubuntu-latest]
+[Rust tests/rust-tests] ⭐ Run Main Install minimal stable
+[Rust tests/rust-tests]   🐳  docker cp src=/home/mnabil/.cache/act/dtolnay-rust-toolchain@stable/ dst=/var/run/act/actions/dtolnay-rust-toolchain@stable/
+[Rust tests/rust-tests] ⭐ Run Main : parse toolchain version
+if [[ -z $toolchain ]]; then
+  # GitHub does not enforce `required: true` inputs itself. https://github.com/actions/runner/issues/1070
+  echo "'toolchain' is a required input" >&2
+  exit 1
+elif [[ $toolchain =~ ^stable' '[0-9]+' '(year|month|week|day)s?' 'ago$ ]]; then
+  if [[ Linux == macOS ]]; then
+    echo "toolchain=1.$((($(date -v-$(sed 's/stable \([0-9]*\) \(.\).*/\1\2/' <<< $toolchain) +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT
+  else
+    echo "toolchain=1.$((($(date --date "${toolchain#stable }" +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT
+  fi
+elif [[ $toolchain =~ ^stable' 'minus' '[0-9]+' 'releases?$ ]]; then
+  echo "toolchain=1.$((($(date +%s)/60/60/24-16569)/7/6-${toolchain//[^0-9]/}))" >> $GITHUB_OUTPUT
+elif [[ $toolchain =~ ^1\.[0-9]+$ ]]; then
+  echo "toolchain=1.$((i=${toolchain#1.}, c=($(date +%s)/60/60/24-16569)/7/6, i+9*i*(10*i<=c)+90*i*(100*i<=c)))" >> $GITHUB_OUTPUT
+else
+  echo "toolchain=$toolchain" >> $GITHUB_OUTPUT
+fi
+[Rust tests/rust-tests]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/0-composite-parse.sh] user= workdir=
+[Rust tests/rust-tests]   ✅  Success - Main : parse toolchain version
+if [[ -z $toolchain ]]; then
+  # GitHub does not enforce `required: true` inputs itself. https://github.com/actions/runner/issues/1070
+  echo "'toolchain' is a required input" >&2
+  exit 1
+elif [[ $toolchain =~ ^stable' '[0-9]+' '(year|month|week|day)s?' 'ago$ ]]; then
+  if [[ Linux == macOS ]]; then
+    echo "toolchain=1.$((($(date -v-$(sed 's/stable \([0-9]*\) \(.\).*/\1\2/' <<< $toolchain) +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT
+  else
+    echo "toolchain=1.$((($(date --date "${toolchain#stable }" +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT
+  fi
+elif [[ $toolchain =~ ^stable' 'minus' '[0-9]+' 'releases?$ ]]; then
+  echo "toolchain=1.$((($(date +%s)/60/60/24-16569)/7/6-${toolchain//[^0-9]/}))" >> $GITHUB_OUTPUT
+elif [[ $toolchain =~ ^1\.[0-9]+$ ]]; then
+  echo "toolchain=1.$((i=${toolchain#1.}, c=($(date +%s)/60/60/24-16569)/7/6, i+9*i*(10*i<=c)+90*i*(100*i<=c)))" >> $GITHUB_OUTPUT
+else
+  echo "toolchain=$toolchain" >> $GITHUB_OUTPUT
+fi
+ [185.192189ms]
+[Rust tests/rust-tests]   ⚙  ::set-output:: toolchain=stable
+[Rust tests/rust-tests] ⭐ Run Main : construct rustup command line
+echo "targets=$(for t in ${targets//,/ }; do echo -n ' --target' $t; done)" >> $GITHUB_OUTPUT
+echo "components=$(for c in ${components//,/ }; do echo -n ' --component' $c; done)" >> $GITHUB_OUTPUT
+echo "downgrade=" >> $GITHUB_OUTPUT
+[Rust tests/rust-tests]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/0-composite-flags.sh] user= workdir=
+[Rust tests/rust-tests]   ✅  Success - Main : construct rustup command line
+echo "targets=$(for t in ${targets//,/ }; do echo -n ' --target' $t; done)" >> $GITHUB_OUTPUT
+echo "components=$(for c in ${components//,/ }; do echo -n ' --component' $c; done)" >> $GITHUB_OUTPUT
+echo "downgrade=" >> $GITHUB_OUTPUT
+ [154.873432ms]
+[Rust tests/rust-tests]   ⚙  ::set-output:: targets=
+[Rust tests/rust-tests]   ⚙  ::set-output:: components=
+[Rust tests/rust-tests]   ⚙  ::set-output:: downgrade=
+[Rust tests/rust-tests] ⭐ Run Main : set $CARGO_HOME
+echo CARGO_HOME=${CARGO_HOME:-"$HOME/.cargo"} >> $GITHUB_ENV
+[Rust tests/rust-tests]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/0-composite-2.sh] user= workdir=
+[Rust tests/rust-tests]   ✅  Success - Main : set $CARGO_HOME
+echo CARGO_HOME=${CARGO_HOME:-"$HOME/.cargo"} >> $GITHUB_ENV
+ [147.882498ms]
+[Rust tests/rust-tests]   ⚙  ::set-env:: CARGO_HOME=/root/.cargo
+[Rust tests/rust-tests] ⭐ Run Main : install rustup if needed
+if ! command -v rustup &>/dev/null; then
+  curl --proto '=https' --tlsv1.2 --retry 10 --retry-connrefused --location --silent --show-error --fail https://sh.rustup.rs | sh -s -- --default-toolchain none -y
+  echo "$CARGO_HOME/bin" >> $GITHUB_PATH
+fi
+[Rust tests/rust-tests]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/0-composite-3.sh] user= workdir=
+[Rust tests/rust-tests]   | info: downloading installer
+[Rust tests/rust-tests]   | warn: It looks like you have an existing rustup settings file at:
+[Rust tests/rust-tests]   | warn: /root/.rustup/settings.toml
+[Rust tests/rust-tests]   | warn: Rustup will install the default toolchain as specified in the settings file,
+[Rust tests/rust-tests]   | warn: instead of the one inferred from the default host triple.
+[Rust tests/rust-tests]   | 
+[Rust tests/rust-tests]   | 
+[Rust tests/rust-tests]   | Rust is installed now. Great!
+[Rust tests/rust-tests]   | 
+[Rust tests/rust-tests]   | To get started you may need to restart your current shell.
+[Rust tests/rust-tests]   | This would reload your PATH environment variable to include
+[Rust tests/rust-tests]   | Cargo's bin directory ($HOME/.cargo/bin).
+[Rust tests/rust-tests]   | 
+[Rust tests/rust-tests]   | To configure your current shell, you need to source
+[Rust tests/rust-tests]   | the corresponding env file under $HOME/.cargo.
+[Rust tests/rust-tests]   | 
+[Rust tests/rust-tests]   | This is usually done by running one of the following (note the leading DOT):
+[Rust tests/rust-tests]   | . "$HOME/.cargo/env"            # For sh/bash/zsh/ash/dash/pdksh
+[Rust tests/rust-tests]   | source "$HOME/.cargo/env.fish"  # For fish
+[Rust tests/rust-tests]   | source "~/.cargo/env.nu"  # For nushell
+[Rust tests/rust-tests]   | source "$HOME/.cargo/env.tcsh"  # For tcsh
+[Rust tests/rust-tests]   | . "$HOME/.cargo/env.ps1"        # For pwsh
+[Rust tests/rust-tests]   | source "$HOME/.cargo/env.xsh"   # For xonsh
+[Rust tests/rust-tests]   | info: profile set to default
+[Rust tests/rust-tests]   | info: default host triple is x86_64-unknown-linux-gnu
+[Rust tests/rust-tests]   | info: skipping toolchain installation
+[Rust tests/rust-tests]   ✅  Success - Main : install rustup if needed
+if ! command -v rustup &>/dev/null; then
+  curl --proto '=https' --tlsv1.2 --retry 10 --retry-connrefused --location --silent --show-error --fail https://sh.rustup.rs | sh -s -- --default-toolchain none -y
+  echo "$CARGO_HOME/bin" >> $GITHUB_PATH
+fi
+ [770.952323ms]
+[Rust tests/rust-tests]   ⚙  ::add-path:: /root/.cargo/bin
+[Rust tests/rust-tests] ⭐ Run Main rustup toolchain install stable
+[Rust tests/rust-tests]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/0-composite-5.sh] user= workdir=
+[Rust tests/rust-tests]   | info: syncing channel updates for stable-x86_64-unknown-linux-gnu
+[Rust tests/rust-tests]   | info: latest update on 2026-04-16 for version 1.95.0 (59807616e 2026-04-14)
+[Rust tests/rust-tests]   | info: downloading 3 components
+[Rust tests/rust-tests]   | 
+[Rust tests/rust-tests]   |   stable-x86_64-unknown-linux-gnu installed - rustc 1.95.0 (59807616e 2026-04-14)
+[Rust tests/rust-tests]   | 
+[Rust tests/rust-tests]   | info: default toolchain set to stable-x86_64-unknown-linux-gnu
+[Rust tests/rust-tests]   ✅  Success - Main rustup toolchain install stable [9.898333611s]
+[Rust tests/rust-tests] ⭐ Run Main rustup default stable
+[Rust tests/rust-tests]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/0-composite-6.sh] user= workdir=
+[Rust tests/rust-tests]   | info: using existing install for stable-x86_64-unknown-linux-gnu
+[Rust tests/rust-tests]   | info: default toolchain set to stable-x86_64-unknown-linux-gnu
+[Rust tests/rust-tests]   | 
+[Rust tests/rust-tests]   |   stable-x86_64-unknown-linux-gnu unchanged - rustc 1.95.0 (59807616e 2026-04-14)
+[Rust tests/rust-tests]   | 
+[Rust tests/rust-tests]   ✅  Success - Main rustup default stable [228.313095ms]
+[Rust tests/rust-tests] ⭐ Run Main : create cachekey
+DATE=$(rustc +stable --version --verbose | sed -ne 's/^commit-date: \(20[0-9][0-9]\)-\([01][0-9]\)-\([0-3][0-9]\)$/\1\2\3/p')
+HASH=$(rustc +stable --version --verbose | sed -ne 's/^commit-hash: //p')
+echo "cachekey=$(echo $DATE$HASH | head -c12)" >> $GITHUB_OUTPUT
+[Rust tests/rust-tests]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/0-composite-rustc-version.sh] user= workdir=
+[Rust tests/rust-tests]   ✅  Success - Main : create cachekey
+DATE=$(rustc +stable --version --verbose | sed -ne 's/^commit-date: \(20[0-9][0-9]\)-\([01][0-9]\)-\([0-3][0-9]\)$/\1\2\3/p')
+HASH=$(rustc +stable --version --verbose | sed -ne 's/^commit-hash: //p')
+echo "cachekey=$(echo $DATE$HASH | head -c12)" >> $GITHUB_OUTPUT
+ [215.922303ms]
+[Rust tests/rust-tests]   ⚙  ::set-output:: cachekey=202604145980
+[Rust tests/rust-tests] ⭐ Run Main : disable incremental compilation
+if [ -z "${CARGO_INCREMENTAL+set}" ]; then
+  echo CARGO_INCREMENTAL=0 >> $GITHUB_ENV
+fi
+[Rust tests/rust-tests]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/0-composite-8.sh] user= workdir=
+[Rust tests/rust-tests]   ✅  Success - Main : disable incremental compilation
+if [ -z "${CARGO_INCREMENTAL+set}" ]; then
+  echo CARGO_INCREMENTAL=0 >> $GITHUB_ENV
+fi
+ [176.69402ms]
+[Rust tests/rust-tests]   ⚙  ::set-env:: CARGO_INCREMENTAL=0
+[Rust tests/rust-tests] ⭐ Run Main : enable colors in Cargo output
+if [ -z "${CARGO_TERM_COLOR+set}" ]; then
+  echo CARGO_TERM_COLOR=always >> $GITHUB_ENV
+fi
+[Rust tests/rust-tests]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/0-composite-9.sh] user= workdir=
+[Rust tests/rust-tests]   ✅  Success - Main : enable colors in Cargo output
+if [ -z "${CARGO_TERM_COLOR+set}" ]; then
+  echo CARGO_TERM_COLOR=always >> $GITHUB_ENV
+fi
+ [170.31663ms]
+[Rust tests/rust-tests] ⭐ Run Main : enable Cargo sparse registry
+# implemented in 1.66, stabilized in 1.68, made default in 1.70
+if [ -z "${CARGO_REGISTRIES_CRATES_IO_PROTOCOL+set}" -o -f "/tmp"/.implicit_cargo_registries_crates_io_protocol ]; then
+  if rustc +stable --version --verbose | grep -q '^release: 1\.6[89]\.'; then
+    touch "/tmp"/.implicit_cargo_registries_crates_io_protocol || true
+    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse >> $GITHUB_ENV
+  elif rustc +stable --version --verbose | grep -q '^release: 1\.6[67]\.'; then
+    touch "/tmp"/.implicit_cargo_registries_crates_io_protocol || true
+    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=git >> $GITHUB_ENV
+  fi
+fi
+[Rust tests/rust-tests]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/0-composite-10.sh] user= workdir=
+[Rust tests/rust-tests]   ✅  Success - Main : enable Cargo sparse registry
+# implemented in 1.66, stabilized in 1.68, made default in 1.70
+if [ -z "${CARGO_REGISTRIES_CRATES_IO_PROTOCOL+set}" -o -f "/tmp"/.implicit_cargo_registries_crates_io_protocol ]; then
+  if rustc +stable --version --verbose | grep -q '^release: 1\.6[89]\.'; then
+    touch "/tmp"/.implicit_cargo_registries_crates_io_protocol || true
+    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse >> $GITHUB_ENV
+  elif rustc +stable --version --verbose | grep -q '^release: 1\.6[67]\.'; then
+    touch "/tmp"/.implicit_cargo_registries_crates_io_protocol || true
+    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=git >> $GITHUB_ENV
+  fi
+fi
+ [220.486683ms]
+[Rust tests/rust-tests] ⭐ Run Main : work around spurious network errors in curl 8.0
+# https://rust-lang.zulipchat.com/#narrow/stream/246057-t-cargo/topic/timeout.20investigation
+if rustc +stable --version --verbose | grep -q '^release: 1\.7[01]\.'; then
+  echo CARGO_HTTP_MULTIPLEXING=false >> $GITHUB_ENV
+fi
+[Rust tests/rust-tests]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/0-composite-11.sh] user= workdir=
+[Rust tests/rust-tests]   ✅  Success - Main : work around spurious network errors in curl 8.0
+# https://rust-lang.zulipchat.com/#narrow/stream/246057-t-cargo/topic/timeout.20investigation
+if rustc +stable --version --verbose | grep -q '^release: 1\.7[01]\.'; then
+  echo CARGO_HTTP_MULTIPLEXING=false >> $GITHUB_ENV
+fi
+ [177.582356ms]
+[Rust tests/rust-tests] ⭐ Run Main rustc +stable --version --verbose
+[Rust tests/rust-tests]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/0-composite-12.sh] user= workdir=
+[Rust tests/rust-tests]   | rustc 1.95.0 (59807616e 2026-04-14)
+[Rust tests/rust-tests]   | binary: rustc
+[Rust tests/rust-tests]   | commit-hash: 59807616e1fa2540724bfbac14d7976d7e4a3860
+[Rust tests/rust-tests]   | commit-date: 2026-04-14
+[Rust tests/rust-tests]   | host: x86_64-unknown-linux-gnu
+[Rust tests/rust-tests]   | release: 1.95.0
+[Rust tests/rust-tests]   | LLVM version: 22.1.2
+[Rust tests/rust-tests]   ✅  Success - Main rustc +stable --version --verbose [178.769247ms]
+[Rust tests/rust-tests]   ⚙  ::set-output:: name=stable
+[Rust tests/rust-tests]   ⚙  ::set-output:: cachekey=202604145980
+[Rust tests/rust-tests]   ✅  Success - Main Install minimal stable [13.702823167s]
+[Rust tests/rust-tests] ⭐ Run Main actions/checkout@v6
+[Rust tests/rust-tests]   🐳  docker cp src=/scratch/raian-files/LLM4Build/project_path/qdrant/. dst=/scratch/raian-files/LLM4Build/project_path/qdrant
+[Rust tests/rust-tests]   ✅  Success - Main actions/checkout@v6 [3.242702229s]
+[Rust tests/rust-tests] ⭐ Run Main Swatinem/rust-cache@v2
+[Rust tests/rust-tests]   🐳  docker cp src=/home/mnabil/.cache/act/Swatinem-rust-cache@v2/ dst=/var/run/act/actions/Swatinem-rust-cache@v2/
+[Rust tests/rust-tests]   🐳  docker exec cmd=[/opt/acttoolcache/node/24.15.0/x64/bin/node /var/run/act/actions/Swatinem-rust-cache@v2/dist/restore/index.js] user= workdir=
+[Rust tests/rust-tests]   | (node:291) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+[Rust tests/rust-tests]   | (Use `node --trace-deprecation ...` to show where the warning was created)
+[Rust tests/rust-tests]   ❓  ::group::Cache Configuration
+[Rust tests/rust-tests]   | Cache Provider:
+[Rust tests/rust-tests]   |     github
+[Rust tests/rust-tests]   | Workspaces:
+[Rust tests/rust-tests]   |     /scratch/raian-files/LLM4Build/project_path/qdrant
+[Rust tests/rust-tests]   | Cache Paths:
+[Rust tests/rust-tests]   |     /root/.cargo/bin
+[Rust tests/rust-tests]   |     /root/.cargo/.crates.toml
+[Rust tests/rust-tests]   |     /root/.cargo/.crates2.json
+[Rust tests/rust-tests]   |     /root/.cargo/registry
+[Rust tests/rust-tests]   |     /root/.cargo/git
+[Rust tests/rust-tests]   |     /scratch/raian-files/LLM4Build/project_path/qdrant/target
+[Rust tests/rust-tests]   | Restore Key:
+[Rust tests/rust-tests]   |     v0-rust-rust-tests-Linux-x64-267d10fb
+[Rust tests/rust-tests]   | Cache Key:
+[Rust tests/rust-tests]   |     v0-rust-rust-tests-Linux-x64-267d10fb-bd5e3f80
+[Rust tests/rust-tests]   | .. Prefix:
+[Rust tests/rust-tests]   |   - v0-rust-rust-tests-Linux-x64
+[Rust tests/rust-tests]   | .. Environment considered:
+[Rust tests/rust-tests]   |   - Rust Versions:
+[Rust tests/rust-tests]   |     - 1.95.0 x86_64-unknown-linux-gnu 59807616e1fa2540724bfbac14d7976d7e4a3860
+[Rust tests/rust-tests]   |     - 1.95.0 x86_64-unknown-linux-gnu 59807616e1fa2540724bfbac14d7976d7e4a3860
+[Rust tests/rust-tests]   |   - CARGO_HOME
+[Rust tests/rust-tests]   |   - CARGO_INCREMENTAL
+[Rust tests/rust-tests]   |   - CARGO_TERM_COLOR
+[Rust tests/rust-tests]   | .. Lockfiles considered:
+[Rust tests/rust-tests]   |   - /scratch/raian-files/LLM4Build/project_path/qdrant/Cargo.lock
+[Rust tests/rust-tests]   |   - /scratch/raian-files/LLM4Build/project_path/qdrant/Cargo.toml
+[Rust tests/rust-tests]   |   - /scratch/raian-files/LLM4Build/project_path/qdrant/lib/api/Cargo.toml
+[Rust tests/rust-tests]   |   - /scratch/raian-files/LLM4Build/project_path/qdrant/lib/collection/Cargo.toml
+[Rust tests/rust-tests]   |   - /scratch/raian-files/LLM4Build/project_path/qdrant/lib/common/cancel/Cargo.toml
+[Rust tests/rust-tests]   |   - /scratch/raian-files/LLM4Build/project_path/qdrant/lib/common/common/Cargo.toml
+[Rust tests/rust-tests]   |   - /scratch/raian-files/LLM4Build/project_path/qdrant/lib/common/dataset/Cargo.toml
+[Rust tests/rust-tests]   |   - /scratch/raian-files/LLM4Build/project_path/qdrant/lib/common/issues/Cargo.toml
+[Rust tests/rust-tests]   |   - /scratch/raian-files/LLM4Build/project_path/qdrant/lib/edge/Cargo.toml
+[Rust tests/rust-tests]   |   - /scratch/raian-files/LLM4Build/project_path/qdrant/lib/edge/python/Cargo.toml
+[Rust tests/rust-tests]   |   - /scratch/raian-files/LLM4Build/project_path/qdrant/lib/edge/python/codegen/Cargo.toml
+[Rust tests/rust-tests]   |   - /scratch/raian-files/LLM4Build/project_path/qdrant/lib/gpu/Cargo.toml
+[Rust tests/rust-tests]   |   - /scratch/raian-files/LLM4Build/project_path/qdrant/lib/gridstore/Cargo.toml
+[Rust tests/rust-tests]   |   - /scratch/raian-files/LLM4Build/project_path/qdrant/lib/macros/Cargo.toml
+[Rust tests/rust-tests]   |   - /scratch/raian-files/LLM4Build/project_path/qdrant/lib/posting_list/Cargo.toml
+[Rust tests/rust-tests]   |   - /scratch/raian-files/LLM4Build/project_path/qdrant/lib/quantization/Cargo.toml
+[Rust tests/rust-tests]   |   - /scratch/raian-files/LLM4Build/project_path/qdrant/lib/segment/Cargo.toml
+[Rust tests/rust-tests]   |   - /scratch/raian-files/LLM4Build/project_path/qdrant/lib/shard/Cargo.toml
+[Rust tests/rust-tests]   |   - /scratch/raian-files/LLM4Build/project_path/qdrant/lib/sparse/Cargo.toml
+[Rust tests/rust-tests]   |   - /scratch/raian-files/LLM4Build/project_path/qdrant/lib/storage/Cargo.toml
+[Rust tests/rust-tests]   |   - /scratch/raian-files/LLM4Build/project_path/qdrant/lib/trififo/Cargo.toml
+[Rust tests/rust-tests]   |   - /scratch/raian-files/LLM4Build/project_path/qdrant/lib/wal/Cargo.toml
+[Rust tests/rust-tests]   ❓  ::endgroup::
+[Rust tests/rust-tests]   | 
+[Rust tests/rust-tests]   | ... Restoring cache ...
+[Rust tests/rust-tests]   | No cache found.
+[Rust tests/rust-tests]   ✅  Success - Main Swatinem/rust-cache@v2 [1.66588684s]
+[Rust tests/rust-tests]   ⚙  ::set-env:: CARGO_INCREMENTAL=0
+[Rust tests/rust-tests]   ⚙  ::set-env:: CACHE_ON_FAILURE=false
+[Rust tests/rust-tests]   ⚙  ::set-output:: cache-hit=false
+[Rust tests/rust-tests] ⭐ Run Main Install Protoc
+[Rust tests/rust-tests]   🐳  docker cp src=/home/mnabil/.cache/act/arduino-setup-protoc@v3/ dst=/var/run/act/actions/arduino-setup-protoc@v3/
+[Rust tests/rust-tests]   🐳  docker exec cmd=[/opt/acttoolcache/node/24.15.0/x64/bin/node /var/run/act/actions/arduino-setup-protoc@v3/dist/index.js] user= workdir=
+[Rust tests/rust-tests]   | (node:347) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+[Rust tests/rust-tests]   | (Use `node --trace-deprecation ...` to show where the warning was created)
+[Rust tests/rust-tests]   | Getting protoc version: v23.4
+[Rust tests/rust-tests]   | Downloading archive: https://github.com/protocolbuffers/protobuf/releases/download/v23.4/protoc-23.4-linux-x86_64.zip
+[Rust tests/rust-tests]   | [command]/usr/bin/unzip -o -q /tmp/153159fa-357a-4e3e-a715-4bc61fc6827c
+[Rust tests/rust-tests]   | Protoc cached under /opt/hostedtoolcache/protoc/v23.4/x64
+[Rust tests/rust-tests]   ✅  Success - Main Install Protoc [4.84175479s]
+[Rust tests/rust-tests]   ⚙  ::set-output:: path=/opt/hostedtoolcache/protoc/v23.4/x64
+[Rust tests/rust-tests]   ⚙  ::set-output:: version=v23.4
+[Rust tests/rust-tests]   ⚙  ::add-path:: /opt/hostedtoolcache/protoc/v23.4/x64/bin
+[Rust tests/rust-tests] ⭐ Run Main Install mold
+[Rust tests/rust-tests]   🐳  docker cp src=/home/mnabil/.cache/act/rui314-setup-mold@v1/ dst=/var/run/act/actions/rui314-setup-mold@v1/
+[Rust tests/rust-tests] ⭐ Run Main set -x
+echo "mold 2.41.0"
+if [ "$(whoami)" = root ]; then SUDO=; else SUDO=sudo; fi
+wget -O- --timeout=10 --waitretry=3 --retry-connrefused --progress=dot:mega https://github.com/rui314/mold/releases/download/v2.41.0/mold-2.41.0-$(uname -m)-linux.tar.gz | $SUDO tar -C /usr/local --strip-components=1 --no-overwrite-dir -xzf -
+test true = true -a "$(realpath /usr/bin/ld)" != /usr/local/bin/mold && $SUDO ln -sf /usr/local/bin/mold "$(realpath /usr/bin/ld)"; true
+[Rust tests/rust-tests]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/4-composite-0.sh] user= workdir=
+[Rust tests/rust-tests]   | mold 2.41.0
+[Rust tests/rust-tests]   | + echo 'mold 2.41.0'
+[Rust tests/rust-tests]   | ++ whoami
+[Rust tests/rust-tests]   | + '[' root = root ']'
+[Rust tests/rust-tests]   | + SUDO=
+[Rust tests/rust-tests]   | + tar -C /usr/local --strip-components=1 --no-overwrite-dir -xzf -
+[Rust tests/rust-tests]   | ++ uname -m
+[Rust tests/rust-tests]   | + wget -O- --timeout=10 --waitretry=3 --retry-connrefused --progress=dot:mega https://github.com/rui314/mold/releases/download/v2.41.0/mold-2.41.0-x86_64-linux.tar.gz
+[Rust tests/rust-tests]   | --2026-05-10 21:57:39--  https://github.com/rui314/mold/releases/download/v2.41.0/mold-2.41.0-x86_64-linux.tar.gz
+[Rust tests/rust-tests]   | Resolving github.com (github.com)... 140.82.116.3
+[Rust tests/rust-tests]   | Connecting to github.com (github.com)|140.82.116.3|:443... connected.
+[Rust tests/rust-tests]   | HTTP request sent, awaiting response... 302 Found
+[Rust tests/rust-tests]   | Location: https://release-assets.githubusercontent.com/github-production-release-asset/299510783/f4863e5d-1747-433e-8c26-b5a1c1950d2d?sp=r&sv=2018-11-09&sr=b&spr=https&se=2026-05-10T22%3A43%3A54Z&rscd=attachment%3B+filename%3Dmold-2.41.0-x86_64-linux.tar.gz&rsct=application%2Foctet-stream&skoid=96c2d410-5711-43a1-aedd-ab1947aa7ab0&sktid=398a6654-997b-47e9-b12b-9515b896b4de&skt=2026-05-10T21%3A43%3A34Z&ske=2026-05-10T22%3A43%3A54Z&sks=b&skv=2018-11-09&sig=%2Fiy7VorAABg220Fc%2FvqGvkAQg8eUeIWWnjFm9frwBc0%3D&jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmVsZWFzZS1hc3NldHMuZ2l0aHVidXNlcmNvbnRlbnQuY29tIiwia2V5Ijoia2V5MSIsImV4cCI6MTc3ODQ1MDU1OSwibmJmIjoxNzc4NDUwMjU5LCJwYXRoIjoicmVsZWFzZWFzc2V0cHJvZHVjdGlvbi5ibG9iLmNvcmUud2luZG93cy5uZXQifQ.m7yN2qx5DB2UAdQe81ZhtMLCD_-pofaML_aotwFyO_A&response-content-disposition=attachment%3B%20filename%3Dmold-2.41.0-x86_64-linux.tar.gz&response-content-type=application%2Foctet-stream [following]
+[Rust tests/rust-tests]   | --2026-05-10 21:57:39--  https://release-assets.githubusercontent.com/github-production-release-asset/299510783/f4863e5d-1747-433e-8c26-b5a1c1950d2d?sp=r&sv=2018-11-09&sr=b&spr=https&se=2026-05-10T22%3A43%3A54Z&rscd=attachment%3B+filename%3Dmold-2.41.0-x86_64-linux.tar.gz&rsct=application%2Foctet-stream&skoid=96c2d410-5711-43a1-aedd-ab1947aa7ab0&sktid=398a6654-997b-47e9-b12b-9515b896b4de&skt=2026-05-10T21%3A43%3A34Z&ske=2026-05-10T22%3A43%3A54Z&sks=b&skv=2018-11-09&sig=%2Fiy7VorAABg220Fc%2FvqGvkAQg8eUeIWWnjFm9frwBc0%3D&jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmVsZWFzZS1hc3NldHMuZ2l0aHVidXNlcmNvbnRlbnQuY29tIiwia2V5Ijoia2V5MSIsImV4cCI6MTc3ODQ1MDU1OSwibmJmIjoxNzc4NDUwMjU5LCJwYXRoIjoicmVsZWFzZWFzc2V0cHJvZHVjdGlvbi5ibG9iLmNvcmUud2luZG93cy5uZXQifQ.m7yN2qx5DB2UAdQe81ZhtMLCD_-pofaML_aotwFyO_A&response-content-disposition=attachment%3B%20filename%3Dmold-2.41.0-x86_64-linux.tar.gz&response-content-type=application%2Foctet-stream
+[Rust tests/rust-tests]   | Resolving release-assets.githubusercontent.com (release-assets.githubusercontent.com)... 185.199.110.133, 185.199.108.133, 185.199.109.133, ...
+[Rust tests/rust-tests]   | Connecting to release-assets.githubusercontent.com (release-assets.githubusercontent.com)|185.199.110.133|:443... connected.
+[Rust tests/rust-tests]   | HTTP request sent, awaiting response... 200 OK
+[Rust tests/rust-tests]   | Length: 5119986 (4.9M) [application/octet-stream]
+[Rust tests/rust-tests]   | Saving to: ‘STDOUT’
+[Rust tests/rust-tests]   | 
+[Rust tests/rust-tests]   |      0K ........ ........ ........ ........ ........ ........ 61% 22.4M 0s
+[Rust tests/rust-tests]   |   3072K ........ ........ ........ ......                    100% 30.8M=0.2s
+[Rust tests/rust-tests]   | 
+[Rust tests/rust-tests]   | 2026-05-10 21:57:39 (25.1 MB/s) - written to stdout [5119986/5119986]
+[Rust tests/rust-tests]   | 
+[Rust tests/rust-tests]   | ++ realpath /usr/bin/ld
+[Rust tests/rust-tests]   | + test true = true -a /usr/bin/x86_64-linux-gnu-ld.bfd '!=' /usr/local/bin/mold
+[Rust tests/rust-tests]   | ++ realpath /usr/bin/ld
+[Rust tests/rust-tests]   | + ln -sf /usr/local/bin/mold /usr/bin/x86_64-linux-gnu-ld.bfd
+[Rust tests/rust-tests]   | + true
+[Rust tests/rust-tests]   ✅  Success - Main set -x
+echo "mold 2.41.0"
+if [ "$(whoami)" = root ]; then SUDO=; else SUDO=sudo; fi
+wget -O- --timeout=10 --waitretry=3 --retry-connrefused --progress=dot:mega https://github.com/rui314/mold/releases/download/v2.41.0/mold-2.41.0-$(uname -m)-linux.tar.gz | $SUDO tar -C /usr/local --strip-components=1 --no-overwrite-dir -xzf -
+test true = true -a "$(realpath /usr/bin/ld)" != /usr/local/bin/mold && $SUDO ln -sf /usr/local/bin/mold "$(realpath /usr/bin/ld)"; true
+ [755.372192ms]
+[Rust tests/rust-tests]   ✅  Success - Main Install mold [886.069552ms]
+[Rust tests/rust-tests] ⭐ Run Main Enable mold on Linux
+[Rust tests/rust-tests]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/5.sh] user= workdir=
+[Rust tests/rust-tests]   ✅  Success - Main Enable mold on Linux [169.909794ms]
+[Rust tests/rust-tests] ⭐ Run Main Install nextest
+[Rust tests/rust-tests]   🐳  docker cp src=/home/mnabil/.cache/act/taiki-e-install-action@nextest/ dst=/var/run/act/actions/taiki-e-install-action@nextest/
+[Rust tests/rust-tests] ⭐ Run Main bail() {
+  printf '::error::install-action: %s\n' "$*"
+  exit 1
+}
+# If /bin/sh is dash, environment variable containing % is not imported, but is fine
+# because it also means that it will not be exposed to subprocess.
+if /usr/bin/env | grep -Eq '^BASH_FUNC_'; then
+  bail 'bash function injection via BASH_FUNC_ environment variable is not allowed for security reasons'
+fi
+if ! command -v bash >/dev/null; then
+  if grep -Eq '^ID=alpine' /etc/os-release; then
+    printf '::group::Install packages required for install-action (bash)\n'
+    # NB: sync with apk_install in main.sh
+    if command -v sudo >/dev/null; then
+      sudo apk --no-cache add bash
+    elif command -v doas >/dev/null; then
+      doas apk --no-cache add bash
+    else
+      apk --no-cache add bash
+    fi
+    printf '::endgroup::\n'
+  else
+    bail 'this action requires bash'
+  fi
+fi
+bash --noprofile --norc "${GITHUB_ACTION_PATH:?}/main.sh"
+[Rust tests/rust-tests]   🐳  docker exec cmd=[/usr/bin/env -u ENV -u BASH_ENV -u CDPATH -u SHELLOPTS -u BASHOPTS /bin/sh -eu /var/run/act/workflow/6-composite-0] user= workdir=
+[Rust tests/rust-tests]   | info: host platform: x86_64_linux
+[Rust tests/rust-tests]   | info: installing cargo-nextest@latest
+[Rust tests/rust-tests]   | info: downloading https://github.com/nextest-rs/nextest/releases/download/cargo-nextest-0.9.133/cargo-nextest-0.9.133-x86_64-unknown-linux-gnu.tar.gz
+[Rust tests/rust-tests]   | info: verifying sha256 checksum for cargo-nextest-0.9.133-x86_64-unknown-linux-gnu.tar.gz
+[Rust tests/rust-tests]   | info: cargo-nextest installed at /root/.cargo/bin/cargo-nextest
+[Rust tests/rust-tests]   | + cargo-nextest nextest --version
+[Rust tests/rust-tests]   | cargo-nextest 0.9.133 (65e806bd5 2026-04-14)
+[Rust tests/rust-tests]   | release: 0.9.133
+[Rust tests/rust-tests]   | commit-hash: 65e806bd589d12c4341d3696a02a9788bd437c3c
+[Rust tests/rust-tests]   | commit-date: 2026-04-14
+[Rust tests/rust-tests]   | host: x86_64-unknown-linux-gnu
+[Rust tests/rust-tests]   | 
+[Rust tests/rust-tests]   ✅  Success - Main bail() {
+  printf '::error::install-action: %s\n' "$*"
+  exit 1
+}
+# If /bin/sh is dash, environment variable containing % is not imported, but is fine
+# because it also means that it will not be exposed to subprocess.
+if /usr/bin/env | grep -Eq '^BASH_FUNC_'; then
+  bail 'bash function injection via BASH_FUNC_ environment variable is not allowed for security reasons'
+fi
+if ! command -v bash >/dev/null; then
+  if grep -Eq '^ID=alpine' /etc/os-release; then
+    printf '::group::Install packages required for install-action (bash)\n'
+    # NB: sync with apk_install in main.sh
+    if command -v sudo >/dev/null; then
+      sudo apk --no-cache add bash
+    elif command -v doas >/dev/null; then
+      doas apk --no-cache add bash
+    else
+      apk --no-cache add bash
+    fi
+    printf '::endgroup::\n'
+  else
+    bail 'this action requires bash'
+  fi
+fi
+bash --noprofile --norc "${GITHUB_ACTION_PATH:?}/main.sh"
+ [2.243617855s]
+[Rust tests/rust-tests]   ✅  Success - Main Install nextest [3.157078329s]
+[Rust tests/rust-tests] ⭐ Run Main Build
+[Rust tests/rust-tests]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/7] user= workdir=
+[Rust tests/rust-tests]   | [1m[92m    Updating[0m git repository `https://github.com/qdrant/hyper`
+[Rust tests/rust-tests]   | [1m[92m    Updating[0m git repository `https://github.com/qdrant/tonic`
+[Rust tests/rust-tests]   | [1m[92m    Updating[0m crates.io index
+[Rust tests/rust-tests]   | [1m[92m    Updating[0m git repository `https://github.com/qdrant/murmur3`
+[Rust tests/rust-tests]   | [1m[92m Downloading[0m crates ...
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m async-lock v3.4.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m allocator-api2 v0.2.21
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m clap_lex v1.0.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m cmsketch v0.2.4
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m dunce v1.0.5
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m float_next_after v1.0.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m erased-serde v0.4.10
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m getrandom v0.1.16
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m getrandom v0.3.4
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m gimli v0.31.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m home v0.5.12
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m errno v0.3.14
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m fixedbitset v0.4.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m hyper-timeout v0.4.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m hyper-util v0.1.20
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m ident_case v1.0.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m glob-match v0.2.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m is_ci v1.2.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m jemalloc_pprof v0.8.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m libflate_lz77 v2.2.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m iri-string v0.7.10
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m macro_rules_attribute-proc_macro v0.2.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m multimap v0.10.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m idna_adapter v1.2.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m mea v0.6.3
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m mio v1.1.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m geo v0.32.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m group v0.13.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m num-conv v0.2.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m num-cmp v0.1.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m hash32 v0.3.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m http-body v0.4.6
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m heck v0.4.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m lazy_static v1.5.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m hyper-rustls v0.27.7
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m futures-task v0.3.32
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m num_cpus v1.17.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m num-iter v0.1.45
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m foyer-storage v0.22.3
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m pe-unwind-info v0.4.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m once_cell v1.21.3
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m pest_generator v2.8.6
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m lz4 v1.28.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m lru-slab v0.1.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m delegate v0.13.5
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m crossbeam-utils v0.8.21
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m phf v0.13.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m phf_generator v0.13.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m pin-project-internal v1.1.11
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m potential_utf v0.1.4
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m nias v0.5.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m include-flate-codegen v0.3.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m lz4_flex v0.12.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m primeorder v0.13.6
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m include-flate-compress v0.3.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m prettyplease v0.1.25
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m jobserver v0.1.34
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m memmap2 v0.5.10
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m proc-macro2 v1.0.106
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m pathdiff v0.2.3
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m include-flate v0.3.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m http v1.4.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m prost-derive v0.11.9
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m prost-wkt-types v0.5.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m mockito v1.7.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m page_size v0.6.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m nodrop v0.1.14
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m multimap v0.8.3
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m percent-encoding v2.3.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m phf_codegen v0.13.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m pest_derive v2.8.6
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m procfs-core v0.18.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m ppv-lite86 v0.2.21
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m proc-macro-error v1.0.4
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m pprof v0.15.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m permutation_iterator v0.1.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m pyo3-macros v0.28.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m num-complex v0.4.6
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m rand_xorshift v0.4.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m plotters-backend v0.3.7
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m plain v0.2.3
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m ref-cast-impl v1.0.25
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m quinn-udp v0.5.14
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m quick_cache v0.6.18
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m proc-macro-crate v3.4.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m quote v1.0.45
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m mixtrics v0.2.3
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m matchit v0.7.3
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m pyo3-ffi v0.28.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m ringbuffer v0.16.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m rand_chacha v0.2.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m radium v0.7.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m path_facts v0.2.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m getrandom v0.4.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m rand_core v0.6.4
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m librocksdb-sys v0.17.3+10.4.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m rusty-hook v0.11.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m serde_cbor v0.11.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m serde_qs v0.13.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m simd-adler32 v0.3.8
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m siphasher v1.0.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m relative-path v1.9.3
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m sealed_test v1.1.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m rgb v0.8.53
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m rand_core v0.9.5
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m schemars v0.8.22
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m sif-itree v0.4.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m siphasher v0.3.11
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m shlex v1.3.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m schemars v1.2.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m self_cell v1.2.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m serial_test v3.4.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m rustls v0.22.4
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m strum v0.28.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m rustls-webpki v0.103.9
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m typeid v1.0.3
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m tower-service v0.3.3
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m ucd-trie v0.1.7
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m tracing-serde v0.2.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m tinystr v0.8.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m unicode-xid v0.2.6
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m num-format v0.4.4
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m want v0.3.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m zbus_macros v5.14.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m zstd-safe v7.2.4
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m zerovec-derive v0.11.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m slice-group-by v0.3.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m tower-http v0.6.8
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m syn v1.0.109
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m unicode-segmentation v1.12.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m yaml-rust2 v0.10.4
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m zvariant v5.10.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m zbus v5.14.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m zstd-sys v2.0.16+zstd.1.5.7
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m zerofrom-derive v0.1.6
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m zbus_names v4.3.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m zstd v0.13.3
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m which v4.4.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m unicase v2.9.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m unicode-width v0.2.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m zvariant_utils v3.3.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m small_ctor v0.1.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m rand_distr v0.6.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m typetag v0.2.21
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m symbolic-demangle v12.17.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m vaporetto v0.6.5
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m zerotrie v0.2.3
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m pyo3-macros-backend v0.28.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m h2 v0.3.27
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m zerocopy-derive v0.8.42
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m scc v2.4.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m serde_json v1.0.149
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m protobuf v2.28.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m proptest v1.10.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m winnow v0.7.14
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m nix v0.26.4
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m curve25519-dalek v4.1.3
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m nix v0.25.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m ndarray v0.17.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m zerocopy v0.8.42
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m p384 v0.13.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m regex-syntax v0.8.10
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m i_overlay v4.0.7
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m plotters v0.3.7
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m hkdf v0.12.4
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m goblin v0.7.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m pest v2.8.6
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m url v2.5.8
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m syn v2.0.117
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m spade v2.15.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m hashbrown v0.16.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m unicode-ident v1.0.24
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m earcutr v0.4.3
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m toml_edit v0.23.10+spec-1.0.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m regex-lite v0.1.9
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m pulldown-cmark v0.9.6
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m hashbrown v0.15.5
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m tracing-subscriber v0.3.22
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m petgraph v0.6.5
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m thread_local v1.1.9
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m tempfile v3.26.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m spin v0.9.8
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m libc v0.2.182
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m socket2 v0.6.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m envmnt v0.8.4
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m socket2 v0.5.10
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m slog v2.8.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m csv v1.4.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m libz-sys v1.1.24
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m serde v1.0.228
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m itertools v0.11.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m itertools v0.10.5
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m zvariant_derive v5.10.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m writeable v0.6.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m validator v0.20.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m toml_parser v1.0.9+spec-1.1.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m spki v0.7.3
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m spin v0.10.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m socket2 v0.4.10
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m smallvec v1.15.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m pyroscope v2.0.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m tower v0.5.3
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m clap_builder v4.5.60
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m unarray v0.1.4
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m tikv-jemalloc-ctl v0.6.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m thiserror-impl v1.0.69
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m thiserror v2.0.18
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m pyo3 v0.28.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m thiserror v1.0.69
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m untrusted v0.9.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m tonic-reflection v0.11.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m virtue v0.0.18
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m uuid v1.22.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m twox-hash v2.1.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m encoding_rs v0.8.35
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m tokio-io-timeout v1.2.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m time-macros v0.2.27
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m xattr v1.6.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m tracing-appender v0.2.4
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m tokio-rustls v0.26.4
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m tikv-jemallocator v0.6.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m zerofrom v0.1.6
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m yoke v0.8.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m unit-prefix v0.5.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m tokio-stream v0.1.18
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m thread-priority v3.0.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m thiserror-impl v2.0.18
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m target-lexicon v0.13.5
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m slog-scope v4.4.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m similar v2.7.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m serde_core v1.0.228
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m zerovec v0.11.5
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m yoke-derive v0.8.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m wyhash v0.5.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m validator_derive v0.20.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m static_assertions v1.1.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m slog-stdlog v4.1.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m time-core v0.1.8
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m tikv-jemalloc-sys v0.6.1+5.3.0-1-ge13ca993e8ccb9ba9847cc330696e02839f328f7
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m tar v0.4.44
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m tango-bench v0.7.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m rle-decode-fast v1.0.3
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m prettyplease v0.2.37
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m typetag-impl v0.2.21
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m whatlang v0.16.4
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m vcpkg v0.2.15
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m unicode-normalization v0.1.25
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m typenum v1.19.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m tracing-log v0.2.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m tracing v0.1.44
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m tower v0.4.13
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m subtle v2.6.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m criterion v0.8.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m tokio-util v0.7.18
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m linux-raw-sys v0.4.15
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m tokio v1.50.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m time v0.3.47
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m sysinfo v0.38.4
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m pest_meta v2.8.6
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m zmij v1.0.21
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m zeroize v1.8.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m wyz v0.5.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m web-time v1.1.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m walkdir v2.5.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m unty v0.0.4
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m str_stack v0.1.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m xxhash-rust v0.8.15
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m qdrant-rust-stemmers v1.2.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m wait-timeout v0.2.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m utf8parse v0.2.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m aws-lc-sys v0.38.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m version_check v0.9.5
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m v_htmlescape v0.15.8
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m utf8_iter v1.0.4
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m urlencoding v2.1.3
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m try-lock v0.2.5
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m tracing-attributes v0.1.31
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m toml_datetime v0.7.5+spec-1.1.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m sync_wrapper v0.1.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m symbolic-common v12.17.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m strum_macros v0.28.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m sdd v3.0.10
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m derive_more-impl v2.1.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m crypto-bigint v0.5.5
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m tracing-core v0.1.36
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m tower-layer v0.3.3
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m tinyvec v1.10.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m tokio-rustls v0.25.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m tokio-macros v2.6.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m tinyvec_macros v0.1.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m strsim v0.10.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m slab v0.4.12
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m tonic-build v0.11.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m toml v0.5.11
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m tinytemplate v1.2.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m tap v1.0.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m sys-info v0.9.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m synstructure v0.13.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m sync_wrapper v1.0.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m supports-color v3.0.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m stable_deref_trait v1.2.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m ring v0.17.14
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m strsim v0.11.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m linux-raw-sys v0.12.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m serde_with v3.17.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m rustls-webpki v0.102.8
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m rustls v0.23.37
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m signal-hook-registry v1.4.8
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m rmp v0.8.15
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m pkcs1 v0.7.5
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m matrixmultiply v0.3.10
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m rstest_macros v0.26.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m rsa v0.9.10
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m rocksdb v0.24.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m reqwest v0.13.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m regex v1.12.3
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m rand v0.9.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m quinn v0.11.9
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m quick-xml v0.38.4
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m quick-xml v0.26.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m crossbeam-channel v0.5.15
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m sec1 v0.7.3
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m schnellru v0.2.4
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m rand v0.10.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m parking_lot v0.12.5
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m schemars v0.9.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m sha1 v0.10.6
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m serde_with_macros v3.17.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m serde_urlencoded v0.7.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m schemars_derive v0.8.22
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m jsonwebtoken v10.3.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m serde_repr v0.1.20
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m scroll v0.11.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m ryu v1.0.23
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m rustls-platform-verifier v0.6.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m rustls-pki-types v1.14.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m rustc-demangle v0.1.27
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m rstar v0.12.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m names v0.14.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m jieba-rs v0.8.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m flate2 v1.1.9
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m ed25519-dalek v2.2.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m sha2 v0.10.9
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m serde_plain v1.0.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m serde-value v0.7.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m serde-untagged v0.1.9
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m semver v1.0.27
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m sealed_test_derive v1.1.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m seahash v4.1.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m prost-types v0.11.9
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m prost v0.14.3
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m geographiclib-rs v0.2.7
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m same-file v1.0.6
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m rand_core v0.10.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m rand_core v0.5.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m rand_chacha v0.9.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m simple_asn1 v0.6.4
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m signature v2.2.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m serial_test_derive v3.4.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m rustls-pemfile v2.2.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m rustls-native-certs v0.8.3
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m rustix v1.1.4
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m rstest v0.26.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m rmp-serde v1.3.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m rayon v1.11.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m sharded-slab v0.1.7
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m serde_variant v0.1.3
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m rustix v0.38.44
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m robust v1.2.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m rawpointer v0.2.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m rand_chacha v0.3.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m quickcheck v1.1.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m pyo3-build-config v0.28.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m prost-types v0.12.6
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m serde_derive_internals v0.29.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m serde_derive v1.0.228
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m roaring v0.11.3
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m reqwest v0.12.28
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m regex-automata v0.4.14
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m rand v0.8.5
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m quinn-proto v0.11.14
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m py_literal v0.4.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m prost-wkt-build v0.5.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m prost-derive v0.12.6
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m prost-build v0.11.9
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m prost v0.11.9
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m proc-macro-error2 v2.0.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m pprof_util v0.8.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m pprof-pyroscope-fork v0.1500.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m powerfmt v0.2.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m phf_shared v0.13.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m derive_more v2.1.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m der v0.7.10
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m seedable_hash v0.1.7
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m scroll_derive v0.11.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m scopeguard v1.2.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m rayon-core v1.13.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m rand v0.7.3
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m raft v0.7.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m pulldown-cmark-to-cmark v10.0.4
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m prometheus v0.14.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m procfs v0.18.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m portable-atomic v1.13.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m polling v3.11.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m pin-project-lite v0.2.17
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m parking_lot_core v0.9.12
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m ordered-float v2.10.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m object_store v0.13.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m object v0.37.3
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m object v0.29.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m ndarray-npy v0.10.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m memmap2 v0.9.10
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m language-tags v0.3.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m derive_more v0.99.20
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m darling_core v0.21.3
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m darling_core v0.20.11
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m rusty-forkfork v0.4.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m rustversion v1.0.22
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m rustc_version v0.4.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m rustc-hash v2.1.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m ref-cast v1.0.25
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m raft-proto v0.7.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m quick-error v1.2.3
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m prost-derive v0.14.3
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m prost v0.12.6
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m pkg-config v0.3.32
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m pkcs8 v0.10.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m piper v0.2.5
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m ph v0.8.5
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m pem v3.0.6
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m paste v1.0.15
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m ordered-stream v0.2.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m ordered-float v5.1.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m oorandom v11.1.5
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m libflate v2.2.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m nix v0.31.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m num-bigint-dig v0.8.6
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m libm v0.2.16
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m idna v1.1.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m framehop v0.13.3
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m const-oid v0.9.6
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m rfc6979 v0.4.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m proc-macro-error-attr2 v2.0.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m proc-macro-error-attr v1.0.4
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m nom v7.1.3
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m memchr v2.8.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m pem-rfc7468 v0.7.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m miniz_oxide v0.8.9
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m icu_locale_core v2.1.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m jieba-macros v0.8.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m plotters-svg v0.3.7
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m itertools v0.12.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m prost-wkt v0.5.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m prost-build v0.12.6
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m find-msvc-tools v0.1.9
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m num-traits v0.2.19
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m macho-unwind-info v0.5.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m pin-utils v0.1.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m elliptic-curve v0.13.8
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m pin-project v1.1.11
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m p256 v0.13.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m minimal-lexical v0.2.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m daachorse v1.0.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m num-integer v0.1.46
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m indicatif v0.18.4
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m num_threads v0.1.7
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m num v0.4.3
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m nu-ansi-term v0.50.3
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m icu_collections v2.1.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m io-uring v0.7.11
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m i_shape v1.14.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m http-body-util v0.1.3
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m local-waker v0.1.4
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m hyper v1.8.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m httpdate v1.0.3
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m http-range v0.1.5
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m fst v0.4.7
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m num-rational v0.4.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m num-derive v0.4.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m itertools v0.13.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m ipnet v2.12.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m inferno v0.11.21
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m icu_properties_data v2.1.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m parse-size v1.1.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m parking v2.2.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m openssl-probe v0.2.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m mappings v0.7.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m hdrhistogram v7.5.4
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m gimli v0.32.3
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m futures-channel v0.3.32
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m is_terminal_polyfill v1.70.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m i_float v1.15.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m hashlink v0.10.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m constant_time_eq v0.4.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m humantime v2.3.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m geo-types v0.7.18
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m macro_rules_attribute v0.2.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m log v0.4.29
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m itoa v1.0.17
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m iana-time-zone v0.1.65
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m console v0.16.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m hashbrown v0.14.5
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m http v0.2.12
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m heapless v0.8.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m matchers v0.2.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m memoffset v0.9.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m md-5 v0.10.6
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m i_tree v0.16.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m num-bigint v0.4.6
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m nom v8.0.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m icu_properties v2.1.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m libloading v0.8.9
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m icu_provider v2.1.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m httparse v1.10.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m event-listener v5.4.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m darling v0.20.11
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m docopt v1.1.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m dashmap v6.1.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m darling v0.21.3
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m is-terminal v0.4.17
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m colored v3.1.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m clang-sys v1.8.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m half v2.7.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m half v1.8.3
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m generic-array v0.14.9
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m futures v0.3.32
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m foldhash v0.1.5
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m charabia v0.9.9
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m glob v0.3.3
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m getrandom v0.2.17
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m getopts v0.2.24
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m futures-sink v0.3.32
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m futures-macro v0.3.32
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m fs4 v0.13.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m foyer-memory v0.22.3
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m fastant v0.1.11
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m event-listener-strategy v0.5.4
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m env_logger v0.11.9
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m enumflags2 v0.7.12
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m ecdsa v0.16.9
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m displaydoc v0.2.5
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m crossbeam-deque v0.8.6
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m backtrace v0.3.76
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m futures-executor v0.3.32
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m deranged v0.5.8
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m curve25519-dalek-derive v0.1.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m aws-lc-rs v1.16.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m lz4-sys v1.11.1+lz4-1.10.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m inventory v0.3.22
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m integer-encoding v4.1.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m impl-more v0.1.9
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m fs_extra v1.3.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m bytemuck v1.25.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m i_key_sort v0.6.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m foyer-common v0.22.3
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m criterion-plot v0.8.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m core2 v0.4.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m cookie v0.16.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m config v0.15.19
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m colorz v1.1.4
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m mime_guess v2.0.5
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m mime v0.3.17
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m http-body v1.0.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m futures-lite v2.6.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m fs-err v3.3.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m form_urlencoded v1.2.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m filetime v0.2.27
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m ff v0.13.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m fallible-iterator v0.3.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m erased-serde v0.3.31
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m ci_info v0.10.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m cast v0.3.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m bytestring v1.5.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m base64 v0.22.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m lock_api v0.4.14
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m local-channel v0.1.5
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m litemap v0.8.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m jiff v0.2.22
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m itertools v0.14.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m generic-tests v0.1.3
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m foldhash v0.2.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m either v1.15.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m ecow v0.2.6
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m bzip2-sys v0.1.13+1.0.8
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m bytes v1.11.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m arrayvec v0.7.6
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m irg-kvariants v0.1.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m indexmap v2.13.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m findshlibs v0.10.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m equivalent v1.0.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m dyn-clone v1.0.20
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m digest v0.10.7
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m dary_heap v0.3.8
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m crc v3.4.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m ciborium v0.2.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m cgroups-rs v0.5.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m bustle v0.5.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m bit-vec v0.6.3
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m adler2 v2.0.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m indexmap v1.9.3
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m heck v0.5.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m darling_macro v0.20.11
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m async-stream-impl v0.3.6
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m icu_normalizer_data v2.1.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m icu_normalizer v2.1.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m hex v0.4.3
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m foyer-tokio v0.22.3
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m fastrand v2.3.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m equator-macro v0.4.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m darling_macro v0.21.3
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m ciborium-ll v0.2.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m cfg-if v1.0.4
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m crunchy v0.2.4
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m cexpr v0.6.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m base64 v0.21.7
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m axum v0.6.20
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m arc-swap v1.8.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m actix-codec v0.5.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m getset v0.1.6
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m futures-core v0.3.32
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m fnv v1.0.7
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m block-buffer v0.10.4
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m async-stream v0.3.6
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m actix-web v4.13.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m csv-core v0.1.13
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m crc32fast v1.5.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m cpp_demangle v0.5.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m convert_case v0.10.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m colorchoice v1.0.4
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m bytemuck_derive v1.10.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m blake2-rfc v0.2.18
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m bitpacking v0.9.3
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m bitflags v2.11.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m base16ct v0.2.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m async-trait v0.1.89
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m anstyle-query v1.1.5
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m anstream v0.6.21
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m http-serde v2.1.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m cpufeatures v0.2.17
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m convert_case v0.4.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m async-process v2.5.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m async-broadcast v0.7.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m anes v0.1.6
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m ahash v0.8.12
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m actix-http v3.12.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m faccess v0.2.4
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m blocking v1.6.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m bitflags v1.3.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m async-recursion v1.1.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m async-channel v2.5.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m assert-json-diff v2.0.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m actix-router v0.5.4
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m actix-cors v0.7.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m debugid v0.8.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m cedarwood v0.4.6
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m brotli-decompressor v5.0.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m bincode_derive v2.0.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m bincode v1.3.3
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m async-task v4.7.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m approx v0.5.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m addr2line v0.25.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m actix-web-codegen v4.3.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m actix-tls v3.5.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m actix-multipart v0.7.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m hmac v0.12.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m hashring v0.3.6
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m hashbrown v0.13.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m hashbrown v0.12.3
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m h2 v0.4.13
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m equator v0.4.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m enumflags2_derive v0.7.12
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m endi v1.1.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m dyn_size_of v0.4.5
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m anstyle v1.0.13
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m alloc-no-stdlib v2.0.4
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m actix-web-extras v0.1.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m actix-utils v3.0.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m geohash v0.13.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m env_filter v1.0.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m crypto-common v0.1.6
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m cpufeatures v0.3.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m axum-core v0.3.4
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m atomic-waker v1.1.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m futures-util v0.3.32
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m fsio v0.1.3
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m ed25519 v2.2.3
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m crossbeam-epoch v0.9.18
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m concurrent-queue v2.5.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m alloc-stdlib v0.2.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m fxhash v0.2.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m futures-io v0.3.32
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m funty v2.0.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m foyer-intrusive-collections v0.10.0-dev
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m foyer v0.22.3
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m crc32c v0.6.8
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m protobuf-build v0.14.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m count-min-sketch v0.1.8
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m core_affinity v0.8.3
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m actix-server v2.6.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m data-encoding v2.10.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m crc-catalog v2.4.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m constant_time_eq v0.1.5
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m bitvec v1.0.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m base64ct v1.8.3
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m anyhow v1.0.102
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m clap v4.5.60
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m cfg_aliases v0.2.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m cc v1.2.56
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m brotli v8.0.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m bindgen v0.72.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m atomicwrites v0.4.4
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m cmake v0.1.57
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m chacha20 v0.10.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m cap v0.1.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m byteorder v1.5.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m bitm v0.4.3
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m bincode v2.0.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m autocfg v1.5.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m atomic_refcell v0.1.13
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m arraydeque v0.5.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m aho-corasick v1.1.4
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m actix-service v2.0.3
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m clap_derive v4.5.55
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m ciborium-io v0.2.2
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m chrono v0.4.44
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m binout v0.3.1
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m async-signal v0.2.13
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m async-io v2.6.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m arrayvec v0.4.12
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m anstyle-parse v0.2.7
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m aligned-vec v0.6.4
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m async-executor v1.14.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m alloca v0.4.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m adler32 v1.2.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m actix-web-validator v7.0.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m actix-rt v2.11.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m actix-multipart-derive v0.7.0
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m actix-macros v0.2.4
+[Rust tests/rust-tests]   | [1m[92m  Downloaded[0m actix-files v0.6.10
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m proc-macro2 v1.0.106
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m quote v1.0.45
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m unicode-ident v1.0.24
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m cfg-if v1.0.4
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m serde_core v1.0.228
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m libc v0.2.182
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m memchr v2.8.0
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m serde v1.0.228
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m equivalent v1.0.2
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m foldhash v0.2.0
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m autocfg v1.5.0
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m once_cell v1.21.3
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m allocator-api2 v0.2.21
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m bytes v1.11.1
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m pin-project-lite v0.2.17
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m shlex v1.3.0
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m find-msvc-tools v0.1.9
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m fixedbitset v0.4.2
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m smallvec v1.15.1
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m bitflags v2.11.0
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m adler2 v2.0.1
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m object v0.37.3
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m log v0.4.29
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m gimli v0.32.3
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m rustc-demangle v0.1.27
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m simd-adler32 v0.3.8
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m version_check v0.9.5
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m parking_lot_core v0.9.12
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m itoa v1.0.17
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m zerocopy v0.8.42
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m either v1.15.0
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m scopeguard v1.2.0
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m libm v0.2.16
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m regex-syntax v0.8.10
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m futures-core v0.3.32
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m rand_core v0.10.0
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m getrandom v0.4.2
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m zeroize v1.8.2
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m fnv v1.0.7
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m fastrand v2.3.0
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m futures-io v0.3.32
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m slab v0.4.12
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m crossbeam-utils v0.8.21
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m stable_deref_trait v1.2.1
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m zmij v1.0.21
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m serde_json v1.0.149
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m litemap v0.8.1
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m writeable v0.6.2
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m subtle v2.6.1
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m anyhow v1.0.102
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m futures-sink v0.3.32
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m futures-task v0.3.32
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m getrandom v0.3.4
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m icu_properties_data v2.1.2
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m icu_normalizer_data v2.1.1
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m typenum v1.19.0
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m fs_extra v1.3.0
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m rustix v1.1.4
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m bitflags v1.3.2
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m percent-encoding v2.3.2
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m linux-raw-sys v0.12.1
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m utf8_iter v1.0.4
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m pkg-config v0.3.32
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m strsim v0.11.1
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m crc32fast v1.5.0
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m rustversion v1.0.22
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m const-oid v0.9.6
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m rayon-core v1.13.0
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m untrusted v0.9.0
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m dunce v1.0.5
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m hashbrown v0.12.3
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m thiserror v2.0.18
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m httparse v1.10.1
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m iana-time-zone v0.1.65
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m ident_case v1.0.1
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m aws-lc-rs v1.16.1
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m heck v0.5.0
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m httpdate v1.0.3
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m cpufeatures v0.3.0
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m rustix v0.38.44
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m rustls v0.23.37
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m ryu v1.0.23
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m linux-raw-sys v0.4.15
+[Rust tests/rust-tests]   | [1m[92m   Compiling[0m base64 v0.22.1
+[Rust tests/rust-tests]   | [1m[91merror[0m[1m: linker `clang` not found[0m
+[Rust tests/rust-tests]   |   [1m[94m|[0m
+[Rust tests/rust-tests]   |   [1m[94m= [0m[1mnote[0m: No such file or directory (os error 2)
+[Rust tests/rust-tests]   | 
+[Rust tests/rust-tests]   | [1m[91merror[0m: could not compile `quote` (build script) due to 1 previous error
+[Rust tests/rust-tests]   | [1m[33mwarning[0m: build failed, waiting for other jobs to finish...
+[Rust tests/rust-tests]   | [1m[91merror[0m: could not compile `proc-macro2` (build script) due to 1 previous error
+[Rust tests/rust-tests]   | [1m[91merror[0m: could not compile `serde_core` (build script) due to 1 previous error
+[Rust tests/rust-tests]   | [1m[91merror[0m: could not compile `libc` (build script) due to 1 previous error
+[Rust tests/rust-tests]   | [1m[91merror[0m: could not compile `serde` (build script) due to 1 previous error
+[Rust tests/rust-tests]   | [1m[91merror[0m: could not compile `libc` (build script) due to 1 previous error
+[Rust tests/rust-tests]   | [1m[91merror[0m: could not compile `object` (build script) due to 1 previous error
+[Rust tests/rust-tests]   | [1m[91merror[0m: could not compile `typenum` (build script) due to 1 previous error
+[Rust tests/rust-tests]   | [1m[91merror[0m: could not compile `crc32fast` (build script) due to 1 previous error
+[Rust tests/rust-tests]   | [1m[91merror[0m: could not compile `httparse` (build script) due to 1 previous error
+[Rust tests/rust-tests]   | [1m[91merror[0m: could not compile `rustix` (build script) due to 1 previous error
+[Rust tests/rust-tests]   | [1m[91merror[0m: could not compile `zmij` (build script) due to 1 previous error
+[Rust tests/rust-tests]   | [1m[91merror[0m: could not compile `thiserror` (build script) due to 1 previous error
+[Rust tests/rust-tests]   | [1m[91merror[0m: could not compile `icu_normalizer_data` (build script) due to 1 previous error
+[Rust tests/rust-tests]   | [1m[91merror[0m: could not compile `rustls` (build script) due to 1 previous error
+[Rust tests/rust-tests]   | [1m[91merror[0m: could not compile `zerocopy` (build script) due to 1 previous error
+[Rust tests/rust-tests]   | [1m[91merror[0m: could not compile `parking_lot_core` (build script) due to 1 previous error
+[Rust tests/rust-tests]   | [1m[91merror[0m: could not compile `crossbeam-utils` (build script) due to 1 previous error
+[Rust tests/rust-tests]   | [1m[91merror[0m: could not compile `aws-lc-rs` (build script) due to 1 previous error
+[Rust tests/rust-tests]   | [1m[91merror[0m: could not compile `rustversion` (build script) due to 1 previous error
+[Rust tests/rust-tests]   | [1m[91merror[0m: could not compile `getrandom` (build script) due to 1 previous error
+[Rust tests/rust-tests]   | [1m[91merror[0m: could not compile `rayon-core` (build script) due to 1 previous error
+[Rust tests/rust-tests]   | [1m[91merror[0m: could not compile `rustix` (build script) due to 1 previous error
+[Rust tests/rust-tests]   | [1m[91merror[0m: could not compile `rustix` (build script) due to 1 previous error
+[Rust tests/rust-tests]   | [1m[91merror[0m: could not compile `serde_json` (build script) due to 1 previous error
+[Rust tests/rust-tests]   | [1m[91merror[0m: could not compile `libm` (build script) due to 1 previous error
+[Rust tests/rust-tests]   | [1m[91merror[0m: could not compile `icu_properties_data` (build script) due to 1 previous error
+[Rust tests/rust-tests]   | [1m[91merror[0m: could not compile `anyhow` (build script) due to 1 previous error
+[Rust tests/rust-tests]   | [1m[91merror[0m: could not compile `getrandom` (build script) due to 1 previous error
+[Rust tests/rust-tests]   ❌  Failure - Main Build [14.188486031s]
+[Rust tests/rust-tests] exitcode '101': failure
+[Rust tests/rust-tests] ⭐ Run Post Install nextest
+[Rust tests/rust-tests]   🐳  docker cp src=/home/mnabil/.cache/act/taiki-e-install-action@nextest/ dst=/var/run/act/actions/taiki-e-install-action@nextest/
+[Rust tests/rust-tests]   ✅  Success - Post Install nextest [739.306604ms]
+[Rust tests/rust-tests] ⭐ Run Post Install mold
+[Rust tests/rust-tests]   🐳  docker cp src=/home/mnabil/.cache/act/rui314-setup-mold@v1/ dst=/var/run/act/actions/rui314-setup-mold@v1/
+[Rust tests/rust-tests]   ✅  Success - Post Install mold [10.141024ms]
+[Rust tests/rust-tests] ⭐ Run Post Install minimal stable
+[Rust tests/rust-tests]   🐳  docker cp src=/home/mnabil/.cache/act/dtolnay-rust-toolchain@stable/ dst=/var/run/act/actions/dtolnay-rust-toolchain@stable/
+[Rust tests/rust-tests]   ✅  Success - Post Install minimal stable [145.45469ms]
+[Rust tests/rust-tests] ⭐ Run Complete job
+[Rust tests/rust-tests]   ✅  Success - Complete job
+[Rust tests/rust-tests] 🏁  Job failed
+Error: Job 'rust-tests' failed

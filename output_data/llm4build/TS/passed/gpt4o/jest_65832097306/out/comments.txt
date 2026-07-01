@@ -1,0 +1,36 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      Node LTS on Ubuntu with coverage (3/4)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   node:lts-bullseye
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ yarn jest-coverage --color --config jest.config.ci.mjs --max-workers $CPU_CORES --shard=3/4 || true
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in LLM but not in original: GoDefault
+  - [jest] Test run mismatch: original=1744, LLM=1868
+  - [jest] Test passed mismatch: original=1737, LLM=1836
+  - [jest] Test failed mismatch: original=0, LLM=25
+
+--- Root Cause Analysis ---
+  - [jest] LLM ran 124 more tests than original — LLM likely used a broader test scope or included extra test suites.
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: (not present)
+    LLM:      6 run, 0 passed, 5 failed, 0 skipped
+  [jest]
+    Original: 1744 run, 1737 passed, 0 failed, 7 skipped
+    LLM:      1868 run, 1836 passed, 25 failed, 7 skipped

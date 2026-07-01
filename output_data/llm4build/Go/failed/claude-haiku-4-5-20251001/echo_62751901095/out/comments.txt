@@ -1,0 +1,40 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          3
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      windows-latest @ Go 1.25
+  Test command(s) run in original CI:
+    $ actions/checkout@v5
+    $ go test -race --coverprofile=coverage.coverprofile --covermode=atomic ./...
+
+--- LLM-Generated Dockerfile ---
+  Base image:   golang:1.25-alpine
+  RUN steps:    2
+
+--- LLM run.sh Test Command(s) ---
+  $ go test -race --coverprofile=coverage.coverprofile --covermode=atomic ./...
+
+--- Reason(s) for Non-Reproducibility ---
+  (no specific stat differences found)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    12---- FAIL: TestStartConfig_Start (0.00s)
+    21---- FAIL: TestStartConfig_GracefulShutdown (0.16s)
+    22-    --- FAIL: TestStartConfig_GracefulShutdown/ok,_all_handlers_returns_before_graceful_shutdown_deadline (0.00s)
+
+  [Root cause classification]
+  - The original CI ran on `windows-latest` (Go 1.25 on Windows). The LLM ran the same `go test -race` command on Linux (Alpine). `TestStartConfig_Start` and `TestStartConfig_GracefulShutdown/ok,_all_handlers_returns_before_graceful_shutdown_deadline` test the Echo v5 server's startup and graceful shutdown lifecycle. The graceful shutdown test sets a deadline and checks that all in-flight handlers complete before the deadline expires. Windows process scheduling and signal handling (SIGTERM equivalent via `os.Interrupt`) differ from Linux, so the timing window and signal propagation differ.
+
+  - Both original and LLM have exactly 1 failure each, but they fail on different tests: the original CI's 1 failure was a Windows-specific test, while the LLM's 1 failure is the graceful shutdown timing test on Linux. The "(no specific stat differences found)" classification reflects that the counts match (3 run, 2 passed, 1 failed) but the identity of the failing test differs — an OS/platform substitution failure rather than a count mismatch.
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 3 run, 2 passed, 1 failed, 0 skipped
+    LLM:      3 run, 2 passed, 1 failed, 0 skipped

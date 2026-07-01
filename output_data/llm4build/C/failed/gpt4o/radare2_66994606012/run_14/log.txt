@@ -1,0 +1,82 @@
+Error from docker build
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 1.17kB done
+#1 DONE 0.0s
+
+#2 [internal] load .dockerignore
+#2 transferring context: 2B done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/ubuntu:22.04
+#3 DONE 0.1s
+
+#4 [ 1/12] FROM docker.io/library/ubuntu:22.04@sha256:962f6cadeae0ea6284001009daa4cc9a8c37e75d1f5191cf0eb83fe565b63dd7
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 2.07MB 1.6s done
+#5 DONE 1.7s
+
+#6 [ 8/12] RUN useradd -ms /bin/bash radareuser
+#6 CACHED
+
+#7 [ 7/12] RUN chmod +x sys/install.sh sys/build.sh
+#7 CACHED
+
+#8 [ 3/12] RUN apt-get update && apt-get install -y     git     make     gcc     python3     python3-pip     && rm -rf /var/lib/apt/lists/*
+#8 CACHED
+
+#9 [ 4/12] RUN python3 -m pip install --upgrade pip &&     pip3 install r2pipe wheel
+#9 CACHED
+
+#10 [ 5/12] WORKDIR /app
+#10 CACHED
+
+#11 [ 6/12] COPY . .
+#11 CACHED
+
+#12 [ 2/12] RUN ln -snf /usr/share/zoneinfo/America/Los_Angeles /etc/localtime && echo America/Los_Angeles > /etc/timezone
+#12 CACHED
+
+#13 [ 9/12] RUN git config --global --add safe.directory /app
+#13 CACHED
+
+#14 [10/12] RUN export CFLAGS="-O2 -Wno-unused-result" &&     /bin/bash sys/install.sh
+#14 0.939 fatal: detected dubious ownership in repository at '/app'
+#14 0.939 To add an exception for this directory, call:
+#14 0.939 
+#14 0.939 	git config --global --add safe.directory /app
+#14 0.961 Warning: Cannot find system wide capstone
+#14 0.961 ARGS=
+#14 0.961 /bin/bash ./sys/build.sh
+#14 0.961 /app
+#14 1.001 Building on Linux : computing number of allowed parallel jobs.
+#14 1.001 Maximum allowed RAM memory per job is 150000 kB.
+#14 1.021 Number of CPUs is 88 and current free RAM allows us to run 2278 jobs in parallel.
+#14 1.041 So, the build will run on 88 job(s).
+#14 1.181 /app
+#14 1.181 ./configure --with-rpath --prefix=/usr/local
+#14 1.185 ./sys/build.sh: line 110: ./configure: Permission denied
+#14 ERROR: process "/bin/sh -c export CFLAGS=\"-O2 -Wno-unused-result\" &&     /bin/bash sys/install.sh" did not complete successfully: exit code: 1
+------
+ > [10/12] RUN export CFLAGS="-O2 -Wno-unused-result" &&     /bin/bash sys/install.sh:
+#14 0.961 ARGS=
+#14 0.961 /bin/bash ./sys/build.sh
+#14 0.961 /app
+#14 1.001 Building on Linux : computing number of allowed parallel jobs.
+#14 1.001 Maximum allowed RAM memory per job is 150000 kB.
+#14 1.021 Number of CPUs is 88 and current free RAM allows us to run 2278 jobs in parallel.
+#14 1.041 So, the build will run on 88 job(s).
+#14 1.181 /app
+#14 1.181 ./configure --with-rpath --prefix=/usr/local
+#14 1.185 ./sys/build.sh: line 110: ./configure: Permission denied
+------
+Dockerfile:40
+--------------------
+  39 |     # Build Radare2 as non-root user
+  40 | >>> RUN export CFLAGS="-O2 -Wno-unused-result" && \
+  41 | >>>     /bin/bash sys/install.sh
+  42 |     
+--------------------
+ERROR: failed to solve: process "/bin/sh -c export CFLAGS=\"-O2 -Wno-unused-result\" &&     /bin/bash sys/install.sh" did not complete successfully: exit code: 1

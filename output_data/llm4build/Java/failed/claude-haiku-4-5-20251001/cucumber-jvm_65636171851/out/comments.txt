@@ -1,0 +1,81 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Build Java 21 - ubuntu-latest
+  Test command(s) run in original CI:
+    $ actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+    $ actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 (java-version: 21, distribution: temurin)
+    $ mvn install -Pinclude-extra-modules -DskipTests=true -DskipITs=true
+        -D"archetype.test.skip=true" -D"maven.javadoc.skip=true" --batch-mode
+        -D"style.color=always" --show-version
+    $ mvn verify -Pinclude-extra-modules -D"style.color=always"
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    7
+
+--- LLM run.sh Test Command(s) ---
+  $ mvn install -Pinclude-extra-modules -DskipTests=true -DskipITs=true
+      -D"archetype.test.skip=true" -D"maven.javadoc.skip=true" --batch-mode
+      -D"style.color=always" -Drat.skip=true -Dlicense.skip=true --show-version
+  $ mvn verify -Pinclude-extra-modules -D"style.color=always" -Drat.skip=true -Dlicense.skip=true
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Maven] Test run mismatch: original=1600, LLM=926
+  - [Maven] Test passed mismatch: original=1522, LLM=855
+  - [Maven] Test failed mismatch: original=4, LLM=2
+  - [Maven] 2 tests fail in LLM but not in original:
+    scanForResourcesDirectorySymlink(io.cucumber.core.resource.ResourceScannerTest)
+    scanForResourcesPathSymlink(io.cucumber.core.resource.ResourceScannerTest)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    ERROR ResourceScannerTest.scanForResourcesPathSymlink
+      java.lang.IllegalArgumentException: path must exist:
+        src/test/resource-symlink/test/resource.txt
+      at io.cucumber.core.resource.ResourceScanner.scanForResourcesPath(ResourceScanner.java:120)
+
+    ERROR ResourceScannerTest.scanForResourcesDirectorySymlink
+      Expected: iterable with items [
+        <file:/workspace/cucumber-core/src/test/resource-symlink/test/resource.txt>,
+        <file:/workspace/cucumber-core/src/test/resource-symlink/test/other-resource.txt>,
+        <file:/workspace/cucumber-core/src/test/resource-symlink/test/spaces%20in%20name%20resource.txt>
+      ] in any order but: no item matches [...] in []
+
+    Cucumber-JVM: Core  FAILURE [23.310 s]
+    BUILD FAILURE
+
+  [From original CI log — different failures at CompatibilityTest in a different module]
+    ERROR CompatibilityTest.test(TestCase)[12],[22],[28],[29] — 4 failures in cucumber-compatibility-kit
+
+  [Root cause classification]
+  - Docker COPY does not preserve symlinks in test resources — `resource-symlink/` directory symlink
+    is broken inside the container, causing `ResourceScannerTest` to fail and Maven to stop at
+    `cucumber-core`, leaving 674 tests from subsequent modules unexecuted:
+    The `cucumber-core` module contains `src/test/resource-symlink/` which is a symbolic link to
+    another directory (e.g., `src/test/resources/`). When Docker builds the image with
+    `COPY . /workspace/`, symlinks that point to directories are not reliably preserved — Docker's
+    build context uses tar, and symlinks pointing to directories may be converted to the link target
+    contents or, if the target is outside the copied path, result in a broken link. In the container,
+    `resource-symlink/test/resource.txt` does not exist as a regular file path. The
+    `ResourceScannerTest.scanForResourcesPathSymlink` test verifies that `ResourceScanner` can
+    resolve resources via a symlinked path; it throws `IllegalArgumentException: path must exist`
+    immediately. The `scanForResourcesDirectorySymlink` test expects to find 3 files under the
+    symlinked directory but finds an empty result. These 2 tests do not appear in the original CI
+    because `actions/checkout@v4` preserves all git-tracked symlinks as proper filesystem symlinks.
+    Without `-fae`, Maven stops at `cucumber-core` failure, skipping all downstream modules
+    (including `cucumber-compatibility-kit`, `cucumber-junit`, `cucumber-junit-platform-engine`, etc.)
+    — 674 fewer tests than the original CI's 1600. The original CI's 4 failures are in
+    `CompatibilityTest` in the `cucumber-compatibility-kit` module, which the LLM never reaches.
+
+--- Test Statistics Comparison ---
+  [Maven]
+    Original: 1600 run, 1522 passed, 4 failed, 74 skipped
+    LLM:      926 run, 855 passed, 2 failed, 69 skipped

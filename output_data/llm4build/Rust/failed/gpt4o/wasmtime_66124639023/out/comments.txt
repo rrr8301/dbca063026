@@ -1,0 +1,32 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      Test Linux x86_64 (2/6)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    4
+
+Note: Original had test failures; LLM build passed all — failed build has passed.
+
+--- Reason(s) for Non-Reproducibility ---
+  - [cargo] Test run mismatch: original=134, LLM=196
+  - [cargo] Test passed mismatch: original=133, LLM=196
+  - [cargo] Test failed mismatch: original=1, LLM=0
+  - [cargo] 1 test(s) failed in original but passed in LLM: component_fuzz::tests::arbtest
+
+--- Root Cause Analysis ---
+  - [cargo] LLM ran 62 more tests than original — LLM likely used a broader test scope or included extra test suites.
+
+--- Test Statistics Comparison ---
+  [cargo]
+    Original: 134 run, 133 passed, 1 failed, 0 skipped
+    LLM:      196 run, 196 passed, 0 failed, 0 skipped

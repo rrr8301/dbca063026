@@ -1,0 +1,44 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     windows-2025
+  CI job name:      msys2 (CLANG64, int32, Release)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:20.04
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ ctest || true
+  $ ctest --rerun-failed --output-on-failure || true
+
+--- Reason(s) for Non-Reproducibility ---
+  - [CTest] Test run mismatch: original=124, LLM=140
+  - [CTest] Test passed mismatch: original=116, LLM=100
+  - [CTest] Test failed mismatch: original=8, LLM=40
+  - [CTest] 4 test(s) failed in original but passed in LLM: cblas3, dblas3, sblas3, zblas3
+  - [CTest] 20 test(s) failed in LLM but not in original: cblas1, dblas1, openblas_utest, openblas_utest_ext, sblas1 ... (+15 more)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > Unable to find executable: /app/build/ctest/xzcblat1
+    > /app/build/ctest/test_cblas_helper.sh: 1: /app/build/ctest/xzcblat2: not found
+    > 1 - openblas_utest (Not Run)
+    > 0% tests passed, 20 tests failed out of 20
+
+  [Root cause classification]
+  - The original CI runs on Windows 2025 with MSYS2 CLANG64 toolchain targeting int32 indexing mode; the LLM replicated this on a Linux/ubuntu:20.04 x86_64 container which builds a different SIMD code path. The CBLAS reference binaries (xscblat1, xdcblat2, xccblat3, xzcblat1, etc.) were not placed in the expected CTest binary directory (/app/build/ctest/), causing "not found" / "Not Run" failures for all 20 CBLAS level tests.
+  - The openblas_utest and openblas_utest_ext unit test binaries also failed to be located because the Linux cmake build places outputs in a different subdirectory structure than the MSYS2/Windows build; the LLM's CMake configuration did not account for the correct output path or install step needed before running ctest.
+  - The 4 tests that failed in the original but passed in the LLM (cblas3, dblas3, sblas3, zblas3) are level-3 BLAS tests that on Windows/CLANG64 fail due to int32 indexing or SIMD differences, but on the Linux x86_64 build pass because the native SIMD auto-detection selects a compatible code path.
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 124 run, 116 passed, 8 failed, 0 skipped
+    LLM:      140 run, 100 passed, 40 failed, 0 skipped

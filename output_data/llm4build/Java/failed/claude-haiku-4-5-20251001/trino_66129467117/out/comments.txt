@@ -1,0 +1,60 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          4
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      test (plugin/trino-redshift, fte-tests)
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ source .github/bin/redshift/setup-aws-redshift.sh
+    $ mvn test ${MAVEN_TEST} -pl plugin/trino-redshift -P fte-tests \
+        -Dtest.redshift.jdbc.user=$REDSHIFT_USER \
+        -Dtest.redshift.jdbc.endpoint=$REDSHIFT_ENDPOINT \
+        -Dtest.redshift.aws.access-key=$AWS_ACCESS_KEY_ID ...
+    $ .github/bin/s3/delete-s3-bucket.sh
+    $ .github/bin/redshift/delete-aws-redshift.sh
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ mvn test ${MAVEN_TEST} -pl plugin/trino-redshift  (without AWS credentials)
+  $ (cloud Redshift tests skipped — no AWS_ACCESS_KEY_ID set)
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Maven] Test run mismatch: original=13, LLM=4
+  - [Maven] Test passed mismatch: original=10, LLM=4
+  - [Maven] Test failed mismatch: original=1, LLM=0
+
+--- Root Cause Analysis ---
+  [From original CI log]
+    ERROR testCreateTable
+      (io.trino.plugin.redshift.TestRedshiftQueryFailureRecoverySmokeTest)
+    Tests run: 13, Failures: 1, Errors: 0, Skipped: 2
+
+  [Root cause classification]
+  - The original CI runs `fte-tests` profile with live AWS credentials and a provisioned
+    Amazon Redshift cluster (`setup-aws-redshift.sh` creates an ephemeral Redshift cluster).
+    The 13 tests are the `-P fte-tests` test suite which connects to a real Redshift instance.
+    `testCreateTable` in `TestRedshiftQueryFailureRecoverySmokeTest` fails because the test
+    simulates query failure recovery scenarios against a live Redshift cluster, and a specific
+    query failure recovery path doesn't work as expected in the CI's Redshift version.
+    The LLM's run.sh has the cloud Redshift test block gated on `AWS_ACCESS_KEY_ID` being set:
+    ```
+    if [ -n "${AWS_ACCESS_KEY_ID:-}" ] && [ -n "${REDSHIFT_SUBNET_GROUP_NAME:-}" ]; then
+    ```
+    Since Docker has no AWS credentials, the cloud Redshift tests are skipped entirely.
+    The LLM runs only the 4 non-cloud unit tests from `mvn test -pl plugin/trino-redshift`
+    (without the `-P fte-tests` profile), which all pass. The 9 missing tests (13 - 4) are
+    the cloud-dependent `fte-tests` profile tests that require a live Redshift cluster.
+
+--- Test Statistics Comparison ---
+  [Maven]
+    Original: 13 run, 10 passed, 1 failed, 2 skipped
+    LLM:      4 run, 4 passed, 0 failed, 0 skipped

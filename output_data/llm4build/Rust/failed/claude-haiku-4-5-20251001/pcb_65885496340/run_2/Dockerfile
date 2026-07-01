@@ -1,0 +1,1 @@
+RUN cargo install cargo-nextest

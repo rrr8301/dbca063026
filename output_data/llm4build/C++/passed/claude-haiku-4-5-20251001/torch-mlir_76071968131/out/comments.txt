@@ -1,0 +1,46 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          3
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Build and Test (Linux, torch-nightly, assertions)
+  Test command(s) run in original CI:
+    $ actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+    $ ./.github/actions/setup-build
+    $ sudo apt-get install --yes ccache ninja-build
+    $ bash build_tools/ci/test_posix.sh nightly
+    $ ONNX e2e integration tests
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ bash "${GITHUB_WORKSPACE}/build_tools/ci/test_posix.sh" nightly || TEST_FAILED=1
+
+--- Reason(s) for Non-Reproducibility ---
+  - [LLVMLit] Test result mismatch (same count 192): original=(191p/0f/1s), LLM=(189p/2f/1s)
+  - [LLVMLit] Tests failed in LLM but passed in original: python/importer/jit_ir/node_import/function-derefine.py, python/importer/jit_ir/node_import/prim.py
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    5633:FAIL: TORCH_MLIR_PT1 :: python/importer/jit_ir/node_import/function-derefine.py (15 of 48)
+    5634:******************** TEST 'TORCH_MLIR_PT1 :: python/importer/jit_ir/node_import/function-derefine.py' FAILED ********************
+    5643:/workspace/projects/pt1/test/python/importer/jit_ir/node_import/function-derefine.py:15:16: error: CHECK-LABEL: expected string not found in input
+    5597:FAIL: TORCH_MLIR_PT1 :: python/importer/jit_ir/node_import/prim.py (7 of 48)
+    5598:******************** TEST 'TORCH_MLIR_PT1 :: python/importer/jit_ir/node_import/prim.py' FAILED ********************
+    5607:/workspace/projects/pt1/test/python/importer/jit_ir/node_import/prim.py:19:16: error: CHECK-LABEL: expected string not found in input
+
+  [Root cause classification]
+  - Missing file or path not found — test data, certificate, or resource file absent in the Docker environment.
+  - Assertion failure: 5643:/workspace/projects/pt1/test/python/importer/jit_ir/node_import/function-derefine.py:15:16: error: CHECK-LABEL: expected string not found in input
+
+--- Test Statistics Comparison ---
+  [LLVMLit]
+    Original: 192 run, 191 passed, 0 failed, 1 skipped
+    LLM:      192 run, 189 passed, 2 failed, 1 skipped

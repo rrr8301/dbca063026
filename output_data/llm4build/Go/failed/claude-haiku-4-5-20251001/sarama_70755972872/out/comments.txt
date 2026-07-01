@@ -1,0 +1,44 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          3
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Unit Testing with Go stable
+  Test command(s) run in original CI:
+    $ actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+    $ make test
+    $ go run github.com/mfridman/tparse@${TPARSE_VERSION} -all -format markdown -file _test/unittests.json | tee -a $GITHUB_STEP_SUMMARY
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ TEST_FAILED=0
+  $ TEST_FAILED=1
+  $ go run github.com/mfridman/tparse@${TPARSE_VERSION} -all -format markdown -file _test/unittests.json | tee test_results.md || true
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in original but missing in LLM: GoDefault
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    2217:=== FAIL: . TestConsumerRebalancingMultiplePartitions (0.45s)
+
+  [Root cause classification]
+  - The `GoDefault` framework is missing from the LLM output because of a parser ambiguity. Sarama's `make test` uses `gotestsum` to write JSON output and then `tparse` to format it as a markdown table. The original CI's `tparse` output produces a specific report format that the result parser recognises as 10 "GoDefault" package rows (487 individual tests counted per package, 3 failures). The LLM's run.sh produced slightly different `tparse` output format or invoked a different `tparse` version, causing the parser to miss the GoDefault rows entirely while still correctly parsing the GoRace output (1055 tests, identical to original).
+
+  - `TestConsumerRebalancingMultiplePartitions` (visible in the LLM log) is a Kafka consumer rebalancing test that requires a running Kafka broker. The LLM had no Kafka running, so this test failed — but since the GoDefault parser result is missing entirely, the test's failure isn't captured in the comparison. The GoRace suite (which tests in-process race conditions without Kafka) correctly matched the original CI: 1055 run, 1027 passed, 1 failed, 27 skipped.
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 10 run, 487 passed, 3 failed, 0 skipped
+    LLM:      (not present)
+  [GoRace]
+    Original: 1055 run, 1027 passed, 1 failed, 27 skipped
+    LLM:      1055 run, 1027 passed, 1 failed, 27 skipped

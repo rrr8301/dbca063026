@@ -1,0 +1,42 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      test (24.x, ubuntu-latest)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   node:24-bullseye
+  RUN steps:    5
+
+Note: Original had test failures; LLM build passed all — failed build has passed.
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in original but missing in LLM: GoDefault
+  - [vitest] Test passed mismatch: original=601, LLM=602
+  - [vitest] Test failed mismatch: original=1, LLM=0
+  - [vitest] 1 test(s) failed in original but passed in LLM: test/exports.test.ts
+
+--- Root Cause Analysis ---
+  [Actual error messages from original CI log (test (24.x, ubuntu-latest))]
+    > FAIL test/exports.test.ts > exports-snapshot > @shikijs/twoslash-unocss
+    > Error: Snapshot `exports-snapshot > @shikijs/twoslash-unocss 1` mismatched
+    > await expect(yaml.dump(manifest.exports, ...)).toMatchFileSnapshot(`./exports/${pkg.name}.yaml`)
+
+  [Root cause classification: Stale vitest file snapshot — package exports map changed]
+  - The test in test/exports.test.ts serializes the package.json "exports" map of @shikijs/twoslash-unocss to YAML and compares it against a committed snapshot file; the original CI run failed because a recent build of the twoslash-unocss package produced an updated exports map that no longer matched the checked-in snapshot.
+  - The LLM container passed because it built the package fresh from the same source, generating a snapshot that matched the freshly-built output rather than the stale committed one; this is a snapshot-drift issue tied to the CI's committed baseline being out of sync with the code.
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 1 run, 0 passed, 1 failed, 0 skipped
+    LLM:      (not present)
+  [vitest]
+    Original: 602 run, 601 passed, 1 failed, 0 skipped
+    LLM:      602 run, 602 passed, 0 failed, 0 skipped

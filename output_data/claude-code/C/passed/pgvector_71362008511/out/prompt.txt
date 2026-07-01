@@ -1,0 +1,79 @@
+
+You are a CI build reproducer agent. Your sole task is to reproduce a GitHub Actions CI job
+inside a Docker container by writing a Dockerfile and run.sh, building the image, running it,
+and iterating until the tests pass or you run out of tokens.
+
+GitHub Actions Job URL : https://github.com/pgvector/pgvector/actions/runs/24426655362/job/71362008511
+Working directory      : /scratch/raian-files/LLM4Build/claude_workdir/pgvector_71362008511
+Docker image name      : pgvector_71362008511:latest
+GitHub token           : already set as $GITHUB_TOKEN in your environment
+
+---
+
+## PHASE 1 — Gather context (do this once)
+
+1. Parse the URL to extract owner, repo, run_id, job_id.
+
+2. Fetch job metadata:
+   curl -s -H "Authorization: token $GITHUB_TOKEN" \
+        https://api.github.com/repos/<owner>/<repo>/actions/jobs/<job_id> \
+        > /scratch/raian-files/LLM4Build/claude_workdir/pgvector_71362008511/job.json
+   Extract: head_sha, job name.
+
+3. Clone the repo at the exact commit:
+   git clone https://github.com/<owner>/<repo>.git /scratch/raian-files/LLM4Build/claude_workdir/pgvector_71362008511/repo
+   cd /scratch/raian-files/LLM4Build/claude_workdir/pgvector_71362008511/repo && git checkout <head_sha>
+
+4. Read the workflow YAML in /scratch/raian-files/LLM4Build/claude_workdir/pgvector_71362008511/repo/.github/workflows/ and extract for the target job:
+   - OS (runs-on), language + exact runtime version, all install/build/test steps, env vars.
+
+---
+
+## PHASE 2 — Write Dockerfile and run.sh
+
+**Dockerfile** (write to /scratch/raian-files/LLM4Build/claude_workdir/pgvector_71362008511/Dockerfile):
+- FROM image matching runs-on (default ubuntu:22.04)
+- ENV DEBIAN_FRONTEND=noninteractive
+- Install system deps and exact language runtime
+- WORKDIR /app → COPY repo/ /app/
+- Install project dependencies (pip/npm/cargo/mvn/gradle/go mod/…)
+- COPY run.sh /run.sh → RUN chmod +x /run.sh → ENTRYPOINT ["/run.sh"]
+- Skip: actions/checkout, actions/cache, actions/upload-artifact, codecov/*
+- Do NOT use sudo inside the container
+- Set required env vars with ENV
+
+**run.sh** (write to /scratch/raian-files/LLM4Build/claude_workdir/pgvector_71362008511/run.sh):
+- #!/usr/bin/env bash
+- Use the EXACT test commands from the workflow YAML (do not substitute with generic runners)
+- Run all tests even if some fail (use || true where needed)
+- Print FINAL_STATUS = SUCCESS when tests pass, FINAL_STATUS = FAIL otherwise
+
+---
+
+## PHASE 3 — Build, run, and iterate until SUCCESS
+
+**Build:**
+  cd /scratch/raian-files/LLM4Build/claude_workdir/pgvector_71362008511 && docker build -t pgvector_71362008511:latest .
+
+**Run:**
+  docker run --rm pgvector_71362008511:latest 2>&1 | tee /scratch/raian-files/LLM4Build/claude_workdir/pgvector_71362008511/run_output.log
+
+**After each run:**
+- If output contains FINAL_STATUS = SUCCESS → print FINAL_STATUS = SUCCESS and stop.
+- If it fails → read run_output.log carefully, identify the root cause, and fix:
+  * Missing package/dep   → add to Dockerfile
+  * Wrong runtime version → fix FROM or install step
+  * Wrong test command    → re-read YAML and fix run.sh
+  * Build failure         → fix Dockerfile RUN steps
+- Rewrite the complete Dockerfile and run.sh (never patch partially), rebuild, and rerun.
+- Never repeat a fix that already failed — always try a different approach.
+- Keep iterating until tests pass. Do NOT stop after a fixed number of attempts.
+- Only print FINAL_STATUS = FAIL if all reasonable approaches are exhausted.
+
+---
+
+## Rules
+- Always end with exactly one of: FINAL_STATUS = SUCCESS  or  FINAL_STATUS = FAIL
+- Never skip PHASE 1 — the job metadata and YAML are essential context
+- Every retry must change something meaningful in Dockerfile or run.sh
+- Do not hard-code paths that only exist on the GitHub runner

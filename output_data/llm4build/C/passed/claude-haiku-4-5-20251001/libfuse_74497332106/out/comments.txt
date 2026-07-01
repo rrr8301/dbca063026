@@ -1,0 +1,46 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          8
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      build (ubuntu-latest)
+  Test command(s) run in original CI:
+    $ actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+    $ test/ci-build.sh
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ test/ci-build.sh
+
+--- Reason(s) for Non-Reproducibility ---
+  - [pytest] Test run mismatch: original=292, LLM=11
+  - [pytest] Test passed mismatch: original=229, LLM=2
+  - [pytest] Test failed mismatch: original=0, LLM=1
+  - [pytest] 1 test(s) failed in LLM but not in original: test/test_ctests.py
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    test/test_ctests.py::test_signals FAILED                                 [ 15%]
+    subprocess.CalledProcessError: Command '.../test/test_signals' returned non-zero exit status 1.
+    Failed to mount FUSE filesystem
+    SKIPPED [2] test/test_ctests.py:31: not supported by running kernel
+    SKIPPED [4] test/test_ctests.py:60: not supported by running kernel
+    SKIPPED [2] test/test_ctests.py:113: not supported by running kernel
+    1 failed, 2 passed, 8 skipped in 1.43s
+
+  [Root cause classification]
+  - FUSE filesystem unavailable in Docker — 281 tests (292-11) never ran: The libfuse test suite requires mounting a real FUSE filesystem, which in turn requires `/dev/fuse` + `fusermount`/`fusermount3` + kernel FUSE support. In Docker, FUSE is typically unavailable unless the container is run with `--device /dev/fuse --cap-add SYS_ADMIN`. The vast majority of tests (281 out of 292) were SKIPPED with messages "not supported by running kernel" because the test setup in `ci-build.sh` detects no FUSE mount capability and skips. The original CI passes 229 tests because GitHub Actions runners support FUSE.
+  - test_signals FAILED — signal test fails when FUSE mount fails: `test/test_signals` runs a test binary that tries to mount a FUSE filesystem (`Failed to mount FUSE filesystem`). When FUSE is unavailable, the mount fails with non-zero exit, so `test_ctests.py::test_signals` catches the CalledProcessError and reports failure. The original CI passes this test because FUSE is available.
+
+--- Test Statistics Comparison ---
+  [pytest]
+    Original: 292 run, 229 passed, 0 failed, 63 skipped
+    LLM:      11 run, 2 passed, 1 failed, 8 skipped

@@ -1,0 +1,40 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          4
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Run HSM tests
+  Test command(s) run in original CI:
+    $ ory/ci/checkout@master
+    $ actions/checkout@v2
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ go test -p 1 -failfast -short -timeout=20m -tags=sqlite,hsm ./...
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoDefault] Test run mismatch: original=3, LLM=33
+  - [GoDefault] Test passed mismatch: original=2, LLM=33
+  - [GoDefault] Test failed mismatch: original=1, LLM=0
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    (no specific test error messages in log — all 33 LLM tests passed)
+
+  [Root cause classification]
+  - The original CI job is `Run HSM tests` — a specialised Hardware Security Module integration test job. It runs only 3 specific HSM-related test functions (2 passed, 1 failed). The LLM's `go test -p 1 -failfast -short -timeout=20m -tags=sqlite,hsm ./...` ran the full test suite with `hsm` build tag (33 tests, all passing). The LLM ran 30 extra packages beyond the narrow HSM test selection the original CI made.
+
+  - The original CI's 1 failure was a test that specifically exercises HSM hardware interaction (likely an HSM slot operation that the GitHub Actions runner's SoftHSM configuration makes flaky). The LLM's broader `./...` sweep ran all packages with the `hsm` tag, none of which needed actual HSM hardware (they use software emulation), so all 33 passed. This is a scope mismatch: the original CI ran a narrow HSM-specific test filter, while the LLM ran the whole suite.
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 3 run, 2 passed, 1 failed, 0 skipped
+    LLM:      33 run, 33 passed, 0 failed, 0 skipped

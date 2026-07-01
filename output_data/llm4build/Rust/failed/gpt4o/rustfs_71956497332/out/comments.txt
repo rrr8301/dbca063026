@@ -1,0 +1,42 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      Test and Lint
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    6
+
+--- LLM run.sh Test Command(s) ---
+  $ cargo test --all --doc
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoDefault] Test run mismatch: original=2, LLM=8
+  - [GoDefault] Test failed mismatch: original=2, LLM=8
+  - [cargo] Test run mismatch: original=9, LLM=3186
+  - [cargo] Test passed mismatch: original=0, LLM=47
+  - [cargo] Test failed mismatch: original=1, LLM=4
+  - [cargo] Test skipped mismatch: original=8, LLM=3135
+  - [cargo] 1 test(s) failed in original but passed in LLM: serial_tests::test_scanner_expires_zero_day_current_version
+  - [cargo] 4 test(s) failed in LLM but not in original: app::capacity_dirty_scope_test::data_movement_put_object_marks_dirty_disks_for_capacity_manager, app::capacity_dirty_scope_test::heal_object_marks_missing_shard_disk_dirty_for_capacity_manager, storage::sse::tests::test_kms_sse_dek_provider_uses_latest_reconfigured_service, test_embedded_server_basic_s3_operations
+
+--- Root Cause Analysis ---
+  - [GoDefault] LLM ran 6 more tests than original — LLM likely used a broader test scope or included extra test suites.
+  - [cargo] LLM ran 3177 more tests than original — LLM likely used a broader test scope or included extra test suites.
+  - [cargo] 4 test(s) failed in LLM but not original: app::capacity_dirty_scope_test::data_movement_put_object_marks_dirty_disks_for_capacity_manager, app::capacity_dirty_scope_test::heal_object_marks_missing_shard_disk_dirty_for_capacity_manager, storage::sse::tests::test_kms_sse_dek_provider_uses_latest_reconfigured_service, test_embedded_server_basic_s3_operations
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 2 run, 0 passed, 2 failed, 0 skipped
+    LLM:      8 run, 0 passed, 8 failed, 0 skipped
+  [cargo]
+    Original: 9 run, 0 passed, 1 failed, 8 skipped
+    LLM:      3186 run, 47 passed, 4 failed, 3135 skipped

@@ -1,0 +1,46 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      Test on Node.js Latest (with coverage)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ export BABEL_ENV=test
+  $ export BABEL_COVERAGE=true
+  $ yarn c8 jest --ci
+  $ yarn test:esm
+
+--- Reason(s) for Non-Reproducibility ---
+  - jest test count mismatch: original=36556 run, LLM test suite ran with 259 suites (256 failed)
+  - node:test test count mismatch: original not present, LLM=5 run, 3 passed, 2 failed
+  - jest failed test count mismatch: original=532 failed, LLM produced a very different failure profile
+
+--- Root Cause Analysis ---
+  Actual error messages from LLM log.txt:
+    > Cannot find module '/app/packages/babel-core/lib/index.js'
+    > ERR_MODULE_NOT_FOUND
+    > Test Suites: 256 failed, 3 passed, 259 total
+    > Cannot find module '/app/packages/babel-runtime/helpers/wrapNativeSuper.js' imported from /app/test/esm/index.ts
+    > AssertionError [ERR_ASSERTION]: Got unwanted rejection
+
+  Root cause classification: Build artifacts missing / ESM module resolution failure
+  - The LLM ran tests without first building the Babel monorepo packages, so the compiled output in each package's `lib/` directory was absent. The original CI runs `yarn build` before `yarn test`, but the LLM's run.sh skipped the build step and went directly to testing. This caused widespread module-not-found failures across all 256 test suites that import compiled Babel packages. The ESM integration tests also failed because helper files were not compiled and present in the expected locations.
+
+--- Test Statistics Comparison ---
+  jest
+    Original: 36556 run, 36003 passed, 532 failed, 21 skipped
+    LLM:      ~26 run (suites: 259 total, 256 failed, 3 passed), 4 passed, 21 failed, 1 skipped
+  node:test
+    Original: N/A
+    LLM:      5 run, 3 passed, 2 failed, 0 skipped

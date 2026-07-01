@@ -1,0 +1,47 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      ubuntu-22.04-clang-14
+  Test command(s) run in original CI:
+    $ actions/checkout@v4
+    $ ci/build
+    $ ci/collect-testdir
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ cmake_params=(-D CMAKE_BUILD_TYPE=CI)
+  $ cmake_params+=(-D DEPS=LOCAL)
+  $ /workspace/ci/collect-testdir || true
+
+--- Reason(s) for Non-Reproducibility ---
+  - [CTest] Test result mismatch (same count 52): original=(37p/1f/14s), LLM=(32p/2f/18s)
+  - [CTest] Tests failed in LLM but passed in original: test.base
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    451:Failure reason: Expected output.ltrans0.ltrans.su to exist, but it's missing
+    452-
+    --
+    610:Failure reason: Expected cache_miss to be 1, actual 0
+
+  [Root cause classification]
+  - Permission denied on executable/script — fake compiler or test helper script lacks execute permission in Docker container.
+  - Required environment variable not set — test reads a specific env var that was present in original CI but not in Docker container.
+  - Database service unavailable or not properly configured — test requires an external database service.
+  - Test timed out — likely due to slower execution in Docker container or a blocking service call that never returns.
+  - Assertion failure: 451:Failure reason: Expected output.ltrans0.ltrans.su to exist, but it's missing
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 52 run, 37 passed, 1 failed, 14 skipped
+    LLM:      52 run, 32 passed, 2 failed, 18 skipped

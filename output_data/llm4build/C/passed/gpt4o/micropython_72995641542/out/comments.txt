@@ -1,0 +1,36 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          20
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT TESTS NOT REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      coverage
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    5
+
+--- Test Reproducibility Gap ---
+  Original ran 4369 test(s) across [micropython].
+  LLM build produced no test results (empty llm_log_stats).
+
+--- Root Cause ---
+  [Actual error from LLM log.txt]
+    > /app/run.sh: line 20: tools/ci.sh: Permission denied
+    > /app/run.sh: line 21: tools/ci.sh: Permission denied
+    > build-coverage/py/argcheck.gcno:cannot open notes file
+    > build-coverage/py/argcheck.gcda:cannot open data file, assuming not executed
+    > No executable lines
+
+  [Root cause classification: CI script execution failure — tools/ci.sh not executable]
+  - The LLM's run.sh delegates to tools/ci.sh for all build and test steps, but tools/ci.sh lacks the executable bit inside the Docker container (Permission denied on every call), so no compilation or test execution occurs.
+  - Because the coverage build never runs, the gcov instrumented binaries (.gcno/.gcda files) are never generated; all subsequent gcov analysis and the micropython test runner produce no output, yielding zero parseable test results against the original's 4369 tests.
+  - The original CI uses GitHub Actions which preserves file permissions via git attributes/checkout; the Dockerfile does not explicitly chmod the script, exposing this permission mismatch.
+
+--- Original Test Statistics (not reproduced) ---
+  [micropython] 4369 run, 4369 passed, 0 failed, 166 skipped

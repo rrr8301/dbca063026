@@ -1,0 +1,80 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Ubuntu / build and test (ubuntu-24.04)
+  Test command(s) run in original CI:
+    $ mkdir -p "$CPYTHON_RO_SRCDIR" "$CPYTHON_BUILDDIR"
+    $ ../cpython-ro-srcdir/configure --config-cache --with-pydebug --enable-slower-safety
+            --enable-safety --with-openssl="$OPENSSL_DIR"
+    $ make -j --output-sync 2>&1 | tee compiler_output_ubuntu.txt
+    $ make ci
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ ./configure --config-cache --with-pydebug
+  $ make -j4
+  $ make pythoninfo
+  $ xvfb-run make ci
+
+--- Reason(s) for Non-Reproducibility ---
+  - [unittest] Test result mismatch (same count 502): original=(483p/0f/19s), LLM=(474p/2f/26s)
+  - [unittest] 3 tests failed in LLM but not in original:
+    test_create_connection_service_name
+    (test.test_asyncio.test_base_events.BaseEventLoopWithSelectorTests)
+    testGetServBy (test.test_socket.GeneralModuleTests)
+    testGetaddrinfo (test.test_socket.GeneralModuleTests)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > testGetaddrinfo (test.test_socket.GeneralModuleTests.testGetaddrinfo) ... ERROR
+    >   File "/cpython/Lib/test/test_socket.py", line 1704, in testGetaddrinfo
+    >     socket.getaddrinfo(HOST, "http")
+    >   File "/cpython/Lib/socket.py", line 992, in getaddrinfo
+    >     for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+    > socket.gaierror: [Errno -8] Servname not supported for ai_socktype
+    >
+    > testGetServBy (test.test_socket.GeneralModuleTests.testGetServBy) ... ERROR
+    >   File "/cpython/Lib/test/test_socket.py", line 1297, in testGetServBy
+    >     raise OSError
+    > OSError
+    >
+    > test_create_connection_service_name ... ERROR
+    >   File "/cpython/Lib/asyncio/base_events.py", line 941, in getaddrinfo
+    >     return await self.run_in_executor(...)
+    >   File "/cpython/Lib/socket.py", line 992, in getaddrinfo
+    >     for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+    > socket.gaierror: [Errno -8] Servname not supported for ai_socktype
+
+  [Root cause classification]
+  - Docker network stack / glibc NSS: string service name resolution fails with EAI_SERVICE
+    All three failing tests call into glibc's `getaddrinfo()` using a string service name
+    ("http") in place of a numeric port number.
+    `testGetaddrinfo` calls `socket.getaddrinfo(HOST, "http")` directly.
+    `testGetServBy` calls `socket.getservbyname()` and re-raises any failure as OSError.
+    `test_create_connection_service_name` calls asyncio's `loop.getaddrinfo(host, "http",
+    type=SOCK_STREAM)` which delegates to `_socket.getaddrinfo`.
+    In all three cases the call returns `[Errno -8] EAI_SERVICE: Servname not supported
+    for ai_socktype`. This error means glibc could not map the string service name "http"
+    to a port number for the requested socket type combination.
+    On the GitHub Actions ubuntu-24.04 runner, the system's NSS (Name Service Switch)
+    `/etc/nsswitch.conf` is configured to look up the `services` database from `/etc/services`
+    files, which defines "http" as port 80/tcp. In the Docker container (minimal ubuntu:24.04),
+    the NSS configuration or the glibc service database lookup behaves differently, causing
+    `EAI_SERVICE` to be returned when resolving string service names in certain socket type
+    contexts. The 7 extra skipped tests in the LLM run (26 vs 19) are the gdb-based tests
+    (test.test_gdb.*) skipped because `gdb` is not installed in the Docker container.
+
+--- Test Statistics Comparison ---
+  [unittest]
+    Original: 502 run, 483 passed, 0 failed, 19 skipped
+    LLM:      502 run, 474 passed, 2 failed, 26 skipped

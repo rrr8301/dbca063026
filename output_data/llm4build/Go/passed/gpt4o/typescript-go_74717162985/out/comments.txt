@@ -1,0 +1,40 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          20
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT TESTS NOT REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      test (ubuntu-latest)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   node:lts
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ if ! npx hereby $test_command; then
+
+--- Test Reproducibility Gap ---
+  Original ran 326 test(s) across [node:test, GoDefault, GoRace].
+  LLM build produced no test results (empty llm_log_stats).
+
+--- Root Cause ---
+  Reason type: Test runner executed but produced no parseable output
+  Last log output before stopping:
+    /app/go.mod:31: unknown block type: ignore
+    [10:31:44.847] [0] ✘ Command failed with exit code 1: go test ./...
+    [10:31:44.847] [0] ✘ (done in 18ms)
+    Error in test in 23ms
+    ExecaError: Command failed with exit code 1: go test ./...
+    Completed test with errors in 23ms
+    Failed tasks: test
+    Test failed
+
+--- Original Test Statistics (not reproduced) ---
+  [node:test] 264 run, 264 passed, 0 failed, 0 skipped
+  [GoDefault] 52 run, 52 passed, 0 failed, 0 skipped
+  [GoRace] 10 run, -2539 passed, 0 failed, 2549 skipped

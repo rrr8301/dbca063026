@@ -1,0 +1,45 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          20
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      test
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ go install github.com/gotesttools/gotestfmt/v2/cmd/gotestfmt@v2.4.1
+    $ dominikh/staticcheck-action@v1
+    $ export STATICCHECK_CACHE="/home/runner/work/_temp/staticcheck"
+
+--- LLM-Generated Dockerfile ---
+  Base image:   golang:1.24
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  (no test commands found)
+
+--- Reason(s) for Non-Reproducibility ---
+  - [gotestfmt] Test run mismatch: original=510, LLM=360
+  - [gotestfmt] Test passed mismatch: original=510, LLM=359
+  - [gotestfmt] Test failed mismatch: original=0, LLM=1
+  - [gotestfmt] 2 test(s) failed in LLM but not in original: TestAgentMultiNode, TestAgentMultiNode/testRTCServicePath=v0
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    1343-2026-04-26T10:27:57.659-0700	WARN	livekit	rtc/transport.go:937	error reading data channel	{"label": "_data_track", "error": "[0xc00030c308] abort chunk, with following errors: (User Initiated Abo
+    1344-2026-04-26T10:27:57.659-0700	WARN	livekit	rtc/transport.go:1347	error reading data channel	{"label": "subraw", "error": "[0xc00030c308] abort chunk, with following errors: (User Initiated Abort:
+    1419-2026-04-26T10:27:58.062-0700	WARN	livekit.pion.ice	v4@v4.2.2/candidate_base.go:277	Failed to read from candidate udp4 host 172.17.0.4:49898 (resolved: 172.17.0.4:49898): read udp 172.17.0.4:49898
+
+  [Root cause classification]
+  - `TestAgentMultiNode` in LiveKit's server tests creates multiple WebRTC agents and establishes peer-to-peer connections between them. The failure is WebRTC/ICE-level: the SCTP data channel aborts ("User Initiated Abort") and the ICE candidate on `udp4 172.17.0.4:49898` fails to read because the UDP socket returns an error. In Docker containers, the kernel restricts UDP socket buffer sizes and the network namespace does not allow ICE candidates to connect via UDP hole-punching (used by WebRTC's ICE layer). This is the same root cause as the failed-category counterpart `livekit_70678488359`.
+
+  - The 150 fewer tests (360 vs 510) are ICE/WebRTC integration tests that register themselves only when a functional network environment is detected. When ICE initialization fails (no valid UDP candidates), those test cases are not registered, reducing the total count. The "abort chunk, User Initiated Abort" from pion/sctp indicates the SCTP association was forcibly closed because the underlying UDP transport became unavailable — Docker's restricted network namespace does not support the raw UDP socket operations that WebRTC requires for DTLS/ICE connectivity.
+
+--- Test Statistics Comparison ---
+  [gotestfmt]
+    Original: 510 run, 510 passed, 0 failed, 0 skipped
+    LLM:      360 run, 359 passed, 1 failed, 0 skipped

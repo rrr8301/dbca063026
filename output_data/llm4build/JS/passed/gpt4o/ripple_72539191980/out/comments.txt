@@ -1,0 +1,44 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      test (24)
+  Test command(s) run in original CI:
+    $ pnpm test
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ pnpm test
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > AssertionError: expected '<button>0</button><div class="pending">Loading...</div><!---->' not to contain 'Loading...'
+    > FAIL ripple-client — packages/ripple/tests/client/async-suspend.test.tsrx > async suspense > resolves chained async values without explicit flushSync
+    > Test Files: 1 failed, 155 passed; Tests: 1 failed, 2237 passed, 12 skipped
+    > GoDefault: 1 run, 0 passed, 1 failed (auxiliary tooling check)
+
+  [Root cause classification]
+  - One async suspense test fails because the LLM container runs on ubuntu:22.04 while the original CI used ubuntu-24.04 with pnpm. The test asserts that chained async values resolve without an explicit flushSync() call, but in the LLM environment the DOM still shows a "Loading..." state after a 10ms setTimeout — indicating a timing or microtask scheduling difference between the Node.js versions or JSDOM versions shipped with each OS. The 1-ms timing window in the test is sensitive enough to differ across Node minor versions.
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in LLM but not in original: GoDefault
+  - [vitest] Test passed mismatch: original=2238, LLM=2237
+  - [vitest] Test failed mismatch: original=0, LLM=1
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: (not present)
+    LLM:      1 run, 0 passed, 1 failed, 0 skipped
+  [vitest]
+    Original: 2250 run, 2238 passed, 0 failed, 12 skipped
+    LLM:      2250 run, 2237 passed, 1 failed, 12 skipped

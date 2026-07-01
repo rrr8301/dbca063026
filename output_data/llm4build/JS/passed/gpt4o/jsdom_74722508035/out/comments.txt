@@ -1,0 +1,37 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      Tests (22)
+  Test command(s) run in original CI:
+    $ npm test
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ npm test
+
+--- Reason(s) for Non-Reproducibility ---
+  - [mocha] Test run mismatch: original=9618, LLM=2383
+  - [mocha] Test passed mismatch: original=6866, LLM=2381
+  - [mocha] Test failed mismatch: original=0, LLM=2
+  - [mocha] Test skipped mismatch: original=2752, LLM=0
+  - [mocha] 2 test(s) failed in LLM but not in original: "after all" hook: $mochaNoSugar in "{root}":, "before all" hook: $mochaNoSugar in "{root}":
+
+--- Root Cause Analysis ---
+  - [mocha] LLM ran 7235 fewer tests than original — LLM likely used a narrower test scope or missed some test suites.
+  - [mocha] 2 test(s) failed in LLM but not original: "after all" hook: $mochaNoSugar in "{root}":, "before all" hook: $mochaNoSugar in "{root}":
+
+--- Test Statistics Comparison ---
+  [mocha]
+    Original: 9618 run, 6866 passed, 0 failed, 2752 skipped
+    LLM:      2383 run, 2381 passed, 2 failed, 0 skipped

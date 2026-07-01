@@ -1,0 +1,42 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          N/A
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT TESTS NOT REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      JDK 21 on ubuntu-latest
+  Test command(s) run in original CI:
+    $ mvn test -B
+
+--- LLM-Generated Dockerfile ---
+  Base image:   eclipse-temurin:21
+  RUN steps:    2
+
+--- LLM run.sh Test Command(s) ---
+  $ mvn install -Dmaven.javadoc.skip=true -Denforcer.skip=true -Dlicense.skip=true -B -V
+  $ mvn test -B
+  $ mvn -P '!examples' javadoc:javadoc
+
+--- Test Reproducibility Gap ---
+  Original ran 6767 test(s) across [Maven].
+  LLM build produced no test results (empty llm_log_stats).
+
+--- Root Cause ---
+  Reason type: Test runner executed but produced no parseable output
+  Last log output before stopping:
+    [[1;31mERROR[m] [1;31mPlease make sure you define the required toolchains in your ~/.m2/toolchains.xml file.[m
+    [[1;31mERROR[m] -> [1m[Help 1][m
+    [[1;31mERROR[m]
+    [[1;31mERROR[m] To see the full stack trace of the errors, re-run Maven with the [1m-e[m switch.
+    [[1;31mERROR[m] Re-run Maven using the [1m-X[m switch to enable full debug logging.
+    [[1;31mERROR[m]
+    [[1;31mERROR[m] For more information about the errors and possible solutions, please read the following articles:
+    [[1;31mERROR[m] [1m[Help 1][m http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException
+
+--- Original Test Statistics (not reproduced) ---
+  [Maven] 6767 run, 6705 passed, 2 failed, 60 skipped

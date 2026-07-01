@@ -1,0 +1,42 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          N/A
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      Test and Lint
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    6
+
+--- LLM run.sh Test Command(s) ---
+  $ cargo test --all --doc
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in original but missing in LLM: nexttest
+  - Framework(s) in LLM but not in original: GoDefault
+  - [cargo] Test run mismatch: original=92, LLM=3185
+  - [cargo] Test failed mismatch: original=0, LLM=3
+  - [cargo] Test skipped mismatch: original=45, LLM=3135
+  - [cargo] 3 test(s) failed in LLM but not in original: app::capacity_dirty_scope_test::data_movement_put_object_marks_dirty_disks_for_capacity_manager, app::capacity_dirty_scope_test::heal_object_marks_missing_shard_disk_dirty_for_capacity_manager, storage::sse::tests::test_kms_sse_dek_provider_uses_latest_reconfigured_service
+
+--- Root Cause Analysis ---
+  - [cargo] LLM ran 3093 more tests than original — LLM likely used a broader test scope or included extra test suites.
+  - [cargo] 3 test(s) failed in LLM but not original: app::capacity_dirty_scope_test::data_movement_put_object_marks_dirty_disks_for_capacity_manager, app::capacity_dirty_scope_test::heal_object_marks_missing_shard_disk_dirty_for_capacity_manager, storage::sse::tests::test_kms_sse_dek_provider_uses_latest_reconfigured_service
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: (not present)
+    LLM:      6 run, 0 passed, 6 failed, 0 skipped
+  [cargo]
+    Original: 92 run, 47 passed, 0 failed, 45 skipped
+    LLM:      3185 run, 47 passed, 3 failed, 3135 skipped
+  [nexttest]
+    Original: 4511 run, 4445 passed, 0 failed, 66 skipped
+    LLM:      (not present)

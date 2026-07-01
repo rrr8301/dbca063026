@@ -1,0 +1,29 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          3
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Reason(s) for Non-Reproducibility ---
+  - [CTest] Test run mismatch: original=15, LLM=60
+  - [CTest] Test passed mismatch: original=14, LLM=60
+  - [CTest] Test failed mismatch: original=1, LLM=0
+
+--- Test Statistics Comparison ---
+  [CTest] 15 run, 14 passed, 1 failed, 0 skipped
+    Failed: BootstrapTest
+LLM:
+  [CTest] 60 run, 60 passed, 0 failed, 0 skipped
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > 100% tests passed, 0 tests failed out of 15 (run 1)
+    > 100% tests passed, 0 tests failed out of 15 (run 2)
+    > 100% tests passed, 0 tests failed out of 15 (run 3)
+    > 100% tests passed, 0 tests failed out of 15 (run 4)
+
+  [Root cause classification]
+  Inflated test count from repeated test runs: The LLM's run.sh invoked ctest four times (e.g. via fbcode_builder's --run-tests loop), accumulating 4 x 15 = 60 recorded test results. The original CI ran the suite once, producing 15 results with BootstrapTest failing. In the LLM environment BootstrapTest passed consistently across all four runs (it is a network-bound socket test sensitive to runner load), so the failure is not reproduced. The root cause of non-reproducibility is the duplicated test invocation inflating the count rather than a build difference.

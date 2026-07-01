@@ -1,0 +1,44 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      gcc normal - ubuntu-24.04 - mbedtls4
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    3
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Autotools] Test passed mismatch: original=24, LLM=22
+  - [Autotools] Test failed mismatch: original=4, LLM=6
+  - [GoDefault] Test run mismatch: original=2, LLM=3
+  - [GoDefault] Test failed mismatch: original=2, LLM=3
+  - [GoDefault] 1 test(s) failed in LLM but not in original: t_net.sh
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > ERROR: failed to start server t_server_null_server-1197_multisocket_ipv4_ipv6
+    > ./t_server_null_server.sh: 15: sudo: not found
+    > ./t_net.sh: line 36: ip: command not found
+    > can't create interface ovpn-dummy0
+    > FAIL t_net.sh (exit status: 1)
+
+  [Root cause classification]
+  - The t_net.sh test requires the `ip` command (from iproute2) and the ability to create a TUN/TAP dummy network interface (ovpn-dummy0), which requires NET_ADMIN Linux capability or root privileges inside the container; Docker containers typically lack NET_ADMIN by default, so the interface creation fails and the test aborts.
+  - The t_server_null.sh test fails because it uses `sudo` to start OpenVPN server instances, but the Docker container does not have sudo installed (or is not configured for passwordless sudo), causing all 4 server startup attempts to fail immediately.
+  - The original CI job runs on a full GitHub Actions ubuntu-24.04 runner with mbedtls4 as the TLS backend and full network namespace capabilities; the LLM's Docker build lacks the necessary kernel network capabilities and sudo access, producing 2 extra Autotools test failures and 1 extra GoDefault failure (t_net.sh) not seen in the original.
+
+--- Test Statistics Comparison ---
+  [Autotools]
+    Original: 30 run, 24 passed, 4 failed, 2 skipped
+    LLM:      30 run, 22 passed, 6 failed, 2 skipped
+  [GoDefault]
+    Original: 2 run, 0 passed, 2 failed, 0 skipped
+    LLM:      3 run, 0 passed, 3 failed, 0 skipped

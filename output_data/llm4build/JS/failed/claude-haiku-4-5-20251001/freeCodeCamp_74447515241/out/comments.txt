@@ -1,0 +1,43 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Test (24)
+  Test command(s) run in original CI:
+    $ actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+    $ pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d
+    $ echo pnpm version $(pnpm -v)
+    $ pnpm -F=curriculum install-puppeteer
+    $ pnpm test
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ pnpm test
+
+--- Reason(s) for Non-Reproducibility ---
+  - [vitest] Test run mismatch: original=56243, LLM=307
+  - [vitest] Test passed mismatch: original=56210, LLM=307
+  - [vitest] Test failed mismatch: original=27, LLM=0
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    @freecodecamp/curriculum:test: error during close TypeError: Cannot read properties of undefined (reading 'close')
+
+  [Root cause classification]
+  - The 55,936 missing tests (307 vs 56,243) are freeCodeCamp curriculum certification tests. The `@freecodecamp/curriculum` package contains thousands of vitest tests that validate each curriculum challenge's seed code and solutions. These tests require Puppeteer (a headless Chromium browser) to run the code in a real browser context — hence the original CI's explicit `pnpm -F=curriculum install-puppeteer` step. The LLM's `pnpm test` skipped the Puppeteer installation step, so the curriculum package falls back to running without a browser and immediately fails with `TypeError: Cannot read properties of undefined (reading 'close')` — the browser `page` object is `undefined` because Puppeteer was never launched.
+
+  - The 307 tests that the LLM ran are from the non-curriculum packages in the monorepo (utility functions, API validators, etc.) that use pure Node.js vitest without a browser. The curriculum package's test runner exits with an error on close, producing 0 test results from that package. The original 27 failures were real curriculum test failures (challenges with incorrect seed/solutions), none of which appear in the LLM's output because the curriculum tests never ran.
+
+--- Test Statistics Comparison ---
+  [vitest]
+    Original: 56243 run, 56210 passed, 27 failed, 6 skipped
+    LLM:      307 run, 307 passed, 0 failed, 0 skipped

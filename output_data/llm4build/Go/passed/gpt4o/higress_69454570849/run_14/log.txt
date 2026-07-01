@@ -1,0 +1,67 @@
+Error from docker build
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 778B done
+#1 DONE 0.0s
+
+#2 [internal] load .dockerignore
+#2 transferring context: 2B done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/golang:1.25
+#3 DONE 0.1s
+
+#4 [1/8] FROM docker.io/library/golang:1.25@sha256:8cd78ec5a59bf58b6d2d72e2565bece318ef43563977929512e1dbee9085f7e4
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 2.63MB 1.0s done
+#5 DONE 1.0s
+
+#6 [2/8] WORKDIR /app
+#6 CACHED
+
+#7 [3/8] COPY go.mod go.sum ./
+#7 CACHED
+
+#8 [4/8] RUN mkdir -p ./hgctl ./external/go-control-plane ./external/api ./external/client-go
+#8 DONE 0.4s
+
+#9 [5/8] COPY . .
+#9 DONE 3.5s
+
+#10 [6/8] RUN chmod +x ./run.sh
+#10 DONE 0.3s
+
+#11 [7/8] RUN ./run.sh setup
+#11 0.444 go version go1.25.9 linux/amd64
+#11 0.448 The go.mod file contains a replacement for github.com/envoyproxy/go-control-plane.
+#11 0.448 Ensure the path ./external/go-control-plane exists or adjust the go.mod file.
+#11 0.453 Cloning into './external/go-control-plane'...
+#11 5.004 The go.mod file contains a replacement for github.com/alibaba/higress/hgctl.
+#11 5.004 Ensure the path ./hgctl exists or adjust the go.mod file.
+#11 5.009 Directory ./hgctl is not empty, skipping clone.
+#11 5.011 The go.mod file contains a replacement for istio.io/api.
+#11 5.011 Ensure the path ./external/api exists or adjust the go.mod file.
+#11 5.015 Cloning into './external/api'...
+#11 7.053 The go.mod file contains a replacement for istio.io/client-go.
+#11 7.053 Ensure the path ./external/client-go exists or adjust the go.mod file.
+#11 7.058 Cloning into './external/client-go'...
+#11 DONE 8.2s
+
+#12 [8/8] RUN go mod download
+#12 7.906 go: istio.io/istio@v0.0.0 (replaced by ./external/istio): reading external/istio/go.mod: open /app/external/istio/go.mod: no such file or directory
+#12 ERROR: process "/bin/sh -c go mod download" did not complete successfully: exit code: 1
+------
+ > [8/8] RUN go mod download:
+#12 7.906 go: istio.io/istio@v0.0.0 (replaced by ./external/istio): reading external/istio/go.mod: open /app/external/istio/go.mod: no such file or directory
+------
+Dockerfile:23
+--------------------
+  21 |     
+  22 |     # Download all dependencies. Dependencies will be cached if the go.mod and go.sum files are not changed
+  23 | >>> RUN go mod download
+  24 |     
+  25 |     # Run the run.sh script
+--------------------
+ERROR: failed to solve: process "/bin/sh -c go mod download" did not complete successfully: exit code: 1

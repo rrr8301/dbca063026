@@ -1,0 +1,46 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          15
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      coverage_32bit
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    4
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoDefault] Test run mismatch: original=1, LLM=4
+  - [GoDefault] Test failed mismatch: original=1, LLM=4
+  - [micropython] Test run mismatch: original=1085, LLM=1064
+  - [micropython] Test passed mismatch: original=1084, LLM=1060
+  - [micropython] Test failed mismatch: original=1, LLM=4
+  - [micropython] Test skipped mismatch: original=21, LLM=22
+  - [micropython] 1 test(s) failed in original but passed in LLM: basics/string_tstring_basic1.py
+  - [micropython] 4 test(s) failed in LLM but not in original: extmod/asyncio_get_event_loop.py, extmod/asyncio_new_event_loop.py, extmod/asyncio_wait_for_linked_task.py, thread/stress_aes.py
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > FAIL  extmod/asyncio_new_event_loop.py
+    > FAIL  extmod/asyncio_get_event_loop.py
+    > FAIL  thread/stress_aes.py
+    > 4 tests failed: extmod/asyncio_wait_for_linked_task.py extmod/asyncio_new_event_loop.py extmod/asyncio_get_event_loop.py thread/stress_aes.py
+
+  [Root cause classification]
+  - The original CI job is coverage_32bit running on ubuntu-24.04, while the LLM used ubuntu:22.04 as a 64-bit base. The asyncio event-loop tests (asyncio_get_event_loop.py, asyncio_new_event_loop.py, asyncio_wait_for_linked_task.py) expose version-sensitive behavior in the asyncio/uasyncio module that differs between MicroPython builds targeting 32-bit coverage mode versus a standard 64-bit host build.
+  - The thread/stress_aes.py failure is caused by the absence of hardware AES acceleration or differing threading/timing behavior in the Docker container environment compared to the original GitHub Actions runner, making the stress test exceed timing thresholds or produce incorrect results under different CPU capabilities.
+  - The LLM ran 21 fewer tests because the 32-bit coverage CI job uses a cross-compiled or QEMU-run MicroPython port with a specific test selection; the LLM's native x86_64 build skips or excludes tests that require 32-bit or ARM-specific modules.
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 1 run, 0 passed, 1 failed, 0 skipped
+    LLM:      4 run, 0 passed, 4 failed, 0 skipped
+  [micropython]
+    Original: 1085 run, 1084 passed, 1 failed, 21 skipped
+    LLM:      1064 run, 1060 passed, 4 failed, 22 skipped

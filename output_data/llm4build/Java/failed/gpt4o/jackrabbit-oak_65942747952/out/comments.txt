@@ -1,0 +1,36 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          N/A
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      Maven Build
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ mvn -B $MVN_GOAL $MVN_ADDITIONAL_OPTS -Pcoverage,integrationTesting,javadoc -Dnsfixtures=SEGMENT_TAR,DOCUMENT_NS
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Maven] Test run mismatch: original=23145, LLM=12707
+  - [Maven] Test passed mismatch: original=22633, LLM=11482
+  - [Maven] Test failed mismatch: original=6, LLM=876
+  - [Maven] Test skipped mismatch: original=506, LLM=349
+  - [Maven] 6 test(s) failed in original but passed in LLM: bundleStates(org.apache.jackrabbit.oak.osgi.OSGiIT), listBundles(org.apache.jackrabbit.oak.osgi.OSGiIT), listServices(org.apache.jackrabbit.oak.osgi.OSGiIT), testLeaseFailureHandlerIsExported(org.apache.jackrabbit.oak.osgi.OSGiIT), testNodeStore(org.apache.jackrabbit.oak.osgi.OSGiIT) ... (+1 more)
+  - [Maven] 876 test(s) failed in LLM but not in original: testAcContentIsProtected(org.apache.jackrabbit.oak.jcr.security.authorization.AccessControlManagementTest), testAccessControlModification(org.apache.jackrabbit.oak.jcr.security.authorization.AccessControlManagementTest), testAccessControlModificationWithoutPrivilege(org.apache.jackrabbit.oak.jcr.security.authorization.AccessControlManagementTest), testAccessControlPrivileges(org.apache.jackrabbit.oak.jcr.security.authorization.AccessControlManagementTest), testAccessDisabledUser(org.apache.jackrabbit.oak.jcr.security.user.UserTest) ... (+871 more)
+
+--- Root Cause Analysis ---
+  - [Maven] LLM ran 10438 fewer tests than original — LLM likely used a narrower test scope or missed some test suites.
+  - [Maven] 876 test(s) failed in LLM but not original: testAcContentIsProtected(org.apache.jackrabbit.oak.jcr.security.authorization.AccessControlManagementTest), testAccessControlModification(org.apache.jackrabbit.oak.jcr.security.authorization.AccessControlManagementTest), testAccessControlModificationWithoutPrivilege(org.apache.jackrabbit.oak.jcr.security.authorization.AccessControlManagementTest), testAccessControlPrivileges(org.apache.jackrabbit.oak.jcr.security.authorization.AccessControlManagementTest), testAccessDisabledUser(org.apache.jackrabbit.oak.jcr.security.user.UserTest) ... (+871 more)
+
+--- Test Statistics Comparison ---
+  [Maven]
+    Original: 23145 run, 22633 passed, 6 failed, 506 skipped
+    LLM:      12707 run, 11482 passed, 876 failed, 349 skipped

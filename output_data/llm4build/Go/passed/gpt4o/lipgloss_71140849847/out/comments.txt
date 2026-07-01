@@ -1,0 +1,40 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          20
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT TESTS NOT REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      build / build (ubuntu-latest)
+  Test command(s) run in original CI:
+    $ go test ./...
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ go test ./...
+
+--- Test Reproducibility Gap ---
+  Original ran 4 test(s) across [GoDefault].
+  LLM build produced no test results (empty llm_log_stats).
+
+--- Root Cause ---
+  Reason type: Test runner executed but produced no parseable output
+  Last log output before stopping:
+    /app/go.mod:3: malformed module path "": empty string
+    /app/go.mod:5: invalid go version '1.16.0': must match format 1.23
+    go: errors parsing go.mod:
+    /app/go.mod:3: malformed module path "": empty string
+    /app/go.mod:5: invalid go version '1.16.0': must match format 1.23
+    Post Install Go step
+    Post Checkout code step
+    Complete job step
+
+--- Original Test Statistics (not reproduced) ---
+  [GoDefault] 4 run, 4 passed, 0 failed, 0 skipped

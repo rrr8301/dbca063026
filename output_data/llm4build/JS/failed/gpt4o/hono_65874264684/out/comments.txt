@@ -1,0 +1,39 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          4
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      Main
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    5
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoDefault] Test run mismatch: original=3, LLM=1135
+  - [GoDefault] Test failed mismatch: original=3, LLM=1135
+  - [GoDefault] 3 test(s) failed in original but passed in LLM: jsx-runtime-default, jsx-runtime-dom, main
+  - [GoDefault] 7 test(s) failed in LLM but not in original: |fastly|, |jsx-runtime-default|, |jsx-runtime-dom|, |lambda-edge|, |lambda| ... (+2 more)
+  - [vitest] Test run mismatch: original=4204, LLM=3801
+  - [vitest] Test passed mismatch: original=4168, LLM=2647
+  - [vitest] Test failed mismatch: original=3, LLM=1122
+  - [vitest] Test skipped mismatch: original=33, LLM=32
+
+--- Root Cause Analysis ---
+  - [GoDefault] LLM ran 1132 more tests than original — LLM likely used a broader test scope or included extra test suites.
+  - [GoDefault] 7 test(s) failed in LLM but not original: |fastly|, |jsx-runtime-default|, |jsx-runtime-dom|, |lambda-edge|, |lambda| ... (+2 more)
+  - [vitest] LLM ran 403 fewer tests than original — LLM likely used a narrower test scope or missed some test suites.
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 3 run, 0 passed, 3 failed, 0 skipped
+    LLM:      1135 run, 0 passed, 1135 failed, 0 skipped
+  [vitest]
+    Original: 4204 run, 4168 passed, 3 failed, 33 skipped
+    LLM:      3801 run, 2647 passed, 1122 failed, 32 skipped

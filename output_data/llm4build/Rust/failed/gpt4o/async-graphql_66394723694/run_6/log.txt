@@ -1,0 +1,66 @@
+Error from docker build
+
+#1 [ 1/10] FROM docker.io/library/ubuntu:22.04
+#1 CACHED
+
+#2 [2/9] RUN ln -snf /usr/share/zoneinfo/America/Los_Angeles /etc/localtime && echo America/Los_Angeles > /etc/timezone
+#2 CACHED
+
+#3 [internal] load .dockerignore
+#3 transferring context: 2B done
+#3 DONE 0.0s
+
+#4 [internal] load build definition from Dockerfile
+#4 transferring dockerfile: 1.29kB done
+#4 DONE 0.0s
+
+#5 [internal] load metadata for docker.io/library/ubuntu:22.04
+#5 DONE 0.0s
+
+#6 [internal] load build context
+#6 transferring context: 102.73kB 0.1s done
+#6 DONE 0.1s
+
+#7 [ 3/13] RUN apt-get update && apt-get install -y --no-install-recommends     git     curl     jq     build-essential     ca-certificates     && rm -rf /var/lib/apt/lists/*
+#7 CACHED
+
+#8 [ 4/13] RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+#8 CACHED
+
+#9 [ 5/13] RUN /root/.cargo/bin/rustc --version
+#9 CACHED
+
+#10 [ 6/13] RUN /root/.cargo/bin/cargo install mdbook --version 0.5.2
+#10 CACHED
+
+#11 [ 7/13] WORKDIR /workspace
+#11 CACHED
+
+#12 [ 8/13] COPY . .
+#12 DONE 1.3s
+
+#13 [ 9/13] RUN git config --global --add safe.directory '*'
+#13 DONE 0.4s
+
+#14 [10/13] RUN useradd -m testuser && chown -R testuser /workspace
+#14 DONE 0.8s
+
+#15 [11/13] RUN echo 'source $HOME/.cargo/env' >> /home/testuser/.bashrc
+#15 DONE 0.5s
+
+#16 [12/13] RUN /bin/bash -c "source $HOME/.cargo/env && rustc --version"
+#16 0.555 /bin/bash: line 1: /home/testuser/.cargo/env: No such file or directory
+#16 ERROR: process "/bin/sh -c /bin/bash -c \"source $HOME/.cargo/env && rustc --version\"" did not complete successfully: exit code: 1
+------
+ > [12/13] RUN /bin/bash -c "source $HOME/.cargo/env && rustc --version":
+#16 0.555 /bin/bash: line 1: /home/testuser/.cargo/env: No such file or directory
+------
+Dockerfile:51
+--------------------
+  49 |     
+  50 |     # Set up the environment for the non-root user
+  51 | >>> RUN /bin/bash -c "source $HOME/.cargo/env && rustc --version"
+  52 |     
+  53 |     WORKDIR /workspace
+--------------------
+ERROR: failed to solve: process "/bin/sh -c /bin/bash -c \"source $HOME/.cargo/env && rustc --version\"" did not complete successfully: exit code: 1

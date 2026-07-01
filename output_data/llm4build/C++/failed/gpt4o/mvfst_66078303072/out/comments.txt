@@ -1,0 +1,36 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-22.04
+  CI job name:      build
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    3
+
+Note: Original had test failures; LLM build passed all — failed build has passed.
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in original but missing in LLM: GTest
+  - [CTest] Test run mismatch: original=3706, LLM=7008
+  - [CTest] Test passed mismatch: original=3705, LLM=7008
+  - [CTest] Test failed mismatch: original=1, LLM=0
+  - [CTest] 1 test(s) failed in original but passed in LLM: SimulatedTBFTest.NoEmptyIntervalAfterDrainIfTsHadTokens
+
+--- Root Cause Analysis ---
+  - [CTest] LLM ran 3302 more tests than original — LLM likely used a broader test scope or included extra test suites.
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 3706 run, 3705 passed, 1 failed, 0 skipped
+    LLM:      7008 run, 7008 passed, 0 failed, 0 skipped
+  [GTest]
+    Original: 1 run, 0 passed, 1 failed, 0 skipped
+    LLM:      (not present)

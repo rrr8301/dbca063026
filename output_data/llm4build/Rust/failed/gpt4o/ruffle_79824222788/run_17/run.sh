@@ -1,0 +1,33 @@
+#!/bin/bash
+
+# Activate Rust environment
+source /home/testuser/.cargo/env
+
+# Ensure cargo-nextest is installed with --locked
+if ! command -v cargo-nextest &> /dev/null; then
+    cargo install --locked cargo-nextest --root /home/testuser/.cargo
+fi
+
+# Set LIBCLANG_PATH to ensure bindgen can find libclang
+export LIBCLANG_PATH=$(llvm-config --libdir)
+
+# Verify that libclang is accessible
+if [ ! -f "$LIBCLANG_PATH/libclang.so" ]; then
+    echo "Error: libclang.so not found in $LIBCLANG_PATH"
+    exit 1
+fi
+
+# Verify Java installation
+if ! command -v java &> /dev/null; then
+    echo "Error: Java is not installed."
+    exit 1
+fi
+
+# Install project dependencies
+# (Assuming dependencies are managed via Cargo.toml)
+cargo fetch
+
+# Run tests
+FEATURES="lzma,jpegxr,imgtests"
+TEST_OPTS="--workspace --locked --no-fail-fast -j 4"
+cargo nextest run --profile ci --cargo-profile ci ${TEST_OPTS} --features ${FEATURES}

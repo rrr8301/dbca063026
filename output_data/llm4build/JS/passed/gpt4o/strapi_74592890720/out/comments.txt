@@ -1,0 +1,48 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   False
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          20
+Original build category: passed
+
+STATUS: BUILD EXECUTION FAILED
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      unit_back (node: 22)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   node:22
+  RUN steps:    6
+
+--- Failure Analysis ---
+  Failure type: Docker build error
+  Failed at Docker build step: 8 of 10
+  Step label:   RUN yarn install --network-timeout 100000 --check-files || (yarn cache clean && yarn install --network-timeout 100000...
+
+  Original build was passing. LLM failed to reproduce it after 20 attempt(s).
+
+--- Dockerfile Error Context ---
+  Dockerfile:24
+  --------------------
+    22 |     # Install dependencies
+    23 |     # Adding --network-timeout to handle potential network issues
+    24 | >>> RUN yarn install --network-timeout 100000 --check-files || (yarn cache clean && yarn install --network-timeout 100000 --check-files)
+    25 |     
+    26 |     # Copy the rest of the application code into the container
+  --------------------
+
+--- Error Message(s) ---
+  #12 ERROR: process "/bin/sh -c yarn install --network-timeout 100000 --check-files || (yarn cache clean && yarn install --network-timeout 100000 --check-files)" did not complete successfully: exit ...
+  ERROR: failed to solve: process "/bin/sh -c yarn install --network-timeout 100000 --check-files || (yarn cache clean && yarn install --network-timeout 100000 --check-files)" did not complete succes...
+
+No test results could be produced due to build failure.
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > #12 0.586 Unknown Syntax Error: Unsupported option name ("--check-files").
+    > $ yarn install [--json] [--immutable] [--immutable-cache] [--refresh-lockfile] [--check-cache] [--check-resolutions] [--inline-builds] [--mode #0]
+    > #12 ERROR: process "... yarn install --network-timeout 100000 --check-files ..." did not complete successfully: exit code: 1
+
+  [Root cause classification]
+  - The LLM used `--check-files`, a Yarn 1.x (Classic) flag, with a Yarn 4.x installation (activated via `corepack prepare yarn@4.12.0`). Yarn 4 does not recognise this flag and exits immediately with a syntax error. Both the primary and fallback install commands in the OR expression use the same unsupported flag, so the fallback also fails. The LLM failed to account for the breaking API change between Yarn major versions when constructing the install command.

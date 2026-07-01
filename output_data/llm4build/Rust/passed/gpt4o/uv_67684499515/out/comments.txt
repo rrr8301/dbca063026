@@ -1,0 +1,36 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          N/A
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      test / cargo test on linux
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    6
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in LLM but not in original: GoDefault, cargo
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: (not present)
+    LLM:      540 run, 0 passed, 540 failed, 0 skipped
+  [cargo]
+    Original: (not present)
+    LLM:      1340658 run, 0 passed, 540 failed, 1340118 skipped
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > thread 'test_create_then_move' panicked at crates/uv-keyring/tests/threading.rs:20:14: Can't set initial ascii password: PlatformFailure(Unavailable)
+    > Caused by: no secret service provider or dbus session found
+    > warning: Unable to fetch credentials from system keyring: Platform secure storage failure
+    > Can't set ascii password: PlatformFailure(Unavailable)
+
+  [Root cause classification: Secret Service / D-Bus unavailable in headless Docker container]
+  - The LLM run.sh compiled uv with --features secret-service (via --features test-python-patch,native-auth,secret-service) which links the uv-keyring crate against the system Secret Service API; inside a headless Docker container there is no D-Bus session or GNOME Keyring daemon, so every attempt to store or retrieve a credential fails with PlatformFailure(Unavailable). The original CI ran under a GitHub Actions runner with --features test-python-patch,native-tls where the secret-service feature was not enabled, so keyring tests were skipped rather than executed and failing. The gnome-keyring-daemon started in run.sh lacks the --daemonize components to fully initialize a D-Bus session, leaving the service unavailable at test time.

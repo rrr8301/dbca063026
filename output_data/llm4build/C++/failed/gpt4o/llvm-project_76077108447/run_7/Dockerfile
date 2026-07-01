@@ -1,0 +1,41 @@
+FROM ubuntu:22.04
+
+# Set timezone to Pacific Time
+ENV TZ=America/Los_Angeles
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+# Install dependencies
+RUN apt-get update && apt-get install -y \
+    wget \
+    gnupg \
+    git \
+    python3 \
+    python3-venv \
+    python3-pip \
+    cmake \
+    make \
+    ninja-build \
+    lsb-release \
+    && rm -rf /var/lib/apt/lists/*
+
+# Add LLVM repository and install clang-23
+RUN wget https://apt.llvm.org/llvm.sh && \
+    chmod +x llvm.sh && \
+    ./llvm.sh 23 && \
+    rm llvm.sh
+
+# Create work directory
+WORKDIR /app
+
+# Copy repository contents
+COPY . .
+
+# Ensure the run-buildbot script is executable
+RUN chmod +x libcxx/utils/ci/run-buildbot
+
+# Copy run.sh and make it executable
+COPY run.sh /app/run.sh
+RUN chmod +x /app/run.sh
+
+# Set entrypoint
+ENTRYPOINT ["/app/run.sh"]

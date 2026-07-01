@@ -1,0 +1,45 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      Test with TypeScript latest on Node lts/* (ubuntu-latest)
+  Test command(s) run in original CI:
+    $ pnpm test
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ pnpm test
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoDefault] Test run mismatch: original=1, LLM=2
+  - [GoDefault] Test failed mismatch: original=1, LLM=2
+  - [GoDefault] 1 test(s) failed in original but passed in LLM: zod
+  - [GoDefault] 2 test(s) failed in LLM but not in original: @zod/resolution, attw.test.ts
+  - [vitest] Test run mismatch: original=3555, LLM=3556
+  - [vitest] Test passed mismatch: original=3555, LLM=3554
+  - [vitest] Test failed mismatch: original=0, LLM=2
+  - [vitest] 1 test(s) failed in LLM but not in original: attw.test.ts
+
+--- Root Cause Analysis ---
+  - [GoDefault] LLM ran 1 more tests than original — LLM likely used a broader test scope or included extra test suites.
+  - [GoDefault] 2 test(s) failed in LLM but not original: @zod/resolution, attw.test.ts
+  - [vitest] LLM ran 1 more tests than original — LLM likely used a broader test scope or included extra test suites.
+  - [vitest] 1 test(s) failed in LLM but not original: attw.test.ts
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 1 run, 0 passed, 1 failed, 0 skipped
+    LLM:      2 run, 0 passed, 2 failed, 0 skipped
+  [vitest]
+    Original: 3555 run, 3555 passed, 0 failed, 0 skipped
+    LLM:      3556 run, 3554 passed, 2 failed, 0 skipped

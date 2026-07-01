@@ -1,0 +1,71 @@
+Error from docker build
+
+#1 [internal] load .dockerignore
+#1 transferring context: 2B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 1.20kB done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/ubuntu:24.04
+#3 DONE 0.1s
+
+#4 [ 2/10] RUN ln -snf /usr/share/zoneinfo/America/Los_Angeles /etc/localtime && echo America/Los_Angeles > /etc/timezone
+#4 CACHED
+
+#5 [ 1/10] FROM docker.io/library/ubuntu:24.04@sha256:c4a8d5503dfb2a3eb8ab5f807da5bc69a85730fb49b5cfca2330194ebcc41c7b
+#5 CACHED
+
+#6 [ 3/11] RUN apt-get update && apt-get install -y --no-install-recommends     git     curl     wget     ca-certificates     postgresql-client     postgresql     postgresql-contrib     build-essential     && rm -rf /var/lib/apt/lists/*
+#6 CACHED
+
+#7 [ 4/11] WORKDIR /workspace
+#7 CACHED
+
+#8 [internal] load build context
+#8 transferring context: 1.43MB 0.6s done
+#8 DONE 0.6s
+
+#9 [ 5/11] COPY .git .git
+#9 DONE 1.2s
+
+#10 [ 6/11] COPY .gitmodules .gitmodules
+#10 DONE 0.0s
+
+#11 [ 7/11] COPY go.mod go.sum* ./
+#11 DONE 0.2s
+
+#12 [ 8/11] RUN git config --global --add safe.directory /workspace &&     git submodule update --init --recursive
+#12 0.358 Cloning into '/workspace/internal/embeddocs/website'...
+#12 0.363 error: cannot run ssh: No such file or directory
+#12 0.363 fatal: unable to fork
+#12 0.365 fatal: clone of 'git@github.com:inngest/website.git' into submodule path '/workspace/internal/embeddocs/website' failed
+#12 0.366 Failed to clone 'internal/embeddocs/website'. Retry scheduled
+#12 0.371 Cloning into '/workspace/internal/embeddocs/website'...
+#12 0.374 error: cannot run ssh: No such file or directory
+#12 0.374 fatal: unable to fork
+#12 0.376 fatal: clone of 'git@github.com:inngest/website.git' into submodule path '/workspace/internal/embeddocs/website' failed
+#12 0.376 Failed to clone 'internal/embeddocs/website' a second time, aborting
+#12 ERROR: process "/bin/sh -c git config --global --add safe.directory /workspace &&     git submodule update --init --recursive" did not complete successfully: exit code: 1
+------
+ > [ 8/11] RUN git config --global --add safe.directory /workspace &&     git submodule update --init --recursive:
+#12 0.358 Cloning into '/workspace/internal/embeddocs/website'...
+#12 0.363 error: cannot run ssh: No such file or directory
+#12 0.363 fatal: unable to fork
+#12 0.365 fatal: clone of 'git@github.com:inngest/website.git' into submodule path '/workspace/internal/embeddocs/website' failed
+#12 0.366 Failed to clone 'internal/embeddocs/website'. Retry scheduled
+#12 0.371 Cloning into '/workspace/internal/embeddocs/website'...
+#12 0.374 error: cannot run ssh: No such file or directory
+#12 0.374 fatal: unable to fork
+#12 0.376 fatal: clone of 'git@github.com:inngest/website.git' into submodule path '/workspace/internal/embeddocs/website' failed
+#12 0.376 Failed to clone 'internal/embeddocs/website' a second time, aborting
+------
+Dockerfile:26
+--------------------
+  25 |     # Initialize and update git submodules
+  26 | >>> RUN git config --global --add safe.directory /workspace && \
+  27 | >>>     git submodule update --init --recursive
+  28 |     
+--------------------
+ERROR: failed to solve: process "/bin/sh -c git config --global --add safe.directory /workspace &&     git submodule update --init --recursive" did not complete successfully: exit code: 1

@@ -1,0 +1,39 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          N/A
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      3.10
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    4
+
+Note: Original had test failures; LLM build passed all — failed build has passed.
+
+--- Reason(s) for Non-Reproducibility ---
+  - [pytest] Test passed mismatch: original=459, LLM=502
+  - [pytest] Test failed mismatch: original=43, LLM=0
+  - [pytest] 1 test(s) failed in original but passed in LLM: tests/test_pyramidparser.py
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > (LLM run passed all 502 tests; original CI failures shown below from webargs-65274984602.log)
+    > tests/test_pyramidparser.py EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE  [ERROR at setup]
+    > ModuleNotFoundError: No module named 'pkg_resources'
+    > pyramid.asset.py:2: import pkg_resources  →  ModuleNotFoundError
+    > ERROR at setup of TestPyramidParser.test_parse_querystring_args (and all 43 pyramid tests)
+
+  [Root cause classification]
+  - The original CI ran on ubuntu-24.04 with a system Python that had `setuptools` (providing `pkg_resources`) removed or stripped, causing all 43 Pyramid adapter tests to fail at the fixture setup stage because `pyramid.asset` unconditionally imports `pkg_resources`. The LLM Dockerfile (ubuntu:22.04) installs the full tox environment via `python -m tox -epy310-marshmallow`, which pulls in a recent `setuptools` that includes `pkg_resources`, allowing Pyramid to import successfully and all tests to pass. The divergence is entirely due to the presence of `pkg_resources`/`setuptools` in the LLM image that was absent in the CI runner's Python environment.
+
+--- Test Statistics Comparison ---
+  [pytest]
+    Original: 506 run, 459 passed, 43 failed, 4 skipped
+    LLM:      506 run, 502 passed, 0 failed, 4 skipped

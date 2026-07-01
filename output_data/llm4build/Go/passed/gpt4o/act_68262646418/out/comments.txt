@@ -1,0 +1,32 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          8
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      test-linux
+  Docker image pulled: docker.io/tonistiigi/binfmt:latest
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    6
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoRace] Test run mismatch: original=1230, LLM=1210
+  - [GoRace] Test passed mismatch: original=1230, LLM=1079
+  - [GoRace] Test failed mismatch: original=0, LLM=131
+  - [GoRace] 5 test(s) failed in LLM but not in original: cmd, pkg/artifacts, pkg/common/git, pkg/container, pkg/runner
+
+--- Root Cause Analysis ---
+  - [GoRace] LLM ran 20 fewer tests than original — LLM likely used a narrower test scope or missed some test suites.
+  - [GoRace] 5 test(s) failed in LLM but not original: cmd, pkg/artifacts, pkg/common/git, pkg/container, pkg/runner
+
+--- Test Statistics Comparison ---
+  [GoRace]
+    Original: 1230 run, 1230 passed, 0 failed, 0 skipped
+    LLM:      1210 run, 1079 passed, 131 failed, 0 skipped

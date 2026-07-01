@@ -1,0 +1,68 @@
+FROM ubuntu:22.04
+
+# Set timezone and locale
+ENV TZ=America/Los_Angeles
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+ENV LANG=C.UTF-8
+ENV LC_ALL=C.UTF-8
+
+# Set environment variables
+ENV CI=true
+ENV GITHUB_ACTIONS=true
+
+# Install dependencies
+RUN apt-get update -qq && \
+    apt-get install --no-install-recommends -y \
+    software-properties-common \
+    dirmngr \
+    gnupg \
+    git \
+    cmake \
+    clang \
+    lld \
+    gcc \
+    build-essential \
+    libjpeg-turbo8-dev \
+    libimagequant-dev \
+    libpng-dev \
+    libwebp-dev \
+    libtiff5-dev \
+    libx265-dev \
+    libfreetype-dev \
+    libxpm-dev \
+    libraqm-dev \
+    dh-autoreconf \
+    ninja-build \
+    nasm \
+    meson \
+    wget && \
+    add-apt-repository ppa:strukturag/libde265 && \
+    add-apt-repository ppa:strukturag/libheif && \
+    apt-get update -qq && \
+    apt-get install --no-install-recommends -y \
+    libde265-dev \
+    libheif-dev && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install libavif from source to ensure the correct version
+RUN git clone --depth 1 --branch v1.0.0 https://github.com/AOMediaCodec/libavif.git /tmp/libavif && \
+    cd /tmp/libavif && \
+    mkdir build && cd build && \
+    cmake .. -DCMAKE_BUILD_TYPE=Release && \
+    make -j$(nproc) && \
+    make install && \
+    cd / && rm -rf /tmp/libavif
+
+# Create a non-root user
+RUN useradd -m testuser
+WORKDIR /workspace
+COPY . /workspace
+RUN chown -R testuser /workspace
+RUN git config --global --add safe.directory '*'
+USER testuser
+
+# Ensure the script is executable
+RUN chmod +x /workspace/run.sh
+
+ENTRYPOINT ["/bin/bash", "/workspace/run.sh"]

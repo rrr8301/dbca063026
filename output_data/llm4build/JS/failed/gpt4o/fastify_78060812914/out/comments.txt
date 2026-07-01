@@ -1,0 +1,44 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          4
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      unit (node 22)
+  Test command(s) run in original CI:
+    $ npm install --ignore-scripts
+    $ npm run unit
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    9
+
+--- LLM run.sh Test Command(s) ---
+  $ nvm use 20 && npm install --ignore-scripts && npm run unit
+
+--- Reason(s) for Non-Reproducibility ---
+  - [node:test] Test failed mismatch: original=5, LLM=0
+  - [node:test] Test passed mismatch: original=2227, LLM=2233
+  - [node:test] Test skipped mismatch: original=4, LLM=3
+  - The 5 original failures were not reproduced; instead the LLM run passed those same tests.
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    npm warn EBADENGINE package: 'borp@1.0.0', required: { node: '>=22.6.0' }, current: { node: 'v20.20.2', npm: '10.9.2' }
+    (tests continued running despite the warning)
+
+  [Root cause classification]
+  - The run.sh used `nvm use 20` (Node 20.20.2) despite the original CI running on Node 22.x. The test runner `borp@1.0.0` requires Node >=22.6.0; running it on Node 20 generated an EBADENGINE warning but did not prevent execution.
+
+  - The 5 failures in the original CI were likely Node 22-specific timing or API behavior differences. On Node 20, those same tests passed, masking the failures that would occur on the correct Node version. This is a version-specific test behavior difference rather than a test environment setup issue.
+
+  - The LLM Dockerfile installed Node 20/22/24/26 via nvm for both root and testuser but defaulted to Node 20 in run.sh. The correct version to use was Node 22, matching the original CI job `unit (node 22)`.
+
+--- Test Statistics Comparison ---
+  [node:test]
+    Original: 2236 run, 2227 passed, 5 failed, 4 skipped
+    LLM:      2236 run, 2233 passed, 0 failed, 3 skipped

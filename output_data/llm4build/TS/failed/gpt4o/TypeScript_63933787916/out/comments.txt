@@ -1,0 +1,51 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   False
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          20
+Original build category: failed
+
+STATUS: BUILD EXECUTION FAILED
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      Test Node 14 on ubuntu-latest
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:20.04
+  RUN steps:    6
+
+--- Failure Analysis ---
+  Failure type: Docker build error
+  Failed at Docker build step: 4 of 10
+  Step label:   RUN curl -fsSL https://deb.nodesource.com/setup_14.x | bash -
+
+  Original build was already failing. LLM could not reproduce or fix it after 20 attempt(s).
+
+--- Dockerfile Error Context ---
+  Dockerfile:19
+  --------------------
+    17 |     
+    18 |     # Add NodeSource GPG key and install Node.js 14
+    19 | >>> RUN curl -fsSL https://deb.nodesource.com/setup_14.x | bash -
+    20 |     
+    21 |     # Install Node.js
+  --------------------
+
+--- Error Message(s) ---
+  #8 ERROR: process "/bin/sh -c curl -fsSL https://deb.nodesource.com/setup_14.x | bash -" did not complete successfully: exit code: 1
+  ERROR: failed to solve: process "/bin/sh -c curl -fsSL https://deb.nodesource.com/setup_14.x | bash -" did not complete successfully: exit code: 1
+
+No test results could be produced due to build failure.
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > Err:1 https://deb.nodesource.com/node_14.x focal InRelease
+    >   The following signatures couldn't be verified because the public key is not available: NO_PUBKEY 1655A0AB68576280
+    > E: The repository 'https://deb.nodesource.com/node_14.x focal InRelease' is not signed.
+    > Error executing command, exiting
+
+  [Root cause classification]
+  - The LLM attempted to install Node.js 14 from NodeSource on Ubuntu 20.04 (focal) using the legacy `setup_14.x` script, but NodeSource has dropped GPG signing for EOL Node 14 repositories. The repository's InRelease file no longer carries a valid signature, so apt rejects it and the setup script exits with code 1.
+  - Node 14 reached end-of-life in April 2023 and is no longer supported by NodeSource; the CI job "Test Node 14 on ubuntu-latest" was itself already failing in CI for the same reason (the original build category is "failed"), meaning the project's own Node 14 matrix leg was broken before the LLM attempt.
+  - Since the Node installation step failed, the TypeScript compiler source could not be set up, no build or tests ran, and no test results were produced across all 20 attempts.

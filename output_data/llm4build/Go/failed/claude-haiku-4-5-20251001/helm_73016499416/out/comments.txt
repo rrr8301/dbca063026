@@ -1,0 +1,52 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          20
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT TESTS NOT REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      build
+  Test command(s) run in original CI:
+    $ make test-source-headers
+    $ make test-coverage
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ make test-source-headers
+  $ make test-coverage
+
+--- Test Reproducibility Gap ---
+  Original ran 46 test(s) across [GoDefault].
+  LLM build produced no test results (empty llm_log_stats).
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > go: downloading go1.26.0 (linux/amd64)
+    > go version go1.26.0 linux/amd64
+    > Some source files are missing the copyright header.
+    > ./run.sh
+    > make: *** [Makefile:130: test-source-headers] Error 1
+
+  [Root cause classification]
+  - The `make test-source-headers` target checks that every Go source file contains the required Apache 2.0 copyright header. In the LLM's Docker build environment, some source files are missing the copyright header — most likely newly generated files (from `go generate` or `make generate` steps that the LLM didn't run before the header check) or files from a different checkout state. The Makefile exits with error code 1 at step 130, stopping execution before `make test-coverage` can run.
+
+  - After 20 attempts, the LLM could not produce any test output because the copyright header check always failed first. The original CI job (`build`) also ran `make test-source-headers` before tests, and it has 1 known failure out of 46 GoDefault tests — meaning the original CI passed the header check (or the single failure was in a separate test from the header check). The LLM's header check failure is a pre-test gate that prevents any test results from being generated.
+
+--- Root Cause ---
+  Reason type: Test runner executed but produced no parseable output
+  Last log output before stopping:
+    go: downloading go1.26.0 (linux/amd64)
+    go version go1.26.0 linux/amd64
+    Some source files are missing the copyright header.
+    ./run.sh
+    make: *** [Makefile:130: test-source-headers] Error 1
+
+--- Original Test Statistics (not reproduced) ---
+  [GoDefault] 46 run, 45 passed, 1 failed, 0 skipped

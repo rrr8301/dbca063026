@@ -1,0 +1,40 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      linux (-Dcc='g++')
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    3
+
+--- Reason(s) for Non-Reproducibility ---
+  - [perl-harness] Test run mismatch: original=1380165, LLM=1380013
+  - [perl-harness] Test passed mismatch: original=1380165, LLM=1380013
+  - [perl-harness] 5 test(s) failed in LLM but not in original: ../cpan/Socket/t/getaddrinfo.t                                     (Wstat: 512 (exited 2) Tests: 31, ../dist/Net-Ping/t/110_icmp_inst.t                                 (Wstat: 512 (exited 2) Tests: 1, ../dist/Net-Ping/t/500_ping_icmp.t                                 (Wstat: 512 (exited 2) Tests: 0, ../dist/Net-Ping/t/520_icmp_ttl.t                                  (Wstat: 512 (exited 2) Tests: 1, porting/authors.t                                                  (Wstat: 768 (exited 3) Tests: 7
+
+--- Root Cause Analysis ---
+  [Actual errors from LLM log.txt]
+    > Can't get icmp protocol by name at t/110_icmp_inst.t line 24.
+    > ../dist/Net-Ping/t/110_icmp_inst.t  Dubious, test returned 2 — Failed 1/2 subtests
+    > ../dist/Net-Ping/t/500_ping_icmp.t  Dubious, test returned 2 — No subtests run
+    > Can't get icmp protocol by name at t/520_icmp_ttl.t line 23.
+    > ../cpan/Socket/t/getaddrinfo.t  Dubious, test returned 2 — Failed 2/31 subtests
+    > porting/authors.t  Dubious, test returned 3 — Failed 3/7 subtests (git config user not in AUTHORS)
+
+  [Root cause classification: Raw ICMP socket privilege restriction and missing git author identity in Docker]
+  - The Net-Ping ICMP tests (110_icmp_inst, 500_ping_icmp, 520_icmp_ttl) fail because creating a raw ICMP socket requires CAP_NET_RAW capability; Docker containers run without this capability by default, so `getprotobyname("icmp")` returns undef and the tests abort.
+  - The Socket/getaddrinfo tests fail because the Docker container's DNS resolver is not configured to resolve external names, causing getaddrinfo to return unexpected error codes on 2 of 31 subtests.
+  - The porting/authors.t failures are caused by the LLM build running inside a git repository whose `user.name` / `user.email` do not match any entry in Perl's AUTHORS file; the test checks that every git committer identity is registered, and the Docker environment's anonymous git config triggers 3 failures. The 152 fewer tests run is due to platform-specific modules (Windows, VMS, OS/2) being skipped on Linux and minor version differences in optional CPAN modules.
+
+--- Test Statistics Comparison ---
+  [perl-harness]
+    Original: 1380165 run, 1380165 passed, 0 failed, 0 skipped
+    LLM:      1380013 run, 1380013 passed, 0 failed, 0 skipped

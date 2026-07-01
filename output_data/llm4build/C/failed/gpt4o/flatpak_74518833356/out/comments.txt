@@ -1,0 +1,39 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          3
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      Build with gcc and test
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    3
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Meson] Test passed mismatch: original=62, LLM=9
+  - [Meson] Test failed mismatch: original=1, LLM=12
+  - [Meson] Test skipped mismatch: original=0, LLM=42
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > test-instance    ERROR   0.32s   (exit status 134 or signal 6 SIGABRT)
+    > test-portal      ERROR   0.34s   (exit status 134 or signal 6 SIGABRT)
+    > testlibrary      ERROR   0.43s   (exit status 134 or signal 6 SIGABRT)
+    > test-completion.sh  ERROR  1.19s   exit status 1
+    > test-summaries@user.wrap  ERROR  1.25s   exit status 1
+
+  [Root cause classification]
+  - Tests that require the D-Bus system bus, ostree, or polkit agent abort with SIGABRT (exit 134) because those system services are not running inside the Docker container. Flatpak's test-instance and test-portal tests attempt to connect to the Flatpak portal over D-Bus and call polkit for privilege escalation, which requires a live dbus-daemon session and system bus — neither of which is available in a plain container.
+  - The 42 skipped tests (vs. 0 in original CI) correspond to @system.wrap and @user.wrap integration tests that require a fully configured Flatpak installation with ostree remotes, a mounted filesystem, and a running system session. The original ubuntu-24.04 CI runner provides these services via systemd and the host OS environment; the Docker container has none of them.
+  - The shell-based tests (test-auth.sh, test-repair.sh, test-override.sh, test-preinstall.sh) fail with exit status 1 because they invoke the flatpak CLI which requires either a system Flatpak installation or a working D-Bus session to set up user installations, both absent in the container environment.
+
+--- Test Statistics Comparison ---
+  [Meson]
+    Original: 63 run, 62 passed, 1 failed, 0 skipped
+    LLM:      63 run, 9 passed, 12 failed, 42 skipped

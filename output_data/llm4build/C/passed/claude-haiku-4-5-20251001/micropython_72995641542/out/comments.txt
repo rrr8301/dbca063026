@@ -1,0 +1,51 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      coverage
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ tools/ci.sh unix_coverage_build
+    $ tools/ci.sh unix_coverage_run_tests
+    $ tools/ci.sh unix_coverage_run_mpy_merge_tests
+    $ tools/ci.sh native_mpy_modules_build
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ bash tools/ci.sh unix_coverage_run_tests || TEST_SUITE_FAILED=1
+  $ bash tools/ci.sh unix_coverage_run_mpy_merge_tests || MPY_MERGE_FAILED=1
+  $ bash tools/ci.sh unix_coverage_run_native_mpy_tests || NATIVE_MPY_TEST_FAILED=1
+  $ python3 tests/run-tests.py --print-failures || true
+
+--- Reason(s) for Non-Reproducibility ---
+  - [micropython] Test run mismatch: original=4369, LLM=1124
+  - [micropython] Test passed mismatch: original=4369, LLM=1121
+  - [micropython] Test failed mismatch: original=0, LLM=3
+  - [micropython] 3 test(s) failed in LLM but not in original: extmod/asyncio_get_event_loop.py, extmod/asyncio_new_event_loop.py, extmod/asyncio_wait_for_linked_task.py
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    --- tests/results/extmod_asyncio_new_event_loop.py.exp
+    +++ tests/results/extmod_asyncio_new_event_loop.py.out
+    -/workspace/micropython/tests/extmod/asyncio_new_event_loop.py:41: DeprecationWarning: There is no current event loop
+    -  loop = asyncio.get_event_loop()
+    (same for asyncio_get_event_loop.py and asyncio_wait_for_linked_task.py)
+    FAILURE /workspace/micropython/tests/results/extmod_asyncio_new_event_loop.py
+
+  [Root cause classification]
+  - asyncio DeprecationWarning missing in LLM build: The 3 failing tests (`asyncio_new_event_loop.py`, `asyncio_get_event_loop.py`, `asyncio_wait_for_linked_task.py`) have expected output that includes `DeprecationWarning: There is no current event loop` emitted by `asyncio.get_event_loop()` when no event loop exists. The LLM's MicroPython build (from current source tree) does not emit this deprecation warning, but the expected `.exp` files still include it. This means the test expected output was written for an older MicroPython version that emitted the warning, and the current code was updated to suppress it but the expected output files were not updated — a test expectation drift.
+  - 3245 fewer tests in LLM (1124 vs 4369): The original CI ran four `ci.sh` tasks: `unix_coverage_build`, `unix_coverage_run_tests`, `unix_coverage_run_mpy_merge_tests`, and `native_mpy_modules_build`. The LLM ran only three (`unix_coverage_run_tests`, `unix_coverage_run_mpy_merge_tests`, `unix_coverage_run_native_mpy_tests`) but missed the `native_mpy_modules_build` task and other large test batches. The original's 4369 tests likely include cross-compilation and module tests from multiple ci.sh tasks.
+
+--- Test Statistics Comparison ---
+  [micropython]
+    Original: 4369 run, 4369 passed, 0 failed, 166 skipped
+    LLM:      1124 run, 1121 passed, 3 failed, 27 skipped

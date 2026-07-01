@@ -1,0 +1,31 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   False
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          20
+Original build category: failed
+
+STATUS: BUILD EXECUTION FAILED
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-22.04
+  CI job name:      Linux / Electron
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    7
+
+--- Failure Analysis ---
+  Failure type: Build error
+
+  Original build was failing. LLM failed to reproduce it after 20 attempt(s).
+
+--- Root Cause Analysis ---
+  Actual error messages from LLM log.txt:
+    > ERROR: process "/bin/sh -c bash -c "source $NVM_DIR/nvm.sh && nvm install $(cat .nvmrc)"" did not complete successfully: exit code: 3
+    > COPY run.sh /usr/local/bin/run.sh (referencing file not in build context)
+
+  Root cause classification: nvm install failure / shell variable expansion issue in Dockerfile
+  - The Dockerfile RUN instruction uses `$(cat .nvmrc)` as a shell subcommand inside bash -c, but Docker evaluates this at build time before the nvm shell is sourced, causing nvm install to fail with exit code 3 (nvm not found in non-interactive shell context). The NVM_DIR environment variable was set but nvm.sh was not yet sourced when the subcommand runs. Additionally, the vscode Electron test suite requires Xvfb (X virtual framebuffer), specific Electron system dependencies, and display server setup that the LLM did not provision, making it fundamentally unsuitable for a standard Docker container without additional X11 display configuration.
+
+No test results could be produced due to build failure.

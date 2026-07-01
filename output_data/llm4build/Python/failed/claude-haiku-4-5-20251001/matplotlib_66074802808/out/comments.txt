@@ -1,0 +1,117 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          5
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Python 3.12 on ubuntu-24.04
+  Test command(s) run in original CI:
+    $ python -m pip install --upgrade pip setuptools wheel
+    $ python -m pip install --upgrade pycairo 'cairocffi>=0.8' 'PyGObject'
+    $ python -mpip install --upgrade --only-binary :all: pyqt5
+    $ python -mpip install --upgrade --only-binary :all: pyqt6
+    $ python -mpip install --upgrade --only-binary :all: pyside6
+    $ python -m pip install --no-deps --no-build-isolation --verbose --editable .[dev]
+    $ pytest -rfEsXR -n auto \
+        --maxfail=50 --timeout=300 --durations=25 \
+        --cov-report=xml --cov=lib --log-level=DEBUG --color=yes
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    13
+
+--- LLM run.sh Test Command(s) ---
+  $ ccache -s
+  $ python -m pip install --break-system-packages --no-deps --no-build-isolation --verbose \
+      --config-settings=setup-args="-DrcParams-backend=Agg" \
+      --editable .[dev]
+  $ pytest -rfEsXR -n auto \
+      --maxfail=50 --timeout=300 --durations=25 \
+      --cov-report=xml --cov=lib --log-level=DEBUG --color=yes
+
+--- Reason(s) for Non-Reproducibility ---
+  - [pytest] Test run mismatch: original=10250, LLM=3648 (6602 fewer tests ran)
+  - [pytest] Test failed mismatch: original=4, LLM=1051
+  - [pytest] 1051 tests failed in LLM vs 4 in original
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > _______________________________ test_fonttype[3] _______________________________
+    >   def test_fonttype(fonttype):
+    >       mpl.rcParams["ps.fonttype"] = fonttype
+    >       fig, ax = plt.subplots()
+    >       ax.text(0.25, 0.5, "Forty-two is the answer to everything!")
+    >       buf = io.BytesIO()
+    > >     fig.savefig(buf, format="ps")
+    >
+    > lib/matplotlib/tests/test_backend_ps.py:273:
+    > lib/matplotlib/backends/backend_ps.py:975: in _print_ps
+    >     f"Matplotlib v{mpl.__version__}, https://matplotlib.org/"
+    > lib/matplotlib/__init__.py:241: in <lambda>
+    >     __version__ = property(lambda self: _get_version())
+    > lib/matplotlib/__init__.py:227: in _get_version
+    >     return setuptools_scm.get_version(...)
+    > vcs_versioning/_version_schemes/_standard.py:107:
+    > >   warnings.warn(
+    >       "Version scheme 'release-branch-semver' has been renamed to "
+    >       "'semver-pep440-release-branch'. Please update your configuration. "
+    >       "The old name will be removed in a future version.",
+    >       DeprecationWarning,
+    >   )
+    > E  DeprecationWarning: Version scheme 'release-branch-semver' has been renamed to
+    >    'semver-pep440-release-branch'. Please update your configuration.
+    >    The old name will be removed in a future version.
+    >
+    > /usr/local/lib/python3.12/dist-packages/vcs_versioning/_version_schemes/_standard.py:107:
+    >    DeprecationWarning
+
+  [Root cause classification]
+  - setuptools-scm renamed version scheme `release-branch-semver` → DeprecationWarning treated
+    as error by matplotlib's pytest filterwarnings configuration → 1051 test failures
+
+    matplotlib's editable install generates its version string dynamically via
+    `setuptools_scm.get_version()` (called as `mpl.__version__` property). The `pyproject.toml`
+    specifies `version_scheme = "release-branch-semver"`. In the version of `vcs_versioning`
+    (the internal engine used by newer setuptools-scm) installed in the Docker container, the
+    scheme `release-branch-semver` was renamed to `semver-pep440-release-branch`. The old name
+    is still supported but emits a `DeprecationWarning`.
+
+    Any test that accesses `mpl.__version__` — either directly or indirectly through calling
+    `fig.savefig(format="ps")`, `fig.savefig(format="pdf")`, `fig.savefig(format="svg")`, or
+    other rendering code that embeds the version in the output file header — triggers this
+    warning. matplotlib's `pyproject.toml` configures pytest with:
+      `filterwarnings = ["error::DeprecationWarning"]`
+    This converts the `DeprecationWarning` into an error, causing those tests to FAIL.
+
+    1051 tests fail this way — all rendering tests that write to PS/PDF/SVG backends or otherwise
+    access the matplotlib version. Tests using only the Agg backend (which doesn't embed the
+    version string) pass successfully (2283 pass).
+
+    The original CI uses a pinned/older setuptools-scm version (likely from pip's caching of the
+    locked environment) where `release-branch-semver` is the correct current name, not yet
+    renamed, so no DeprecationWarning is emitted and only 4 tests fail (pre-existing GTK4 issues).
+
+  - --maxfail=50 stops test distribution early → only 3648 tests run vs 10250
+    Since 1051 tests fail and pytest's `--maxfail=50` is set, pytest signals xdist workers to
+    stop distributing new tests after 50 failures. However, with `-n auto` (many parallel workers),
+    tests already queued in workers run to completion. The combination of many early failures +
+    maxfail=50 stops pytest after only 3648 tests run (36% of the 10250 in original CI).
+
+  - Additional teardown failures: `AttributeError: 'PosixPath' object has no attribute '_str'`
+    pytest captures unraisable exceptions during teardown via its `unraisableexception` plugin.
+    ~31 teardown errors occur where matplotlib's cleanup code (figure deletion in __del__) tries
+    to compute a string representation of a PosixPath object that was created via
+    pickle/unpickle across xdist workers. Python 3.12.3's pathlib.py caches `_str` lazily in
+    `__str__` (line 441: `return self._str`), but pickled/reconstructed PosixPath objects
+    lose this cached value. These teardown errors are separate from the main 1051 failures.
+
+--- Test Statistics Comparison ---
+  [pytest]
+    Original: 10250 run, 9935 passed, 4 failed, 275 skipped, 31 xfailed, 5 xpassed
+    LLM:      3648 run, 2283 passed, 1051 failed, 287 skipped, 27 xfailed, 0 xpassed
+    (1051 LLM failures = setuptools-scm DeprecationWarning for version scheme rename;
+     6602 fewer tests ran = --maxfail=50 triggered early due to rapid failures)

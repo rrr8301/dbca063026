@@ -1,0 +1,61 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      tests (JDK 25 on ubuntu-latest)
+  Test command(s) run in original CI:
+    $ actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+    $ ./.github/actions/prepare-for-build
+    $ gradle/actions/setup-gradle@f29f5a9d7b09a7c6b29859002d29d24e1674c884
+    $ ./gradlew displayGradleDiagnostics allOptions test \
+        -Ptask.times=true -Pvalidation.errorprone=false
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ ./gradlew displayGradleDiagnostics
+  $ ./gradlew allOptions test \
+      -Ptask.times=true -Pvalidation.errorprone=false \
+      -DTEST_JVM_ARGS="-XX:TieredStopAtLevel=1 -XX:+UseParallelGC -XX:ActiveProcessorCount=1"
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Gradle] Test run mismatch: original=11180, LLM=17402
+  - [Gradle] Test passed mismatch: original=10577, LLM=16580
+  - [Gradle] Test failed mismatch: original=1, LLM=0
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    (LLM has 0 failures — all 17402 tests pass)
+
+  [From original CI log]
+    (1 test failure — specific test name not captured by stats parser,
+     but Tests run: 11180, Failures: 1, Errors: 0, Skipped: 602)
+
+  [Root cause classification]
+  - Lucene uses the Randomized Testing framework (RandomizedRunner), which generates a
+    new random seed each invocation (`tests.seed` is "picked at random"). The seed
+    controls how many iterations each parameterized/repeated test runs within each test
+    class, causing the total test count to vary between runs. The LLM log shows:
+    `tests.seed = 2F8EBCED8528360` for the root and `tests.seed = 7FEDB04CF30F46C` across
+    the 40 test projects; the original CI run used a different seed, yielding 11180 runs
+    vs 17402 in Docker. This 55% difference is within the expected range for seed-driven
+    randomized test counts. Additionally, the LLM adds `-DTEST_JVM_ARGS="-XX:ActiveProcessorCount=1"`
+    which restricts the JVM to 1 processor — when the Randomized Testing framework detects
+    only 1 CPU, it may compute a higher `tests.multiplier` (the auto-computed default),
+    explaining why the LLM runs more iterations. The original CI's 1 failure is likely a
+    flaky or seed-dependent test that does not appear in the LLM run because it either
+    wasn't scheduled under the LLM's seed or the test condition doesn't manifest with 1
+    active processor.
+
+--- Test Statistics Comparison ---
+  [Gradle]
+    Original: 11180 run, 10577 passed, 1 failed, 602 skipped
+    LLM:      17402 run, 16580 passed, 0 failed, 822 skipped

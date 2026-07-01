@@ -1,0 +1,98 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      coverage
+  Platform:         ubuntu-latest with Node.js 22.22.1 (cached)
+  Test command(s) run in original CI:
+    $ pipenv run python tools/frontend/hash_source.py
+      (computes hash to look up frontend build cache key)
+    $ pipenv run python tools/frontend/bundle_build.py
+      (builds tailpy-gui webpack JS bundle; npm install + webpack compilation)
+    $ playwright install chromium --with-deps
+    $ pipenv run pytest --cov=taipy --cov-report=xml:/workspace/coverage.xml --cov-config=.coveragerc
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    6
+
+--- LLM run.sh Test Command(s) ---
+  $ if [ -f "/workspace/package.json" ]; then ... npm install && bundle_build.py ...
+    (SKIPPED: condition false — package.json is not at /workspace root)
+  $ pipenv run playwright install chromium --with-deps
+  $ pipenv run pytest --cov=taipy --cov-report=xml:/workspace/coverage.xml --cov-config=.coveragerc
+
+--- Reason(s) for Non-Reproducibility ---
+  - [pytest] Test result mismatch (same count 2292): original=(2249p/3f/40s), LLM=(2188p/64f/40s)
+  - [pytest] 61 additional failures in LLM vs original (64 total vs 3)
+  - All additional LLM failures are e2e Playwright tests with `[flask-chromium]` parametrization
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > Skipping Node.js dependencies (package.json not found)...
+    >
+    > RuntimeError: Something is wrong with the taipy-gui front-end installation.
+    >   Check that the js bundle has been properly built (is Node.js installed?).
+    >   [taipy-gui/app.py:875  Exception on /page1 [GET]]
+    >
+    > playwright._impl._errors.TimeoutError: Page.wait_for_selector: Timeout 30000ms exceeded.
+
+  [Root cause classification]
+  LLM's package.json check uses wrong path → frontend JS bundle not built → Flask app
+  crashes on every request → Playwright e2e tests time out after 30 seconds
+
+  The taipy-gui Flask application requires a pre-compiled webpack JavaScript bundle
+  (`taipy-gui/dist/` directory) to serve its frontend. This bundle must be built via
+  `tools/frontend/bundle_build.py`, which runs `npm install` inside `frontend/taipy-gui/`
+  and then executes webpack to compile the React/TypeScript frontend.
+
+  (1) Wrong package.json check in run.sh → frontend build skipped
+    The LLM's run.sh checks `if [ -f "/workspace/package.json" ]` before running
+    `bundle_build.py`. However, taipy's `package.json` is NOT at the repository root
+    `/workspace/` — it is located at `frontend/taipy-gui/package.json`. Since
+    `/workspace/package.json` does not exist, the entire `if` block is skipped, and the
+    log shows:
+      `Skipping Node.js dependencies (package.json not found)...`
+    The frontend JS bundle is never built.
+
+  (2) Flask test server crashes without the bundle → Playwright timeouts
+    When each e2e test starts the taipy Flask development server, the server serves the
+    frontend. On the first request to any page (e.g., `/page1`, `/`), the Flask route
+    handler calls `taipy-gui`'s asset serving code, which detects that the JS bundle
+    (`dist/index.html` or equivalent) is missing and raises:
+      `RuntimeError: Something is wrong with the taipy-gui front-end installation.
+       Check that the js bundle has been properly built (is Node.js installed?).`
+    This unhandled exception causes Flask to return a 500 Internal Server Error instead
+    of the expected HTML page. Playwright's `page.wait_for_selector()` waits for the
+    expected DOM element to appear, but since the page is 500, the selector never appears
+    and Playwright times out after 30 seconds with:
+      `playwright._impl._errors.TimeoutError: Page.wait_for_selector: Timeout 30000ms exceeded.`
+
+  (3) Original CI builds the frontend correctly
+    In the original CI, `tools/frontend/bundle_build.py` is explicitly run after restoring
+    a GitHub Actions cache keyed by the frontend source hash. The script runs `npm install`
+    inside `frontend/taipy-gui/` and then `npm run build` to produce the webpack bundle.
+    With the bundle present, the Flask server serves pages correctly and Playwright tests pass.
+    The original 3 failures (`test_margin_3/4/5[flask-chromium]`) are pre-existing CI issues
+    with the margin test rendering and are unrelated to the frontend bundle.
+
+  (4) LLM Docker does install Node.js — the build is structurally feasible but skipped
+    The Dockerfile correctly installs `nodejs` and `npm`. The `bundle_build.py` script would
+    work if called because the Dockerfile includes these tools. The failure is solely in
+    run.sh's path check: `if [ -f "/workspace/package.json" ]` should have been
+    `if [ -f "/workspace/frontend/taipy-gui/package.json" ]` or simply always run
+    `pipenv run python tools/frontend/bundle_build.py` unconditionally.
+
+--- Test Statistics Comparison ---
+  [pytest]
+    Original: 2292 run, 2249 passed, 3 failed, 40 skipped
+      (3 failures: test_margin_3/4/5[flask-chromium] — pre-existing rendering issues)
+    LLM:      2292 run, 2188 passed, 64 failed, 40 skipped
+      (64 failures: all e2e Playwright [flask-chromium] tests that load any GUI page;
+       root cause: frontend JS bundle not built → Flask 500 error → Playwright timeout)

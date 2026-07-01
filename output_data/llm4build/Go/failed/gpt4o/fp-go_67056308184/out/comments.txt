@@ -1,0 +1,35 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          19
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      Build v1 (Go 1.25.x)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ go test -v -race -coverprofile=coverage.txt -covermode=atomic -coverpkg=./... ./... || true
+
+Note: Original had test failures; LLM build passed all — failed build has passed.
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoDefault] Test run mismatch: original=185, LLM=305
+  - [GoDefault] Test passed mismatch: original=0, LLM=305
+  - [GoDefault] Test failed mismatch: original=185, LLM=0
+  - [GoDefault] 185 test(s) failed in original but passed in LLM: github.com/IBM/fp-go, github.com/IBM/fp-go/array, github.com/IBM/fp-go/array/generic, github.com/IBM/fp-go/array/nonempty, github.com/IBM/fp-go/array/testing ... (+180 more)
+
+--- Root Cause Analysis ---
+  - [GoDefault] LLM ran 120 more tests than original — LLM likely used a broader test scope or included extra test suites.
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 185 run, 0 passed, 185 failed, 0 skipped
+    LLM:      305 run, 305 passed, 0 failed, 0 skipped

@@ -1,0 +1,49 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Run tests and lints
+  Test command(s) run in original CI:
+    $ ory/ci/checkout@master
+    $ actions/checkout@v2
+    $ npm install
+    $ make install
+    $ make test-coverage
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    8
+
+--- LLM run.sh Test Command(s) ---
+  $ make install
+  $ make test-coverage
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoDefault] Test run mismatch: original=56, LLM=31
+  - [GoDefault] Test passed mismatch: original=55, LLM=28
+  - [GoDefault] Test failed mismatch: original=1, LLM=3
+  - [GoDefault] 3 test(s) failed in LLM but not in original: github.com/ory/kratos/continuity, github.com/ory/kratos/driver, github.com/ory/kratos/driver/config
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    402:driver/config/config.go:8:2: could not import cmp (-: could not load export data: internal error in importing "cmp" (unsupported version: 2); please report an issue) (typecheck)
+    402:driver/config/config.go:8:2: could not import cmp (-: could not load export data: internal error in importing "cmp" (unsupported version: 2); please report an issue) (typecheck)
+    418:func (p *Config) getIdentitySchemaValidator(ctx context.Context) (*jsonschema.Schema, error) {
+    593:        	Error Trace:	/workspace/continuity/manager_test.go:48
+    594-        	Error:      	Received unexpected error:
+
+  [Root cause classification]
+  - Two root causes combine. First, `driver/config/config.go:8:2: could not import cmp (-: could not load export data: internal error in importing "cmp" (unsupported version: 2))` — this is a Go toolchain version mismatch. The `cmp` package (standard library in Go 1.21+) uses an export data format version (`version: 2`) that is not supported by the typecheck tool used by `make test-coverage` (likely `staticcheck` or `golangci-lint`'s typecheck pass). This causes `driver` and `driver/config` to fail at the type-checking stage rather than the test stage, explaining why 25 fewer packages ran (31 vs 56).
+
+  - Second, `continuity/manager_test.go:48` with `Received unexpected error` is a database connectivity failure: the continuity manager tests require a PostgreSQL or SQLite database connection. The original CI's `make test-coverage` target was run in the context of the `ory/ci/checkout@master` and `npm install` steps that configure database services; the LLM only ran `make install` and `make test-coverage` without provisioning any database, leaving the continuity tests without their required persistence backend.
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 56 run, 55 passed, 1 failed, 0 skipped
+    LLM:      31 run, 28 passed, 3 failed, 0 skipped

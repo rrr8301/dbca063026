@@ -1,0 +1,46 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Node 22
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ npm ci
+    $ npm run test:no-lint
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ npm run test:no-lint
+  $ TEST_RESULT=$?
+  $ npm run typecheck
+  $ npm run lint
+
+--- Reason(s) for Non-Reproducibility ---
+  - [tap] Test run mismatch: original=7106, LLM=7179
+  - [tap] Test passed mismatch: original=7103, LLM=7176
+  - [tap] Test failed mismatch: original=3, LLM=3
+  - [tap] 1 test(s) failed in LLM but not in original: /workspace/packages/vega-scenegraph/test/path-test.js
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    7481-      Error: should be deeply equivalent
+    7482-          at Test.assert [as _assert] (/workspace/node_modules/tape/lib/test.js:492:48)
+    7496-      Error: should be deeply equivalent
+    7497-          at Test.assert [as _assert] (/workspace/node_modules/tape/lib/test.js:492:48)
+
+  [Root cause classification]
+  - Assertion failure: 7482-          at Test.assert [as _assert] (/workspace/node_modules/tape/lib/test.js:492:48)
+
+--- Test Statistics Comparison ---
+  [tap]
+    Original: 7106 run, 7103 passed, 3 failed, 0 skipped
+    LLM:      7179 run, 7176 passed, 3 failed, 0 skipped

@@ -1,0 +1,1 @@
+RUN /bin/sh -c 'cat > /workspace/run.sh << '\''SCRIPT_EOF'\''

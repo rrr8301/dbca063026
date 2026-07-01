@@ -1,0 +1,91 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      tests / 3.14 / ubuntu-22.04
+  Test command(s) run in original CI:
+    $ nox -s test-3.14 -- tests/unit --verbose --numprocesses auto --showlocals
+    $ nox -s test-3.14 --no-install -- tests/functional --verbose --numprocesses auto --showlocals --durations=15
+
+--- LLM-Generated Dockerfile ---
+  Base image:   python:3.14-slim
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ nox -s test-3.14 -- tests/unit --verbose --numprocesses auto --showlocals
+  $ nox -s test-3.14 --no-install -- tests/functional --verbose --numprocesses auto --showlocals --durations=15
+
+--- Reason(s) for Non-Reproducibility ---
+  - [pytest] Test result mismatch (same count 2836): original=(2706p/30f/71s), LLM=(2716p/2f/93s)
+  - [pytest] 30 tests failed in original but passed in LLM (keyring and cert tests)
+  - [pytest] 2 new tests failed in LLM but passed in original (port conflict + readonly cache)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > tests/functional/test_download.py::test_download_metadata_server[simple2==1.0-...]
+    > ERROR ... - OSError: [Errno 98] Address already in use
+    >
+    > tests/functional/test_wheel.py::test_pip_wheel_readonly_cache
+    > tmpdir = PosixPath('/tmp/pytest-of-root/pytest-1/popen-gw57/test_pip_wheel_readonly_cache0')
+    > cache_dir = PosixPath('.../cache')
+    > E   AssertionError: Script result: python -m pip wheel --no-build-isolation --no-index
+    >     -f file:///...data/packages --cache-dir .../cache simple==3.0
+    >     [wheel built successfully — stored in cache directory]
+    > E     assert 'The cache has been disabled.' in "...Stored in directory: .../cache/wheels/..."
+    >     (pip wrote to the cache instead of reporting it as disabled)
+
+  [Root cause classification]
+  Two Docker-specific failures, and the original CI's failures pass in LLM (different environment):
+
+  (1) Docker root user bypasses chmod 000 → test_pip_wheel_readonly_cache fails
+    `test_pip_wheel_readonly_cache` tests that pip outputs "The cache has been disabled." when
+    it encounters a cache directory that cannot be written to. The test uses `chmod 000` to make
+    the cache directory unreadable/unwritable, then runs:
+      `python -m pip wheel --cache-dir <readonly-cache-dir> simple==3.0`
+    and asserts that pip's output contains "The cache has been disabled."
+
+    Docker runs as root (uid=0). On Linux, root bypasses all discretionary access control —
+    `chmod 000` does NOT prevent root from reading or writing to a directory. pip successfully
+    writes the wheel to the "readonly" cache directory, producing:
+      `Stored in directory: .../cache/wheels/...`
+    instead of disabling the cache. The assertion `assert 'The cache has been disabled.' in output`
+    fails because no permission error occurs for root.
+
+  (2) Port conflict with --numprocesses auto → test_download_metadata_server fails
+    `test_download_metadata_server[simple2==1.0-...]` sets up a local HTTP metadata server
+    (e.g., on 127.0.0.1:PORT) for pip to query during the test. Running with `-n auto`
+    (pytest-xdist, ~70+ parallel workers in Docker) causes two workers to race for the same
+    local port. One worker's server fails to bind with:
+      `OSError: [Errno 98] Address already in use`
+    In the original CI, the pytest-xdist worker count or port selection may be different,
+    avoiding this collision.
+
+  (3) Original CI's 30 failures pass in LLM (inverted environment sensitivity)
+    The original CI's 30 failures are:
+    - 26 × `test_prompt_for_keyring_if_needed`: tests that pip correctly prompts for keyring
+      credentials when index authentication is required. These tests mock a local auth server
+      and check pip's interactive credential handling. The GitHub Actions runner's Python 3.14
+      environment (ubuntu-22.04) has specific system keyring behavior that causes these to fail;
+      the LLM's python:3.14-slim Docker has a different (no-keyring) environment where the
+      expected behavior matches.
+    - 3 × TLS cert tests (`test_install_sends_client_cert`, `test_install_sends_certs_for_pep518_deps`):
+      Tests that pip sends TLS client certificates to a local HTTPS server. In the original CI
+      environment, the HTTPS mock server setup fails or the cert handling differs. In the Docker
+      environment, the TLS handling works as expected.
+    - 1 × `test_config_file_override_stack`: config file precedence test sensitive to the
+      system's user/site config file locations.
+    All 30 of these pass in the LLM Docker, making the LLM result "better" but different from original.
+
+--- Test Statistics Comparison ---
+  [pytest]
+    Original: 2836 run, 2706 passed, 30 failed, 71 skipped
+    LLM:      2836 run, 2716 passed, 2 failed, 93 skipped
+    (LLM: 2 new failures — root bypasses chmod 000 (test_pip_wheel_readonly_cache) and
+     port conflict with -n auto (test_download_metadata_server);
+     Original: 30 failures — keyring auth tests + TLS cert tests (environment-sensitive))

@@ -1,0 +1,74 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          3
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      build (3.14, ubuntu-22.04)
+  Test command(s) run in original CI:
+    $ actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+    $ make
+      (installs requirements-dev.txt including trustme, pytest-httpbin)
+    $ make ci
+      (runs pytest on all test_*.py files)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   python:3.14-slim
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ make
+  $ make ci
+
+--- Reason(s) for Non-Reproducibility ---
+  - [pytest] Test result mismatch (same count 611): original=(595p/0f/15s), LLM=(594p/1f/15s)
+  - [pytest] 1 test(s) failed in LLM but not in original:
+    TestPreparingURLs::test_different_connection_pool_for_tls_settings_verify_bundle_unexpired_cert
+    (tests/test_requests.py)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > pytest-httpbin server hit an exception serving request:
+    >   [SSL: TLSV1_ALERT_UNKNOWN_CA] tlsv1 alert unknown ca (_ssl.c:1081)
+    > verify = 'tests/certs/valid/ca/ca.crt'
+    > if not cert_loc or not os.path.exists(cert_loc):
+    >     raise OSError(
+    >         f"Could not find a suitable TLS CA certificate bundle, "
+    >         f"invalid path: {cert_loc}"
+    >     )
+    > E  OSError: Could not find a suitable TLS CA certificate bundle,
+    >             invalid path: tests/certs/valid/ca/ca.crt
+    > src/requests/adapters.py:305: OSError
+
+  [Root cause classification]
+  - Missing test certificate file tests/certs/valid/ca/ca.crt
+    The test `test_different_connection_pool_for_tls_settings_verify_bundle_unexpired_cert`
+    (in `TestPreparingURLs`) tests that requests correctly differentiates connection pools
+    based on TLS `verify` settings. It starts a local TLS server with:
+      `TLSServer(cert_chain="tests/certs/valid/server/server.pem",
+                 keyfile="tests/certs/valid/server/server.key")`
+    and then makes a request with a specific CA bundle:
+      `r2 = s.get(url, verify="tests/certs/valid/ca/ca.crt")`
+    The server starts successfully (server.pem and server.key exist), but
+    `tests/certs/valid/ca/ca.crt` is not found in the Docker container. The requests
+    library checks `os.path.exists(cert_loc)` in `adapters.py:305` and raises
+    `OSError: Could not find a suitable TLS CA certificate bundle`.
+    This test is a new addition for Python 3.14 testing, testing TLS CA bundle validation.
+    The test certificate hierarchy (server cert + CA cert) appears to require a generation
+    step that produces `tests/certs/valid/ca/ca.crt`. On the GitHub Actions runner
+    (Python 3.14 CI), this file exists either because it's committed to the repo or because
+    a CI setup step (not captured in `make` or `make ci`) generates it using `trustme`
+    (which is in requirements-dev.txt). In the Docker container, `make` only installs
+    dependencies without generating the certificate files, leaving `ca.crt` absent.
+    Note: both `server.pem` and `server.key` do exist (server starts, and a first request
+    `r1 = s.get(url, verify=False)` succeeds), while only `ca.crt` in the CA subdirectory
+    is missing -- consistent with partial cert generation.
+
+--- Test Statistics Comparison ---
+  [pytest]
+    Original: 611 run, 595 passed, 0 failed, 15 skipped
+    LLM:      611 run, 594 passed, 1 failed, 15 skipped

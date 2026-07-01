@@ -1,0 +1,47 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     N/A (not found in CI log)
+  CI job name:      N/A (not found in CI log)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ go mod download
+  $ gofmt -d -e . 2>&1 | tee outfile && test -z "$(cat outfile)" && rm outfile
+  $ go vet ./...
+  $ cd _examples && go vet ./... && cd ..
+  $ go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
+  $ cd _examples && go test -v -race ./... && cd ..
+  $ go install ./cmd/godog
+  $ godog -f progress --strict
+
+--- Reason(s) for Non-Reproducibility ---
+  - GoDefault num_tests_run mismatch: original=68, LLM=6
+  - GoDefault num_tests_passed mismatch: original=64, LLM=0
+  - GoDefault num_tests_failed mismatch: original=0, LLM=6
+
+--- Root Cause Analysis ---
+  All 6 example sub-packages failed to build due to a missing C compiler.
+    > cgo: C compiler "gcc" not found: exec: "gcc": executable file not found in $PATH
+    > FAIL github.com/cucumber/godog/_examples/api [build failed]
+    > FAIL github.com/cucumber/godog/_examples/assert-godogs [build failed]
+    > FAIL github.com/cucumber/godog/_examples/db [build failed]
+    > /usr/local/bin/run.sh: line 21: cd: _examples: No such file or directory
+    > godog: command not found
+
+  Missing build toolchain and incorrect working directory: The LLM-generated Dockerfile did not install gcc/build-essential, so cgo-dependent packages in _examples/ could not compile. Additionally the run.sh attempted to `cd _examples` from a working directory where the path did not exist as expected, and the installed `godog` binary was not on PATH. These issues caused all 6 example test packages to fail vs. 64 passing in the original, and the overall test count collapsed from 68 to 6.
+
+--- Test Statistics Comparison ---
+  GoDefault
+    Original: 68 run, 64 passed, 0 failed, 0 skipped
+    LLM:       6 run,  0 passed, 6 failed, 0 skipped

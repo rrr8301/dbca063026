@@ -1,0 +1,40 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          N/A
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      Typing Tests
+  Test command(s) run in original CI:
+    $ pytest tests/compliance/test_typing.py
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    8
+
+--- LLM run.sh Test Command(s) ---
+  $ pytest tests/compliance/test_typing.py
+
+--- Reason(s) for Non-Reproducibility ---
+  - [pytest] Test passed mismatch: original=35, LLM=11
+  - [pytest] Test failed mismatch: original=3, LLM=27
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > Error: /usr/bin/python3.12: No module named pyright
+    > Error: /usr/bin/python3.12: No module named mypy
+    > AssertionError: Status: 1 (expected 0) — typing checker subprocess exited non-zero
+    > 27 failed, 11 passed, 1 skipped in 1.36s
+
+  [Root cause classification]
+  - The LLM Dockerfile (ubuntu:22.04) installed Dash but omitted the typing-checker dependencies `pyright` and `mypy`, which are bundled as extras in the original CI's `dash[testing]` install on ubuntu-24.04. Every test that invokes `run_module(codefile, module="pyright")` or `run_module(codefile, module="mypy")` fails with "No module named X", flipping 24 additional tests from PASS to FAIL. The original CI had only 3 mypy-related failures (legitimate type annotation issues), while the LLM environment has all mypy and pyright tests failing due to missing tools.
+
+--- Test Statistics Comparison ---
+  [pytest]
+    Original: 39 run, 35 passed, 3 failed, 1 skipped
+    LLM:      39 run, 11 passed, 27 failed, 1 skipped

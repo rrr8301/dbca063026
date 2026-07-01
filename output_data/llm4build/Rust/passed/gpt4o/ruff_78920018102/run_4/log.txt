@@ -1,0 +1,69 @@
+Error from docker build
+
+#1 [ 1/10] FROM docker.io/library/ubuntu:22.04
+#1 CACHED
+
+#2 [2/9] RUN ln -snf /usr/share/zoneinfo/America/Los_Angeles /etc/localtime && echo America/Los_Angeles > /etc/timezone
+#2 CACHED
+
+#3 [internal] load .dockerignore
+#3 transferring context: 2B done
+#3 DONE 0.0s
+
+#4 [internal] load build definition from Dockerfile
+#4 transferring dockerfile: 1.36kB done
+#4 DONE 0.0s
+
+#5 [internal] load metadata for docker.io/library/ubuntu:22.04
+#5 DONE 0.0s
+
+#6 [internal] load build context
+#6 transferring context: 2.96MB 1.2s done
+#6 DONE 1.3s
+
+#7 [ 4/15] RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+#7 CACHED
+
+#8 [ 5/15] RUN /root/.cargo/bin/cargo install cargo-insta uv
+#8 CACHED
+
+#9 [ 6/15] RUN /root/.cargo/bin/cargo install --locked cargo-nextest
+#9 CACHED
+
+#10 [ 7/15] RUN useradd -m testuser
+#10 CACHED
+
+#11 [ 3/15] RUN apt-get update && apt-get install -y     git     curl     wget     build-essential     libssl-dev     pkg-config     mold
+#11 CACHED
+
+#12 [ 8/15] WORKDIR /workspace
+#12 CACHED
+
+#13 [ 9/15] COPY . /workspace
+#13 DONE 3.7s
+
+#14 [10/15] RUN chown -R testuser /workspace
+#14 DONE 8.7s
+
+#15 [11/15] RUN git config --global --add safe.directory '*'
+#15 DONE 0.5s
+
+#16 [12/15] RUN echo 'source $HOME/.cargo/env' >> /home/testuser/.bashrc
+#16 DONE 0.5s
+
+#17 [13/15] RUN /root/.cargo/bin/rustup-init -y --no-modify-path
+#17 0.394 /bin/sh: 1: /root/.cargo/bin/rustup-init: Permission denied
+#17 ERROR: process "/bin/sh -c /root/.cargo/bin/rustup-init -y --no-modify-path" did not complete successfully: exit code: 126
+------
+ > [13/15] RUN /root/.cargo/bin/rustup-init -y --no-modify-path:
+#17 0.394 /bin/sh: 1: /root/.cargo/bin/rustup-init: Permission denied
+------
+Dockerfile:44
+--------------------
+  42 |     
+  43 |     # Ensure Rust environment is set up for testuser
+  44 | >>> RUN /root/.cargo/bin/rustup-init -y --no-modify-path
+  45 |     RUN /home/testuser/.cargo/bin/rustup toolchain install stable
+  46 |     RUN /home/testuser/.cargo/bin/rustup default stable
+--------------------
+ERROR: failed to solve: process "/bin/sh -c /root/.cargo/bin/rustup-init -y --no-modify-path" did not complete successfully: exit code: 126

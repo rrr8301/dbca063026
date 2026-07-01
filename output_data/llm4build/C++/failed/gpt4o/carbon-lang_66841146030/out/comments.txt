@@ -1,0 +1,35 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          20
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT TESTS NOT REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-22.04
+  CI job name:      test (ubuntu-22.04, opt)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   python:3.10-slim
+  RUN steps:    1
+
+--- Test Reproducibility Gap ---
+  Original ran 23 test(s) across [Bazel].
+  LLM build produced no test results (empty llm_log_stats).
+
+--- Root Cause ---
+  Reason type: Test runner executed but produced no parseable output
+  Last log output before stopping:
+    p = subprocess.run([bazel] + bazel_args)
+    File "/usr/local/lib/python3.10/subprocess.py", line 503, in run
+    with Popen(*popenargs, **kwargs) as process:
+    File "/usr/local/lib/python3.10/subprocess.py", line 971, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+    File "/usr/local/lib/python3.10/subprocess.py", line 1863, in _execute_child
+    raise child_exception_type(errno_num, err_msg, err_filename)
+    PermissionError: [Errno 13] Permission denied: '/app/scripts/run_bazelisk.py'
+
+--- Original Test Statistics (not reproduced) ---
+  [Bazel] 23 run, 23 passed, 0 failed, 0 skipped

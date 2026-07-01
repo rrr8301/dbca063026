@@ -1,0 +1,92 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      cargo test (linux)
+  Platform:         GitHub Actions Linux x86_64
+  Test command(s) run in original CI:
+    $ cargo test -p ty_python_semantic --test mdtest
+      (329 mdtest tests; 1 failed — return_type.md insta snapshot mismatch)
+    $ cargo insta test --all-features --unreferenced reject --test-runner nextest
+      (7377 nextest tests; 1 failed — ty_python_semantic::mdtest return_type.md)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04 with Rust stable
+  Architecture: x86_64 (Docker)
+  RUN steps:    several
+
+--- LLM run.sh Test Command(s) ---
+  $ cargo test -p ty_python_semantic --test mdtest
+    (423 cargo tests; 3 failed — return_type.md + unreadable_pyproject_toml)
+  $ cargo insta test --all-features --unreferenced reject --test-runner nextest
+    (7359 nextest tests; 2 failed — return_type.md + unreadable_pyproject_toml)
+
+--- Reason(s) for Non-Reproducibility ---
+  - [cargo] Test count difference: original=329 run, LLM=423 run (94 skipped in LLM)
+  - [nexttest] Test count difference: original=7377 run, LLM=7359 run (18 fewer in LLM)
+  - [cargo/nexttest] Same test fails in both: mdtest::function/return_type.md
+  - [nexttest] LLM-only failure: ruff::integration_test unreadable_pyproject_toml
+  - Docker runs as root → can read chmod 000 files → unreadable_pyproject_toml "unexpected success"
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > Snapshot file: crates/ty_python_semantic/resources/mdtest/snapshots/
+    >   return_type.md_-_Function_return_type_-_Generator_functions_-_Synchronous_(...).snap
+    > snapshot assertion for '..._Synchronous_...' failed in line 621
+    > -old snapshot
+    > +new results
+    >          37 │+error[invalid-assignment]: Object of type `Literal[42]` is not assignable to `None`
+    >          67 │+error[invalid-assignment]: Object of type `Literal[42]` is not assignable to `None`
+    >          70 │+19 | def j() -> str:  # error: [invalid-return-type]
+    > thread '<unnamed>' panicked at insta-1.46.3/src/runtime.rs:719:13:
+    > snapshot assertion for 'return_type.md_-_Function_return_type_-_Generator_functions_-_Synchronous_...'
+    >   failed in line 621
+    >
+    > FAIL ruff::integration_test unreadable_pyproject_toml
+    > Error: Unexpected success
+
+  [Actual error messages from original CI log]
+    > snapshot assertion for 'return_type.md_-_Function_return_type_-_Generator_functions_-_Synchronous_...'
+    >   failed in line 621
+    > [same snapshot mismatch — new result includes additional invalid-assignment errors]
+    > PASS ruff::integration_test unreadable_pyproject_toml
+    [passes in CI: non-root user cannot read chmod 000 file → ruff fails as expected]
+
+  [Root cause classification]
+  Two separate failure causes:
+
+  (1) Pre-existing (both original CI and LLM): insta snapshot mismatch in return_type.md
+    The `ty_python_semantic` mdtest for `function/return_type.md` tests generator function
+    return type inference. The committed snapshot at
+    `crates/ty_python_semantic/resources/mdtest/snapshots/return_type.md_-_..._Synchronous_....snap`
+    reflects the old behavior, but the current implementation now also emits
+    `error[invalid-assignment]: Object of type `Literal[42]` is not assignable to `None``
+    for generator functions returning None-typed yields. The new output contains additional
+    diagnostic lines (at positions 37, 67, 70 in the test file) not in the old snapshot.
+    Both original CI and LLM hit this identical snapshot assertion failure.
+
+  (2) LLM only: `ruff::integration_test unreadable_pyproject_toml` passes unexpectedly
+    This integration test creates a temporary directory with a `pyproject.toml` whose
+    permissions are set to 000 (unreadable by non-root users). It then runs ruff against
+    that directory, expecting ruff to fail with an error because it cannot read the config
+    file. In Docker, the container runs as root. Root bypasses Unix file permission checks
+    and can read any file regardless of its permission bits. So ruff successfully reads the
+    `pyproject.toml`, runs without error, and exits with status 0. The test expected a
+    non-zero exit but got 0 → `Error: Unexpected success`. On GitHub Actions, the runner
+    is a non-root user, the chmod 000 file is genuinely unreadable, and ruff fails correctly.
+
+--- Test Statistics Comparison ---
+  [cargo / mdtest binary]
+    Original: 329 run, 326 passed, 3 failed (return_type.md counted 3×), 0 skipped
+    LLM:      423 run, 326 passed, 3 failed, 94 skipped
+      (return_type.md×2 + unreadable_pyproject_toml; 94 cargo integration tests filtered out)
+  [nextest]
+    Original: 7377 run, 7332 passed, 1 failed (mdtest::function/return_type.md), 44 skipped
+    LLM:      7359 run, 7313 passed, 2 failed, 44 skipped
+      (return_type.md + unreadable_pyproject_toml; 18 fewer tests discovered)

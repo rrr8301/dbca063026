@@ -1,0 +1,42 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          20
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      unit (1.24)
+  Test command(s) run in original CI:
+    $ go test -race ./...
+    $ go test -race ./...
+    $ go test -race ./...
+    $ go test -race ./...
+
+--- LLM-Generated Dockerfile ---
+  Base image:   golang:1.24
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ go test -race ./cmd/... || true
+  $ go test -race ./dialect/... || true
+  $ go test -race ./schema/... || true
+  $ go test -race ./entc/load/... || true
+  $ go test -race ./entc/gen/... || true
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoDefault] Test passed mismatch: original=46, LLM=38
+  - [GoDefault] Test failed mismatch: original=0, LLM=8
+  - [GoDefault] 8 test(s) failed in LLM but not in original: entgo.io/ent/examples/compositetypes, entgo.io/ent/examples/domaintypes, entgo.io/ent/examples/enumtypes, entgo.io/ent/examples/functionalidx, entgo.io/ent/examples/rls ... (+3 more)
+
+--- Root Cause Analysis ---
+  - [GoDefault] 8 test(s) failed in LLM but not original: entgo.io/ent/examples/compositetypes, entgo.io/ent/examples/domaintypes, entgo.io/ent/examples/enumtypes, entgo.io/ent/examples/functionalidx, entgo.io/ent/examples/rls ... (+3 more)
+  - Test command differences detected — original CI vs LLM run.sh may use different flags or test selection.
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 46 run, 46 passed, 0 failed, 0 skipped
+    LLM:      46 run, 38 passed, 8 failed, 0 skipped

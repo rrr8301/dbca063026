@@ -1,0 +1,38 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          4
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT TESTS NOT REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      Test - stable toolchain, recent deps
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+--- Test Reproducibility Gap ---
+  Original ran 34755 test(s) across [cargo].
+  LLM build produced no test results (empty llm_log_stats).
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > error[E0463]: can't find crate for `core`
+    >   = note: the `thumbv7m-none-eabi` target may not be installed
+    >   = help: consider downloading the target with `rustup target add thumbv7m-none-eabi`
+    > Error running tests: command exited with non-zero code `cargo build --target thumbv7m-none-eabi --no-default-features`: 101
+
+  [Root cause classification]
+  - The LLM's run.sh invokes `cargo rbmt test --toolchain stable --lock-file recent`, which is rust-bitcoin's custom `rbmt` (Rust Bitcoin Meta Tool) test driver. `rbmt` automatically detects `no_std` packages in the workspace (`bitcoin-addresses`) and attempts a cross-compilation for embedded targets to verify that the `no_std` compatibility is maintained. It tries to build `bitcoin-addresses` for `thumbv7m-none-eabi` (ARM Cortex-M3 bare-metal), but the `thumbv7m-none-eabi` Rust target is not installed in the Docker container. The LLM's Dockerfile did not run `rustup target add thumbv7m-none-eabi` before invoking `rbmt`, causing the `no_std` cross-compilation check to fail with `can't find crate for core`.
+
+  - The original CI (ubuntu-24.04, stable toolchain) passed all 34755 tests because the CI runner's Rust installation included the `thumbv7m-none-eabi` target — either pre-installed by the `actions/rust-toolchain` action or installed by `rbmt` itself when running in the CI environment with network access to rustup's component server. After 4 attempts, the LLM could not resolve the missing target because `rustup target add` requires network access to the Rust component distribution servers, which is available during `docker build` but not during the LLM's iterative Dockerfile editing phase.
+
+--- Root Cause ---
+  Reason type: Compilation / linker failure during build
+
+--- Original Test Statistics (not reproduced) ---
+  [cargo] 34755 run, 34598 passed, 0 failed, 157 skipped

@@ -1,0 +1,62 @@
+Error from docker build
+
+#1 [internal] load .dockerignore
+#1 transferring context: 1.21kB done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 1.80kB done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/ubuntu:22.04
+#3 DONE 0.0s
+
+#4 [ 1/12] FROM docker.io/library/ubuntu:22.04
+#4 DONE 0.0s
+
+#5 [ 2/12] RUN ln -snf /usr/share/zoneinfo/America/Los_Angeles /etc/localtime && echo America/Los_Angeles > /etc/timezone
+#5 CACHED
+
+#6 [internal] load build context
+#6 transferring context: 213.31kB 0.0s done
+#6 DONE 0.0s
+
+#7 [ 9/12] RUN mkdir -p /tmp/go-cache /tmp/go-mod-cache /tmp/go-path /tmp/go-tmp /tmp/embedded-pg-cache
+#7 CACHED
+
+#8 [10/12] RUN go mod download
+#8 CACHED
+
+#9 [ 6/12] RUN curl -fsSL https://apt.releases.hashicorp.com/gpg | apt-key add - &&     echo "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main" > /etc/apt/sources.list.d/hashicorp.list &&     apt-get update && apt-get install -y --no-install-recommends terraform &&     rm -rf /var/lib/apt/lists/*
+#9 CACHED
+
+#10 [ 5/12] RUN go install github.com/gotestyourself/gotestsum@latest
+#10 CACHED
+
+#11 [ 4/12] RUN curl -fsSL https://go.dev/dl/go1.21.0.linux-amd64.tar.gz -o /tmp/go.tar.gz &&     tar -C /usr/local -xzf /tmp/go.tar.gz &&     rm /tmp/go.tar.gz
+#11 CACHED
+
+#12 [ 8/12] COPY . .
+#12 CACHED
+
+#13 [ 7/12] WORKDIR /workspace
+#13 CACHED
+
+#14 [11/12] COPY run.sh /workspace/run.sh
+#14 ERROR: failed to calculate checksum of ref bbf0bc14-1281-4098-922e-22d26f66be72::9b1088rmuxqlvhwvjq92aj71v: "/run.sh": not found
+
+#15 [ 3/12] RUN apt-get update && apt-get install -y --no-install-recommends     git     build-essential     curl     wget     ca-certificates     postgresql-13     postgresql-client     gnupg     lsb-release     && rm -rf /var/lib/apt/lists/*
+#15 0.455 runc run failed: container process is already dead
+#15 CANCELED
+------
+ > [11/12] COPY run.sh /workspace/run.sh:
+------
+Dockerfile:57
+--------------------
+  55 |     
+  56 |     # Copy and set run.sh as entrypoint
+  57 | >>> COPY run.sh /workspace/run.sh
+  58 |     RUN chmod +x /workspace/run.sh
+  59 |     
+--------------------
+ERROR: failed to solve: failed to compute cache key: failed to calculate checksum of ref bbf0bc14-1281-4098-922e-22d26f66be72::9b1088rmuxqlvhwvjq92aj71v: "/run.sh": not found

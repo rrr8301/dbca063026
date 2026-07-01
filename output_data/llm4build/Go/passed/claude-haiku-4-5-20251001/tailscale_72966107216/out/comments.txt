@@ -1,0 +1,46 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          5
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      test (amd64)
+  Test command(s) run in original CI:
+    $ actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+    $ ./tool/go build  ./...
+    $ ./build_dist.sh --extra-small ./cmd/tailscaled
+    $ ./tool/go build -o /tmp/testwrapper ./cmd/testwrapper
+    $ NOBASHDEBUG=true NOPWSHDEBUG=true PATH=$PWD/tool:$PATH /tmp/testwrapper ./...
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  (no test commands found)
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoDefault] Test run mismatch: original=1, LLM=31
+  - [GoDefault] Test passed mismatch: original=0, LLM=2
+  - [GoDefault] Test failed mismatch: original=1, LLM=8
+  - [GoDefault] 7 test(s) failed in LLM but not in original: tailscale.com/cmd/natc, tailscale.com/derp/xdp, tailscale.com/net/udprelay, tailscale.com/ssh/tailssh, tailscale.com/tstest/integration, tailscale.com/util/linuxfw, tailscale.com/wgengine/router/osrouter
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    1185---- FAIL: TestDNSOverTCPIntervalResolver (23.21s)
+    1149:FAIL	tailscale.com/wgengine/router/osrouter	0.065
+    1105:FAIL	tailscale.com/util/linuxfw	0.031
+
+  [Root cause classification]
+  - The original CI ran 1 test via Tailscale's `testwrapper` binary (`/tmp/testwrapper ./...`) with `PATH=$PWD/tool:$PATH` overriding the system Go. The `testwrapper` binary filters packages by kernel capability — it probes for `iptables`, `ip6tables`, XDP support, WireGuard kernel module, and raw network socket privileges before deciding which packages to run. On a GitHub Actions runner with a full Ubuntu kernel, `testwrapper` selected 1 package to test (the one failing test was `TestDNSOverTCPIntervalResolver` which timed out in the original CI too). The LLM ran `go test ./...` without `testwrapper`, so all 31 packages ran regardless of kernel capability.
+
+  - The 7 extra failures in the LLM (`cmd/natc`, `derp/xdp`, `net/udprelay`, `ssh/tailssh`, `tstest/integration`, `util/linuxfw`, `wgengine/router/osrouter`) are all packages that require kernel-level features: XDP (eBPF), WireGuard, iptables, TUN devices, or raw UDP socket capabilities. Inside Docker without `--privileged`, these capabilities are not available. `TestDNSOverTCPIntervalResolver` (23.21s) times out in the LLM as well (though the original's 1 failure is the same test). This is the same root cause as the failed-category counterpart `tailscale_73108001418`: the `testwrapper` package filter is essential for running only the capability-appropriate subset of Tailscale's tests.
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 1 run, 0 passed, 1 failed, 0 skipped
+    LLM:      31 run, 2 passed, 8 failed, 0 skipped

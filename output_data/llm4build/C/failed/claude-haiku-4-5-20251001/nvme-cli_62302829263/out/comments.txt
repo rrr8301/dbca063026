@@ -1,0 +1,46 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      libnvme (gcc, debug)
+  Test command(s) run in original CI:
+    $ actions/checkout@v5
+    $ scripts/build.sh -b debug -c gcc -x libnvme
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ghcr.io/linux-nvme/debian.python:latest
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  (no test commands found)
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Meson] Test result mismatch (same count 42): original=(39p/1f/0s), LLM=(34p/6f/0s)
+  - [Meson] Tests failed in LLM but passed in original: libnvme - NBFT-Dell.PowerEdge.R760, libnvme - cpp-dump, libnvme - python-create-ctrl-object, libnvme - python-read-nbft-file, libnvme - python-sigsegv-during-gc
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    260:26/42 libnvme - cpp-dump      FAIL   1.34s   killed by signal 11 SIGSEGV
+    261:>>> valgrind /github/workspace/.build-ci/libnvme/test/test-cpp
+    278:40/42 libnvme - python-create-ctrl-object   FAIL   5.37s   killed by signal 11 SIGSEGV
+    279:>>> valgrind /usr/bin/python3 .../create-ctrl-obj.py
+    281:41/42 libnvme - python-sigsegv-during-gc    FAIL   5.51s   killed by signal 11 SIGSEGV
+    284:42/42 libnvme - python-read-nbft-file       FAIL   6.04s   killed by signal 11 SIGSEGV
+    265:29/42 libnvme - kdoc   FAIL   1.29s   exit status 1
+    249:17/42 libnvme - NBFT-Dell.PowerEdge.R760   FAIL   1.14s   exit status 1
+
+  [Root cause classification]
+  - SIGSEGV under valgrind in C++ and Python tests: `cpp-dump`, `python-create-ctrl-object`, `python-sigsegv-during-gc`, and `python-read-nbft-file` all crash with SIGSEGV (signal 11) when run under valgrind. The valgrind version in the Docker container (ghcr.io/linux-nvme/debian.python) is incompatible with the glibc or C++ ABI version, causing spurious segfaults in the test wrappers. The original CI ran the same tests without these valgrind-induced crashes.
+  - kdoc kernel documentation check fails: `valgrind kernel-doc-check` exits with status 1, indicating that the NVMe header files have undocumented kernel-doc entries or formatting errors not present in the original CI's code version.
+  - NBFT-Dell.PowerEdge.R760 data mismatch: The NBFT table dump for a specific Dell PowerEdge R760 hardware configuration doesn't match the expected diff, likely because the test reference data was not updated to match the Docker environment's library version.
+
+--- Test Statistics Comparison ---
+  [Meson]
+    Original: 42 run, 39 passed, 1 failed, 0 skipped
+    LLM:      42 run, 34 passed, 6 failed, 0 skipped

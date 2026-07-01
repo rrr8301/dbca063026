@@ -1,0 +1,71 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      MySQL / MySQL 8.0 - mysql-ci
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ actions/setup-java@v4 (java-version: 21)
+    $ ./.github/actions/build-debezium-mysql
+    $ ./mvnw clean install -B -pl debezium-connector-mysql -am -Pmysql-ci \
+        -Dcheckstyle.skip=true -Dformat.skip=true -Dversion.mysql.server=8.0 \
+        -DfailFlakyTests=false -Ddebezium.test.mongo.replica.primary.startup.timeout.seconds=120
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ ./mvnw clean install -B (with matrix of -Pmysql-ci, -Pmysql-ci-gtids,
+      -Pmysql-ci-percona, -Pmysql-ci-ssl across versions 8.0, 8.4, 9.1)
+  (also runs debezium-testing-testcontainers module)
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Maven] Test run mismatch: original=1584, LLM=860
+  - [Maven] Test passed mismatch: original=1512, LLM=852
+  - [Maven] Test failed mismatch: original=0, LLM=4
+  - [Maven] 4 tests fail in LLM but pass in original:
+    ApicurioRegistryTestIT (io.debezium.testing.testcontainers)
+    DebeziumContainerIT (io.debezium.testing.testcontainers)
+    MongoDbReplicaSetAuthContainerIT (io.debezium.testing.testcontainers)
+    testCluster (io.debezium.testing.testcontainers.MongoDbReplicaSetContainerIT)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    ERROR   ApicurioRegistryTestIT.startContainers:82 ? Runtime Failed to start Kafka containers
+    ERROR   DebeziumContainerIT.startContainers:68 ? Runtime Failed to start Kafka containers
+    ERROR   MongoDbReplicaSetAuthContainerIT.beforeAll:49 ? IllegalState
+      java.util.concurrent.ExecutionException: java.lang.IllegalStateException:
+      Previous attempts to find a Docker environment failed. Will not retry.
+      Please see logs and check configuration
+    ERROR   MongoDbReplicaSetContainerIT.testCluster:70->testCluster:104 ? IllegalState
+      java.util.concurrent.ExecutionException: java.lang.IllegalStateException:
+      Previous attempts to find a Docker environment failed. Will not retry.
+
+  [Root cause classification]
+  - No Docker socket in Docker → Testcontainers cannot start containers → 4 integration tests
+    fail. The `debezium-testing-testcontainers` module's integration tests use Testcontainers
+    to spin up Kafka, Apicurio Registry, and MongoDB containers inside the test process.
+    Testcontainers requires access to the Docker daemon via `/var/run/docker.sock`. Inside
+    Docker, this socket is not mounted, so Testcontainers reports "Previous attempts to find
+    a Docker environment failed. Will not retry." and all container-dependent tests fail with
+    RuntimeException (Kafka containers) or IllegalStateException (MongoDB replica set).
+    In the original CI (GitHub Actions), the runner has Docker installed and the socket is
+    accessible, so Testcontainers successfully starts all containers.
+    The test count difference (1584 vs 860) is because the LLM runs the `debezium-testing-testcontainers`
+    module (which produces 4 failing tests) but the original CI only runs `debezium-connector-mysql`
+    tests (with `-pl debezium-connector-mysql -am`). The LLM also runs MySQL with multiple
+    profile/version combinations (a matrix of 4 profiles × 3 versions), but many of the
+    tests overlap or fail due to profile incompatibilities, resulting in fewer successful test
+    runs than the original single MySQL 8.0 run.
+
+--- Test Statistics Comparison ---
+  [Maven]
+    Original: 1584 run, 1512 passed, 0 failed, 72 skipped
+    LLM:      860 run, 852 passed, 4 failed, 4 skipped

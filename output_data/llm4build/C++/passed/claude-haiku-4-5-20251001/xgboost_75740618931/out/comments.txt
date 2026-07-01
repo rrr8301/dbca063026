@@ -1,0 +1,44 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          3
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Build CPU (sanitizer)
+  Test command(s) run in original CI:
+    $ actions/checkout@v6.0.2
+    $ rm -fv dmlc-core/include/dmlc/build_config_default.h
+    $ bash ops/pipeline/build-cpu.sh cpu-sanitizer
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  (no test commands found)
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GTest] Test run mismatch: original=825, LLM=389
+  - [GTest] Test passed mismatch: original=819, LLM=0
+  - [GTest] Test failed mismatch: original=0, LLM=0
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > ==25553==AddressSanitizer CHECK failed: sanitizer_posix.cpp:61 "(("unable to unmap" && 0)) != (0)"
+    > ==25553==ERROR: AddressSanitizer failed to allocate 0xff000 (1044480) bytes at address fdfeadf8000 (errno: 12)
+    > ==25553==ReserveShadowMemoryRange failed while trying to map 0xff000 bytes. Perhaps you're using ulimit -v
+    > ops/pipeline/build-cpu.sh: line 16: 25553 Aborted (core dumped) ./testxgboost --gtest_filter=-*DeathTest*
+
+  [Root cause classification]
+  - The `Build CPU (sanitizer)` CI job compiles XGBoost with AddressSanitizer (`-fsanitize=address`). ASan works by shadowing the entire virtual address space: it reserves a large contiguous region of memory (shadow memory) to track every byte allocation. In Docker containers with memory or virtual address space restrictions (`ulimit -v`), ASan cannot reserve its shadow memory ranges ("failed to allocate 0xff000 bytes", "ReserveShadowMemoryRange failed"). The test binary (`testxgboost`) aborts before running any tests, which is why the LLM's GTest count shows 389 tests "run" with 0 passed — the parser reads the test binary's registered tests count from the preamble but the binary crashes before executing them.
+
+  - The original CI ran on a GitHub Actions Linux runner with full virtual address space (no ulimit restriction), allowing ASan to map its shadow memory (typically 16+ TB of virtual address space for x86_64). The 436 fewer tests in the LLM (389 vs 825) reflect which GTest test cases were registered before the crash, not executed. The `xgboost_66714523910` failed-category counterpart has the same dependency on pre-built artifacts (different CI job). This sanitizer memory restriction is the same class of problem as seen in other ASan-heavy projects in Docker: the container's virtual address space limit prevents the shadow memory reservation.
+
+--- Test Statistics Comparison ---
+  [GTest]
+    Original: 825 run, 819 passed, 0 failed, 6 skipped
+    LLM:      389 run, 0 passed, 0 failed, 0 skipped

@@ -1,0 +1,39 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   False
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          20
+Original build category: failed
+
+STATUS: BUILD EXECUTION FAILED
+
+--- Original CI Environment ---
+  CI job name:      test (1.24) / Go 1.24
+  Test command(s) run in original CI:
+    $ go test ./...
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    6
+
+--- LLM run.sh Test Command(s) ---
+  $ cd /workspace/webrtc && go mod download && go test ./...
+
+--- Reason(s) for Non-Reproducibility ---
+  - [ER=False] Docker container failed to produce any test output; log.txt is empty indicating the build or execution never completed successfully.
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    (log.txt is empty — no output was produced)
+
+  [Root cause classification]
+  - The Docker build or test execution failed silently after 20 attempts, producing no test output. The empty log.txt and ER=False indicate the container never reached the test execution stage.
+
+  - The LLM installed Go 1.24.0 and golangci-lint v1.50.1 on ubuntu:22.04 and attempted to clone the pion/webrtc repository. The run.sh tries `cd /workspace/webrtc`, but if the repository was cloned directly into /workspace (without a subdirectory), this cd would fail before tests could run.
+
+  - The original CI used a reusable workflow (`pion/.goassets/.github/workflows/test.reusable.yml`) on a GitHub-hosted runner with Go 1.24. After 20 failed attempts the LLM was unable to produce a working Docker environment.
+
+--- Test Statistics Comparison ---
+  [No test statistics available — execution failed]
+    Original: (no stats recorded)
+    LLM:      (no stats recorded)

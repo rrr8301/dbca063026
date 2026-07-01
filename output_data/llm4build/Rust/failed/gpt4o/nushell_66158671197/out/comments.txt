@@ -1,0 +1,25 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): True
+Attempt Number:          1
+Original build category: failed
+
+STATUS: FULLY REPRODUCIBLE
+
+The LLM build fully reproduces the original build results.
+Reason: Test case names, test counts, and pass/fail statuses all match.
+
+Matching test statistics:
+  [cargo] 13 run, 13 passed, 0 failed, 0 skipped
+    Failed tests (same in both): tests::repl::test_type_check::array_of_wrong_types
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > thread 'kitest-worker-4' panicked at /app/crates/nu-test-support/src/macros.rs:253:10: Could not canonicalize dummy binaries path: Os { code: 2, kind: NotFound, message: "No such file or directory" }
+    > Couldn't canonicalize dummy binaries path /app/target/debug: Os { code: 2, kind: NotFound, message: "No such file or directory" }
+    > could not get mutex lock: PoisonError { .. }  (repeated across plugin test threads)
+    > test result: FAILED. 963 passed; 798 failed; 28 ignored; 0 filtered out; across 3 groups, finished in 8.82s
+
+  [Root cause classification: Missing compiled debug binaries required by nu-test-support harness]
+  - The LLM ran cargo test with --profile ci which compiles test binaries under target/ci rather than target/debug; the nu-test-support macros hard-code a path to target/debug to find the nu binary and dummy plugin binaries at test startup, so every test that invokes a subprocess panics immediately with "No such file or directory". The resulting mutex PoisonError cascade is a secondary consequence of this missing binary path. The original CI used --profile ci with a pre-built target/debug present from an earlier step, which the LLM Dockerfile did not replicate, causing the large difference in failure count (798 vs 1).

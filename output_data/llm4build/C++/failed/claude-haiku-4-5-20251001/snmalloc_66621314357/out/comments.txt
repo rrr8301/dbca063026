@@ -1,0 +1,49 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      ubuntu-24.04 Release TSan + UBSan / build
+  Test command(s) run in original CI:
+    $ actions/checkout@v4
+    $ sudo apt install -y ninja-build libc++-dev
+    $ cmake -DSNMALLOC_CI_BUILD=ON -B /home/runner/work/snmalloc/snmalloc/build -G Ninja -DSNMALLOC_SANITIZER=undefined,thread -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_CXX_FLAGS=-stdlib="libc++ -g" -DCMAKE_BUILD_TYPE=Release
+    $ cmake --build . --config Release
+    $ ctest --output-on-failure -j 4 -C Release --timeout 400 -E "memcpy|external_pointer" --repeat-until-fail 2
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ cmake \
+  $ -DCMAKE_BUILD_TYPE=Release \
+  $ -DCMAKE_CXX_COMPILER=clang++ \
+  $ -DCMAKE_CXX_FLAGS=-stdlib="libc++ -g"
+  $ ctest \
+
+--- Reason(s) for Non-Reproducibility ---
+  - [CTest] Test run mismatch: original=80, LLM=78
+  - [CTest] Test passed mismatch: original=76, LLM=74
+  - [CTest] Test failed mismatch: original=4, LLM=4
+  - [CTest] 1 test(s) failed in LLM but not in original: perf-lotsofthreads-check
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > Test #3: perf-lotsofthreads-fast ***Failed 8.93 sec
+    > Test #42: perf-lotsofthreads-check ***Failed 9.19 sec
+
+  [Root cause classification]
+  - `perf-lotsofthreads-check` (and `perf-lotsofthreads-fast`) fail in the LLM because the Docker container's thread scheduler cannot sustain the throughput that snmalloc's performance test expects when running many concurrent allocation threads simultaneously. These tests measure thread-scalability of snmalloc's allocator; under Docker's CPU scheduling restrictions, high-thread-count workloads experience higher scheduling jitter and longer lock-wait times, causing the performance assertion to fail within the 9-second timeout. The original CI ran on a GitHub Actions `ubuntu-24.04` runner with dedicated CPU cores and no scheduler contention, so both `perf-lotsofthreads-*` tests passed.
+
+  - The 2 missing CTest entries (80→78) are the two `memcpy` and `external_pointer` tests excluded by the original CI's `-E "memcpy|external_pointer"` flag. The LLM's run.sh correctly includes `-E "memcpy|external_pointer"` in its ctest command, but the original CI used `-DSNMALLOC_CI_BUILD=ON` (the LLM omits this flag). `SNMALLOC_CI_BUILD=ON` enables additional CI-specific test targets in CMake that the LLM's cmake configure does not register, resulting in 78 vs 80 total CTest targets. The LLM's omission of `-DSNMALLOC_CI_BUILD=ON` is the direct cause of the 2-test scope difference.
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 80 run, 76 passed, 4 failed, 0 skipped
+    LLM:      78 run, 74 passed, 4 failed, 0 skipped

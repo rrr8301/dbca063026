@@ -1,0 +1,44 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          10
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      linux-meson (ubuntu:rolling)
+  Test command(s) run in original CI:
+    $ actions/checkout@v5
+    $ useradd builder --create-home
+    $ chown -R builder .
+    $ chmod a+w $GITHUB_ENV && sudo --preserve-env --set-home --user=builder ci/run-build-and-tests.sh
+    $ tests
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:rolling
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ bash ci/run-build-and-tests.sh
+  $ bash ci/print-test-failures.sh
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in original but missing in LLM: Meson
+  - Framework(s) in LLM but not in original: perl-harness
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    (LLM ran perl-harness suite: 32602 tests, all passed — no Meson tests ran)
+
+  [Root cause classification]
+  - Build system path divergence: The original CI job (`linux-meson`) invoked `ci/run-build-and-tests.sh` as a non-root `builder` user (`sudo --preserve-env --set-home --user=builder`). That user context combined with the Meson-specific CI environment triggers the Meson build path inside the script, producing 1036 Meson tests. The LLM ran `bash ci/run-build-and-tests.sh` directly as root without user switching. Without the `builder` user context, the script autodetected a different build system or environment flag, falling back to the old Make-based build and running the full TAP-based perl test harness instead (32602 tests). The original CI had 1 Meson test failure and 1 skipped; the LLM ran zero Meson tests because the Meson-specific code path was never reached.
+
+--- Test Statistics Comparison ---
+  [Meson]
+    Original: 1036 run, 1034 passed, 1 failed, 1 skipped
+    LLM:      (not present)
+  [perl-harness]
+    Original: (not present)
+    LLM:      32602 run, 32602 passed, 0 failed, 0 skipped

@@ -1,0 +1,43 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-22.04
+  CI job name:      build
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ sudo python3 build/fbcode_builder/getdeps.py --allow-system-packages install-system-deps --recursive proxygen
+  $ python3 build/fbcode_builder/getdeps.py --allow-system-packages build --src-dir=. proxygen --project-install-prefix proxygen:/usr/local
+  $ python3 build/fbcode_builder/getdeps.py --allow-system-packages test --src-dir=. proxygen --project-install-prefix proxygen:/usr/local
+
+--- Reason(s) for Non-Reproducibility ---
+  - CTest test count mismatch: original=6272, LLM=1551
+  - CTest failure mismatch: original=0 failed, LLM=3 failed
+  - GTest failure: HTTPConnectorWithFizzTest.TestFizzConnect (Failed), HTTPConnectorWithFizzTest.TestFizzConnectFailure (Timeout), AcceptorTest.Basic (Timeout)
+
+--- Root Cause Analysis ---
+  LLM container log shows network connection failures and test timeouts in TLS/QUIC tests:
+    > HTTPConnectorWithFizzTest.TestFizzConnectFailure (Timeout 120.07 sec)
+    > AcceptorTest.Basic (Timeout 119.93 sec)
+    > connectError(@... AsyncSocketException: connect failed (immediately), type = Socket not open, errno = 99 (Cannot assign requested address))
+
+  Network socket restrictions in Docker cause TLS/QUIC connection tests to fail or timeout
+  - The LLM reproduced only 1551 out of 6272 original tests (the proxygen library alone rather than the full stack with all its dependencies tested), and 3 of those failed due to network socket restrictions. The Fizz TLS connector tests and AcceptorTest.Basic require the ability to establish loopback TCP/TLS connections, which fail inside Docker with errno=99 (Cannot assign requested address) because socket binding or loopback interface access is restricted. The original CI ran the full 6272-test suite on ubuntu-22.04 with no failures.
+
+--- Test Statistics Comparison ---
+  CTest
+    Original: 6272 run, 6272 passed, 0 failed, 0 skipped
+    LLM:      1551 run, 1548 passed, 3 failed, 0 skipped
+  GTest
+    Original: (included within CTest pass counts)
+    LLM:      1 run, 0 passed, 1 failed, 0 skipped

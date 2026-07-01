@@ -1,0 +1,59 @@
+Error from docker build
+
+#1 [internal] load .dockerignore
+#1 ...
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile:
+#2 transferring dockerfile: 1.01kB done
+#2 DONE 17.4s
+
+#1 [internal] load .dockerignore
+#1 transferring context: 2B done
+#1 DONE 17.4s
+
+#3 [internal] load metadata for docker.io/library/ubuntu:22.04
+#3 DONE 0.0s
+
+#4 [ 1/10] FROM docker.io/library/ubuntu:22.04
+#4 CACHED
+
+#5 [2/9] RUN ln -snf /usr/share/zoneinfo/America/Los_Angeles /etc/localtime && echo America/Los_Angeles > /etc/timezone
+#5 CACHED
+
+#6 [internal] load build context
+#6 transferring context: 25.45MB 0.5s done
+#6 DONE 16.6s
+
+#7 [3/9] RUN apt-get update && apt-get install -y     git     curl     wget     build-essential     && rm -rf /var/lib/apt/lists/*
+#7 CACHED
+
+#8 [4/9] RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain nightly
+#8 CACHED
+
+#9 [5/9] WORKDIR /workspace
+#9 CACHED
+
+#10 [6/9] COPY . /workspace
+#10 DONE 10.6s
+
+#11 [7/9] RUN git config --global --add safe.directory '*'
+#11 DONE 8.9s
+
+#12 [8/9] RUN useradd -m testuser && chown -R testuser /workspace
+#12 DONE 9.1s
+
+#13 [9/9] RUN /bin/bash -c "source $HOME/.cargo/env && rustup default nightly"
+#13 0.394 /bin/bash: line 1: /home/testuser/.cargo/env: No such file or directory
+#13 ERROR: process "/bin/sh -c /bin/bash -c \"source $HOME/.cargo/env && rustup default nightly\"" did not complete successfully: exit code: 1
+------
+ > [9/9] RUN /bin/bash -c "source $HOME/.cargo/env && rustup default nightly":
+#13 0.394 /bin/bash: line 1: /home/testuser/.cargo/env: No such file or directory
+------
+Dockerfile:41
+--------------------
+  39 |     
+  40 |     # Initialize Rust environment for the non-root user
+  41 | >>> RUN /bin/bash -c "source $HOME/.cargo/env && rustup default nightly"
+--------------------
+ERROR: failed to solve: process "/bin/sh -c /bin/bash -c \"source $HOME/.cargo/env && rustup default nightly\"" did not complete successfully: exit code: 1

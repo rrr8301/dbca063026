@@ -1,0 +1,44 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          N/A
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      Tests Linux x86_64 stable
+  Test command(s) run in original CI:
+    $ cargo test -p cargo
+    $ cargo test -p cargo git
+    $ cargo test -p cargo --test testsuite -- fix::
+    $ cargo test --workspace --exclude cargo --exclude benchsuite --exclude resolver-tests
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    8
+
+--- LLM run.sh Test Command(s) ---
+  $ cargo test -p cargo
+  $ __CARGO_USE_GITOXIDE_INSTEAD_OF_GIT2=1 cargo test -p cargo git
+  $ cargo test --workspace --exclude cargo --exclude benchsuite --exclude resolver-tests
+  $ cargo test -p benchsuite --all-targets -- cargo
+
+--- Reason(s) for Non-Reproducibility ---
+  - [cargo] Test run mismatch: original=12949, LLM=12945
+  - [cargo] Test passed mismatch: original=4410, LLM=4381
+  - [cargo] Test failed mismatch: original=0, LLM=1
+  - [cargo] Test skipped mismatch: original=8539, LLM=8563
+  - [cargo] 1 test(s) failed in LLM but not in original: registry::inaccessible_registry_cache_still_works
+
+--- Root Cause Analysis ---
+  - [cargo] LLM ran 4 fewer tests than original — LLM likely used a narrower test scope or missed some test suites.
+  - [cargo] 1 test(s) failed in LLM but not original: registry::inaccessible_registry_cache_still_works
+  - Test command differences detected — original CI vs LLM run.sh may use different flags or test selection.
+
+--- Test Statistics Comparison ---
+  [cargo]
+    Original: 12949 run, 4410 passed, 0 failed, 8539 skipped
+    LLM:      12945 run, 4381 passed, 1 failed, 8563 skipped

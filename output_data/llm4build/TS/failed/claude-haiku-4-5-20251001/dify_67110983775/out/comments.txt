@@ -1,0 +1,43 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          5
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      API Tests / API Tests (3.12)
+  Test command(s) run in original CI:
+    $ actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+    $ uv lock --project api --check
+    $ uv run --project api dev/pytest/pytest_config_tests.py
+    $ cp api/tests/integration_tests/.env.example api/tests/integration_tests/.env
+    $ uv run --project api pytest \
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ uv pip install pytest-cov
+  $ uv run pytest -v
+
+--- Reason(s) for Non-Reproducibility ---
+  - [pytest] Test run mismatch: original=12732, LLM=14
+  - [pytest] Test passed mismatch: original=12696, LLM=0
+  - [pytest] Test failed mismatch: original=23, LLM=14
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    ERROR tests/test_containers_integration_tests - ModuleNotFoundError: No modul...
+
+  [Root cause classification]
+  - Database service unavailable or not properly configured — test requires an external database service.
+  - Test timed out — likely due to slower execution in Docker container or a blocking service call that never returns.
+
+--- Test Statistics Comparison ---
+  [pytest]
+    Original: 12732 run, 12696 passed, 23 failed, 13 skipped
+    LLM:      14 run, 0 passed, 14 failed, 0 skipped

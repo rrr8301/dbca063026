@@ -1,0 +1,43 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      🧪 Test
+  Test command(s) run in original CI:
+    $ yarn test-ci --minWorkers=1 --maxWorkers=4
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    6
+
+--- LLM run.sh Test Command(s) ---
+  $ yarn test-ci --minWorkers=1 --maxWorkers=$(nproc)
+  $ yarn test-ci --minWorkers=1 --maxWorkers=$(nproc)
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoDefault] Test run mismatch: original=4, LLM=8
+  - [GoDefault] Test failed mismatch: original=4, LLM=8
+  - [vitest] Test run mismatch: original=3431, LLM=6862
+  - [vitest] Test passed mismatch: original=3386, LLM=6772
+  - [vitest] Test failed mismatch: original=1, LLM=2
+  - [vitest] Test skipped mismatch: original=44, LLM=88
+
+--- Root Cause Analysis ---
+  - [GoDefault] LLM ran 4 more tests than original — LLM likely used a broader test scope or included extra test suites.
+  - [vitest] LLM ran 3431 more tests than original — LLM likely used a broader test scope or included extra test suites.
+  - Test command differences detected — original CI vs LLM run.sh may use different flags or test selection.
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 4 run, 0 passed, 4 failed, 0 skipped
+    LLM:      8 run, 0 passed, 8 failed, 0 skipped
+  [vitest]
+    Original: 3431 run, 3386 passed, 1 failed, 44 skipped
+    LLM:      6862 run, 6772 passed, 2 failed, 88 skipped

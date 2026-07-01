@@ -1,0 +1,41 @@
+FROM ubuntu:22.04
+
+# Set timezone to Pacific Time
+ENV TZ=America/Los_Angeles
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+# Install dependencies
+RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    wget \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create /nix directory manually
+RUN mkdir -m 0755 /nix && chown root /nix
+
+# Install Nix
+RUN curl -L https://nixos.org/nix/install -o install-nix.sh && \
+    sh install-nix.sh --no-daemon && \
+    rm install-nix.sh
+
+# Install Rust
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
+
+# Install just
+RUN cargo install just
+
+# Create work directory
+WORKDIR /app
+
+# Copy repository
+COPY . .
+
+# Copy run.sh and make it executable
+COPY run.sh /usr/local/bin/run.sh
+RUN chmod +x /usr/local/bin/run.sh
+
+# Set entrypoint
+ENTRYPOINT ["/usr/local/bin/run.sh"]

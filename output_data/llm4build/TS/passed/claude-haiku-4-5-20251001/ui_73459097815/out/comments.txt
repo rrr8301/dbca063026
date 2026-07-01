@@ -1,0 +1,48 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      pnpm test
+  Test command(s) run in original CI:
+    $ actions/checkout@v3
+    $ pnpm/action-setup@v4
+    $ echo "pnpm_cache_dir=$(pnpm store path)" >> $GITHUB_OUTPUT
+    $ pnpm install
+    $ pnpm test
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    6
+
+--- LLM run.sh Test Command(s) ---
+  $ pnpm test
+
+--- Reason(s) for Non-Reproducibility ---
+  - [vitest] Test result mismatch (same count 1482): original=(1476p/0f/6s), LLM=(1476p/5f/1s)
+  - [vitest] Tests failed in LLM but passed in original: src/tests/apply.test.ts, src/tests/init.test.ts
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    1712:tests:test:  ❯ src/tests/init.test.ts (22 tests | 2 failed | 1 skipped) 240800ms
+    1918:tests:test:  FAIL  src/tests/init.test.ts > shadcn init - next-monorepo > should create a monorepo with preset
+    1919-tests:test: AssertionError: expected 1 to be +0 // Object.is equality
+    1828:tests:test:  ❯ src/tests/apply.test.ts (23 tests | 3 failed) 315748ms
+    1858:tests:test:  FAIL  src/tests/apply.test.ts > shadcn apply > should keep the app config updated when linked workspace sync fails
+    1859-tests:test: AssertionError: expected 1 to be +0 // Object.is equality
+
+  [Root cause classification]
+  - Process aborted (SIGABRT) — likely a GLib g_assert() failure, AddressSanitizer/UBSan abort, or missing D-Bus/system service in Docker container.
+  - Required environment variable not set — test reads a specific env var that was present in original CI but not in Docker container.
+  - Test timed out — likely due to slower execution in Docker container or a blocking service call that never returns.
+  - Assertion failure: 1919-tests:test: AssertionError: expected 1 to be +0 // Object.is equality
+
+--- Test Statistics Comparison ---
+  [vitest]
+    Original: 1482 run, 1476 passed, 0 failed, 6 skipped
+    LLM:      1482 run, 1476 passed, 5 failed, 1 skipped

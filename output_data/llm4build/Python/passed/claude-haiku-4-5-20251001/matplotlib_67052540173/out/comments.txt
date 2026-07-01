@@ -1,0 +1,80 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          5
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Python 3.12 on ubuntu-24.04
+  Test command(s) run in original CI:
+    $ actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+    $ python -m pip install --no-deps --no-build-isolation --verbose
+          --config-settings=setup-args="-DrcParams-backend=Agg" --editable .[dev]
+    $ pytest -rfEsXR -n auto --maxfail=50 --timeout=300 --durations=25 ...
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    11
+
+--- LLM run.sh Test Command(s) ---
+  $ python -m pip install --break-system-packages --no-deps --no-build-isolation
+          --verbose --editable .[dev]
+  $ pytest -rfEsXR -n auto --maxfail=50 --timeout=300 --durations=25
+          --cov-report=xml --cov=lib --log-level=DEBUG --color=yes
+
+--- Reason(s) for Non-Reproducibility ---
+  - [pytest] Test run mismatch: original=10335, LLM=3503
+  - [pytest] Test passed mismatch: original=10051, LLM=2374
+  - [pytest] Test failed mismatch: original=0, LLM=828
+  - [pytest] 828 tests failed across 29+ test modules (all with the same root cause):
+    test_agg.py, test_agg_filter.py, test_animation.py, test_arrow_patches.py,
+    test_artist.py, test_axes.py, test_axis.py, test_backend_bases.py, etc.
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > setuptools_scm/_get_version.py:56: in get_version
+    > vcs_versioning/_version_schemes/_standard.py:107: DeprecationWarning
+    > E  DeprecationWarning: Version scheme 'release-branch-semver' has been renamed
+    >    to 'semver-pep440-release-branch'. Please update your configuration.
+    >    The old name will be removed in a future version.
+    > FAILED lib/matplotlib/tests/test_agg.py::test_repeated_save_with_alpha
+    >        - DeprecationWarning: Version scheme 'release-branch-semver' has been renamed...
+    > (repeated for all 828 failures)
+    > xdist.dsession.Interrupted: stopping after 50 failures
+    > !!!!!!!!!!!!! stopping after 828 failures !!!!!!!!!!!!!!
+
+  [Root cause classification]
+  Two combined effects:
+
+  (1) setuptools-scm version scheme rename → 828 DeprecationWarning failures
+    The LLM Docker container installs a newer version of `setuptools_scm` (or its
+    `vcs_versioning` dependency) that renamed the version scheme `release-branch-semver`
+    to `semver-pep440-release-branch`. matplotlib's `pyproject.toml` specifies
+    `version_scheme = "release-branch-semver"` in `[tool.setuptools_scm]`. When any
+    test calls `setuptools_scm.get_version()` (e.g., to embed the version string in
+    a saved figure), the newer setuptools-scm raises:
+    `DeprecationWarning: Version scheme 'release-branch-semver' has been renamed to
+     'semver-pep440-release-branch'. Please update your configuration.`
+    matplotlib's test suite converts `DeprecationWarning` into test errors (via
+    `filterwarnings = ["error::DeprecationWarning"]` in `pyproject.toml`), so
+    every test that calls into the version-lookup code path fails with this warning.
+    The original CI has a pinned/older setuptools-scm version that uses the old scheme
+    name without raising a deprecation warning.
+
+  (2) --maxfail=50 with 44 parallel workers stops run after 50+ failures
+    pytest is invoked with `--maxfail=50`. With 44 pytest-xdist workers running
+    concurrently, once 50 failures accumulate across all workers, xdist sends a
+    stop signal: `Interrupted: stopping after 50 failures`. However, because 44
+    workers run in parallel, tests already in-flight on each worker continue to
+    complete, resulting in 803 total failures (+ 25 errors = 828 combined) before
+    the run actually stops. The remaining ~6830 tests (out of 10333 collected) are
+    never scheduled, leaving the LLM run with only 3503 tests executed vs 10335 in
+    the original CI (which had 0 failures and ran all 10335 tests to completion).
+
+--- Test Statistics Comparison ---
+  [pytest]
+    Original: 10335 run, 10051 passed, 0 failed, 250 skipped, 34 xfailed
+    LLM:      3503 run, 2374 passed, 828 failed, 275 skipped, 26 xfailed, 51 rerun

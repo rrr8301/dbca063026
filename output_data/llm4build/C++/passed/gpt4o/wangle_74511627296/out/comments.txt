@@ -1,0 +1,41 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          20
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      build
+  Test command(s) run in original CI:
+    $ python3 build/fbcode_builder/getdeps.py --allow-system-packages build --src-dir=. wangle --project-install-prefix wangle:/usr/local
+    $ python3 build/fbcode_builder/getdeps.py --allow-system-packages fixup-dyn-deps --strip --src-dir=. wangle _artifacts/linux --project-install-prefix wangle:/usr/local --final-install-prefix /usr/local
+    $ python3 build/fbcode_builder/getdeps.py --allow-system-packages test --src-dir=. wangle --project-install-prefix wangle:/usr/local
+
+--- LLM-Generated Dockerfile ---
+  Base image:   python:3.9-slim
+  RUN steps:    2
+
+--- LLM run.sh Test Command(s) ---
+  $ python3 -m unittest discover -s /app/tests -p "*.py"
+
+--- Reason(s) for Non-Reproducibility ---
+  - [CTest] TR=False: the LLM generated a completely wrong build approach — Python unittest discovery instead of the C++ getdeps build system
+  - [CTest] No C++ tests were run at all; the container printed "No tests found" and exited
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    1: Running the container...
+    2: No tests found. Please add your test suite.
+
+  [Root cause classification]
+  - The LLM incorrectly identified wangle as a Python project and generated a `python:3.9-slim` Dockerfile with `python3 -m unittest discover` as the test command. This is entirely wrong: wangle is a C++ networking framework that uses Facebook's `getdeps.py` build system to compile and test native C++ code.
+  - The run.sh only checks for a `/app/tests` directory with Python test files, which does not exist in the wangle repository. The container exits with "No tests found" after printing a placeholder message.
+  - After 20 attempts, the LLM never produced a valid test result (TR=False). The original CI uses `getdeps.py` to fetch and build all dependencies (folly, fizz, etc.) and then runs 15 CTest tests, all of which passed in the original run.
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 15 run, 15 passed, 0 failed, 0 skipped
+    LLM:      N/A (wrong build system; no C++ tests executed)

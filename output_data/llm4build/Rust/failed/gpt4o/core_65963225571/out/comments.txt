@@ -1,0 +1,37 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      unit_test
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ just test-all
+
+--- Reason(s) for Non-Reproducibility ---
+  - cargo num_tests_run mismatch: original=1211, LLM=1210
+  - cargo num_tests_failed same count but different test duration: original duration=0.79s, LLM duration=1.12s
+
+--- Root Cause Analysis ---
+  The LLM reproduced the failing test but ran one fewer test overall.
+    > test relay::mapper::tests::test_map_swap_result_base_usdc_to_sol_usdt ... FAILED
+    > thread 'relay::mapper::tests::test_map_swap_result_base_usdc_to_sol_usdt' panicked at crates/swapper/src/relay/mapper.rs:165:40:
+    > called `Option::unwrap()` on a `None` value
+    > error: recipe `test-all` failed on line 40 with exit code 101
+
+  Minor test count drift due to platform or commit differences: The failing test (relay::mapper::tests::test_map_swap_result_base_usdc_to_sol_usdt) was correctly reproduced with the same panic in the same location. The difference of one test (1210 vs 1211 run) is likely due to a small platform-specific conditional compilation gate or a test that was added/removed between the commit used for the original CI run and the commit captured in the LLM's build context. The core failure is faithfully reproduced but the exact test population does not match, preventing full reproducibility.
+
+--- Test Statistics Comparison ---
+  cargo
+    Original: 1211 run, 1210 passed, 1 failed, 0 skipped
+    LLM:      1210 run, 1209 passed, 1 failed, 0 skipped

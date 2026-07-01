@@ -1,0 +1,45 @@
+Error from docker build
+
+#1 [internal] load .dockerignore
+#1 transferring context: 2B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 1.32kB done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/ubuntu:22.04
+#3 DONE 0.1s
+
+#4 [1/9] FROM docker.io/library/ubuntu:22.04@sha256:4f838adc7181d9039ac795a7d0aba05a9bd9ecd480d294483169c5def983b64d
+#4 DONE 0.0s
+
+#5 [2/9] RUN echo "UTC" > /etc/timezone &&     ln -sf /usr/share/zoneinfo/UTC /etc/localtime &&     apt-get update &&     apt-get install -y --no-install-recommends     git curl wget make gcc g++ tzdata ca-certificates &&     rm -rf /var/lib/apt/lists/*
+#5 CACHED
+
+#6 [internal] load build context
+#6 transferring context: 1.45MB 0.7s done
+#6 DONE 0.7s
+
+#7 [3/9] RUN git config --global http.sslVerify false &&     git clone https://github.com/syndbg/goenv.git /home/testuser/.goenv &&     mkdir -p /home/testuser/.goenv/versions &&     chown -R testuser:testuser /home/testuser/.goenv &&     echo 'export GOENV_ROOT="/home/testuser/.goenv"' >> /home/testuser/.bashrc &&     echo 'export PATH="$GOENV_ROOT/bin:$PATH"' >> /home/testuser/.bashrc &&     echo 'eval "$(goenv init -)"' >> /home/testuser/.bashrc
+#0 0.322 Cloning into '/home/testuser/.goenv'...
+#7 1.400 chown: invalid user: ‘testuser:testuser’
+#7 ERROR: process "/bin/sh -c git config --global http.sslVerify false &&     git clone https://github.com/syndbg/goenv.git /home/testuser/.goenv &&     mkdir -p /home/testuser/.goenv/versions &&     chown -R testuser:testuser /home/testuser/.goenv &&     echo 'export GOENV_ROOT=\"/home/testuser/.goenv\"' >> /home/testuser/.bashrc &&     echo 'export PATH=\"$GOENV_ROOT/bin:$PATH\"' >> /home/testuser/.bashrc &&     echo 'eval \"$(goenv init -)\"' >> /home/testuser/.bashrc" did not complete successfully: exit code: 1
+------
+ > [3/9] RUN git config --global http.sslVerify false &&     git clone https://github.com/syndbg/goenv.git /home/testuser/.goenv &&     mkdir -p /home/testuser/.goenv/versions &&     chown -R testuser:testuser /home/testuser/.goenv &&     echo 'export GOENV_ROOT="/home/testuser/.goenv"' >> /home/testuser/.bashrc &&     echo 'export PATH="$GOENV_ROOT/bin:$PATH"' >> /home/testuser/.bashrc &&     echo 'eval "$(goenv init -)"' >> /home/testuser/.bashrc:
+#0 0.322 Cloning into '/home/testuser/.goenv'...
+#7 1.400 chown: invalid user: ‘testuser:testuser’
+------
+Dockerfile:18
+--------------------
+  17 |     # Install Go using goenv
+  18 | >>> RUN git config --global http.sslVerify false && \
+  19 | >>>     git clone https://github.com/syndbg/goenv.git /home/testuser/.goenv && \
+  20 | >>>     mkdir -p /home/testuser/.goenv/versions && \
+  21 | >>>     chown -R testuser:testuser /home/testuser/.goenv && \
+  22 | >>>     echo 'export GOENV_ROOT="/home/testuser/.goenv"' >> /home/testuser/.bashrc && \
+  23 | >>>     echo 'export PATH="$GOENV_ROOT/bin:$PATH"' >> /home/testuser/.bashrc && \
+  24 | >>>     echo 'eval "$(goenv init -)"' >> /home/testuser/.bashrc
+  25 |     
+--------------------
+ERROR: failed to solve: process "/bin/sh -c git config --global http.sslVerify false &&     git clone https://github.com/syndbg/goenv.git /home/testuser/.goenv &&     mkdir -p /home/testuser/.goenv/versions &&     chown -R testuser:testuser /home/testuser/.goenv &&     echo 'export GOENV_ROOT=\"/home/testuser/.goenv\"' >> /home/testuser/.bashrc &&     echo 'export PATH=\"$GOENV_ROOT/bin:$PATH\"' >> /home/testuser/.bashrc &&     echo 'eval \"$(goenv init -)\"' >> /home/testuser/.bashrc" did not complete successfully: exit code: 1

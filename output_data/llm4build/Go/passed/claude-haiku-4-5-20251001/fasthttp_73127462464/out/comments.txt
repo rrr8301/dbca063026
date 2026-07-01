@@ -1,0 +1,46 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      test (1.24.x, ubuntu-latest)
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ go test -shuffle=on ./...
+    $ go test -race -shuffle=on ./...
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ go test -shuffle=on ./... || TEST_SHUFFLE_FAILED=1
+  $ go test -race -shuffle=on ./... || TEST_RACE_FAILED=1
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoDefault] Test run mismatch: original=18, LLM=9
+  - [GoDefault] Test passed mismatch: original=18, LLM=8
+  - [GoDefault] Test failed mismatch: original=0, LLM=1
+  - [GoDefault] 1 test(s) failed in LLM but not in original: github.com/valyala/fasthttp/tcplisten
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    34---- FAIL: TestConfigDeferAccept (0.27s)
+    36---- FAIL: TestConfigAll (0.27s)
+    38---- FAIL: TestConfigBacklog (0.27s)
+    40---- FAIL: TestConfigReusePort (0.26s)
+
+  [Root cause classification]
+  - The `tcplisten` package tests fail because they test Linux-specific TCP socket options that are restricted in Docker containers: `TestConfigDeferAccept` requires `SO_DEFER_ACCEPT`, `TestConfigAll` tests all socket options together, `TestConfigBacklog` requires setting `TCP_FASTOPEN` backlog, and `TestConfigReusePort` requires `SO_REUSEPORT`. These kernel features work on bare GitHub Actions runners (Ubuntu 24.04) but fail inside Docker containers where the network namespace restricts socket option manipulation. The original CI ran on `ubuntu-latest` bare metal where these options are available.
+
+  - The 9 fewer tests (LLM ran 9 vs original's 18) are Windows-specific packages that have `//go:build windows` build constraints. The original CI job `test (1.24.x, ubuntu-latest)` ran on Linux and also only compiled Linux packages, so the 9-test discrepancy indicates the LLM's package discovery found fewer packages. This is the same root cause as the failed-category counterpart `fasthttp_73125547774` — Docker's restricted network namespace blocks `SO_DEFER_ACCEPT`/`TCP_FASTOPEN`/`SO_REUSEPORT` even when running on a Linux host.
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 18 run, 18 passed, 0 failed, 0 skipped
+    LLM:      9 run, 8 passed, 1 failed, 0 skipped

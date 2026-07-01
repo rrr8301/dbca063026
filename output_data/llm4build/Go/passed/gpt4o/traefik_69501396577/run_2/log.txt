@@ -1,0 +1,40 @@
+Error from docker build
+
+#1 [internal] load .dockerignore
+#1 transferring context: 84B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 902B done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/ubuntu:22.04
+#3 DONE 0.2s
+
+#4 [ 1/11] FROM docker.io/library/ubuntu:22.04@sha256:962f6cadeae0ea6284001009daa4cc9a8c37e75d1f5191cf0eb83fe565b63dd7
+#4 DONE 0.0s
+
+#5 [ 2/11] RUN ln -snf /usr/share/zoneinfo/America/Los_Angeles /etc/localtime && echo America/Los_Angeles > /etc/timezone
+#5 CACHED
+
+#6 [internal] load build context
+#6 transferring context: 857.94kB 0.4s done
+#6 DONE 0.4s
+
+#7 [ 4/11] COPY traefik/.go-version /tmp/.go-version
+#7 ERROR: failed to calculate checksum of ref bbf0bc14-1281-4098-922e-22d26f66be72::o6pm35bsuz3nsrkkzjdgy9gtk: "/traefik/.go-version": not found
+
+#8 [ 3/11] RUN apt-get update && apt-get install -y     git     curl     wget
+#8 CANCELED
+------
+ > [ 4/11] COPY traefik/.go-version /tmp/.go-version:
+------
+Dockerfile:16
+--------------------
+  14 |     # Use a default Go version if .go-version is not available
+  15 |     ARG GO_VERSION=1.20.5
+  16 | >>> COPY traefik/.go-version /tmp/.go-version
+  17 |     RUN if [ ! -f /tmp/.go-version ]; then echo $GO_VERSION > /tmp/.go-version; fi
+  18 |     RUN curl -sSL https://golang.org/dl/$(cat /tmp/.go-version).linux-amd64.tar.gz | tar -C /usr/local -xz
+--------------------
+ERROR: failed to solve: failed to compute cache key: failed to calculate checksum of ref bbf0bc14-1281-4098-922e-22d26f66be72::o6pm35bsuz3nsrkkzjdgy9gtk: "/traefik/.go-version": not found

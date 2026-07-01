@@ -1,0 +1,36 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          11
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     windows-2025
+  CI job name:      test (windows-latest)
+  Test command(s) run in original CI:
+    $ go test -count=1 -benchtime=1x ./...
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    6
+
+--- LLM run.sh Test Command(s) ---
+  $ go test -count=1 -benchtime=1x ./...
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoDefault] Test run mismatch: original=83, LLM=75
+  - [GoDefault] Test passed mismatch: original=82, LLM=74
+  - [GoDefault] 1 test(s) failed in original but passed in LLM: github.com/ollama/ollama/server
+  - [GoDefault] 1 test(s) failed in LLM but not in original: github.com/ollama/ollama/cmd/internal/fileutil
+
+--- Root Cause Analysis ---
+  - [GoDefault] LLM ran 8 fewer tests than original — LLM likely used a narrower test scope or missed some test suites.
+  - [GoDefault] 1 test(s) failed in LLM but not original: github.com/ollama/ollama/cmd/internal/fileutil
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 83 run, 82 passed, 1 failed, 0 skipped
+    LLM:      75 run, 74 passed, 1 failed, 0 skipped

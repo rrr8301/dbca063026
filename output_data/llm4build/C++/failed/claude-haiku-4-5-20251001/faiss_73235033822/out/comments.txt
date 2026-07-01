@@ -1,0 +1,45 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          13
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      build-pull-request / Linux x86_64 (cmake)
+  Test command(s) run in original CI:
+    $ actions/checkout@v4
+    $ ./.github/actions/build_cmake
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ cmake=3.30.4 \
+  $ make=4.2 \
+  $ pytest=7.4 \
+  $ cmake -B build \
+  $ -DBUILD_TESTING=ON \
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in original but missing in LLM: pytest
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > (no errors in CTest; pytest never invoked)
+
+  [Root cause classification]
+  - Faiss's CI build action `./.github/actions/build_cmake` compiles the C++ library with `cmake`/`make` and then runs both CTest (C++ unit tests) and pytest (Python binding tests). The LLM correctly reproduced the CTest step (214 run, 213 passed, 1 skipped — exact match), but did not add `cd build && python -m pytest tests/python` or the equivalent pytest invocation after cmake install. The LLM's run.sh sets conda package version variables (`cmake=3.30.4`, `pytest=7.4`) as variable names rather than running them via `conda install`, and the pytest step was never added to the script.
+
+  - The missing 1221 pytest tests cover Faiss's Python bindings (the C-extension `swigfaiss`), including index construction, search accuracy, and GPU fallback logic (107 skipped when no GPU). The original CI failed with 1 pytest failure (`original_log_stats` shows 1 failed test). The passed-category counterpart `faiss_73635632010` shows the same pattern — CTest matches perfectly but pytest is absent. This is a systematic gap in the LLM's Faiss run.sh: it generates the cmake build but does not add the Python binding test step that the `.github/actions/build_cmake` composite action includes.
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 214 run, 213 passed, 0 failed, 1 skipped
+    LLM:      214 run, 213 passed, 0 failed, 1 skipped
+  [pytest]
+    Original: 1221 run, 1113 passed, 1 failed, 107 skipped
+    LLM:      (not present)

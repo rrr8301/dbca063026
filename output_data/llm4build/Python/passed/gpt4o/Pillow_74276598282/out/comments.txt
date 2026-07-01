@@ -1,0 +1,35 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          N/A
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      ubuntu-latest Python 3.12
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ pip install pytest-reverse
+
+--- Reason(s) for Non-Reproducibility ---
+  - [pytest] Test run mismatch: original=5274, LLM=4624
+  - [pytest] Test passed mismatch: original=5228, LLM=4442
+  - [pytest] Test failed mismatch: original=0, LLM=1
+  - [pytest] Test skipped mismatch: original=43, LLM=178
+  - [pytest] 1 test(s) failed in LLM but not in original: Tests/test_imagegrab.py
+
+--- Root Cause Analysis ---
+  - [pytest] LLM ran 650 fewer tests than original — LLM likely used a narrower test scope or missed some test suites.
+  - [pytest] 1 test(s) failed in LLM but not original: Tests/test_imagegrab.py
+
+--- Test Statistics Comparison ---
+  [pytest]
+    Original: 5274 run, 5228 passed, 0 failed, 43 skipped
+    LLM:      4624 run, 4442 passed, 1 failed, 178 skipped

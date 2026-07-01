@@ -1,0 +1,38 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      unit_front (node: 20)
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ yarn install --immutable --inline-builds
+    $ ./.github/actions/run-build
+    $ yarn nx affected --target=test:front --nx-ignore-cycles -- --runInBand --coverage
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    6
+
+--- LLM run.sh Test Command(s) ---
+  $ yarn nx run-many --target=test:front --nx-ignore-cycles -- --runInBand --coverage
+
+--- Reason(s) for Non-Reproducibility ---
+  - [jest] Test result mismatch (same count 869): original=(862p/1f/6s), LLM=(863p/0f/6s)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    (No explicit FAIL lines — all nx-run-many packages showed PASS; coverage output shows ComponentIcon.tsx at 0% coverage)
+
+  [Root cause classification]
+  - The original CI uses `yarn nx affected` (runs only packages changed vs. the base branch) with Node.js 20 on a GitHub Actions runner; the LLM uses `yarn nx run-many` (runs all packages). The single failing test in the original is not identified by name in the parser output (tests_failed=[{"file":"Unknown","failures":[]}]), so its identity is unknown. The most likely cause is a flaky front-end component test — possibly the `ComponentIcon.tsx` component (0% coverage in the LLM run suggests that component's tests may have been conditionally skipped or the test fixture differs between `nx affected` and `nx run-many`). The LLM passes all 869 tests in the more comprehensive run, while the original's single failure was environment-specific or a race condition in the GitHub Actions runner.
+
+--- Test Statistics Comparison ---
+  [jest]
+    Original: 869 run, 862 passed, 1 failed, 6 skipped
+    LLM:      869 run, 863 passed, 0 failed, 6 skipped

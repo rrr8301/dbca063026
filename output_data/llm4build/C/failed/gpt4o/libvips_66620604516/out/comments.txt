@@ -1,0 +1,49 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      Linux x64 (Ubuntu 24.04) - Clang 19 with TSan
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ python3 -m pytest -sv --log-cli-level=WARNING test/test-suite || true
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Meson] Test passed mismatch: original=12, LLM=9
+  - [Meson] Test skipped mismatch: original=0, LLM=3
+  - [pytest] Test run mismatch: original=268, LLM=13
+  - [pytest] Test passed mismatch: original=250, LLM=0
+  - [pytest] Test failed mismatch: original=1, LLM=13
+  - [pytest] Test skipped mismatch: original=11, LLM=0
+  - [pytest] 1 test(s) failed in original but passed in LLM: test/test-suite/test_colour.py
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > /app/run.sh: line 42: sudo: command not found
+    > /app/run.sh: line 45: sudo: command not found
+    > OSError: cannot load library 'libvips.so.42': libvips.so.42: cannot open shared object file: No such file or directory
+    > ModuleNotFoundError: No module named '_libvips'
+    > !!!!!!!!!!!!!!!!!!! Interrupted: 13 errors during collection !!!!!!!!!!!!!!!!!!!
+
+  [Root cause classification]
+  - The run.sh script calls "sudo meson install -C build" and "sudo ldconfig" to install libvips and update the shared library cache, but sudo is not available inside the Docker container. As a result, libvips.so.42 is never installed to /usr/local/lib and ldconfig is never run, so the pyvips Python bindings cannot load libvips at import time. All 13 pytest modules fail at collection with "cannot load library 'libvips.so.42': No such file or directory", producing 13 errors instead of running ~268 tests.
+  - The 3 skipped Meson tests (connections, cli, formats — exit status 77) reflect that the TSan-enabled libvips build requires a live VIPS_LEAK environment and the TSan DSO preloaded via LD_PRELOAD, which cannot function properly when the library was not installed and ldconfig not run. In the original CI runner, sudo is available and libvips installs successfully.
+  - Since the pytest suite never runs (13 collection errors, 0 tests executed), the comparison shows 13 "failures" (collection errors counted as failures) vs. the original's 268 real test results. Fixing sudo availability or replacing it with a non-sudo install path (meson install --destdir) and running ldconfig would resolve both the pytest and Meson test discrepancies.
+
+--- Test Statistics Comparison ---
+  [Meson]
+    Original: 12 run, 12 passed, 0 failed, 0 skipped
+    LLM:      12 run, 9 passed, 0 failed, 3 skipped
+  [pytest]
+    Original: 268 run, 250 passed, 1 failed, 11 skipped
+    LLM:      13 run, 0 passed, 13 failed, 0 skipped

@@ -1,0 +1,34 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     windows-2025
+  CI job name:      test (windows-latest)
+  Test command(s) run in original CI:
+    $ cargo test --workspace
+
+--- LLM-Generated Dockerfile ---
+  Base image:   rust:latest
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ cargo test --workspace
+
+--- Reason(s) for Non-Reproducibility ---
+  - [cargo] Test passed mismatch: original=12, LLM=10
+  - [cargo] Test failed mismatch: original=1, LLM=3
+  - [cargo] 2 test(s) failed in LLM but not in original: run_compilation_success, run_test_success
+
+--- Root Cause Analysis ---
+  - [cargo] 2 test(s) failed in LLM but not original: run_compilation_success, run_test_success
+
+--- Test Statistics Comparison ---
+  [cargo]
+    Original: 13 run, 12 passed, 1 failed, 0 skipped
+    LLM:      13 run, 10 passed, 3 failed, 0 skipped

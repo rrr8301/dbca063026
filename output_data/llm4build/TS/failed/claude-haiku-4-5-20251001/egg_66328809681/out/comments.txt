@@ -1,0 +1,51 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          9
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Test (ubuntu-latest, 24, 3/3)
+  Test command(s) run in original CI:
+    $ actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
+    $ mysql -uroot -e "CREATE DATABASE IF NOT EXISTS test;"
+    $ pnpm/action-setup@41ff72655975bd51cab0327fa583b6e92b6d3061
+    $ pnpm install --frozen-lockfile
+    $ pnpm run ci --shard=3/3
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ mysql -uroot -e "CREATE DATABASE IF NOT EXISTS test;" || true
+  $ pnpm run ci --shard=3/3
+
+--- Reason(s) for Non-Reproducibility ---
+  - [vitest] Test run mismatch: original=825, LLM=1032
+  - [vitest] Test passed mismatch: original=760, LLM=384
+  - [vitest] Test failed mismatch: original=1, LLM=1
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > FAIL @eggjs/tegg-types  test/index.test.ts > should export stable
+    > Error: Snapshot `should export stable 1` mismatched
+    >   Received object contains extra keys:
+    >       "ThreadRunFailed": "thread.run.failed",
+    >     5| it('should export stable', async () => {
+    >     6|   expect(exports).toMatchSnapshot();
+
+  [Root cause classification]
+  - Both the original and LLM runs have exactly 1 vitest failure, but the failure mechanisms are different. The LLM's single failure is `@eggjs/tegg-types > should export stable` — a vitest snapshot test that enumerates all exported constants from the `@eggjs/tegg-types` package. The snapshot stored in the repository was generated before the `ThreadRunFailed: "thread.run.failed"` enum value was added to the package source. When the test runs, the actual exported object now contains this extra key, causing the snapshot comparison to fail. This is a genuine code drift: a developer added a new enum value but did not update the committed snapshot file, leaving the CI in a perpetual "failing" state until the snapshot is regenerated with `vitest --update-snapshots`.
+
+  - The LLM ran 1,032 tests while the original CI ran only 825 on the same shard (`--shard=3/3`). This discrepancy arises because vitest's shard algorithm distributes test files based on the total number of discovered test files across the monorepo. If the LLM environment has a different number of installed packages or test files than the original CI (e.g., due to pnpm's workspace resolution including more packages from the lockfile), the shard boundaries shift and shard 3/3 receives a larger slice. The LLM also shows 60 skipped tests (vs 42 in original), with many cluster, Redis, and service-integration tests marked as `↓` (deferred/skipped) because those services are unavailable in the Docker environment.
+
+  - The dramatic pass/fail mismatch (760 passed → 384 passed) is driven by the larger test distribution in the LLM: many of the extra 207 tests are service-dependent tests that end up skipped rather than passing. The original CI had MySQL available and more services configured, allowing a larger proportion of the non-skipped tests to pass. The overall net: same 1 failure in both, but on different root causes — the original CI's 1 failure was likely a flaky or environment-specific test, while the LLM's failure is the deterministic snapshot mismatch from the missing `ThreadRunFailed` enum update.
+
+--- Test Statistics Comparison ---
+  [vitest]
+    Original: 825 run, 760 passed, 1 failed, 42 skipped
+    LLM:      1032 run, 384 passed, 1 failed, 60 skipped

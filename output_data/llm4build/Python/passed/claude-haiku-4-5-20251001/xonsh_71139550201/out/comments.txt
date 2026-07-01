@@ -1,0 +1,76 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Test Python 3.13 macOS-latest
+  Test command(s) run in original CI:
+    $ uv pip install --system -e ".[test]"
+    $ python -m xonsh run-tests.xsh test -- --timeout=600
+
+--- LLM-Generated Dockerfile ---
+  Base image:   python:3.13-slim
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ uv pip install --system -e ".[test]"
+  $ python -m xonsh run-tests.xsh test -- --timeout=600
+
+--- Reason(s) for Non-Reproducibility ---
+  - [pytest] Test run mismatch: original=6102, LLM=7169
+  - [pytest] Test passed mismatch: original=6033, LLM=7071
+  - [pytest] Test failed mismatch: original=0, LLM=22
+  - [pytest] 22 tests failed in LLM but not in original:
+    tests/completers/test_bash_completer.py (19 failures)
+    tests/xintegration/test_integrations.py (3 failures):
+      test_catching_exit_signal, test_forwarding_sighup, test_on_postcommand_waiting
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > _____________ test_bash_completer[command_context0-completions0-5] _____________
+    >   @skip_if_on_darwin
+    >   def test_bash_completer(command_context, completions, lprefix):
+    >     bash_completions, bash_lprefix = complete_from_bash(...)
+    > >   assert bash_completions == completions and bash_lprefix == lprefix
+    > E   AssertionError: assert (set() == {'--debug', '--debugger'}
+    >
+    > __________________________ test_catching_exit_signal ___________________________
+    >   @skip_if_on_darwin
+    >   def test_catching_exit_signal():
+    >     out, err, ret = run_xonsh(cmd=None, stdin_cmd="sleep 0.2; kill -SIGHUP...", timeout=3)
+    > >   assert ret > 0
+    > E   assert 0 > 0
+    >
+    > test_forwarding_sighup:
+    >   proc.wait(timeout=5)
+    > E subprocess.TimeoutExpired: Command ['...xonsh', '--no-rc', '-i'] timed out after 5 seconds
+
+  [Root cause classification]
+  Two combined effects of running on Linux Docker instead of macOS-latest CI:
+
+  (1) Bash completion tests: @skip_if_on_darwin tests run on Linux but fail (no bash-completion)
+    19 tests in test_bash_completer.py are decorated with `@skip_if_on_darwin`, meaning they
+    are SKIPPED on macOS (original CI) but RUN on Linux (Docker). This explains why the LLM
+    runs 1067 more tests (7169 vs 6102). On Linux Docker (python:3.13-slim), the `bash-completion`
+    package is not installed. The `complete_from_bash()` function invokes bash's completion
+    mechanism (e.g., `compgen -W` or sourcing bash completion scripts) to get completions for
+    xonsh commands like `xonsh --d`, paths, and shell globs. Without `bash-completion` configured
+    in the container, bash returns no completions, so `bash_completions == set()` instead of
+    the expected sets like `{'--debug', '--debugger'}` or `{'/proc/'}`.
+
+  (2) Signal handling tests: xonsh SIGHUP behavior differs between macOS and Linux
+    `test_catching_exit_signal` sends SIGHUP to xonsh and expects exit code > 0.
+    On macOS, xonsh exits with non-zero on SIGHUP; on Linux, it exits with 0 (ret == 0).
+    `test_forwarding_sighup` and `test_on_postcommand_waiting` time out after 5 seconds —
+    signal propagation and process group management differ between macOS (kqueue) and Linux
+    (epoll) in ways that affect xonsh's interactive process handling.
+
+--- Test Statistics Comparison ---
+  [pytest]
+    Original: 6102 run, 6033 passed, 0 failed, 65 skipped
+    LLM:      7169 run, 7071 passed, 22 failed, 72 skipped

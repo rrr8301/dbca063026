@@ -1,0 +1,33 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          20   (retry limit reached)
+Original build category: passed
+
+STATUS: NEVER REACHED TEST EXECUTION — a pre-test generate/verify gate failed
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    5
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    Running: make verify-generate
+    F0513 06:11:16  main.go:29] error constructing generator: error loading header text:
+      error reading file: open ../../../docs/docs/configuration/alpha_config.md.tmpl:
+      no such file or directory
+    exit status 255
+    pkg/apis/options/doc.go:2: running "go": exit status 1
+
+  [Root cause classification]
+  - Workflow Interpretation Errors (pre-test gate failure).
+    Instead of running the unit-test target (`make test`), the LLM ran `make verify-generate`
+    — a codegen/verification gate. That target invokes a reference generator that failed on a
+    relative-path lookup of a docs template (alpha_config.md.tmpl) under the container's
+    working directory, exiting 255. Because `set -e` aborts on the first failing command, the
+    actual test suite was never reached. The original CI (708 Go tests, 0 failures) ran its
+    tests independently of this generate step. TR=False; no LLM test stats produced.
+
+--- Test Statistics Comparison ---
+  [GoDefault]  Original: 708 run, 0 failed   LLM: (no tests ran)

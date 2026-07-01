@@ -1,0 +1,37 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          20
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT TESTS NOT REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      ubuntu (19, ubuntu-24.04)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    7
+
+--- Test Reproducibility Gap ---
+  Original ran 37 test(s) across [ProveTAP, tap, GoDefault].
+  LLM build produced no test results (empty llm_log_stats).
+
+--- Root Cause ---
+  Reason type: Test runner executed but produced no parseable output
+  Key error(s) from build/test log:
+    make: *** No rule to make target 'installcheck'.  Stop.
+    cat: regression.diffs: No such file or directory
+    DROP DATABASE / CREATE DATABASE (pgvector extension install attempted)
+    * Stopping PostgreSQL 15 database server
+
+  - The pgvector test suite runs via PostgreSQL's `installcheck` make target, which requires a live running PostgreSQL server with the vector extension loaded; the LLM's Dockerfile attempted to start and configure PostgreSQL 15 but the `installcheck` target was not present, indicating the pgvector Makefile was not configured with a proper PostgreSQL installation path (pg_config not found or wrong version).
+  - Even though the extension compiled and was installed (vector.so deployed to /usr/lib/postgresql/15/lib), the test framework relies on PostgreSQL regression tests that must be run via `pg_regress` through `installcheck`; without this make target, no TAP or regression output was generated.
+  - The original CI uses PostgreSQL 19 (job: ubuntu (19, ubuntu-24.04)) while the LLM installed PostgreSQL 15, causing a version mismatch in the extension ABI and missing the installcheck infrastructure that was compiled against PostgreSQL 19 headers.
+
+--- Original Test Statistics (not reproduced) ---
+  [ProveTAP] 14 run, 8 passed, 6 failed, 0 skipped
+  [tap] 14 run, 14 passed, 0 failed, 0 skipped
+  [GoDefault] 9 run, 9 passed, 0 failed, 0 skipped

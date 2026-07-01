@@ -1,0 +1,36 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          N/A
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      build (ubuntu-py311)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ pip install tox pytest
+  $ pytest --continue-on-collection-errors || true
+
+--- Reason(s) for Non-Reproducibility ---
+  - [pytest] Test run mismatch: original=4120, LLM=7830
+  - [pytest] Test passed mismatch: original=3988, LLM=7485
+  - [pytest] Test failed mismatch: original=0, LLM=68
+  - [pytest] Test skipped mismatch: original=119, LLM=251
+  - [pytest] 23 test(s) failed in LLM but not in original: test_fixtures.py, test_getfixturevalue_teardown_new_fixture_deprecated.py, test_getfixturevalue_teardown_new_inactive_fixture_errors.py, test_getfixturevalue_teardown_new_inactive_fixture_errors_top_request.py, test_sync.py ... (+18 more)
+
+--- Root Cause Analysis ---
+  - [pytest] LLM ran 3710 more tests than original — LLM likely used a broader test scope or included extra test suites.
+  - [pytest] 23 test(s) failed in LLM but not original: test_fixtures.py, test_getfixturevalue_teardown_new_fixture_deprecated.py, test_getfixturevalue_teardown_new_inactive_fixture_errors.py, test_getfixturevalue_teardown_new_inactive_fixture_errors_top_request.py, test_sync.py ... (+18 more)
+
+--- Test Statistics Comparison ---
+  [pytest]
+    Original: 4120 run, 3988 passed, 0 failed, 119 skipped
+    LLM:      7830 run, 7485 passed, 68 failed, 251 skipped

@@ -1,0 +1,50 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      test-linux
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ go run gotest.tools/gotestsum@latest --junitfile unit-tests.xml --format pkgname -- -v -cover -coverpkg=./... -coverprofile=coverage.txt -covermode=atomic -timeout 20m ./...
+    $ test-summary/action@v2.4
+    $ go run main.go -P ubuntu-latest=node:16-buster-slim -C ./pkg/runner/testdata/ -W ./basic/push.yml
+    $ go run -tags WITHOUT_DOCKER main.go -P ubuntu-latest=-self-hosted -C ./pkg/runner/testdata/ -W ./local-action-js/push.yml
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ TEST_FAILED=0
+  $ TEST_FAILED=1
+  $ TEST_FAILED=1
+  $ TEST_FAILED=1
+  $ cat unit-tests.xml
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoRace] Test run mismatch: original=1230, LLM=1210
+  - [GoRace] Test passed mismatch: original=1230, LLM=1079
+  - [GoRace] Test failed mismatch: original=0, LLM=131
+  - [GoRace] 131 test(s) failed in LLM but not in original: cmd/TestFlags, cmd/TestFlags/TestFlag-bug-report, cmd/TestRun, cmd/TestRunPush, cmd/TestRunPushJsonLogger, pkg/artifacts/TestArtifactFlow, pkg/artifacts/TestArtifactFlow/GHSL-2023-004, pkg/artifacts/TestArtifactFlow/upload-and-download (+123 more)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    1857:=== FAIL: pkg/runner TestRunEvent/uses-nested-composite (0.04s)
+    999:=== FAIL: pkg/runner TestRunEvent/shells/bash (0.14s)
+    5208:=== FAIL: pkg/runner TestRunEvent/env-and-path (0.04s)
+
+  [Root cause classification]
+  - Same root cause as the failed-category counterpart `act_70507612762`: the `act` tool's `pkg/runner` tests need a live Docker daemon to spawn workflow containers. `TestRunEvent/uses-nested-composite`, `TestRunEvent/shells/bash`, and `TestRunEvent/env-and-path` all require `act` to launch Docker containers for workflow steps — which is impossible inside a Docker build container without the host socket mounted. All 131 failing tests are from runner and artifact packages that orchestrate Docker-based workflow execution.
+
+  - The 20 fewer tests (1210 vs 1230) represent packages whose Docker client initialisation panics before any test functions register. The original CI's `test-linux` job ran on a GitHub Actions runner with full Docker daemon access (all 1230 tests passed, 0 failed). The LLM's run.sh attempted the same `gotestsum` command but inside a Docker container without Docker-in-Docker capabilities.
+
+--- Test Statistics Comparison ---
+  [GoRace]
+    Original: 1230 run, 1230 passed, 0 failed, 0 skipped
+    LLM:      1210 run, 1079 passed, 131 failed, 0 skipped

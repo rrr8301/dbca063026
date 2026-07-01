@@ -1,0 +1,50 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      linux (-Dcc='g++')
+  Test command(s) run in original CI:
+    $ actions/checkout@v4
+    $ MALLOC_PERTURB_=254 MALLOC_CHECK_=3 make -j2 test_prep
+    $ LD_LIBRARY_PATH=`pwd` MALLOC_PERTURB_=254 MALLOC_CHECK_=3 TEST_JOBS=2 ./perl t/harness
+    $ perl Porting/manicheck --exitstatus
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ MALLOC_PERTURB_=254 MALLOC_CHECK_=3 make -j2 test_prep
+  $ LD_LIBRARY_PATH="$(pwd):$LD_LIBRARY_PATH" MALLOC_PERTURB_=254 MALLOC_CHECK_=3 TEST_JOBS=2 ./perl t/harness || TEST_FAILED=1
+
+--- Reason(s) for Non-Reproducibility ---
+  - [perl-harness] Test run mismatch: original=1380165, LLM=1379903
+  - [perl-harness] Test passed mismatch: original=1380165, LLM=1379903
+  - [perl-harness] Test failed mismatch: original=0, LLM=0
+  - [perl-harness] 1 test exited abnormally: porting/authors.t (Wstat: 768, exited 3, Tests: 7 run, 3 Failed)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    # Failed test 'git knows your committer name and email.'
+    # You do not have any git user config set up, consider using:
+    #     git config user.name 'Your Name'
+    #     git config user.email 'your@email.com'
+    porting/authors.t .................................................... Dubious, test returned 3 (wstat 768, 0x300)
+    porting/authors.t    (Wstat: 768 (exited 3) Tests: 7 Failed: 3)
+    Files=2944, Tests=1379903, 496 wallclock secs ...
+    Result: FAIL
+
+  [Root cause classification]
+  - `porting/authors.t` fails because Docker container has no git user configuration: The test checks that `git log --pretty=%ae` for recent commits shows email addresses that are registered in the Perl AUTHORS file. In the Docker container, no `git config user.name` or `git config user.email` is set, so `git log` cannot associate commit emails. The test output says "git knows your committer name and email" — it expects the Docker environment's git config to have a valid committer identity. The original CI's GitHub Actions runner has git configured with the machine's identity. Despite the `porting/authors.t` failure, the perl-harness counts it as 0 failures (abnormal exits are counted separately as "Dubious" tests), which is why both original and LLM show 0 failed but different test counts.
+  - 262 fewer tests in LLM (1379903 vs 1380165): `porting/authors.t` ran 7 tests but exited with code 3, meaning it stopped mid-run after failing test 3. The original CI ran all 7 + 262 additional tests from other harness files. The 262-test deficit is from the partial `porting/authors.t` run (262 subtests that would have run in later authors.t iterations never executed) and possibly other porting tests that depend on git configuration.
+
+--- Test Statistics Comparison ---
+  [perl-harness]
+    Original: 1380165 run, 1380165 passed, 0 failed, 0 skipped
+    LLM:      1379903 run, 1379903 passed, 0 failed, 0 skipped

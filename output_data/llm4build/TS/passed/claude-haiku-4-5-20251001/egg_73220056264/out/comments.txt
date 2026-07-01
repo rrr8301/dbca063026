@@ -1,0 +1,47 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          3
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Test (ubuntu-latest, 24)
+  Test command(s) run in original CI:
+    $ actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
+    $ mysql -uroot -e "CREATE DATABASE IF NOT EXISTS test;"
+    $ ut install --from pnpm
+    $ ut run example:test:all
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ trap 'TEST_FAILED=1' ERR
+  $ TEST_FAILED=0
+  $ mysql -uroot -e "CREATE DATABASE IF NOT EXISTS test;" || true
+  $ ut run ci || TEST_FAILED=1
+  $ ut run example:test:all || TEST_FAILED=1
+
+--- Reason(s) for Non-Reproducibility ---
+  - [vitest] Test run mismatch: original=3493, LLM=6
+  - [vitest] Test passed mismatch: original=3200, LLM=6
+  - [vitest] Test failed mismatch: original=0, LLM=0
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    Error: Access denied for user 'root'@'localhost'
+
+  [Root cause classification]
+  - Permission denied on executable/script — fake compiler or test helper script lacks execute permission in Docker container.
+  - Missing file or path not found — test data, certificate, or resource file absent in the Docker environment.
+  - Database service unavailable or not properly configured — test requires an external database service.
+  - I/O error — test encountered a system-level I/O failure, possibly due to filesystem permissions or missing mount points.
+
+--- Test Statistics Comparison ---
+  [vitest]
+    Original: 3493 run, 3200 passed, 0 failed, 277 skipped
+    LLM:      6 run, 6 passed, 0 failed, 0 skipped

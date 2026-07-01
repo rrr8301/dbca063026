@@ -1,0 +1,58 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      test-go-pg-17
+  Test command(s) run in original CI:
+    $ actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+    $ ./.github/scripts/retry.sh -- go install gotest.tools/gotestsum@0d9599e513d70e5792bb9334869f82f6e8b53d4d
+    $ ./.github/actions/test-cache/download
+    $ ./.github/actions/test-go-pg
+    $ make test-postgres-docker
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    6
+
+--- LLM run.sh Test Command(s) ---
+  $ TEST_COUNT=""
+  $ TEST_COUNT="-count=1"
+  $ go test ./... \
+  $ $TEST_COUNT \
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in original but missing in LLM: GoRace
+  - [GoDefault] Test run mismatch: original=220, LLM=14762
+  - [GoDefault] Test passed mismatch: original=218, LLM=9753
+  - [GoDefault] Test failed mismatch: original=2, LLM=94
+  - [GoDefault] 93 test(s) failed in LLM but not in original: github.com/coder/coder/v2/agent, github.com/coder/coder/v2/archive, github.com/coder/coder/v2/cli, github.com/coder/coder/v2/cli/clitest, github.com/coder/coder/v2/cli/exptest, github.com/coder/coder/v2/coderd, github.com/coder/coder/v2/coderd/agentapi, github.com/coder/coder/v2/coderd/autobuild (+85 more)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    377603-        	Error Trace:	/workspace/coderd/database/dbtestutil/db.go:109
+    377609-        	Error:      	Received unexpected error:
+    377620-        	Error Trace:	/workspace/coderd/database/dbtestutil/db.go:109
+    377626-        	Error:      	Received unexpected error:
+    75:    t.go:111: 2026-05-04 22:49:09.607 [debu]  client.net.wgengine: magicsock: [warning] failed to force-set UDP read buffer size to 7340032: operation not permitted; using kernel default values (im
+    76:    t.go:111: 2026-05-04 22:49:09.607 [debu]  client.net.wgengine: magicsock: [warning] failed to force-set UDP write buffer size to 7340032: operation not permitted; using kernel default values (i
+    79-    t.go:111: 2026-05-04 22:49:09.607 [debu]  agent: routine exited  name="init notification banners"  error=<nil>
+    75:    t.go:111: 2026-05-04 22:49:09.607 [debu]  client.net.wgengine: magicsock: [warning] failed to force-set UDP read buffer size to 7340032: operation not permitted; using kernel default values (im
+
+  [Root cause classification]
+  - The original CI job `test-go-pg-17` ran only 220 tests via the `.github/actions/test-go-pg` action — a specially filtered subset of Coder's test suite targeting just the PostgreSQL-17-dependent packages (`make test-postgres-docker`). The LLM ran `go test ./...` which executed the full Coder test suite (14762 tests). Of those, 94 packages fail because PostgreSQL 17 is not running: `dbtestutil/db.go:109` fires `Received unexpected error` whenever it tries to open a database connection — this is the same `dial tcp 127.0.0.1:5432: connect: connection refused` pattern seen in the failed-category counterpart `coder_70902772150`. The 93 failing packages (agent, archive, cli, coderd, coderd/agentapi, etc.) all call `dbtestutil.NewDB()` which requires a live PostgreSQL server.
+
+  - The GoRace suite (20032 tests) is entirely absent from the LLM output. The original CI ran a separate GoRace pass (`gotestsum --format=short-verbose -race ./...`) that produced 20032 tests (19975 passed, 1 failed, 56 skipped). The LLM only ran a single `go test ./...` without the `-race` flag, so no GoRace results were captured. The UDP socket buffer warnings (`failed to force-set UDP read/write buffer size to 7340032: operation not permitted`) indicate that WireGuard/magicsock networking tests partially succeeded but the kernel refused to set large socket buffers — a secondary issue on top of the missing PostgreSQL.
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 220 run, 218 passed, 2 failed, 0 skipped
+    LLM:      14762 run, 9753 passed, 94 failed, 0 skipped
+  [GoRace]
+    Original: 20032 run, 19975 passed, 1 failed, 56 skipped
+    LLM:      (not present)

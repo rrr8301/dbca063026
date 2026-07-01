@@ -1,0 +1,41 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          20
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT TESTS NOT REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Build and Test (Linux, torch-nightly, assertions)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    8
+
+--- Test Reproducibility Gap ---
+  Original ran 2 test(s) across [GoDefault].
+  LLM build produced no test results (empty llm_log_stats).
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > /workspace/lib/Dialect/Torch/IR/TorchOps.cpp:458:22: error: out-of-line definition of 'getMutableSuccessorOperands' does not match any declaration in 'mlir::torch::Torch::PrimLoopConditionOp'
+    > /workspace/lib/Dialect/Torch/IR/TorchOps.cpp:3183:32: error: unknown type name 'OpaqueProperties'; did you mean 'detail::OpProperties'?
+    > ninja: build stopped: cannot make progress due to previous errors.
+
+  [Root cause classification]
+  - The LLM's `ubuntu:22.04` Dockerfile installs LLVM/MLIR from apt, which provides an older MLIR version. torch-mlir's `TorchOps.cpp` uses MLIR's `OpaqueProperties` type (introduced in MLIR ~17-18 era as the new op properties mechanism) but the system's older MLIR headers expose `detail::OpProperties` instead. The MLIR API was refactored — `OpaqueProperties` replaced the older interface — and the LLM's apt-installed MLIR predates this change, causing the C++ compilation of `TorchOps.cpp` to fail with "unknown type name 'OpaqueProperties'" at step 4856 of 4900.
+
+  - The original CI used a specially built Docker container (`us-docker.pkg.dev/...test/linux/...`) containing a torch-nightly build with its matching MLIR version. The `[GoDefault]` parser label on the original 2 failed tests is a parser mis-classification: the actual test output came from torch-mlir's lit (LLVM Integrated Tester) test runner, not Go tests — but lit's output format was parsed as Go default test output. After 20 attempts, the LLM could not install a compatible MLIR version from Ubuntu packages because torch-mlir requires a specific MLIR nightly that is not available in the Ubuntu apt repositories.
+
+--- Root Cause ---
+  Reason type: Compilation / linker failure during build
+  Build stopped at step 4856 of 4900
+  Key error(s) from build/test log:
+    FAILED: [code=1] tools/torch-mlir/lib/Dialect/Torch/IR/CMakeFiles/obj.TorchMLIRTorchDialect.dir/TorchOps.cpp.o
+    Searching for undefined reference errors...
+    ninja: build stopped: cannot make progress due to previous errors.
+
+--- Original Test Statistics (not reproduced) ---
+  [GoDefault] 2 run, 0 passed, 2 failed, 0 skipped

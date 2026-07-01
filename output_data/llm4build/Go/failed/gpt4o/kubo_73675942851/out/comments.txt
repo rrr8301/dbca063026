@@ -1,0 +1,37 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          20
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT TESTS NOT REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      unit-tests
+  Docker image pulled: ${IMAGE_TAG}
+  Test command(s) run in original CI:
+    $ make test_unit &&
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    7
+
+--- Test Reproducibility Gap ---
+  Original ran 1767 test(s) across [GoRace].
+  LLM build produced no test results (empty llm_log_stats).
+
+--- Root Cause ---
+  Reason type: Test runner executed but produced no parseable output
+  Last log output before stopping:
+    go: downloading github.com/fatih/color v1.18.0
+    go: downloading github.com/bitfield/gotestdox v0.2.2
+    go: downloading github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
+    go: downloading github.com/mattn/go-colorable v0.1.14
+    /root/go/pkg/mod/golang.org/x/tools@v0.44.0/go/packages/visit.go:8:2: package cmp is not in GOROOT (/usr/local/go/src/cmp)
+    /root/go/pkg/mod/golang.org/x/tools@v0.44.0/go/ast/inspector/cursor.go:11:2: package iter is not in GOROOT (/usr/local/go/src/iter)
+    /root/go/pkg/mod/golang.org/x/sys@v0.43.0/unix/syscall_linux.go:16:2: package slices is not in GOROOT (/usr/local/go/src/slices)
+    make: *** [test/bin/Rules.mk:43: test/bin/gotestsum] Error 1
+
+--- Original Test Statistics (not reproduced) ---
+  [GoRace] 1767 run, 1142 passed, 1 failed, 624 skipped

@@ -1,0 +1,90 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          7
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      run-tests (3.8, full, pinned)
+  Platform:         ubuntu-latest with Python 3.8.18
+  Test command(s) run in original CI:
+    $ pip install pandas~=1.2.0  (from ci/deps_pinned.txt)
+    $ make test
+      (runs: pytest --doctest-modules seaborn/tests/)
+      (Python 3.8.18, pandas==1.2.5, pytest-8.3.5)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:20.04
+  RUN steps:    7
+
+--- LLM run.sh Test Command(s) ---
+  $ make test
+    (runs: pytest --doctest-modules seaborn/tests/)
+    (Python from ubuntu:20.04 default, pandas from latest pip, not pinned)
+
+--- Reason(s) for Non-Reproducibility ---
+  - [pytest] Test run mismatch: original=2381, LLM=2382 (1 more test in LLM)
+  - [pytest] Test failed mismatch: original=2, LLM=0 (2 original failures now skipped in LLM)
+  - [pytest] Skip count mismatch: original=22 skipped, LLM=71 skipped (49 more skips in LLM)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    (No failures in LLM — the two originally-failing tests are SKIPPED in LLM)
+
+  [Root cause classification]
+  Pinned pandas 1.2.5 in original CI vs newer pandas in LLM Docker causes both original
+  failures to flip to skipped, and introduces 49 additional version-conditional skips
+
+  The original CI job is "run-tests (3.8, full, pinned)". The word "pinned" refers to
+  `ci/deps_pinned.txt` which specifies `pandas~=1.2.0`, locking pandas to version 1.2.5.
+  The LLM Dockerfile installs pandas without pinning, pulling a much newer version
+  (pandas 2.x) where the pandas API has changed significantly.
+
+  (1) test_data_interchange_support_test — original FAILS, LLM SKIPS
+    This test has the decorator:
+      @pytest.mark.skipif(
+        condition=hasattr(pd.api, "interchange"),
+        reason="Tests graceful failure without support for dataframe interchange"
+      )
+    With pandas 1.2.5 (original CI), `pd.api` has no `interchange` attribute:
+      hasattr(pd.api, "interchange") == False → skipif condition is False → test RUNS
+    The test verifies that seaborn raises `TypeError("Support for non-pandas DataFrame...")`
+    when passed a dataframe that does not support the interchange protocol. With pandas 1.2.5,
+    this code path exercises the old seaborn error handling and the test fails because
+    the expected TypeError is not raised with the exact format expected.
+    With newer pandas (≥1.5), `pd.api.interchange` exists:
+      hasattr(pd.api, "interchange") == True → skipif condition is True → test SKIPS
+
+  (2) test_wide_categorical_columns — original FAILS, LLM SKIPS
+    This test exercises seaborn's handling of wide-form DataFrames with many categorical
+    columns. With pandas 1.2.5, seaborn triggers a pandas code path that produces an
+    unexpected internal behavior (likely a pandas bug or changed behavior in later versions).
+    The test fails in original CI because pandas 1.2.5 returns different behavior when
+    constructing a DataFrame with many categorical columns.
+    With newer pandas (2.x), the internal DataFrame construction behavior changed, and
+    seaborn's test either exercises a different code path or the test condition triggers
+    a skip via a version-conditional skipif marker.
+
+  (3) 49 more skips in LLM (71 vs 22)
+    seaborn's test suite has many skip markers tied to pandas version features. Tests
+    checking for features introduced between pandas 1.2.5 and 2.x (e.g., `pd.api.interchange`,
+    new DataFrame methods, changed NA handling) use skipif conditions. With newer pandas,
+    some tests that REQUIRED specific pandas 1.2.x behavior are now skipped because the
+    tested behavior has been removed or changed. The net effect: 49 additional tests
+    skip in the LLM's newer-pandas environment vs the original pinned-1.2.5 environment.
+
+  (4) 1 more test collected in LLM (2382 vs 2381)
+    The single extra test is likely a parametrized variant introduced by newer pytest
+    (newer version from ubuntu:20.04 pip) or a new test file added since the pinned
+    environment was established. This difference is minor compared to the skip/fail flip.
+
+--- Test Statistics Comparison ---
+  [pytest]
+    Original: 2381 run, 2351 passed, 2 failed, 22 skipped  (Python 3.8.18, pandas 1.2.5)
+    LLM:      2382 run, 2305 passed, 0 failed, 71 skipped  (newer Python, newer pandas)
+    (2 original failures become skipped in LLM because newer pandas has pd.api.interchange;
+     49 more skips: version-conditional markers for pandas 1.2.x-specific behavior;
+     1 more test collected: minor parametrization difference from newer pytest/python version)

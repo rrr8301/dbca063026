@@ -1,0 +1,35 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          N/A
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Java 11 / core
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:20.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ mvn -T 1C -B clean install -DskipTests
+  $ mvn -B verify $TEST_MODULES -Ptest-coverage -Ptest-$module -Dlog.dir=/tmp/fluss-logs -Dlog4j.configurationFile=tools/ci/log4j.properties -Denforcer.skip=true || true
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Maven] Test run mismatch: original=3253, LLM=2707
+  - [Maven] Test passed mismatch: original=3247, LLM=2701
+  - [Maven] Test failed mismatch: original=0, LLM=1
+  - [Maven] Test skipped mismatch: original=6, LLM=5
+  - [Maven] 1 test(s) failed in LLM but not in original: remoteLogMiscTest(org.apache.fluss.server.log.remote.RemoteLogITCase)
+
+--- Root Cause Analysis ---
+  - [Maven] LLM ran 546 fewer tests than original — LLM likely used a narrower test scope or missed some test suites.
+  - [Maven] 1 test(s) failed in LLM but not original: remoteLogMiscTest(org.apache.fluss.server.log.remote.RemoteLogITCase)
+
+--- Test Statistics Comparison ---
+  [Maven]
+    Original: 3253 run, 3247 passed, 0 failed, 6 skipped
+    LLM:      2707 run, 2701 passed, 1 failed, 5 skipped

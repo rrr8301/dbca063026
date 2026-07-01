@@ -1,0 +1,74 @@
+Error from docker build
+
+#1 [internal] load .dockerignore
+#1 transferring context: 2B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 1.19kB done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/python:3.12-slim
+#3 DONE 0.1s
+
+#4 [1/8] FROM docker.io/library/python:3.12-slim@sha256:6026d9374020066a85690cabdb66f5d06a2dd606e756c7082fccdaaaf6d048dd
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 98.60kB 0.1s done
+#5 DONE 0.1s
+
+#6 [2/8] RUN ln -snf /usr/share/zoneinfo/America/Los_Angeles /etc/localtime && echo America/Los_Angeles > /etc/timezone
+#6 CACHED
+
+#7 [3/8] RUN apt-get update && apt-get install -y --no-install-recommends     git     build-essential     cmake     ninja-build     meson     pkg-config     curl     wget     clang     clang-format     && rm -rf /var/lib/apt/lists/*
+#7 CACHED
+
+#8 [4/8] WORKDIR /workspace
+#8 CACHED
+
+#9 [5/8] COPY . /workspace/
+#9 DONE 0.7s
+
+#10 [6/8] RUN if [ -f ./.github/workflows/install-ubuntu-dependencies.sh ]; then     sed 's/sudo //g' ./.github/workflows/install-ubuntu-dependencies.sh | bash -s -- --full;     fi
+#10 0.298 Installing full dependencies (including multilib and testing tools)...
+#10 0.298 Adding i386 architecture...
+#10 1.214 Get:1 http://deb.debian.org/debian trixie InRelease [140 kB]
+#10 1.243 Get:2 http://deb.debian.org/debian trixie-updates InRelease [47.3 kB]
+#10 1.243 Get:3 http://deb.debian.org/debian-security trixie-security InRelease [43.4 kB]
+#10 1.287 Get:4 http://deb.debian.org/debian trixie/main i386 Packages [9430 kB]
+#10 1.402 Get:5 http://deb.debian.org/debian trixie/main amd64 Packages [9671 kB]
+#10 1.484 Get:6 http://deb.debian.org/debian trixie-updates/main i386 Packages [5136 B]
+#10 1.484 Get:7 http://deb.debian.org/debian trixie-updates/main amd64 Packages [5412 B]
+#10 1.489 Get:8 http://deb.debian.org/debian-security trixie-security/main i386 Packages [146 kB]
+#10 1.491 Get:9 http://deb.debian.org/debian-security trixie-security/main amd64 Packages [156 kB]
+#10 3.268 Fetched 19.6 MB in 3s (6713 kB/s)
+#10 3.268 Reading package lists...
+#10 4.405 Reading package lists...
+#10 5.635 Building dependency tree...
+#10 5.908 Reading state information...
+#10 5.948 E: Unable to locate package gcc-10
+#10 5.948 E: Unable to locate package gcc-9
+#10 ERROR: process "/bin/sh -c if [ -f ./.github/workflows/install-ubuntu-dependencies.sh ]; then     sed 's/sudo //g' ./.github/workflows/install-ubuntu-dependencies.sh | bash -s -- --full;     fi" did not complete successfully: exit code: 100
+------
+ > [6/8] RUN if [ -f ./.github/workflows/install-ubuntu-dependencies.sh ]; then     sed 's/sudo //g' ./.github/workflows/install-ubuntu-dependencies.sh | bash -s -- --full;     fi:
+#10 1.243 Get:3 http://deb.debian.org/debian-security trixie-security InRelease [43.4 kB]
+#10 1.287 Get:4 http://deb.debian.org/debian trixie/main i386 Packages [9430 kB]
+#10 1.402 Get:5 http://deb.debian.org/debian trixie/main amd64 Packages [9671 kB]
+#10 1.484 Get:6 http://deb.debian.org/debian trixie-updates/main i386 Packages [5136 B]
+#10 1.484 Get:7 http://deb.debian.org/debian trixie-updates/main amd64 Packages [5412 B]
+#10 1.489 Get:8 http://deb.debian.org/debian-security trixie-security/main i386 Packages [146 kB]
+#10 1.491 Get:9 http://deb.debian.org/debian-security trixie-security/main amd64 Packages [156 kB]
+
+#10 5.948 E: Unable to locate package gcc-10
+#10 5.948 E: Unable to locate package gcc-9
+------
+Dockerfile:29
+--------------------
+  28 |     # Remove sudo from the script since we're running as root in container
+  29 | >>> RUN if [ -f ./.github/workflows/install-ubuntu-dependencies.sh ]; then \
+  30 | >>>     sed 's/sudo //g' ./.github/workflows/install-ubuntu-dependencies.sh | bash -s -- --full; \
+  31 | >>>     fi
+  32 |     
+--------------------
+ERROR: failed to solve: process "/bin/sh -c if [ -f ./.github/workflows/install-ubuntu-dependencies.sh ]; then     sed 's/sudo //g' ./.github/workflows/install-ubuntu-dependencies.sh | bash -s -- --full;     fi" did not complete successfully: exit code: 100

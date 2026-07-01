@@ -1,0 +1,32 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          N/A
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT TESTS NOT REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      test (core/trino-main)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   maven:3.8.5-openjdk-17
+  RUN steps:    1
+
+--- LLM run.sh Test Command(s) ---
+  $ if ! mvn dependency:get -Dartifact=io.trino:trino-exchange-filesystem:jar:480-SNAPSHOT ${SETTINGS_OPTION}; then
+  $ if ! mvn dependency:get -Dartifact=io.trino:trino-tpch:jar:480-SNAPSHOT ${SETTINGS_OPTION}; then
+  $ if ! mvn clean install ${MAVEN_FAST_INSTALL} ${MAVEN_GIB} ${SETTINGS_OPTION} -am -pl "core/trino-main" -Drelease=17 -Dmaven.compiler.release=17; then
+  $ if ! mvn test ${MAVEN_TEST} ${SETTINGS_OPTION} -pl "core/trino-main" -Drelease=17 -Dmaven.compiler.release=17; then
+
+--- Test Reproducibility Gap ---
+  Original ran 8997 test(s) across [Maven].
+  LLM build produced no test results (empty llm_log_stats).
+
+--- Root Cause ---
+  Reason type: Compilation / linker failure during build
+
+--- Original Test Statistics (not reproduced) ---
+  [Maven] 8997 run, 8992 passed, 0 failed, 5 skipped

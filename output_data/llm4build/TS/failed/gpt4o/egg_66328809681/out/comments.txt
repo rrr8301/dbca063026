@@ -1,0 +1,35 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      Test (ubuntu-latest, 24, 3/3)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    5
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoDefault] 1 test(s) failed in original but passed in LLM: @eggjs/tegg
+  - [GoDefault] 1 test(s) failed in LLM but not in original: @eggjs/tegg-types
+  - [vitest] Test run mismatch: original=825, LLM=1032
+  - [vitest] Test passed mismatch: original=760, LLM=384
+  - [vitest] Test skipped mismatch: original=42, LLM=60
+
+--- Root Cause Analysis ---
+  - [GoDefault] 1 test(s) failed in LLM but not original: @eggjs/tegg-types
+  - [vitest] LLM ran 207 more tests than original — LLM likely used a broader test scope or included extra test suites.
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 3 run, 0 passed, 3 failed, 0 skipped
+    LLM:      3 run, 0 passed, 3 failed, 0 skipped
+  [vitest]
+    Original: 825 run, 760 passed, 1 failed, 42 skipped
+    LLM:      1032 run, 384 passed, 1 failed, 60 skipped

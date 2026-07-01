@@ -1,0 +1,34 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          N/A
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      test (ubuntu-latest)
+  Test command(s) run in original CI:
+    $ cargo test --all
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ cargo test --all
+
+--- Reason(s) for Non-Reproducibility ---
+  - [cargo] Test passed mismatch: original=1636, LLM=1634
+  - [cargo] Test failed mismatch: original=0, LLM=2
+  - [cargo] 2 test(s) failed in LLM but not in original: backticks::trailing_newlines_are_stripped, functions::env_var_functions_unix
+
+--- Root Cause Analysis ---
+  - [cargo] 2 test(s) failed in LLM but not original: backticks::trailing_newlines_are_stripped, functions::env_var_functions_unix
+
+--- Test Statistics Comparison ---
+  [cargo]
+    Original: 1644 run, 1636 passed, 0 failed, 8 skipped
+    LLM:      1644 run, 1634 passed, 2 failed, 8 skipped

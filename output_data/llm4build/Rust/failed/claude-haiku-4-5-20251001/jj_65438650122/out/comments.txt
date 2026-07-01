@@ -1,0 +1,102 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          3
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      test (linux-x86_64-gnu)
+  Platform:         GitHub Actions Linux x86_64
+  Rust version:     stable (linux-x86_64-gnu)
+  Test command(s) run in original CI:
+    $ cargo nextest run --config .cargo/config-ci.toml --workspace --all-targets
+        --verbose --profile ci --all-features
+      (3069 nextest tests; 3 failed — insta snapshot assertion failures)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu-based
+  Architecture: x86_64 (Docker; same as original CI)
+  RUN steps:    several
+
+--- LLM run.sh Test Command(s) ---
+  $ cargo nextest run --config .cargo/config-ci.toml --workspace --all-targets
+        --verbose --profile ci --all-features
+    (same command as original CI)
+
+--- Reason(s) for Non-Reproducibility ---
+  - [cargo/nexttest] LLM fails 10 tests vs original 3 (7 additional LLM-only failures)
+  - Both fail same 3 insta snapshot tests (pre-existing)
+  - LLM additionally fails: 1 file lock timeout, 1 file permission (root user), 5 ssh signing
+  - LLM cargo count: 7871 vs original 2952 (different binary scope captured)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > thread 'test_workspaces::test_workspaces_rename_workspace_from_before_workspace_store'
+    >   panicked at insta-1.46.3/src/runtime.rs:719:13:
+    > snapshot assertion for 'workspaces_rename_workspace_from_before_workspace_store-2' failed in line 1937
+    >   [same pattern for test_workspaces_root_unavailable and test_workspaces_forget_multi_transaction]
+    >
+    > thread '<unnamed>' panicked at lib/src/lock/mod.rs:76:60:
+    > called `Result::unwrap()` on an `Err` value: FileLockError {
+    >   message: "Timed out while trying to create lock file",
+    >   path: "/tmp/jj-test-XoENEc/test.lock",
+    >   err: Os { code: 17, kind: AlreadyExists, message: "File exists" }
+    > }
+    >
+    > thread 'test_ssh_signing::ssh_signing_missing_allowed_signers' panicked at
+    >   lib/tests/test_ssh_signing.rs:186:10:
+    > called `Result::unwrap()` on an `Err` value:
+    >   Backend(Io(Os { code: 2, kind: NotFound, message: "No such file or directory" }))
+    >   [same error for all 5 ssh_signing tests]
+
+  [Root cause classification]
+  Three separate root causes explain the 7 additional LLM failures:
+
+  (1) Pre-existing: 3 insta snapshot failures (both original CI and LLM)
+    The `test_workspaces` tests use the `insta` crate for snapshot testing. Snapshots
+    stored in the repository under `cli/tests/snapshots/` no longer match the current
+    workspace command output. Both environments fail because the code behavior changed
+    but committed snapshots weren't updated. The assertion:
+      `snapshot assertion for 'workspaces_rename_workspace_from_before_workspace_store-2' failed`
+    indicates the actual output diverges from the stored baseline.
+
+  (2) File lock timeout in Docker (LLM only — 1 failure)
+    `lock::tests::lock_concurrent::fallback_filelock_lock_expects` tests concurrent file
+    locking by spawning threads that all try to acquire the same lock. On Docker with higher
+    I/O latency or different scheduler behavior, one thread holds the lock file (`code: 17,
+    AlreadyExists`) longer than the timeout allows, causing:
+      `FileLockError { message: "Timed out while trying to create lock file" }`
+    On GitHub Actions with faster disk I/O, the lock acquisition completes before timeout.
+
+  (3) Root user bypasses file permissions (LLM only — 1 failure)
+    `test_local_working_copy::test_check_out_existing_file_cannot_be_removed` tests that
+    jj cannot check out a file if an existing path element can't be removed (e.g., a
+    read-only directory). In Docker running as root, `chmod 000` on a directory doesn't
+    prevent root from removing it — root ignores Unix file permission checks. On GitHub
+    Actions (non-root user), the permission restriction is enforced. The test fails
+    because the "cannot be removed" scenario actually succeeds when run as root.
+
+  (4) OpenSSH signing tools not installed in Docker (LLM only — 5 failures)
+    Five `test_ssh_signing` tests call `ssh-keygen -Y sign` and `ssh-keygen -Y verify-blob`
+    to create and verify SSH-signed commits. The Docker image doesn't have OpenSSH installed
+    or lacks the signing-capable version of `ssh-keygen`. Every ssh_signing test that
+    invokes the `ssh-keygen` subprocess gets:
+      `Backend(Io(Os { code: 2, kind: NotFound, message: "No such file or directory" }))`
+    On GitHub Actions, OpenSSH is pre-installed with full signing support.
+
+--- Test Statistics Comparison ---
+  [nexttest]
+    Original: 3069 run, 3066 passed, 3 failed, 0 skipped
+      (3 failures: test_workspaces insta snapshot assertions — pre-existing)
+    LLM:      ~3068 run, ~3058 passed, 10 failed, 0 skipped
+      (3 pre-existing insta snapshot failures +
+       1 file lock timeout (Docker I/O latency) +
+       1 file permissions bypassed by root user +
+       5 ssh_signing: ssh-keygen not installed in Docker)
+  [cargo binary capture]
+    Original: 2952 run, 0 passed, 3 failed, 2949 skipped
+    LLM:      7871 run, 0 passed, 10 failed, 7861 skipped
+      (different binary scope captured in summary.json)

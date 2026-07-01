@@ -1,0 +1,34 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      linux-gcc
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ ctest --output-on-failure -j $(nproc)
+
+--- Reason(s) for Non-Reproducibility ---
+  - [CTest] Test run mismatch: original=486, LLM=162
+  - [CTest] Test passed mismatch: original=486, LLM=161
+  - [CTest] Test failed mismatch: original=0, LLM=1
+  - [CTest] 1 test(s) failed in LLM but not in original: test_multiheadattention_1
+
+--- Root Cause Analysis ---
+  - [CTest] LLM ran 324 fewer tests than original — LLM likely used a narrower test scope or missed some test suites.
+  - [CTest] 1 test(s) failed in LLM but not original: test_multiheadattention_1
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 486 run, 486 passed, 0 failed, 0 skipped
+    LLM:      162 run, 161 passed, 1 failed, 0 skipped

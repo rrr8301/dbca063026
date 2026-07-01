@@ -1,0 +1,36 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          N/A
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      build_and_test
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ mvn -T 4 --batch-mode -Djava.awt.headless=true verify -P enableTests,enableCheckStyle
+  $ mvn test || true
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Maven] Test run mismatch: original=559, LLM=192
+  - [Maven] Test passed mismatch: original=557, LLM=191
+  - [Maven] Test failed mismatch: original=0, LLM=1
+  - [Maven] Test skipped mismatch: original=2, LLM=0
+  - [Maven] 1 test(s) failed in LLM but not in original: testUtf8(org.gephi.io.exporter.plugin.SpreadsheetTest)
+
+--- Root Cause Analysis ---
+  - [Maven] LLM ran 367 fewer tests than original — LLM likely used a narrower test scope or missed some test suites.
+  - [Maven] 1 test(s) failed in LLM but not original: testUtf8(org.gephi.io.exporter.plugin.SpreadsheetTest)
+
+--- Test Statistics Comparison ---
+  [Maven]
+    Original: 559 run, 557 passed, 0 failed, 2 skipped
+    LLM:      192 run, 191 passed, 1 failed, 0 skipped

@@ -1,0 +1,51 @@
+Error from docker build
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 901B done
+#1 DONE 0.0s
+
+#2 [internal] load .dockerignore
+#2 transferring context: 84B done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/ubuntu:22.04
+#3 DONE 0.3s
+
+#4 [ 1/11] FROM docker.io/library/ubuntu:22.04@sha256:962f6cadeae0ea6284001009daa4cc9a8c37e75d1f5191cf0eb83fe565b63dd7
+#4 DONE 0.0s
+
+#5 [ 2/11] RUN ln -snf /usr/share/zoneinfo/America/Los_Angeles /etc/localtime && echo America/Los_Angeles > /etc/timezone
+#5 CACHED
+
+#6 [ 3/11] RUN apt-get update && apt-get install -y     git     curl     wget
+#6 CACHED
+
+#7 [internal] load build context
+#7 transferring context: 857.97kB 0.4s done
+#7 DONE 0.5s
+
+#8 [ 4/11] RUN echo 1.24 > /tmp/.go-version
+#8 DONE 0.4s
+
+#9 [ 5/11] RUN curl -sSL https://go.dev/dl/go$(cat /tmp/.go-version).linux-amd64.tar.gz | tar -C /usr/local -xz
+#9 0.860 
+#9 0.860 gzip: stdin: not in gzip format
+#9 0.861 tar: Child returned status 1
+#9 0.861 tar: Error is not recoverable: exiting now
+#9 ERROR: process "/bin/sh -c curl -sSL https://go.dev/dl/go$(cat /tmp/.go-version).linux-amd64.tar.gz | tar -C /usr/local -xz" did not complete successfully: exit code: 2
+------
+ > [ 5/11] RUN curl -sSL https://go.dev/dl/go$(cat /tmp/.go-version).linux-amd64.tar.gz | tar -C /usr/local -xz:
+#9 0.860 
+#9 0.860 gzip: stdin: not in gzip format
+#9 0.861 tar: Child returned status 1
+#9 0.861 tar: Error is not recoverable: exiting now
+------
+Dockerfile:17
+--------------------
+  15 |     ARG GO_VERSION=1.24
+  16 |     RUN echo $GO_VERSION > /tmp/.go-version
+  17 | >>> RUN curl -sSL https://go.dev/dl/go$(cat /tmp/.go-version).linux-amd64.tar.gz | tar -C /usr/local -xz
+  18 |     ENV PATH="/usr/local/go/bin:${PATH}"
+  19 |     
+--------------------
+ERROR: failed to solve: process "/bin/sh -c curl -sSL https://go.dev/dl/go$(cat /tmp/.go-version).linux-amd64.tar.gz | tar -C /usr/local -xz" did not complete successfully: exit code: 2

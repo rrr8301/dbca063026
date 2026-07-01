@@ -1,0 +1,41 @@
+Error from docker build
+
+#1 [internal] load .dockerignore
+#1 transferring context: 84B 0.0s done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 862B done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/ubuntu:22.04
+#3 DONE 0.1s
+
+#4 [ 1/10] FROM docker.io/library/ubuntu:22.04@sha256:962f6cadeae0ea6284001009daa4cc9a8c37e75d1f5191cf0eb83fe565b63dd7
+#4 DONE 0.0s
+
+#5 [ 2/10] RUN ln -snf /usr/share/zoneinfo/America/Los_Angeles /etc/localtime && echo America/Los_Angeles > /etc/timezone
+#5 CACHED
+
+#6 [internal] load build context
+#6 transferring context: 857.90kB 0.5s done
+#6 DONE 0.5s
+
+#7 [ 4/10] COPY traefik/.go-version /tmp/.go-version || echo 1.20.5 > /tmp/.go-version
+#7 ERROR: failed to calculate checksum of ref bbf0bc14-1281-4098-922e-22d26f66be72::jq23c58yt36m08wh33hylpka5: "/||": not found
+
+#8 [ 3/10] RUN apt-get update && apt-get install -y     git     curl     wget
+#0 0.509 Get:1 http://security.ubuntu.com/ubuntu jammy-security InRelease [129 kB]
+#8 CANCELED
+------
+ > [ 4/10] COPY traefik/.go-version /tmp/.go-version || echo 1.20.5 > /tmp/.go-version:
+------
+Dockerfile:16
+--------------------
+  14 |     # Use a default Go version if .go-version is not available
+  15 |     ARG GO_VERSION=1.20.5
+  16 | >>> COPY traefik/.go-version /tmp/.go-version || echo $GO_VERSION > /tmp/.go-version
+  17 |     RUN curl -sSL https://golang.org/dl/$(cat /tmp/.go-version).linux-amd64.tar.gz | tar -C /usr/local -xz
+  18 |     ENV PATH="/usr/local/go/bin:${PATH}"
+--------------------
+ERROR: failed to solve: failed to compute cache key: failed to calculate checksum of ref bbf0bc14-1281-4098-922e-22d26f66be72::jq23c58yt36m08wh33hylpka5: "/||": not found

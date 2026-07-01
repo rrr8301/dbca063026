@@ -1,0 +1,38 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          4
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      test-fast (ubuntu-24.04-arm)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoDefault] Test run mismatch: original=200, LLM=218
+  - [GoDefault] Test failed mismatch: original=200, LLM=218
+  - [GoDefault] 1 test(s) failed in LLM but not in original: +
+  - [cargo] Test run mismatch: original=13491, LLM=13907
+  - [cargo] Test failed mismatch: original=100, LLM=109
+  - [cargo] Test skipped mismatch: original=13391, LLM=13798
+  - [cargo] 9 test(s) failed in LLM but not in original: ask::askpass_only, ask::username_password, env::git::tests::exe_info::tolerates_broken_temp, env::git::tests::exe_info::tolerates_git_config_env_var, env::git::tests::exe_info::tolerates_oversanitized_env ... (+4 more)
+
+--- Root Cause Analysis ---
+  - [GoDefault] LLM ran 18 more tests than original — LLM likely used a broader test scope or included extra test suites.
+  - [GoDefault] 1 test(s) failed in LLM but not original: +
+  - [cargo] LLM ran 416 more tests than original — LLM likely used a broader test scope or included extra test suites.
+  - [cargo] 9 test(s) failed in LLM but not original: ask::askpass_only, ask::username_password, env::git::tests::exe_info::tolerates_broken_temp, env::git::tests::exe_info::tolerates_git_config_env_var, env::git::tests::exe_info::tolerates_oversanitized_env ... (+4 more)
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 200 run, 0 passed, 200 failed, 0 skipped
+    LLM:      218 run, 0 passed, 218 failed, 0 skipped
+  [cargo]
+    Original: 13491 run, 0 passed, 100 failed, 13391 skipped
+    LLM:      13907 run, 0 passed, 109 failed, 13798 skipped

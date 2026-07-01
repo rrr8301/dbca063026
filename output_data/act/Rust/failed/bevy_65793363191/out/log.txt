@@ -1,0 +1,287 @@
+# command: act pull_request -W .github/workflows/ci.yml --directory project_path/bevy -j build --matrix os:ubuntu-latest
+
+time="2026-05-10T14:45:24-07:00" level=info msg="Using docker host 'unix:///var/run/docker.sock', and daemon socket 'unix:///var/run/docker.sock'"
+[CI/build] ⭐ Run Set up job
+[CI/build] 🚀  Start image=catthehacker/ubuntu:act-latest
+[CI/build]   🐳  docker pull image=catthehacker/ubuntu:act-latest platform= username= forcePull=true
+[CI/build] using DockerAuthConfig authentication for docker pull
+[CI/build]   🐳  docker create image=catthehacker/ubuntu:act-latest platform= entrypoint=["tail" "-f" "/dev/null"] cmd=[] network="host"
+[CI/build]   🐳  docker run image=catthehacker/ubuntu:act-latest platform= entrypoint=["tail" "-f" "/dev/null"] cmd=[] network="host"
+[CI/build]   🐳  docker exec cmd=[node --no-warnings -e console.log(process.execPath)] user= workdir=
+[CI/build]   ✅  Success - Set up job
+[CI/build]   ☁  git clone 'https://github.com/actions/cache' # ref=cdf6c1fa76f9f475f3d7449005a359c84ca0f306
+[CI/build]   ☁  git clone 'https://github.com/dtolnay/rust-toolchain' # ref=efa25f7f19611383d5b0ccf2d1c8914531636bf9
+[CI/build] ⭐ Run Pre dtolnay/rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9
+[CI/build]   ✅  Success - Pre dtolnay/rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9 [46.845812ms]
+[CI/build] 🧪  Matrix: map[os:ubuntu-latest]
+[CI/build] ⭐ Run Main actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+[CI/build]   🐳  docker cp src=/scratch/raian-files/LLM4Build/project_path/bevy/. dst=/scratch/raian-files/LLM4Build/project_path/bevy
+[CI/build]   ✅  Success - Main actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd [7.341223862s]
+[CI/build]   🐳  docker exec cmd=[/opt/acttoolcache/node/24.15.0/x64/bin/node /var/run/act/workflow/hashfiles/index.js] user= workdir=
+[CI/build]   🐳  docker exec cmd=[/opt/acttoolcache/node/24.15.0/x64/bin/node /var/run/act/workflow/hashfiles/index.js] user= workdir=
+[CI/build] ⭐ Run Main actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306
+[CI/build]   🐳  docker cp src=/home/mnabil/.cache/act/actions-cache-restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306/ dst=/var/run/act/actions/actions-cache-restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306/
+[CI/build]   🐳  docker exec cmd=[/opt/acttoolcache/node/24.15.0/x64/bin/node /var/run/act/actions/actions-cache-restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306/dist/restore-only/index.js] user= workdir=
+[CI/build]   | Cache not found for input keys: Linux-stable--b5015b53b42ab9dbcfccd7c05d5931bc96224e2a3d56def50241ae66acd825b5-, Linux-stable--b5015b53b42ab9dbcfccd7c05d5931bc96224e2a3d56def50241ae66acd825b5-, Linux-stable--
+[CI/build]   ✅  Success - Main actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 [846.148576ms]
+[CI/build]   ⚙  ::set-output:: cache-primary-key=Linux-stable--b5015b53b42ab9dbcfccd7c05d5931bc96224e2a3d56def50241ae66acd825b5-
+[CI/build] ⭐ Run Main dtolnay/rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9
+[CI/build]   🐳  docker cp src=/home/mnabil/.cache/act/dtolnay-rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9/ dst=/var/run/act/actions/dtolnay-rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9/
+[CI/build] ⭐ Run Main : parse toolchain version
+if [[ -z $toolchain ]]; then
+  # GitHub does not enforce `required: true` inputs itself. https://github.com/actions/runner/issues/1070
+  echo "'toolchain' is a required input" >&2
+  exit 1
+elif [[ $toolchain =~ ^stable' '[0-9]+' '(year|month|week|day)s?' 'ago$ ]]; then
+  if [[ Linux == macOS ]]; then
+    echo "toolchain=1.$((($(date -v-$(sed 's/stable \([0-9]*\) \(.\).*/\1\2/' <<< $toolchain) +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT
+  else
+    echo "toolchain=1.$((($(date --date "${toolchain#stable }" +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT
+  fi
+elif [[ $toolchain =~ ^stable' 'minus' '[0-9]+' 'releases?$ ]]; then
+  echo "toolchain=1.$((($(date +%s)/60/60/24-16569)/7/6-${toolchain//[^0-9]/}))" >> $GITHUB_OUTPUT
+elif [[ $toolchain =~ ^1\.[0-9]+$ ]]; then
+  echo "toolchain=1.$((i=${toolchain#1.}, c=($(date +%s)/60/60/24-16569)/7/6, i+9*i*(10*i<=c)+90*i*(100*i<=c)))" >> $GITHUB_OUTPUT
+else
+  echo "toolchain=$toolchain" >> $GITHUB_OUTPUT
+fi
+[CI/build]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/2-composite-parse.sh] user= workdir=
+[CI/build]   ✅  Success - Main : parse toolchain version
+if [[ -z $toolchain ]]; then
+  # GitHub does not enforce `required: true` inputs itself. https://github.com/actions/runner/issues/1070
+  echo "'toolchain' is a required input" >&2
+  exit 1
+elif [[ $toolchain =~ ^stable' '[0-9]+' '(year|month|week|day)s?' 'ago$ ]]; then
+  if [[ Linux == macOS ]]; then
+    echo "toolchain=1.$((($(date -v-$(sed 's/stable \([0-9]*\) \(.\).*/\1\2/' <<< $toolchain) +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT
+  else
+    echo "toolchain=1.$((($(date --date "${toolchain#stable }" +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT
+  fi
+elif [[ $toolchain =~ ^stable' 'minus' '[0-9]+' 'releases?$ ]]; then
+  echo "toolchain=1.$((($(date +%s)/60/60/24-16569)/7/6-${toolchain//[^0-9]/}))" >> $GITHUB_OUTPUT
+elif [[ $toolchain =~ ^1\.[0-9]+$ ]]; then
+  echo "toolchain=1.$((i=${toolchain#1.}, c=($(date +%s)/60/60/24-16569)/7/6, i+9*i*(10*i<=c)+90*i*(100*i<=c)))" >> $GITHUB_OUTPUT
+else
+  echo "toolchain=$toolchain" >> $GITHUB_OUTPUT
+fi
+ [163.558343ms]
+[CI/build]   ⚙  ::set-output:: toolchain=stable
+[CI/build] ⭐ Run Main : construct rustup command line
+echo "targets=$(for t in ${targets//,/ }; do echo -n ' --target' $t; done)" >> $GITHUB_OUTPUT
+echo "components=$(for c in ${components//,/ }; do echo -n ' --component' $c; done)" >> $GITHUB_OUTPUT
+echo "downgrade=" >> $GITHUB_OUTPUT
+[CI/build]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/2-composite-flags.sh] user= workdir=
+[CI/build]   ✅  Success - Main : construct rustup command line
+echo "targets=$(for t in ${targets//,/ }; do echo -n ' --target' $t; done)" >> $GITHUB_OUTPUT
+echo "components=$(for c in ${components//,/ }; do echo -n ' --component' $c; done)" >> $GITHUB_OUTPUT
+echo "downgrade=" >> $GITHUB_OUTPUT
+ [161.471352ms]
+[CI/build]   ⚙  ::set-output:: downgrade=
+[CI/build]   ⚙  ::set-output:: targets=
+[CI/build]   ⚙  ::set-output:: components=
+[CI/build] ⭐ Run Main : set $CARGO_HOME
+echo CARGO_HOME=${CARGO_HOME:-"$HOME/.cargo"} >> $GITHUB_ENV
+[CI/build]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/2-composite-2.sh] user= workdir=
+[CI/build]   ✅  Success - Main : set $CARGO_HOME
+echo CARGO_HOME=${CARGO_HOME:-"$HOME/.cargo"} >> $GITHUB_ENV
+ [160.748621ms]
+[CI/build]   ⚙  ::set-env:: CARGO_HOME=/root/.cargo
+[CI/build] ⭐ Run Main : install rustup if needed
+if ! command -v rustup &>/dev/null; then
+  curl --proto '=https' --tlsv1.2 --retry 10 --retry-connrefused --location --silent --show-error --fail https://sh.rustup.rs | sh -s -- --default-toolchain none -y
+  echo "$CARGO_HOME/bin" >> $GITHUB_PATH
+fi
+[CI/build]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/2-composite-3.sh] user= workdir=
+[CI/build]   | info: downloading installer
+[CI/build]   | warn: It looks like you have an existing rustup settings file at:
+[CI/build]   | warn: /root/.rustup/settings.toml
+[CI/build]   | warn: Rustup will install the default toolchain as specified in the settings file,
+[CI/build]   | warn: instead of the one inferred from the default host triple.
+[CI/build]   | 
+[CI/build]   | 
+[CI/build]   | Rust is installed now. Great!
+[CI/build]   | 
+[CI/build]   | To get started you may need to restart your current shell.
+[CI/build]   | This would reload your PATH environment variable to include
+[CI/build]   | Cargo's bin directory ($HOME/.cargo/bin).
+[CI/build]   | 
+[CI/build]   | To configure your current shell, you need to source
+[CI/build]   | the corresponding env file under $HOME/.cargo.
+[CI/build]   | 
+[CI/build]   | info: profile set to default
+[CI/build]   | info: default host triple is x86_64-unknown-linux-gnu
+[CI/build]   | info: skipping toolchain installation
+[CI/build]   | This is usually done by running one of the following (note the leading DOT):
+[CI/build]   | . "$HOME/.cargo/env"            # For sh/bash/zsh/ash/dash/pdksh
+[CI/build]   | source "$HOME/.cargo/env.fish"  # For fish
+[CI/build]   | source "~/.cargo/env.nu"  # For nushell
+[CI/build]   | source "$HOME/.cargo/env.tcsh"  # For tcsh
+[CI/build]   | . "$HOME/.cargo/env.ps1"        # For pwsh
+[CI/build]   | source "$HOME/.cargo/env.xsh"   # For xonsh
+[CI/build]   ✅  Success - Main : install rustup if needed
+if ! command -v rustup &>/dev/null; then
+  curl --proto '=https' --tlsv1.2 --retry 10 --retry-connrefused --location --silent --show-error --fail https://sh.rustup.rs | sh -s -- --default-toolchain none -y
+  echo "$CARGO_HOME/bin" >> $GITHUB_PATH
+fi
+ [820.180094ms]
+[CI/build]   ⚙  ::add-path:: /root/.cargo/bin
+[CI/build] ⭐ Run Main rustup toolchain install stable
+[CI/build]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/2-composite-5.sh] user= workdir=
+[CI/build]   | info: syncing channel updates for stable-x86_64-unknown-linux-gnu
+[CI/build]   | info: latest update on 2026-04-16 for version 1.95.0 (59807616e 2026-04-14)
+[CI/build]   | info: downloading 3 components
+[CI/build]   | 
+[CI/build]   |   stable-x86_64-unknown-linux-gnu installed - rustc 1.95.0 (59807616e 2026-04-14)
+[CI/build]   | 
+[CI/build]   | info: default toolchain set to stable-x86_64-unknown-linux-gnu
+[CI/build]   ✅  Success - Main rustup toolchain install stable [10.11488855s]
+[CI/build] ⭐ Run Main rustup default stable
+[CI/build]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/2-composite-6.sh] user= workdir=
+[CI/build]   | info: using existing install for stable-x86_64-unknown-linux-gnu
+[CI/build]   | info: default toolchain set to stable-x86_64-unknown-linux-gnu
+[CI/build]   | 
+[CI/build]   |   stable-x86_64-unknown-linux-gnu unchanged - rustc 1.95.0 (59807616e 2026-04-14)
+[CI/build]   | 
+[CI/build]   ✅  Success - Main rustup default stable [231.125344ms]
+[CI/build] ⭐ Run Main : create cachekey
+DATE=$(rustc +stable --version --verbose | sed -ne 's/^commit-date: \(20[0-9][0-9]\)-\([01][0-9]\)-\([0-3][0-9]\)$/\1\2\3/p')
+HASH=$(rustc +stable --version --verbose | sed -ne 's/^commit-hash: //p')
+echo "cachekey=$(echo $DATE$HASH | head -c12)" >> $GITHUB_OUTPUT
+[CI/build]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/2-composite-rustc-version.sh] user= workdir=
+[CI/build]   ✅  Success - Main : create cachekey
+DATE=$(rustc +stable --version --verbose | sed -ne 's/^commit-date: \(20[0-9][0-9]\)-\([01][0-9]\)-\([0-3][0-9]\)$/\1\2\3/p')
+HASH=$(rustc +stable --version --verbose | sed -ne 's/^commit-hash: //p')
+echo "cachekey=$(echo $DATE$HASH | head -c12)" >> $GITHUB_OUTPUT
+ [219.906869ms]
+[CI/build]   ⚙  ::set-output:: cachekey=202604145980
+[CI/build] ⭐ Run Main : disable incremental compilation
+if [ -z "${CARGO_INCREMENTAL+set}" ]; then
+  echo CARGO_INCREMENTAL=0 >> $GITHUB_ENV
+fi
+[CI/build]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/2-composite-8.sh] user= workdir=
+[CI/build]   ✅  Success - Main : disable incremental compilation
+if [ -z "${CARGO_INCREMENTAL+set}" ]; then
+  echo CARGO_INCREMENTAL=0 >> $GITHUB_ENV
+fi
+ [154.993615ms]
+[CI/build] ⭐ Run Main : enable colors in Cargo output
+if [ -z "${CARGO_TERM_COLOR+set}" ]; then
+  echo CARGO_TERM_COLOR=always >> $GITHUB_ENV
+fi
+[CI/build]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/2-composite-9.sh] user= workdir=
+[CI/build]   ✅  Success - Main : enable colors in Cargo output
+if [ -z "${CARGO_TERM_COLOR+set}" ]; then
+  echo CARGO_TERM_COLOR=always >> $GITHUB_ENV
+fi
+ [155.705346ms]
+[CI/build] ⭐ Run Main : enable Cargo sparse registry
+# implemented in 1.66, stabilized in 1.68, made default in 1.70
+if [ -z "${CARGO_REGISTRIES_CRATES_IO_PROTOCOL+set}" -o -f "/tmp"/.implicit_cargo_registries_crates_io_protocol ]; then
+  if rustc +stable --version --verbose | grep -q '^release: 1\.6[89]\.'; then
+    touch "/tmp"/.implicit_cargo_registries_crates_io_protocol || true
+    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse >> $GITHUB_ENV
+  elif rustc +stable --version --verbose | grep -q '^release: 1\.6[67]\.'; then
+    touch "/tmp"/.implicit_cargo_registries_crates_io_protocol || true
+    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=git >> $GITHUB_ENV
+  fi
+fi
+[CI/build]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/2-composite-10.sh] user= workdir=
+[CI/build]   ✅  Success - Main : enable Cargo sparse registry
+# implemented in 1.66, stabilized in 1.68, made default in 1.70
+if [ -z "${CARGO_REGISTRIES_CRATES_IO_PROTOCOL+set}" -o -f "/tmp"/.implicit_cargo_registries_crates_io_protocol ]; then
+  if rustc +stable --version --verbose | grep -q '^release: 1\.6[89]\.'; then
+    touch "/tmp"/.implicit_cargo_registries_crates_io_protocol || true
+    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse >> $GITHUB_ENV
+  elif rustc +stable --version --verbose | grep -q '^release: 1\.6[67]\.'; then
+    touch "/tmp"/.implicit_cargo_registries_crates_io_protocol || true
+    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=git >> $GITHUB_ENV
+  fi
+fi
+ [210.455737ms]
+[CI/build] ⭐ Run Main : work around spurious network errors in curl 8.0
+# https://rust-lang.zulipchat.com/#narrow/stream/246057-t-cargo/topic/timeout.20investigation
+if rustc +stable --version --verbose | grep -q '^release: 1\.7[01]\.'; then
+  echo CARGO_HTTP_MULTIPLEXING=false >> $GITHUB_ENV
+fi
+[CI/build]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/2-composite-11.sh] user= workdir=
+[CI/build]   ✅  Success - Main : work around spurious network errors in curl 8.0
+# https://rust-lang.zulipchat.com/#narrow/stream/246057-t-cargo/topic/timeout.20investigation
+if rustc +stable --version --verbose | grep -q '^release: 1\.7[01]\.'; then
+  echo CARGO_HTTP_MULTIPLEXING=false >> $GITHUB_ENV
+fi
+ [201.902715ms]
+[CI/build] ⭐ Run Main rustc +stable --version --verbose
+[CI/build]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/2-composite-12.sh] user= workdir=
+[CI/build]   | rustc 1.95.0 (59807616e 2026-04-14)
+[CI/build]   | binary: rustc
+[CI/build]   | commit-hash: 59807616e1fa2540724bfbac14d7976d7e4a3860
+[CI/build]   | commit-date: 2026-04-14
+[CI/build]   | host: x86_64-unknown-linux-gnu
+[CI/build]   | release: 1.95.0
+[CI/build]   | LLVM version: 22.1.2
+[CI/build]   ✅  Success - Main rustc +stable --version --verbose [206.533865ms]
+[CI/build]   ⚙  ::set-output:: cachekey=202604145980
+[CI/build]   ⚙  ::set-output:: name=stable
+[CI/build]   ✅  Success - Main dtolnay/rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9 [14.011865205s]
+[CI/build] ⭐ Run Main Install Linux dependencies
+[CI/build] ⭐ Run Main Install Linux dependencies
+[CI/build]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/3-composite-0.sh] user= workdir=
+[CI/build]   | Get:1 https://packagecloud.io/github/git-lfs/ubuntu noble InRelease [29.2 kB]
+[CI/build]   | Get:2 http://security.ubuntu.com/ubuntu noble-security InRelease [126 kB]
+[CI/build]   | Get:3 https://packagecloud.io/github/git-lfs/ubuntu noble/main amd64 Packages [1273 B]
+[CI/build]   | Get:4 https://packages.microsoft.com/ubuntu/24.04/prod noble InRelease [3600 B]
+[CI/build]   | Get:5 https://packages.microsoft.com/ubuntu/24.04/prod noble/main amd64 Packages [139 kB]
+[CI/build]   | Get:6 https://ppa.launchpadcontent.net/git-core/ppa/ubuntu noble InRelease [24.3 kB]
+[CI/build]   | Get:7 https://packages.microsoft.com/ubuntu/24.04/prod noble/main all Packages [643 B]
+[CI/build]   | Get:8 http://security.ubuntu.com/ubuntu noble-security/main amd64 Packages [2038 kB]
+[CI/build]   | Get:9 http://security.ubuntu.com/ubuntu noble-security/restricted amd64 Packages [3610 kB]
+[CI/build]   | Get:10 http://security.ubuntu.com/ubuntu noble-security/universe amd64 Packages [1502 kB]
+[CI/build]   | Get:11 http://security.ubuntu.com/ubuntu noble-security/multiverse amd64 Packages [34.2 kB]
+[CI/build]   | Get:12 http://archive.ubuntu.com/ubuntu noble InRelease [256 kB]
+[CI/build]   | Get:13 https://ppa.launchpadcontent.net/git-core/ppa/ubuntu noble/main amd64 Packages [2988 B]
+[CI/build]   | Get:14 http://archive.ubuntu.com/ubuntu noble-updates InRelease [126 kB]
+[CI/build]   | Get:15 http://archive.ubuntu.com/ubuntu noble-backports InRelease [126 kB]
+[CI/build]   | Get:16 http://archive.ubuntu.com/ubuntu noble/main amd64 Packages [1808 kB]
+[CI/build]   | Get:17 http://archive.ubuntu.com/ubuntu noble/restricted amd64 Packages [117 kB]
+[CI/build]   | Get:18 http://archive.ubuntu.com/ubuntu noble/multiverse amd64 Packages [331 kB]
+[CI/build]   | Get:19 http://archive.ubuntu.com/ubuntu noble/universe amd64 Packages [19.3 MB]
+[CI/build]   | Get:20 http://archive.ubuntu.com/ubuntu noble-updates/multiverse amd64 Packages [54.1 kB]
+[CI/build]   | Get:21 http://archive.ubuntu.com/ubuntu noble-updates/universe amd64 Packages [2145 kB]
+[CI/build]   | Get:22 http://archive.ubuntu.com/ubuntu noble-updates/restricted amd64 Packages [3824 kB]
+[CI/build]   | Get:23 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 Packages [2412 kB]
+[CI/build]   | Get:24 http://archive.ubuntu.com/ubuntu noble-backports/universe amd64 Packages [35.9 kB]
+[CI/build]   | Get:25 http://archive.ubuntu.com/ubuntu noble-backports/multiverse amd64 Packages [671 B]
+[CI/build]   | Get:26 http://archive.ubuntu.com/ubuntu noble-backports/main amd64 Packages [49.0 kB]
+[CI/build]   | Fetched 38.1 MB in 3s (12.7 MB/s)
+[CI/build]   | Reading package lists...
+[CI/build]   | Reading package lists...
+[CI/build]   | Building dependency tree...
+[CI/build]   | Reading state information...
+[CI/build]   | The following additional packages will be installed:
+[CI/build]   |   libasound2-data libasound2t64 libwayland-bin libwayland-client0
+[CI/build]   |   libwayland-cursor0 libwayland-egl1 libwayland-server0
+[CI/build]   | Suggested packages:
+[CI/build]   |   alsa-utils libasound2-doc libasound2-plugins libwayland-doc
+[CI/build]   | Recommended packages:
+[CI/build]   |   alsa-ucm-conf alsa-topology-conf
+[CI/build]   | The following NEW packages will be installed:
+[CI/build]   |   libasound2-data libasound2-dev libasound2t64 libudev-dev libwayland-bin
+[CI/build]   |   libwayland-client0 libwayland-cursor0 libwayland-dev libwayland-egl1
+[CI/build]   |   libwayland-server0
+[CI/build]   | 0 upgraded, 10 newly installed, 0 to remove and 18 not upgraded.
+[CI/build]   | Need to get 725 kB of archives.
+[CI/build]   | After this operation, 3255 kB of additional disk space will be used.
+[CI/build]   | Do you want to continue? [Y/n] Abort.
+[CI/build]   ❌  Failure - Main Install Linux dependencies [5.718837502s]
+[CI/build] exitcode '1': failure
+[CI/build]   ❌  Failure - Main Install Linux dependencies [5.847295379s]
+[CI/build] exitcode '1': failure
+[CI/build] ⭐ Run Post Install Linux dependencies
+[CI/build]   ✅  Success - Post Install Linux dependencies [64.136µs]
+[CI/build] ⭐ Run Post dtolnay/rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9
+[CI/build]   🐳  docker cp src=/home/mnabil/.cache/act/dtolnay-rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9/ dst=/var/run/act/actions/dtolnay-rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9/
+[CI/build]   ✅  Success - Post dtolnay/rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9 [138.377951ms]
+[CI/build] ⭐ Run Complete job
+[CI/build]   ✅  Success - Complete job
+[CI/build] 🏁  Job failed
+Error: Job 'build' failed

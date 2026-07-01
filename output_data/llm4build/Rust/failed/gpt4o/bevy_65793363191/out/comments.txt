@@ -1,0 +1,36 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          14
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      build (ubuntu-latest)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   rust:latest
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ cargo test
+
+Note: Original had test failures; LLM build passed all — failed build has passed.
+
+--- Reason(s) for Non-Reproducibility ---
+  - [cargo] Test run mismatch: original=1105, LLM=8
+  - [cargo] Test passed mismatch: original=1101, LLM=8
+  - [cargo] Test failed mismatch: original=2, LLM=0
+  - [cargo] Test skipped mismatch: original=2, LLM=0
+  - [cargo] 2 test(s) failed in original but passed in LLM: system::system::tests::run_system_once_invalid_params, system::system_registry::tests::run_system_invalid_params
+
+--- Root Cause Analysis ---
+  - [cargo] LLM ran 1097 fewer tests than original — LLM likely used a narrower test scope or missed some test suites.
+
+--- Test Statistics Comparison ---
+  [cargo]
+    Original: 1105 run, 1101 passed, 2 failed, 2 skipped
+    LLM:      8 run, 8 passed, 0 failed, 0 skipped

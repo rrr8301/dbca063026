@@ -1,0 +1,911 @@
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100 2669k  100 2669k    0     0  3108k      0 --:--:-- --:--:-- --:--:-- 3108k
+Archive:  sqlite-amalgamation.zip
+   creating: sqlite-amalgamation-3450300/
+  inflating: sqlite-amalgamation-3450300/sqlite3.c
+  inflating: sqlite-amalgamation-3450300/shell.c
+  inflating: sqlite-amalgamation-3450300/sqlite3.h
+  inflating: sqlite-amalgamation-3450300/sqlite3ext.h
+VERSION=0.1.10-alpha.2 \
+DATE=2026-05-08T04:00:23Z+0000 \
+SOURCE=89f620353616194e20cae6feafbe2b14d6db27a1 \
+VERSION_MAJOR=$(echo $VERSION | cut -d. -f1) \
+VERSION_MINOR=$(echo $VERSION | cut -d. -f2) \
+VERSION_PATCH=$(echo $VERSION | cut -d. -f3 | cut -d- -f1) \
+envsubst < sqlite-vec.h.tmpl > sqlite-vec.h
+mkdir -p dist
+cc \
+	-fPIC -shared \
+	-Wall -Wextra \
+	-Ivendor/ \
+	-O3 \
+	-lm -mavx -mavx2 -DSQLITE_VEC_ENABLE_AVX \
+	sqlite-vec.c -o dist/vec0.so
+sqlite-vec.c:1349: warning: ignoring '#pragma region scalar' [-Wunknown-pragmas]
+ 1349 | #pragma region scalar functions
+      |
+sqlite-vec.c:2071: warning: ignoring '#pragma endregion ' [-Wunknown-pragmas]
+ 2071 | #pragma endregion
+      |
+sqlite-vec.c:3203: warning: ignoring '#pragma region vec_each' [-Wunknown-pragmas]
+ 3203 | #pragma region vec_each table function
+      |
+sqlite-vec.c:3395: warning: ignoring '#pragma endregion ' [-Wunknown-pragmas]
+ 3395 | #pragma endregion
+      |
+sqlite-vec.c:3399: warning: ignoring '#pragma region vec0' [-Wunknown-pragmas]
+ 3399 | #pragma region vec0 virtual table
+      |
+In file included from sqlite-vec.c:3770:
+sqlite-vec-diskann.c: In function 'diskann_robust_prune':
+sqlite-vec-diskann.c:917:30: warning: unused parameter 'p_vector' [-Wunused-parameter]
+  917 |     i64 p_rowid, const void *p_vector,
+      |                  ~~~~~~~~~~~~^~~~~~~~
+In file included from sqlite-vec.c:3:
+sqlite-vec.c: In function 'vec0_metadata_filter_text':
+sqlite-vec.c:6768:57: warning: comparison of integer expressions of different signedness: 'long unsigned int' and 'int' [-Wsign-compare]
+ 6768 |   assert((sqlite3_blob_bytes(rowidsBlob) / sizeof(i64)) == size);
+      |                                                         ^~
+sqlite-vec.c:6996:24: warning: comparison of unsigned expression in '< 0' is always false [-Wtype-limits]
+ 6996 |       if(metadataInIdx < 0) {
+      |                        ^
+sqlite-vec.c: In function 'vec0_set_metadata_filter_bitmap':
+sqlite-vec.c:7097:26: warning: comparison of integer expressions of different signedness: 'int' and 'long unsigned int' [-Wsign-compare]
+ 7097 |       szMatch = blobSize == size * sizeof(i64);
+      |                          ^~
+sqlite-vec.c:7101:26: warning: comparison of integer expressions of different signedness: 'int' and 'long unsigned int' [-Wsign-compare]
+ 7101 |       szMatch = blobSize == size * sizeof(double);
+      |                          ^~
+sqlite-vec.c: In function 'vec0Filter_knn_chunks_iter':
+sqlite-vec.c:7390:20: warning: comparison of integer expressions of different signedness: 'i64' {aka 'long long int'} and 'long unsigned int' [-Wsign-compare]
+ 7390 |     if (rowidsSize != p->chunk_size * sizeof(i64)) {
+      |                    ^~
+In file included from sqlite-vec.c:3:
+sqlite-vec.c: In function 'vec0Filter_knn':
+sqlite-vec.c:7812:15: warning: comparison of integer expressions of different signedness: 'int' and 'size_t' {aka 'long unsigned int'} [-Wsign-compare]
+ 7812 |   assert(argc == (strlen(idxStr)-1) / 4);
+      |               ^~
+sqlite-vec.c: At top level:
+sqlite-vec.c:10551: warning: ignoring '#pragma endregion ' [-Wunknown-pragmas]
+10551 | #pragma endregion
+      |
+In file included from sqlite-vec.h:5,
+                 from sqlite-vec.c:1:
+sqlite-vec.c: In function 'vec0_init.constprop':
+vendor/sqlite3ext.h:645:40: warning: 'pkColumnNameLength' may be used uninitialized in this function [-Wmaybe-uninitialized]
+  645 | #define sqlite3_str_appendf            sqlite3_api->str_appendf
+      |                                        ^~~~~~~~~~~
+sqlite-vec.c:4920:7: note: 'pkColumnNameLength' was declared here
+ 4920 |   int pkColumnNameLength;
+      |       ^~~~~~~~~~~~~~~~~~
+sqlite-vec.c: In function 'vec0Filter_knn_chunks_iter':
+sqlite-vec.c:7540:26: warning: 'result' may be used uninitialized in this function [-Wmaybe-uninitialized]
+ 7540 |       chunk_distances[i] = result;
+      |       ~~~~~~~~~~~~~~~~~~~^~~~~~~~
+In file included from sqlite-vec.h:5,
+                 from sqlite-vec.c:1:
+sqlite-vec.c: In function 'vec0Update_InsertWriteFinalStep':
+vendor/sqlite3ext.h:529:40: warning: 'offset' may be used uninitialized in this function [-Wmaybe-uninitialized]
+  529 | #define sqlite3_blob_write             sqlite3_api->blob_write
+      |                                        ^~~~~~~~~~~
+sqlite-vec.c:8848:7: note: 'offset' was declared here
+ 8848 |   int offset;
+      |       ^~~~~~
+In file included from sqlite-vec.h:5,
+                 from sqlite-vec.c:1:
+vendor/sqlite3ext.h:529:40: warning: 'n' may be used uninitialized in this function [-Wmaybe-uninitialized]
+  529 | #define sqlite3_blob_write             sqlite3_api->blob_write
+      |                                        ^~~~~~~~~~~
+sqlite-vec.c:8847:7: note: 'n' was declared here
+ 8847 |   int n;
+      |       ^
+In file included from sqlite-vec.h:5,
+                 from sqlite-vec.c:1:
+sqlite-vec.c: In function 'vec0Update_UpdateVectorColumn':
+vendor/sqlite3ext.h:529:40: warning: 'offset' may be used uninitialized in this function [-Wmaybe-uninitialized]
+  529 | #define sqlite3_blob_write             sqlite3_api->blob_write
+      |                                        ^~~~~~~~~~~
+sqlite-vec.c:8848:7: note: 'offset' was declared here
+ 8848 |   int offset;
+      |       ^~~~~~
+In file included from sqlite-vec.h:5,
+                 from sqlite-vec.c:1:
+vendor/sqlite3ext.h:529:40: warning: 'n' may be used uninitialized in this function [-Wmaybe-uninitialized]
+  529 | #define sqlite3_blob_write             sqlite3_api->blob_write
+      |                                        ^~~~~~~~~~~
+sqlite-vec.c:8847:7: note: 'n' was declared here
+ 8847 |   int n;
+      |       ^
+mkdir -p dist/.objs
+cc -Ivendor/ -lm -mavx -mavx2 -DSQLITE_VEC_ENABLE_AVX -DSQLITE_CORE -DSQLITE_VEC_STATIC \
+-O3 -c  sqlite-vec.c -o dist/.objs/vec.o
+ar rcs dist/libsqlite_vec0.a dist/.objs/vec.o
+Downloading cpython-3.12.13-linux-x86_64-gnu (download) (32.5MiB)
+ Downloaded cpython-3.12.13-linux-x86_64-gnu (download)
+Using CPython 3.12.13
+Creating virtual environment at: .venv
+Resolved 8 packages in 2ms
+Downloading numpy (15.3MiB)
+ Downloaded numpy
+Prepared 6 packages in 460ms
+Installed 6 packages in 43ms
+ + iniconfig==2.0.0
+ + numpy==2.1.3
+ + packaging==24.2
+ + pluggy==1.5.0
+ + pytest==8.3.3
+ + syrupy==4.7.2
+cc \
+	-fPIC -shared \
+	-Wall -Wextra \
+	-Ivendor/ \
+	-O3 \
+	-lm -mavx -mavx2 -DSQLITE_VEC_ENABLE_AVX \
+	sqlite-vec.c -o dist/vec0.so
+sqlite-vec.c:1349: warning: ignoring '#pragma region scalar' [-Wunknown-pragmas]
+ 1349 | #pragma region scalar functions
+      |
+sqlite-vec.c:2071: warning: ignoring '#pragma endregion ' [-Wunknown-pragmas]
+ 2071 | #pragma endregion
+      |
+sqlite-vec.c:3203: warning: ignoring '#pragma region vec_each' [-Wunknown-pragmas]
+ 3203 | #pragma region vec_each table function
+      |
+sqlite-vec.c:3395: warning: ignoring '#pragma endregion ' [-Wunknown-pragmas]
+ 3395 | #pragma endregion
+      |
+sqlite-vec.c:3399: warning: ignoring '#pragma region vec0' [-Wunknown-pragmas]
+ 3399 | #pragma region vec0 virtual table
+      |
+In file included from sqlite-vec.c:3770:
+sqlite-vec-diskann.c: In function 'diskann_robust_prune':
+sqlite-vec-diskann.c:917:30: warning: unused parameter 'p_vector' [-Wunused-parameter]
+  917 |     i64 p_rowid, const void *p_vector,
+      |                  ~~~~~~~~~~~~^~~~~~~~
+In file included from sqlite-vec.c:3:
+sqlite-vec.c: In function 'vec0_metadata_filter_text':
+sqlite-vec.c:6768:57: warning: comparison of integer expressions of different signedness: 'long unsigned int' and 'int' [-Wsign-compare]
+ 6768 |   assert((sqlite3_blob_bytes(rowidsBlob) / sizeof(i64)) == size);
+      |                                                         ^~
+sqlite-vec.c:6996:24: warning: comparison of unsigned expression in '< 0' is always false [-Wtype-limits]
+ 6996 |       if(metadataInIdx < 0) {
+      |                        ^
+sqlite-vec.c: In function 'vec0_set_metadata_filter_bitmap':
+sqlite-vec.c:7097:26: warning: comparison of integer expressions of different signedness: 'int' and 'long unsigned int' [-Wsign-compare]
+ 7097 |       szMatch = blobSize == size * sizeof(i64);
+      |                          ^~
+sqlite-vec.c:7101:26: warning: comparison of integer expressions of different signedness: 'int' and 'long unsigned int' [-Wsign-compare]
+ 7101 |       szMatch = blobSize == size * sizeof(double);
+      |                          ^~
+sqlite-vec.c: In function 'vec0Filter_knn_chunks_iter':
+sqlite-vec.c:7390:20: warning: comparison of integer expressions of different signedness: 'i64' {aka 'long long int'} and 'long unsigned int' [-Wsign-compare]
+ 7390 |     if (rowidsSize != p->chunk_size * sizeof(i64)) {
+      |                    ^~
+In file included from sqlite-vec.c:3:
+sqlite-vec.c: In function 'vec0Filter_knn':
+sqlite-vec.c:7812:15: warning: comparison of integer expressions of different signedness: 'int' and 'size_t' {aka 'long unsigned int'} [-Wsign-compare]
+ 7812 |   assert(argc == (strlen(idxStr)-1) / 4);
+      |               ^~
+sqlite-vec.c: At top level:
+sqlite-vec.c:10551: warning: ignoring '#pragma endregion ' [-Wunknown-pragmas]
+10551 | #pragma endregion
+      |
+In file included from sqlite-vec.h:5,
+                 from sqlite-vec.c:1:
+sqlite-vec.c: In function 'vec0_init.constprop':
+vendor/sqlite3ext.h:645:40: warning: 'pkColumnNameLength' may be used uninitialized in this function [-Wmaybe-uninitialized]
+  645 | #define sqlite3_str_appendf            sqlite3_api->str_appendf
+      |                                        ^~~~~~~~~~~
+sqlite-vec.c:4920:7: note: 'pkColumnNameLength' was declared here
+ 4920 |   int pkColumnNameLength;
+      |       ^~~~~~~~~~~~~~~~~~
+sqlite-vec.c: In function 'vec0Filter_knn_chunks_iter':
+sqlite-vec.c:7540:26: warning: 'result' may be used uninitialized in this function [-Wmaybe-uninitialized]
+ 7540 |       chunk_distances[i] = result;
+      |       ~~~~~~~~~~~~~~~~~~~^~~~~~~~
+In file included from sqlite-vec.h:5,
+                 from sqlite-vec.c:1:
+sqlite-vec.c: In function 'vec0Update_InsertWriteFinalStep':
+vendor/sqlite3ext.h:529:40: warning: 'offset' may be used uninitialized in this function [-Wmaybe-uninitialized]
+  529 | #define sqlite3_blob_write             sqlite3_api->blob_write
+      |                                        ^~~~~~~~~~~
+sqlite-vec.c:8848:7: note: 'offset' was declared here
+ 8848 |   int offset;
+      |       ^~~~~~
+In file included from sqlite-vec.h:5,
+                 from sqlite-vec.c:1:
+vendor/sqlite3ext.h:529:40: warning: 'n' may be used uninitialized in this function [-Wmaybe-uninitialized]
+  529 | #define sqlite3_blob_write             sqlite3_api->blob_write
+      |                                        ^~~~~~~~~~~
+sqlite-vec.c:8847:7: note: 'n' was declared here
+ 8847 |   int n;
+      |       ^
+In file included from sqlite-vec.h:5,
+                 from sqlite-vec.c:1:
+sqlite-vec.c: In function 'vec0Update_UpdateVectorColumn':
+vendor/sqlite3ext.h:529:40: warning: 'offset' may be used uninitialized in this function [-Wmaybe-uninitialized]
+  529 | #define sqlite3_blob_write             sqlite3_api->blob_write
+      |                                        ^~~~~~~~~~~
+sqlite-vec.c:8848:7: note: 'offset' was declared here
+ 8848 |   int offset;
+      |       ^~~~~~
+In file included from sqlite-vec.h:5,
+                 from sqlite-vec.c:1:
+vendor/sqlite3ext.h:529:40: warning: 'n' may be used uninitialized in this function [-Wmaybe-uninitialized]
+  529 | #define sqlite3_blob_write             sqlite3_api->blob_write
+      |                                        ^~~~~~~~~~~
+sqlite-vec.c:8847:7: note: 'n' was declared here
+ 8847 |   int n;
+      |       ^
+uv run --managed-python --project tests pytest -vv -s -x . tests/test-*.py
+============================= test session starts ==============================
+platform linux -- Python 3.12.13, pytest-8.3.3, pluggy-1.5.0 -- /workspace/tests/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /workspace/tests
+configfile: pyproject.toml
+plugins: syrupy-4.7.2
+collecting ... collected 586 items
+
+tests/test-auxiliary.py::test_constructor_limit PASSED
+tests/test-auxiliary.py::test_normal PASSED
+tests/test-auxiliary.py::test_types PASSED
+tests/test-auxiliary.py::test_updates PASSED
+tests/test-auxiliary.py::test_deletes PASSED
+tests/test-auxiliary.py::test_knn PASSED
+tests/test-auxiliary.py::test_rescore_aux_shadow_tables PASSED
+tests/test-auxiliary.py::test_rescore_aux_insert_knn PASSED
+tests/test-auxiliary.py::test_rescore_aux_update PASSED
+tests/test-auxiliary.py::test_rescore_aux_delete PASSED
+tests/test-auxiliary.py::test_diskann_aux_shadow_tables PASSED
+tests/test-auxiliary.py::test_diskann_aux_insert_knn PASSED
+tests/test-auxiliary.py::test_diskann_aux_update_and_delete PASSED
+tests/test-auxiliary.py::test_diskann_aux_drop_cleans_all PASSED
+tests/test-diskann.py::test_diskann_create_basic PASSED
+tests/test-diskann.py::test_diskann_create_int8_quantizer PASSED
+tests/test-diskann.py::test_diskann_create_with_options PASSED
+tests/test-diskann.py::test_diskann_create_with_distance_metric PASSED
+tests/test-diskann.py::test_diskann_create_error_missing_quantizer PASSED
+tests/test-diskann.py::test_diskann_create_error_empty_parens PASSED
+tests/test-diskann.py::test_diskann_create_error_unknown_quantizer PASSED
+tests/test-diskann.py::test_diskann_create_error_bit_column PASSED
+tests/test-diskann.py::test_diskann_create_error_binary_quantizer_odd_dims PASSED
+tests/test-diskann.py::test_diskann_create_error_bad_n_neighbors PASSED
+tests/test-diskann.py::test_diskann_shadow_tables_created PASSED
+tests/test-diskann.py::test_diskann_medoid_in_info PASSED
+tests/test-diskann.py::test_non_diskann_no_extra_tables PASSED
+tests/test-diskann.py::test_diskann_medoid_initial_null PASSED
+tests/test-diskann.py::test_diskann_medoid_set_via_info PASSED
+tests/test-diskann.py::test_diskann_single_insert PASSED
+tests/test-diskann.py::test_diskann_multiple_inserts PASSED
+tests/test-diskann.py::test_diskann_bidirectional_edges PASSED
+tests/test-diskann.py::test_diskann_delete_single PASSED
+tests/test-diskann.py::test_diskann_delete_no_stale_references PASSED
+tests/test-diskann.py::test_diskann_delete_medoid PASSED
+tests/test-diskann.py::test_diskann_delete_all PASSED
+tests/test-diskann.py::test_diskann_insert_delete_insert_cycle PASSED
+tests/test-diskann.py::test_diskann_knn_basic PASSED
+tests/test-diskann.py::test_diskann_knn_distances_sorted PASSED
+tests/test-diskann.py::test_diskann_knn_empty_table PASSED
+tests/test-diskann.py::test_diskann_knn_after_delete PASSED
+tests/test-diskann.py::test_diskann_no_index_still_works PASSED
+tests/test-diskann.py::test_diskann_drop_table PASSED
+tests/test-diskann.py::test_diskann_create_split_search_list_size PASSED
+tests/test-diskann.py::test_diskann_create_error_mixed_search_list_size PASSED
+tests/test-diskann.py::test_diskann_command_search_list_size PASSED
+tests/test-diskann.py::test_diskann_command_search_list_size_error PASSED
+tests/test-diskann.py::test_diskann_create_with_auxiliary_column PASSED
+tests/test-diskann.py::test_diskann_create_error_with_metadata_column PASSED
+tests/test-diskann.py::test_diskann_create_error_with_partition_key PASSED
+tests/test-diskann.py::test_diskann_insert_no_rowid PASSED
+tests/test-diskann.py::test_diskann_insert_large_batch PASSED
+tests/test-diskann.py::test_diskann_insert_zero_vector PASSED
+tests/test-diskann.py::test_diskann_insert_large_values PASSED
+tests/test-diskann.py::test_diskann_insert_int8_quantizer_knn PASSED
+tests/test-diskann.py::test_diskann_delete_nonexistent PASSED
+tests/test-diskann.py::test_diskann_delete_then_reinsert_same_rowid PASSED
+tests/test-diskann.py::test_diskann_delete_all_then_insert PASSED
+tests/test-diskann.py::test_diskann_delete_preserves_graph_connectivity PASSED
+tests/test-diskann.py::test_diskann_update_vector PASSED
+tests/test-diskann.py::test_diskann_knn_recall_after_inserts PASSED
+tests/test-diskann.py::test_diskann_knn_k_larger_than_table PASSED
+tests/test-diskann.py::test_diskann_knn_cosine_metric PASSED
+tests/test-diskann.py::test_diskann_knn_after_heavy_churn PASSED
+tests/test-diskann.py::test_diskann_knn_batch_recall PASSED
+tests/test-diskann.py::test_diskann_insert_wrong_dimensions PASSED
+tests/test-diskann.py::test_diskann_knn_wrong_query_dimensions PASSED
+tests/test-diskann.py::test_diskann_graph_connectivity_after_many_deletes PASSED
+tests/test-diskann.py::test_diskann_large_batch_insert_500 PASSED
+tests/test-diskann.py::test_corrupt_truncated_node_blob PASSED
+tests/test-diskann.py::test_diskann_delete_reinsert_cycle_knn PASSED
+tests/test-diskann.py::test_diskann_delete_interleaved_with_knn PASSED
+tests/test-diskann.py::test_diskann_text_pk_insert_knn_delete PASSED
+tests/test-diskann.py::test_diskann_delete_scrubs_all_references PASSED
+tests/test-general.py::test_shadow PASSED
+tests/test-general.py::test_info PASSED
+tests/test-general.py::test_command_column_name_conflict PASSED
+tests/test-insert-delete.py::test_insert_creates_chunks_and_vectors PASSED
+tests/test-insert-delete.py::test_insert_auto_rowid PASSED
+tests/test-insert-delete.py::test_insert_text_primary_key PASSED
+tests/test-insert-delete.py::test_delete_clears_validity PASSED
+tests/test-insert-delete.py::test_insert_delete_reinsert PASSED
+tests/test-insert-delete.py::test_insert_validates_dimensions PASSED
+tests/test-insert-delete.py::test_insert_validates_type PASSED
+tests/test-insert-delete.py::test_info_table_contents PASSED
+tests/test-insert-delete.py::test_delete_zeroes_rowid_blob PASSED
+tests/test-insert-delete.py::test_delete_zeroes_vector_blob PASSED
+tests/test-insert-delete.py::test_delete_all_rows_deletes_chunk PASSED
+tests/test-insert-delete.py::test_delete_chunk_multiple_chunks PASSED
+tests/test-insert-delete.py::test_delete_with_metadata_columns PASSED
+tests/test-insert-delete.py::test_delete_with_auxiliary_columns PASSED
+tests/test-insert-delete.py::test_delete_with_text_primary_key PASSED
+tests/test-insert-delete.py::test_delete_with_partition_keys PASSED
+tests/test-insert-delete.py::test_delete_int8_vectors PASSED
+tests/test-insert-delete.py::test_delete_bit_vectors PASSED
+tests/test-insert-delete.py::test_delete_chunk_shrinks_pages PASSED
+tests/test-insert-delete.py::test_delete_one_chunk_of_two_shrinks_pages PASSED
+tests/test-insert-delete.py::test_wal_concurrent_reader_during_write PASSED
+tests/test-ivf-mutations.py::test_insert_single_row_knn SKIPPED (IVF not
+enabled (compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-ivf-mutations.py::test_batch_insert_knn_recall SKIPPED (IVF
+not enabled (compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-ivf-mutations.py::test_delete_rows_gone_from_knn SKIPPED (IVF
+not enabled (compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-ivf-mutations.py::test_delete_all_rows_empty_results SKIPPED
+tests/test-ivf-mutations.py::test_insert_after_delete_reuse_rowid SKIPPED
+tests/test-ivf-mutations.py::test_update_vector_via_delete_insert SKIPPED
+tests/test-ivf-mutations.py::test_ivf_with_auxiliary_column SKIPPED (IVF
+not enabled (compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-ivf-mutations.py::test_error_ivf_with_metadata_column SKIPPED
+tests/test-ivf-mutations.py::test_error_ivf_with_partition_key SKIPPED)
+tests/test-ivf-mutations.py::test_flat_with_auxiliary_still_works SKIPPED
+tests/test-ivf-mutations.py::test_flat_with_metadata_still_works SKIPPED
+tests/test-ivf-mutations.py::test_flat_with_partition_key_still_works SKIPPED
+tests/test-ivf-mutations.py::test_zero_vectors SKIPPED (IVF not enabled
+(compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-ivf-mutations.py::test_large_values SKIPPED (IVF not enabled
+(compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-ivf-mutations.py::test_single_row_compute_centroids SKIPPED)
+tests/test-ivf-mutations.py::test_cell_overflow_many_vectors SKIPPED1))
+tests/test-ivf-mutations.py::test_large_batch_with_training SKIPPED (IVF
+not enabled (compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-ivf-mutations.py::test_knn_after_interleaved_insert_delete SKIPPED
+tests/test-ivf-mutations.py::test_knn_empty_centroids_after_deletes SKIPPED
+tests/test-ivf-mutations.py::test_knn_correct_distances SKIPPED (IVF not
+enabled (compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-ivf-mutations.py::test_delete_flat_mode_rowid_map_count SKIPPED
+tests/test-ivf-mutations.py::test_delete_reinsert_as_update SKIPPED (IVF
+not enabled (compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-ivf-mutations.py::test_duplicate_rowid_insert_fails SKIPPED)
+tests/test-ivf-mutations.py::test_interleaved_ops_correctness SKIPPED))
+tests/test-ivf-mutations.py::test_ivf_update_vector_blocked SKIPPED (IVF
+not enabled (compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-ivf-quantization.py::test_ivf_quantizer_binary SKIPPED (IVF
+not enabled (compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-ivf-quantization.py::test_ivf_quantizer_int8 SKIPPED (IVF not
+enabled (compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-ivf-quantization.py::test_ivf_quantizer_none_explicit SKIPPED
+tests/test-ivf-quantization.py::test_ivf_quantizer_all_params SKIPPED))
+tests/test-ivf-quantization.py::test_ivf_error_oversample_without_quantizer SKIPPED
+tests/test-ivf-quantization.py::test_ivf_error_unknown_quantizer SKIPPED
+tests/test-ivf-quantization.py::test_ivf_oversample_1_without_quantizer_ok SKIPPED
+tests/test-ivf-quantization.py::test_ivf_int8_insert_and_query SKIPPED)
+tests/test-ivf-quantization.py::test_ivf_binary_insert_and_query SKIPPED
+tests/test-ivf-quantization.py::test_ivf_int8_cell_sizes_smaller SKIPPED
+tests/test-ivf-quantization.py::test_ivf_binary_cell_sizes_smaller SKIPPED
+tests/test-ivf-quantization.py::test_ivf_int8_oversample_improves_recall SKIPPED
+tests/test-ivf-quantization.py::test_ivf_quantized_delete SKIPPED (IVF
+not enabled (compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-ivf-quantization.py::test_ivf_binary_rejects_non_multiple_of_8_dims SKIPPED
+tests/test-ivf.py::test_ivf_create_defaults SKIPPED (IVF not enabled
+(compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-ivf.py::test_ivf_create_custom_params SKIPPED (IVF not
+enabled (compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-ivf.py::test_ivf_create_with_distance_metric SKIPPED (IVF not
+enabled (compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-ivf.py::test_ivf_create_error_unknown_key SKIPPED (IVF not
+enabled (compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-ivf.py::test_ivf_create_error_nprobe_gt_nlist SKIPPED (IVF
+not enabled (compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-ivf.py::test_ivf_shadow_tables_created SKIPPED (IVF not
+enabled (compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-ivf.py::test_ivf_drop_cleans_up SKIPPED (IVF not enabled
+(compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-ivf.py::test_ivf_insert_flat_mode SKIPPED (IVF not enabled
+(compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-ivf.py::test_ivf_delete_flat_mode SKIPPED (IVF not enabled
+(compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-ivf.py::test_ivf_knn_flat_mode SKIPPED (IVF not enabled
+(compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-ivf.py::test_ivf_knn_flat_empty SKIPPED (IVF not enabled
+(compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-ivf.py::test_compute_centroids SKIPPED (IVF not enabled
+(compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-ivf.py::test_compute_centroids_recompute SKIPPED (IVF not
+enabled (compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-ivf.py::test_ivf_insert_after_training SKIPPED (IVF not
+enabled (compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-ivf.py::test_ivf_knn_after_training SKIPPED (IVF not enabled
+(compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-ivf.py::test_ivf_knn_k_larger_than_n SKIPPED (IVF not enabled
+(compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-ivf.py::test_set_centroid_and_assign SKIPPED (IVF not enabled
+(compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-ivf.py::test_clear_centroids SKIPPED (IVF not enabled
+(compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-ivf.py::test_ivf_delete_after_training SKIPPED (IVF not
+enabled (compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-ivf.py::test_ivf_recall_nprobe_equals_nlist SKIPPED (IVF not
+enabled (compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-knn-distance-constraints.py::test_normal PASSED
+tests/test-legacy-compat.py::test_legacy_select_count PASSED
+tests/test-legacy-compat.py::test_legacy_point_query PASSED
+tests/test-legacy-compat.py::test_legacy_knn PASSED
+tests/test-legacy-compat.py::test_legacy_insert PASSED
+tests/test-legacy-compat.py::test_legacy_delete PASSED
+tests/test-legacy-compat.py::test_legacy_fullscan PASSED
+tests/test-legacy-compat.py::test_legacy_name_conflict_table PASSED
+tests/test-legacy-compat.py::test_legacy_name_conflict_insert_delete PASSED
+tests/test-legacy-compat.py::test_legacy_no_command_column PASSED
+tests/test-loadable.py::test_limits PASSED
+tests/test-loadable.py::test_funcs PASSED
+tests/test-loadable.py::test_modules PASSED
+tests/test-loadable.py::test_vec_version PASSED
+tests/test-loadable.py::test_vec_debug PASSED
+tests/test-loadable.py::test_vec_bit PASSED
+tests/test-loadable.py::test_vec_f32 PASSED
+tests/test-loadable.py::test_vec_int8 PASSED
+tests/test-loadable.py::test_vec_distance_cosine PASSED
+tests/test-loadable.py::test_vec_distance_hamming PASSED
+tests/test-loadable.py::test_vec_distance_l1 PASSED
+tests/test-loadable.py::test_vec_reject_nan_inf PASSED
+tests/test-loadable.py::test_vec_distance_l2 PASSED
+tests/test-loadable.py::test_vec_length PASSED
+tests/test-loadable.py::test_vec_normalize PASSED
+tests/test-loadable.py::test_vec_slice PASSED
+tests/test-loadable.py::test_vec_type PASSED
+tests/test-loadable.py::test_vec_add PASSED
+tests/test-loadable.py::test_vec_sub PASSED
+tests/test-loadable.py::test_vec_to_json PASSED
+tests/test-loadable.py::test_vec_quantize_int8 SKIPPED (TODO)
+tests/test-loadable.py::test_vec_quantize_binary PASSED
+tests/test-loadable.py::test_vec0 SKIPPED (TODO)
+tests/test-loadable.py::test_vec0_inserts PASSED
+tests/test-loadable.py::test_vec0_insert_errors2 PASSED
+tests/test-loadable.py::test_vec0_drops PASSED
+tests/test-loadable.py::test_vec0_delete PASSED
+tests/test-loadable.py::test_vec0_delete_errors PASSED
+tests/test-loadable.py::test_vec0_updates PASSED
+tests/test-loadable.py::test_vec0_point PASSED
+tests/test-loadable.py::test_vec0_text_pk PASSED
+tests/test-loadable.py::test_vec0_best_index PASSED
+tests/test-loadable.py::test_vec_each PASSED
+tests/test-loadable.py::test_vec0_constructor PASSED
+tests/test-loadable.py::test_vec0_indexed_by_flat PASSED
+tests/test-loadable.py::test_vec0_create_errors PASSED
+tests/test-loadable.py::test_vec0_knn PASSED
+tests/test-loadable.py::test_correctness_npy SKIPPED (TODO)
+tests/test-loadable.py::test_smoke PASSED
+tests/test-loadable.py::test_vec0_stress_small_chunks PASSED
+tests/test-loadable.py::test_vec0_distance_metric PASSED
+tests/test-loadable.py::test_vec0_vacuum PASSED
+tests/test-loadable.py::test_stress1 PASSED
+tests/test-loadable.py::test_stress SKIPPED (slow)
+tests/test-loadable.py::test_coverage PASSED
+tests/test-metadata.py::test_constructor_limit PASSED
+tests/test-metadata.py::test_normal PASSED
+tests/test-metadata.py::test_text_knn PASSED
+tests/test-metadata.py::test_long_text_updates PASSED
+tests/test-metadata.py::test_long_text_knn PASSED
+tests/test-metadata.py::test_types PASSED
+tests/test-metadata.py::test_updates PASSED
+tests/test-metadata.py::test_deletes PASSED
+tests/test-metadata.py::test_delete_by_metadata_with_long_text PASSED
+tests/test-metadata.py::test_knn PASSED
+tests/test-metadata.py::test_vtab_in PASSED
+tests/test-metadata.py::test_vtab_in_long_text PASSED
+tests/test-metadata.py::test_idxstr PASSED
+tests/test-metadata.py::test_stress PASSED
+tests/test-metadata.py::test_errors PASSED
+tests/test-partition-keys.py::test_constructor_limit PASSED
+tests/test-partition-keys.py::test_normal PASSED
+tests/test-partition-keys.py::test_types PASSED
+tests/test-partition-keys.py::test_updates PASSED
+tests/test-rename.py::test_rename_basic PASSED
+tests/test-rename.py::test_rename_insert_after PASSED
+tests/test-rename.py::test_rename_delete_after PASSED
+tests/test-rename.py::test_rename_with_auxiliary PASSED
+tests/test-rename.py::test_rename_with_metadata PASSED
+tests/test-rename.py::test_rename_drop_after PASSED
+tests/test-rescore-mutations.py::test_create_with_aux_column PASSED
+tests/test-rescore-mutations.py::test_create_error_with_metadata_column PASSED
+tests/test-rescore-mutations.py::test_create_error_with_partition_key PASSED
+tests/test-rescore-mutations.py::test_insert_single_verify_knn PASSED
+tests/test-rescore-mutations.py::test_insert_large_batch PASSED
+tests/test-rescore-mutations.py::test_delete_all_rows PASSED
+tests/test-rescore-mutations.py::test_delete_then_reinsert_same_rowid PASSED
+tests/test-rescore-mutations.py::test_update_vector PASSED
+tests/test-rescore-mutations.py::test_knn_after_delete_all_but_one PASSED
+tests/test-rescore-mutations.py::test_single_row_knn PASSED
+tests/test-rescore-mutations.py::test_knn_with_all_identical_vectors PASSED
+tests/test-rescore-mutations.py::test_zero_vector_insert PASSED
+tests/test-rescore-mutations.py::test_very_large_values PASSED
+tests/test-rescore-mutations.py::test_negative_values PASSED
+tests/test-rescore-mutations.py::test_single_dimension PASSED
+tests/test-rescore-mutations.py::test_vec_debug_contains_rescore PASSED
+tests/test-rescore-mutations.py::test_insert_batch_recall PASSED
+tests/test-rescore-mutations.py::test_delete_interleaved_with_knn PASSED
+tests/test-rescore-mutations.py::test_delete_with_rowid_in_constraint PASSED
+tests/test-rescore-mutations.py::test_delete_all_then_reinsert_batch PASSED
+tests/test-rescore-mutations.py::test_knn_int8_cosine PASSED
+tests/test-rescore.py::test_create_bit PASSED
+tests/test-rescore.py::test_create_int8 PASSED
+tests/test-rescore.py::test_create_with_oversample PASSED
+tests/test-rescore.py::test_create_with_distance_metric PASSED
+tests/test-rescore.py::test_create_error_missing_quantizer PASSED
+tests/test-rescore.py::test_create_error_invalid_quantizer PASSED
+tests/test-rescore.py::test_create_error_on_bit_column PASSED
+tests/test-rescore.py::test_create_error_on_int8_column PASSED
+tests/test-rescore.py::test_create_error_bad_oversample_zero PASSED
+tests/test-rescore.py::test_create_error_bad_oversample_too_large PASSED
+tests/test-rescore.py::test_create_error_bit_dim_not_divisible_by_8 PASSED
+tests/test-rescore.py::test_shadow_tables_exist PASSED
+tests/test-rescore.py::test_drop_cleans_up PASSED
+tests/test-rescore.py::test_insert_single PASSED
+tests/test-rescore.py::test_insert_multiple PASSED
+tests/test-rescore.py::test_delete_single PASSED
+tests/test-rescore.py::test_delete_and_reinsert PASSED
+tests/test-rescore.py::test_point_query_returns_float PASSED
+tests/test-rescore.py::test_knn_basic_bit PASSED
+tests/test-rescore.py::test_knn_basic_int8 PASSED
+tests/test-rescore.py::test_knn_returns_float_distances PASSED
+tests/test-rescore.py::test_knn_recall PASSED
+tests/test-rescore.py::test_knn_cosine PASSED
+tests/test-rescore.py::test_knn_empty_table PASSED
+tests/test-rescore.py::test_knn_k_larger_than_n PASSED
+tests/test-rescore.py::test_knn_with_rowid_in PASSED
+tests/test-rescore.py::test_knn_after_deletes PASSED
+tests/test-rescore.py::test_oversample_effect PASSED
+tests/test-rescore.py::test_multiple_vector_columns PASSED
+tests/test-rescore.py::test_corrupt_zeroblob_validity PASSED
+tests/test-rescore.py::test_corrupt_truncated_validity_blob PASSED
+tests/test-rescore.py::test_rescore_text_pk_insert_knn_delete PASSED
+tests/test-rescore.py::test_runtime_oversample PASSED
+tests/test-rescore.py::test_runtime_oversample_error PASSED
+tests/test-rescore.py::test_unknown_command_errors PASSED
+tests/test-auxiliary.py::test_constructor_limit PASSED
+tests/test-auxiliary.py::test_normal PASSED
+tests/test-auxiliary.py::test_types PASSED
+tests/test-auxiliary.py::test_updates PASSED
+tests/test-auxiliary.py::test_deletes PASSED
+tests/test-auxiliary.py::test_knn PASSED
+tests/test-auxiliary.py::test_rescore_aux_shadow_tables PASSED
+tests/test-auxiliary.py::test_rescore_aux_insert_knn PASSED
+tests/test-auxiliary.py::test_rescore_aux_update PASSED
+tests/test-auxiliary.py::test_rescore_aux_delete PASSED
+tests/test-auxiliary.py::test_diskann_aux_shadow_tables PASSED
+tests/test-auxiliary.py::test_diskann_aux_insert_knn PASSED
+tests/test-auxiliary.py::test_diskann_aux_update_and_delete PASSED
+tests/test-auxiliary.py::test_diskann_aux_drop_cleans_all PASSED
+tests/test-diskann.py::test_diskann_create_basic PASSED
+tests/test-diskann.py::test_diskann_create_int8_quantizer PASSED
+tests/test-diskann.py::test_diskann_create_with_options PASSED
+tests/test-diskann.py::test_diskann_create_with_distance_metric PASSED
+tests/test-diskann.py::test_diskann_create_error_missing_quantizer PASSED
+tests/test-diskann.py::test_diskann_create_error_empty_parens PASSED
+tests/test-diskann.py::test_diskann_create_error_unknown_quantizer PASSED
+tests/test-diskann.py::test_diskann_create_error_bit_column PASSED
+tests/test-diskann.py::test_diskann_create_error_binary_quantizer_odd_dims PASSED
+tests/test-diskann.py::test_diskann_create_error_bad_n_neighbors PASSED
+tests/test-diskann.py::test_diskann_shadow_tables_created PASSED
+tests/test-diskann.py::test_diskann_medoid_in_info PASSED
+tests/test-diskann.py::test_non_diskann_no_extra_tables PASSED
+tests/test-diskann.py::test_diskann_medoid_initial_null PASSED
+tests/test-diskann.py::test_diskann_medoid_set_via_info PASSED
+tests/test-diskann.py::test_diskann_single_insert PASSED
+tests/test-diskann.py::test_diskann_multiple_inserts PASSED
+tests/test-diskann.py::test_diskann_bidirectional_edges PASSED
+tests/test-diskann.py::test_diskann_delete_single PASSED
+tests/test-diskann.py::test_diskann_delete_no_stale_references PASSED
+tests/test-diskann.py::test_diskann_delete_medoid PASSED
+tests/test-diskann.py::test_diskann_delete_all PASSED
+tests/test-diskann.py::test_diskann_insert_delete_insert_cycle PASSED
+tests/test-diskann.py::test_diskann_knn_basic PASSED
+tests/test-diskann.py::test_diskann_knn_distances_sorted PASSED
+tests/test-diskann.py::test_diskann_knn_empty_table PASSED
+tests/test-diskann.py::test_diskann_knn_after_delete PASSED
+tests/test-diskann.py::test_diskann_no_index_still_works PASSED
+tests/test-diskann.py::test_diskann_drop_table PASSED
+tests/test-diskann.py::test_diskann_create_split_search_list_size PASSED
+tests/test-diskann.py::test_diskann_create_error_mixed_search_list_size PASSED
+tests/test-diskann.py::test_diskann_command_search_list_size PASSED
+tests/test-diskann.py::test_diskann_command_search_list_size_error PASSED
+tests/test-diskann.py::test_diskann_create_with_auxiliary_column PASSED
+tests/test-diskann.py::test_diskann_create_error_with_metadata_column PASSED
+tests/test-diskann.py::test_diskann_create_error_with_partition_key PASSED
+tests/test-diskann.py::test_diskann_insert_no_rowid PASSED
+tests/test-diskann.py::test_diskann_insert_large_batch PASSED
+tests/test-diskann.py::test_diskann_insert_zero_vector PASSED
+tests/test-diskann.py::test_diskann_insert_large_values PASSED
+tests/test-diskann.py::test_diskann_insert_int8_quantizer_knn PASSED
+tests/test-diskann.py::test_diskann_delete_nonexistent PASSED
+tests/test-diskann.py::test_diskann_delete_then_reinsert_same_rowid PASSED
+tests/test-diskann.py::test_diskann_delete_all_then_insert PASSED
+tests/test-diskann.py::test_diskann_delete_preserves_graph_connectivity PASSED
+tests/test-diskann.py::test_diskann_update_vector PASSED
+tests/test-diskann.py::test_diskann_knn_recall_after_inserts PASSED
+tests/test-diskann.py::test_diskann_knn_k_larger_than_table PASSED
+tests/test-diskann.py::test_diskann_knn_cosine_metric PASSED
+tests/test-diskann.py::test_diskann_knn_after_heavy_churn PASSED
+tests/test-diskann.py::test_diskann_knn_batch_recall PASSED
+tests/test-diskann.py::test_diskann_insert_wrong_dimensions PASSED
+tests/test-diskann.py::test_diskann_knn_wrong_query_dimensions PASSED
+tests/test-diskann.py::test_diskann_graph_connectivity_after_many_deletes PASSED
+tests/test-diskann.py::test_diskann_large_batch_insert_500 PASSED
+tests/test-diskann.py::test_corrupt_truncated_node_blob PASSED
+tests/test-diskann.py::test_diskann_delete_reinsert_cycle_knn PASSED
+tests/test-diskann.py::test_diskann_delete_interleaved_with_knn PASSED
+tests/test-diskann.py::test_diskann_text_pk_insert_knn_delete PASSED
+tests/test-diskann.py::test_diskann_delete_scrubs_all_references PASSED
+tests/test-general.py::test_shadow PASSED
+tests/test-general.py::test_info PASSED
+tests/test-general.py::test_command_column_name_conflict PASSED
+tests/test-insert-delete.py::test_insert_creates_chunks_and_vectors PASSED
+tests/test-insert-delete.py::test_insert_auto_rowid PASSED
+tests/test-insert-delete.py::test_insert_text_primary_key PASSED
+tests/test-insert-delete.py::test_delete_clears_validity PASSED
+tests/test-insert-delete.py::test_insert_delete_reinsert PASSED
+tests/test-insert-delete.py::test_insert_validates_dimensions PASSED
+tests/test-insert-delete.py::test_insert_validates_type PASSED
+tests/test-insert-delete.py::test_info_table_contents PASSED
+tests/test-insert-delete.py::test_delete_zeroes_rowid_blob PASSED
+tests/test-insert-delete.py::test_delete_zeroes_vector_blob PASSED
+tests/test-insert-delete.py::test_delete_all_rows_deletes_chunk PASSED
+tests/test-insert-delete.py::test_delete_chunk_multiple_chunks PASSED
+tests/test-insert-delete.py::test_delete_with_metadata_columns PASSED
+tests/test-insert-delete.py::test_delete_with_auxiliary_columns PASSED
+tests/test-insert-delete.py::test_delete_with_text_primary_key PASSED
+tests/test-insert-delete.py::test_delete_with_partition_keys PASSED
+tests/test-insert-delete.py::test_delete_int8_vectors PASSED
+tests/test-insert-delete.py::test_delete_bit_vectors PASSED
+tests/test-insert-delete.py::test_delete_chunk_shrinks_pages PASSED
+tests/test-insert-delete.py::test_delete_one_chunk_of_two_shrinks_pages PASSED
+tests/test-insert-delete.py::test_wal_concurrent_reader_during_write PASSED
+tests/test-ivf-mutations.py::test_insert_single_row_knn SKIPPED (IVF not
+enabled (compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-ivf-mutations.py::test_batch_insert_knn_recall SKIPPED (IVF
+not enabled (compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-ivf-mutations.py::test_delete_rows_gone_from_knn SKIPPED (IVF
+not enabled (compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-ivf-mutations.py::test_delete_all_rows_empty_results SKIPPED
+tests/test-ivf-mutations.py::test_insert_after_delete_reuse_rowid SKIPPED
+tests/test-ivf-mutations.py::test_update_vector_via_delete_insert SKIPPED
+tests/test-ivf-mutations.py::test_ivf_with_auxiliary_column SKIPPED (IVF
+not enabled (compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-ivf-mutations.py::test_error_ivf_with_metadata_column SKIPPED
+tests/test-ivf-mutations.py::test_error_ivf_with_partition_key SKIPPED)
+tests/test-ivf-mutations.py::test_flat_with_auxiliary_still_works SKIPPED
+tests/test-ivf-mutations.py::test_flat_with_metadata_still_works SKIPPED
+tests/test-ivf-mutations.py::test_flat_with_partition_key_still_works SKIPPED
+tests/test-ivf-mutations.py::test_zero_vectors SKIPPED (IVF not enabled
+(compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-ivf-mutations.py::test_large_values SKIPPED (IVF not enabled
+(compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-ivf-mutations.py::test_single_row_compute_centroids SKIPPED)
+tests/test-ivf-mutations.py::test_cell_overflow_many_vectors SKIPPED1))
+tests/test-ivf-mutations.py::test_large_batch_with_training SKIPPED (IVF
+not enabled (compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-ivf-mutations.py::test_knn_after_interleaved_insert_delete SKIPPED
+tests/test-ivf-mutations.py::test_knn_empty_centroids_after_deletes SKIPPED
+tests/test-ivf-mutations.py::test_knn_correct_distances SKIPPED (IVF not
+enabled (compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-ivf-mutations.py::test_delete_flat_mode_rowid_map_count SKIPPED
+tests/test-ivf-mutations.py::test_delete_reinsert_as_update SKIPPED (IVF
+not enabled (compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-ivf-mutations.py::test_duplicate_rowid_insert_fails SKIPPED)
+tests/test-ivf-mutations.py::test_interleaved_ops_correctness SKIPPED))
+tests/test-ivf-mutations.py::test_ivf_update_vector_blocked SKIPPED (IVF
+not enabled (compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-ivf-quantization.py::test_ivf_quantizer_binary SKIPPED (IVF
+not enabled (compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-ivf-quantization.py::test_ivf_quantizer_int8 SKIPPED (IVF not
+enabled (compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-ivf-quantization.py::test_ivf_quantizer_none_explicit SKIPPED
+tests/test-ivf-quantization.py::test_ivf_quantizer_all_params SKIPPED))
+tests/test-ivf-quantization.py::test_ivf_error_oversample_without_quantizer SKIPPED
+tests/test-ivf-quantization.py::test_ivf_error_unknown_quantizer SKIPPED
+tests/test-ivf-quantization.py::test_ivf_oversample_1_without_quantizer_ok SKIPPED
+tests/test-ivf-quantization.py::test_ivf_int8_insert_and_query SKIPPED)
+tests/test-ivf-quantization.py::test_ivf_binary_insert_and_query SKIPPED
+tests/test-ivf-quantization.py::test_ivf_int8_cell_sizes_smaller SKIPPED
+tests/test-ivf-quantization.py::test_ivf_binary_cell_sizes_smaller SKIPPED
+tests/test-ivf-quantization.py::test_ivf_int8_oversample_improves_recall SKIPPED
+tests/test-ivf-quantization.py::test_ivf_quantized_delete SKIPPED (IVF
+not enabled (compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-ivf-quantization.py::test_ivf_binary_rejects_non_multiple_of_8_dims SKIPPED
+tests/test-ivf.py::test_ivf_create_defaults SKIPPED (IVF not enabled
+(compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-ivf.py::test_ivf_create_custom_params SKIPPED (IVF not
+enabled (compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-ivf.py::test_ivf_create_with_distance_metric SKIPPED (IVF not
+enabled (compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-ivf.py::test_ivf_create_error_unknown_key SKIPPED (IVF not
+enabled (compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-ivf.py::test_ivf_create_error_nprobe_gt_nlist SKIPPED (IVF
+not enabled (compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-ivf.py::test_ivf_shadow_tables_created SKIPPED (IVF not
+enabled (compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-ivf.py::test_ivf_drop_cleans_up SKIPPED (IVF not enabled
+(compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-ivf.py::test_ivf_insert_flat_mode SKIPPED (IVF not enabled
+(compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-ivf.py::test_ivf_delete_flat_mode SKIPPED (IVF not enabled
+(compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-ivf.py::test_ivf_knn_flat_mode SKIPPED (IVF not enabled
+(compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-ivf.py::test_ivf_knn_flat_empty SKIPPED (IVF not enabled
+(compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-ivf.py::test_compute_centroids SKIPPED (IVF not enabled
+(compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-ivf.py::test_compute_centroids_recompute SKIPPED (IVF not
+enabled (compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-ivf.py::test_ivf_insert_after_training SKIPPED (IVF not
+enabled (compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-ivf.py::test_ivf_knn_after_training SKIPPED (IVF not enabled
+(compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-ivf.py::test_ivf_knn_k_larger_than_n SKIPPED (IVF not enabled
+(compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-ivf.py::test_set_centroid_and_assign SKIPPED (IVF not enabled
+(compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-ivf.py::test_clear_centroids SKIPPED (IVF not enabled
+(compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-ivf.py::test_ivf_delete_after_training SKIPPED (IVF not
+enabled (compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-ivf.py::test_ivf_recall_nprobe_equals_nlist SKIPPED (IVF not
+enabled (compile with -DSQLITE_VEC_EXPERIMENTAL_IVF_ENABLE=1))
+tests/test-knn-distance-constraints.py::test_normal PASSED
+tests/test-legacy-compat.py::test_legacy_select_count PASSED
+tests/test-legacy-compat.py::test_legacy_point_query PASSED
+tests/test-legacy-compat.py::test_legacy_knn PASSED
+tests/test-legacy-compat.py::test_legacy_insert PASSED
+tests/test-legacy-compat.py::test_legacy_delete PASSED
+tests/test-legacy-compat.py::test_legacy_fullscan PASSED
+tests/test-legacy-compat.py::test_legacy_name_conflict_table PASSED
+tests/test-legacy-compat.py::test_legacy_name_conflict_insert_delete PASSED
+tests/test-legacy-compat.py::test_legacy_no_command_column PASSED
+tests/test-loadable.py::test_limits PASSED
+tests/test-loadable.py::test_funcs PASSED
+tests/test-loadable.py::test_modules PASSED
+tests/test-loadable.py::test_vec_version PASSED
+tests/test-loadable.py::test_vec_debug PASSED
+tests/test-loadable.py::test_vec_bit PASSED
+tests/test-loadable.py::test_vec_f32 PASSED
+tests/test-loadable.py::test_vec_int8 PASSED
+tests/test-loadable.py::test_vec_distance_cosine PASSED
+tests/test-loadable.py::test_vec_distance_hamming PASSED
+tests/test-loadable.py::test_vec_distance_l1 PASSED
+tests/test-loadable.py::test_vec_reject_nan_inf PASSED
+tests/test-loadable.py::test_vec_distance_l2 PASSED
+tests/test-loadable.py::test_vec_length PASSED
+tests/test-loadable.py::test_vec_normalize PASSED
+tests/test-loadable.py::test_vec_slice PASSED
+tests/test-loadable.py::test_vec_type PASSED
+tests/test-loadable.py::test_vec_add PASSED
+tests/test-loadable.py::test_vec_sub PASSED
+tests/test-loadable.py::test_vec_to_json PASSED
+tests/test-loadable.py::test_vec_quantize_int8 SKIPPED (TODO)
+tests/test-loadable.py::test_vec_quantize_binary PASSED
+tests/test-loadable.py::test_vec0 SKIPPED (TODO)
+tests/test-loadable.py::test_vec0_inserts PASSED
+tests/test-loadable.py::test_vec0_insert_errors2 PASSED
+tests/test-loadable.py::test_vec0_drops PASSED
+tests/test-loadable.py::test_vec0_delete PASSED
+tests/test-loadable.py::test_vec0_delete_errors PASSED
+tests/test-loadable.py::test_vec0_updates PASSED
+tests/test-loadable.py::test_vec0_point PASSED
+tests/test-loadable.py::test_vec0_text_pk PASSED
+tests/test-loadable.py::test_vec0_best_index PASSED
+tests/test-loadable.py::test_vec_each PASSED
+tests/test-loadable.py::test_vec0_constructor PASSED
+tests/test-loadable.py::test_vec0_indexed_by_flat PASSED
+tests/test-loadable.py::test_vec0_create_errors PASSED
+tests/test-loadable.py::test_vec0_knn PASSED
+tests/test-loadable.py::test_correctness_npy SKIPPED (TODO)
+tests/test-loadable.py::test_smoke PASSED
+tests/test-loadable.py::test_vec0_stress_small_chunks PASSED
+tests/test-loadable.py::test_vec0_distance_metric PASSED
+tests/test-loadable.py::test_vec0_vacuum PASSED
+tests/test-loadable.py::test_stress1 PASSED
+tests/test-loadable.py::test_stress SKIPPED (slow)
+tests/test-loadable.py::test_coverage PASSED
+tests/test-metadata.py::test_constructor_limit PASSED
+tests/test-metadata.py::test_normal PASSED
+tests/test-metadata.py::test_text_knn PASSED
+tests/test-metadata.py::test_long_text_updates PASSED
+tests/test-metadata.py::test_long_text_knn PASSED
+tests/test-metadata.py::test_types PASSED
+tests/test-metadata.py::test_updates PASSED
+tests/test-metadata.py::test_deletes PASSED
+tests/test-metadata.py::test_delete_by_metadata_with_long_text PASSED
+tests/test-metadata.py::test_knn PASSED
+tests/test-metadata.py::test_vtab_in PASSED
+tests/test-metadata.py::test_vtab_in_long_text PASSED
+tests/test-metadata.py::test_idxstr PASSED
+tests/test-metadata.py::test_stress PASSED
+tests/test-metadata.py::test_errors PASSED
+tests/test-partition-keys.py::test_constructor_limit PASSED
+tests/test-partition-keys.py::test_normal PASSED
+tests/test-partition-keys.py::test_types PASSED
+tests/test-partition-keys.py::test_updates PASSED
+tests/test-rename.py::test_rename_basic PASSED
+tests/test-rename.py::test_rename_insert_after PASSED
+tests/test-rename.py::test_rename_delete_after PASSED
+tests/test-rename.py::test_rename_with_auxiliary PASSED
+tests/test-rename.py::test_rename_with_metadata PASSED
+tests/test-rename.py::test_rename_drop_after PASSED
+tests/test-rescore-mutations.py::test_create_with_aux_column PASSED
+tests/test-rescore-mutations.py::test_create_error_with_metadata_column PASSED
+tests/test-rescore-mutations.py::test_create_error_with_partition_key PASSED
+tests/test-rescore-mutations.py::test_insert_single_verify_knn PASSED
+tests/test-rescore-mutations.py::test_insert_large_batch PASSED
+tests/test-rescore-mutations.py::test_delete_all_rows PASSED
+tests/test-rescore-mutations.py::test_delete_then_reinsert_same_rowid PASSED
+tests/test-rescore-mutations.py::test_update_vector PASSED
+tests/test-rescore-mutations.py::test_knn_after_delete_all_but_one PASSED
+tests/test-rescore-mutations.py::test_single_row_knn PASSED
+tests/test-rescore-mutations.py::test_knn_with_all_identical_vectors PASSED
+tests/test-rescore-mutations.py::test_zero_vector_insert PASSED
+tests/test-rescore-mutations.py::test_very_large_values PASSED
+tests/test-rescore-mutations.py::test_negative_values PASSED
+tests/test-rescore-mutations.py::test_single_dimension PASSED
+tests/test-rescore-mutations.py::test_vec_debug_contains_rescore PASSED
+tests/test-rescore-mutations.py::test_insert_batch_recall PASSED
+tests/test-rescore-mutations.py::test_delete_interleaved_with_knn PASSED
+tests/test-rescore-mutations.py::test_delete_with_rowid_in_constraint PASSED
+tests/test-rescore-mutations.py::test_delete_all_then_reinsert_batch PASSED
+tests/test-rescore-mutations.py::test_knn_int8_cosine PASSED
+tests/test-rescore.py::test_create_bit PASSED
+tests/test-rescore.py::test_create_int8 PASSED
+tests/test-rescore.py::test_create_with_oversample PASSED
+tests/test-rescore.py::test_create_with_distance_metric PASSED
+tests/test-rescore.py::test_create_error_missing_quantizer PASSED
+tests/test-rescore.py::test_create_error_invalid_quantizer PASSED
+tests/test-rescore.py::test_create_error_on_bit_column PASSED
+tests/test-rescore.py::test_create_error_on_int8_column PASSED
+tests/test-rescore.py::test_create_error_bad_oversample_zero PASSED
+tests/test-rescore.py::test_create_error_bad_oversample_too_large PASSED
+tests/test-rescore.py::test_create_error_bit_dim_not_divisible_by_8 PASSED
+tests/test-rescore.py::test_shadow_tables_exist PASSED
+tests/test-rescore.py::test_drop_cleans_up PASSED
+tests/test-rescore.py::test_insert_single PASSED
+tests/test-rescore.py::test_insert_multiple PASSED
+tests/test-rescore.py::test_delete_single PASSED
+tests/test-rescore.py::test_delete_and_reinsert PASSED
+tests/test-rescore.py::test_point_query_returns_float PASSED
+tests/test-rescore.py::test_knn_basic_bit PASSED
+tests/test-rescore.py::test_knn_basic_int8 PASSED
+tests/test-rescore.py::test_knn_returns_float_distances PASSED
+tests/test-rescore.py::test_knn_recall PASSED
+tests/test-rescore.py::test_knn_cosine PASSED
+tests/test-rescore.py::test_knn_empty_table PASSED
+tests/test-rescore.py::test_knn_k_larger_than_n PASSED
+tests/test-rescore.py::test_knn_with_rowid_in PASSED
+tests/test-rescore.py::test_knn_after_deletes PASSED
+tests/test-rescore.py::test_oversample_effect PASSED
+tests/test-rescore.py::test_multiple_vector_columns PASSED
+tests/test-rescore.py::test_corrupt_zeroblob_validity PASSED
+tests/test-rescore.py::test_corrupt_truncated_validity_blob PASSED
+tests/test-rescore.py::test_rescore_text_pk_insert_knn_delete PASSED
+tests/test-rescore.py::test_runtime_oversample PASSED
+tests/test-rescore.py::test_runtime_oversample_error PASSED
+tests/test-rescore.py::test_unknown_command_errors PASSED
+
+=============================== warnings summary ===============================
+tests/test-loadable.py:1394
+  /workspace/tests/test-loadable.py:1394: SyntaxWarning: invalid escape sequence '\['
+    ("SCAN (TABLE )?t VIRTUAL TABLE INDEX 0:3{___}___\[___"),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+--------------------------- snapshot report summary ----------------------------
+204 snapshots passed.
+================= 460 passed, 126 skipped, 1 warning in 4.37s ==================

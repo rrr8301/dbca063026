@@ -1,0 +1,86 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      3.10
+  Platform:         ubuntu-latest with Python 3.10, setuptools==82.0.0
+  Test command(s) run in original CI:
+    $ python -m tox -epy310-marshmallow
+      (installs pyramid>=2.0.2 → pyramid==2.0.2, marshmallow<5.0.0>=4.0.0 → 4.2.2)
+      (tox virtualenv seeded with setuptools==82.0.0 → pkg_resources REMOVED)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ python -m tox -epy310-marshmallow
+    (same command; installs pyramid>=2.0.2 → pyramid==2.1, marshmallow → 4.3.0)
+    (Docker base provides setuptools==81.0.0 → pkg_resources deprecated but PRESENT)
+
+--- Reason(s) for Non-Reproducibility ---
+  - [pytest] Test result mismatch (same count 506): original=(459p/43f/4s), LLM=(502p/0f/4s)
+  - [pytest] 43 original failures in tests/test_pyramidparser.py — all PASS in LLM
+  - Original CI is in the "failed" category; LLM unexpectedly passes all tests
+
+--- Root Cause Analysis ---
+  [Actual error messages from original CI log (webargs-65274984602.log)]
+    > tests/apps/pyramid_app.py:2: in <module>
+    >     from pyramid.config import Configurator
+    > .tox/py310-marshmallow/lib/python3.10/site-packages/pyramid/config/__init__.py:8: in <module>
+    >     from pyramid.asset import resolve_asset_spec
+    > .tox/.../pyramid/asset.py:2:
+    >     import pkg_resources
+    > E   ModuleNotFoundError: No module named 'pkg_resources'
+    >   [ERROR at setup of every TestPyramidParser test]
+
+  [Root cause classification]
+  setuptools==82.0.0 removed pkg_resources module → Pyramid fails to import → all pyramid
+  tests ERROR at setup. LLM accidentally uses setuptools==81.0.0 where pkg_resources still
+  works (with deprecation warning) → all pyramid tests pass
+
+  The critical difference is the `setuptools` version used in the tox virtualenv:
+
+  (1) Original CI: setuptools==82.0.0 — pkg_resources completely removed
+    setuptools 82.0.0 executed the long-announced removal of `pkg_resources` as a standalone
+    importable module (the deprecation warning stated "slated for removal as early as
+    2025-11-30"). With setuptools==82.0.0, `import pkg_resources` raises:
+      `ModuleNotFoundError: No module named 'pkg_resources'`
+    pyramid 2.0.2's `pyramid/asset.py` still imports `pkg_resources` at line 2:
+      `from pyramid.asset import resolve_asset_spec` triggers this import.
+    Since this module-level import fails at test SETUP time, all 43 `TestPyramidParser` tests
+    error before running a single assertion.
+
+  (2) LLM Docker: setuptools==81.0.0 — pkg_resources deprecated but still importable
+    The LLM Docker uses ubuntu:22.04 as base, and when tox creates the virtualenv, it seeds it
+    with setuptools==81.0.0 (from the virtualenv seeder cache or installed pip). With
+    setuptools==81.0.0, `pkg_resources` is still importable but emits a UserWarning:
+      `UserWarning: pkg_resources is deprecated as an API... slated for removal as early as
+       2025-11-30. Refrain from using this package or pin to Setuptools<81.`
+      `import pkg_resources`
+    The LLM also resolves to a newer pyramid version (2.1 vs 2.0.2), but the root difference
+    is the setuptools version — even pyramid 2.0.2 works with setuptools 81 (with warning).
+    All 43 pyramid tests that previously errored now run and pass.
+
+  (3) This is a "flipped" reproducibility case
+    The original CI FAILED because of a recent setuptools breakage (82.0.0 removing
+    pkg_resources), not because of any bug in the webargs codebase itself. The LLM Docker
+    accidentally avoids this failure by using a slightly older setuptools. From a build
+    reproducibility perspective, the LLM produces BETTER results (0 failures) than the
+    original CI (43 failures), but this is coincidental — it uses an earlier dependency
+    version that predates the breaking change.
+
+--- Test Statistics Comparison ---
+  [pytest]
+    Original: 506 run, 459 passed, 43 failed, 4 skipped
+      (43 errors at setup of TestPyramidParser: ModuleNotFoundError: No module named 'pkg_resources'
+       setuptools==82.0.0 removed pkg_resources from pyramid==2.0.2's import chain)
+    LLM:      506 run, 502 passed, 0 failed, 4 skipped
+      (all pyramid tests pass: setuptools==81.0.0 still has pkg_resources available;
+       pyramid==2.1 installed vs 2.0.2; same marshmallow and webargs version)

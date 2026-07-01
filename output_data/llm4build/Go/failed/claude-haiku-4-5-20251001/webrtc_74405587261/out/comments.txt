@@ -1,0 +1,37 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          4
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoDefault] Test run mismatch: original=686, LLM=438
+  - [GoDefault] Test passed mismatch: original=683, LLM=436
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > FAIL	github.com/pion/webrtc/v4	92.537s
+    > mux ERROR: mux: failed to read from packetio.Buffer i/o timeout
+    > mux ERROR: mux: failed to read from packetio.Buffer short buffer
+    > FAIL (exit code: 1)
+
+  [Root cause classification] Missing Network/ICE Tests Due to Docker Network Restrictions
+  - The LLM container ran only 438 of the 686 original tests; 248 tests were not executed because
+    WebRTC network-level tests (ICE gathering, DTLS, SRFLX candidate resolution) require real UDP
+    socket access that Docker isolates, causing entire package-level test runs to be dropped.
+  - TestICEGatherer_RenominationSwitchesPair fails in both environments, but the LLM run reports
+    the entire `github.com/pion/webrtc/v4` package as failed rather than an individual test,
+    indicating the mux i/o timeout aborts the package run before all subtests execute.
+  - The root cause is Docker's network namespace preventing outbound UDP ICE candidate negotiation,
+    which makes network-dependent test cases time out and causes the package-level failure count
+    to diverge from the original CI run.
+
+--- Test Statistics Comparison ---
+  [GoDefault] 686 run, 683 passed, 1 failed, 0 skipped
+    Failed: TestICEGatherer_RenominationSwitchesPair
+LLM:
+  [GoDefault] 438 run, 436 passed, 1 failed, 0 skipped
+    Failed: github.com/pion/webrtc/v4

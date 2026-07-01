@@ -1,0 +1,32 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          N/A
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      build / JUnit tests Java 25
+
+--- LLM-Generated Dockerfile ---
+  Base image:   python:3.12-slim
+  RUN steps:    4
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Gradle] Test run mismatch: original=47012, LLM=54
+  - [Gradle] Test passed mismatch: original=47006, LLM=52
+  - [Gradle] Test failed mismatch: original=6, LLM=2
+  - [Gradle] 3 test(s) failed in original but passed in LLM: largeAssignmentShouldTerminateWithinAcceptableTime(String)."largeAssignmentShouldTerminateWithinAcceptableTime(String).rackAwareStrategy=balance_subtopology", testOnlineMigrationWithCooperativeAssignmentStrategyAndDynamicMembers().testOnlineMigrationWithCooperativeAssignmentStrategyAndDynamicMembers [1] Type=Raft-Isolated, MetadataVersion=4.4-IV0,BrokerSecurityProtocol=PLAINTEXT,BrokerListenerName=ListenerName(EXTERNAL),ControllerSecurityProtocol=PLAINTEXT,ControllerListenerName=ListenerName(CONTROLLER), testOnlineMigrationWithEagerAssignmentStrategyAndDynamicMembers().testOnlineMigrationWithEagerAssignmentStrategyAndDynamicMembers [1] Type=Raft-Isolated, MetadataVersion=4.4-IV0,BrokerSecurityProtocol=PLAINTEXT,BrokerListenerName=ListenerName(EXTERNAL),ControllerSecurityProtocol=PLAINTEXT,ControllerListenerName=ListenerName(CONTROLLER)
+  - [Gradle] 1 test(s) failed in LLM but not in original: testCloseLeavesGroupOnInterrupt(String).testCloseLeavesGroupOnInterrupt(String).groupProtocol=consumer
+
+--- Root Cause Analysis ---
+  - [Gradle] LLM ran 46958 fewer tests than original — LLM likely used a narrower test scope or missed some test suites.
+  - [Gradle] 1 test(s) failed in LLM but not original: testCloseLeavesGroupOnInterrupt(String).testCloseLeavesGroupOnInterrupt(String).groupProtocol=consumer
+
+--- Test Statistics Comparison ---
+  [Gradle]
+    Original: 47012 run, 47006 passed, 6 failed, 0 skipped
+    LLM:      54 run, 52 passed, 2 failed, 0 skipped

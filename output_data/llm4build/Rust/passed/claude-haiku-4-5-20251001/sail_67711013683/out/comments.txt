@@ -1,0 +1,44 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          7
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Rust Tests / Test
+  Test command(s) run in original CI:
+    $ actions/checkout@v4
+    $ taiki-e/install-action@nextest
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    7
+
+--- LLM run.sh Test Command(s) ---
+  $ cargo test --all
+  $ cargo test --all -- --ignored
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in original but missing in LLM: nexttest
+  - Framework(s) in LLM but not in original: cargo
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    Error: "Failed to run tests: ASLR disable failed: EPERM: Operation not permitted"
+    Error: "Failed to run tests: Unexpected signal when starting test"
+
+  [Root cause classification]
+  - Test timed out — likely due to slower execution in Docker container or a blocking service call that never returns.
+  - I/O error — test encountered a system-level I/O failure, possibly due to filesystem permissions or missing mount points.
+  - Assertion failure: Error: "Failed to run tests: Unexpected signal when starting test"
+
+--- Test Statistics Comparison ---
+  [cargo]
+    Original: (not present)
+    LLM:      547 run, 498 passed, 0 failed, 49 skipped
+  [nexttest]
+    Original: 543 run, 496 passed, 0 failed, 47 skipped
+    LLM:      (not present)

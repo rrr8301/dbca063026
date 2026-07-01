@@ -1,0 +1,38 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      libnvme (gcc, debug)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ghcr.io/linux-nvme/debian.python:latest
+  RUN steps:    4
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Meson] Test passed mismatch: original=39, LLM=34
+  - [Meson] Test failed mismatch: original=1, LLM=6
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > 10/42 libnvme - NBFT-Dell.PowerEdge.R760         FAIL   exit status 1
+    > 25/42 libnvme - cpp-dump                         FAIL   killed by signal 11 SIGSEGV
+    > 40/42 libnvme - python-read-nbft-file            FAIL   killed by signal 11 SIGSEGV
+    > 41/42 libnvme - python-create-ctrl-object        FAIL   killed by signal 11 SIGSEGV
+    > 42/42 libnvme - python-sigsegv-during-gc         FAIL   killed by signal 11 SIGSEGV
+
+  [Root cause classification]
+  - The C++ and Python binding tests (cpp-dump, python-read-nbft-file, python-create-ctrl-object, python-sigsegv-during-gc) are killed by SIGSEGV under valgrind, which is the test harness used in the LLM build; the original CI uses a newer gcc with sanitizers that catches these differently, while the Docker image's libpython or libnvme binding has an ABI or version mismatch causing segfaults when the Python extension calls back into the C library.
+  - The NBFT-Dell.PowerEdge.R760 test fails because the expected diff output embedded in the test fixture does not match the actual output produced by the Docker build's nvme-cli binary version, indicating a version skew between the libnvme test vectors and the binary built from HEAD.
+  - The original CI only had libnvme - kdoc failing (a kernel documentation checker), whereas the LLM environment adds 5 additional failures driven by SIGSEGV crashes under valgrind and a stale test fixture — both artifacts of the different base Docker image (debian.python) and library versions compared to the ubuntu-24.04 runner.
+
+--- Test Statistics Comparison ---
+  [Meson]
+    Original: 42 run, 39 passed, 1 failed, 0 skipped
+    LLM:      42 run, 34 passed, 6 failed, 0 skipped

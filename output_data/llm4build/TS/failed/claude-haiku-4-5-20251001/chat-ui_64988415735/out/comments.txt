@@ -1,0 +1,46 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      test
+
+--- LLM-Generated Dockerfile ---
+  Base image:   node:20
+  RUN steps:    5
+
+Note: Original had test failures; LLM build passed all — failed build has passed.
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > ▲ [WARNING] Cannot find base config file "./.svelte-kit/tsconfig.json" [tsconfig.json]
+    >   tsconfig.json:2:12:
+    >     "extends": "./.svelte-kit/tsconfig.json"
+    > Connecting to database
+    > Connected to database
+
+  [Root cause classification]
+  - The LLM ran only the vitest suite (`npm run test`), which produced 155 passing tests. The original CI ran both vitest (155 run, 143 passing, 12 skipped) and GoDefault tests (2 run, both failed). The GoDefault tests represent a Go-based component in the chat-ui repository that is tested via a separate command the LLM did not include in its run script. Without a Go runtime installed in the Docker image and without the corresponding `go test` invocation, these 2 tests were never executed.
+
+  - The 12 vitest tests that were skipped in the original CI but pass in the LLM environment are tests that require external service connections (MongoDB/database). The LLM log shows successful "Connected to database" messages, meaning the LLM's Docker setup included and started a MongoDB service, allowing these 12 tests to run and pass. The original CI either lacked the MongoDB connection or had tests guarded by a `test.skipIf` condition checking for service availability, causing them to be skipped.
+
+  - The `.svelte-kit/tsconfig.json` warning occurs because the SvelteKit generated config file is not present when tests run in isolation — the SvelteKit dev server hasn't been started to generate it. This is a non-fatal warning that does not affect test execution. The original CI (job name "test") passed despite the same underlying issue because the same vitest suite ran there too.
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in original but missing in LLM: GoDefault
+  - [vitest] Test passed mismatch: original=143, LLM=155
+  - [vitest] Test skipped mismatch: original=12, LLM=0
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 2 run, 0 passed, 2 failed, 0 skipped
+    LLM:      (not present)
+  [vitest]
+    Original: 155 run, 143 passed, 0 failed, 12 skipped
+    LLM:      155 run, 155 passed, 0 failed, 0 skipped

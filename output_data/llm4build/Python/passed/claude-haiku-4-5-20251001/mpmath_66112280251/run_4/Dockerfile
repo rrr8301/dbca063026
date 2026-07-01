@@ -1,0 +1,39 @@
+FROM ubuntu:24.04
+
+# Set timezone to Pacific Time noninteractively
+ENV TZ=America/Los_Angeles
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    software-properties-common \
+    && add-apt-repository -y ppa:deadsnakes/ppa \
+    && apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    build-essential \
+    python3.11 \
+    python3.11-venv \
+    python3.11-dev \
+    python3.11-distutils \
+    libgmp-dev \
+    libmpfr-dev \
+    curl \
+    wget \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set Python 3.11 as default
+RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.11 1 && \
+    update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1
+
+# Install pip for Python 3.11
+RUN python3.11 -m pip install --upgrade pip setuptools
+
+# Create work directory
+WORKDIR /workspace
+
+# Copy run.sh and make it executable
+COPY run.sh /workspace/run.sh
+RUN chmod +x /workspace/run.sh
+
+# Set entrypoint
+ENTRYPOINT ["/workspace/run.sh"]

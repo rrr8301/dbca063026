@@ -1,0 +1,50 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          3
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      build-static (ubuntu-latest, Release)
+  Test command(s) run in original CI:
+    $ cmake -G Ninja -S . -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DAVIF_CODEC_AOM=LOCAL -DAVIF_CODEC_DAV1D=LOCAL -DAVIF_CODEC_RAV1E=LOCAL -DAVIF_CODEC_SVT=LOCAL -DAVIF_OPTIMIZE_RAV1E_FOR_SIZE=ON -DAVIF_CODEC_LIBGAV1=LOCAL -DAVIF_LIBSHARPYUV=LOCAL -DAVIF_LIBXML2=LOCAL -DAVIF_LIBYUV=LOCAL -DAVIF_BUILD_EXAMPLES=ON -DAVIF_BUILD_APPS=ON -DAVIF_BUILD_TESTS=ON -DAVIF_GTEST=LOCAL -DAVIF_ENABLE_EXPERIMENTAL_MINI=ON -DAVIF_ENABLE_EXPERIMENTAL_EXTENDED_PIXI=ON -DAVIF_ENABLE_WERROR=ON
+    $ cmake --build build --config Release --parallel 4
+    $ ctest -j $(getconf _NPROCESSORS_ONLN) --output-on-failure
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    7
+
+--- LLM run.sh Test Command(s) ---
+  $ cmake -G Ninja -S . -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DAVIF_CODEC_AOM=LOCAL -DAVIF_CODEC_DAV1D=LOCAL -DAVIF_CODEC_RAV1E=LOCAL -DAVIF_CODEC_SVT=LOCAL -DAVIF_OPTIMIZE_RAV1E_FOR_SIZE=ON -DAVIF_CODEC_LIBGAV1=LOCAL -DAVIF_LIBSHARPYUV=LOCAL -DAVIF_LIBXML2=LOCAL -DAVIF_LIBYUV=LOCAL -DAVIF_BUILD_EXAMPLES=ON -DAVIF_BUILD_APPS=ON -DAVIF_BUILD_TESTS=ON -DAVIF_GTEST=LOCAL -DAVIF_ENABLE_EXPERIMENTAL_MINI=ON -DAVIF_ENABLE_EXPERIMENTAL_EXTENDED_PIXI=ON -DAVIF_ENABLE_WERROR=ON
+  $ cmake --build build --config Release --parallel 4
+  $ ctest -j $(getconf _NPROCESSORS_ONLN) --output-on-failure
+
+--- Reason(s) for Non-Reproducibility ---
+  - [CTest] Test count mismatch: original=65 run, LLM=65 run (same count, different status)
+  - [CTest] Test passed mismatch: original=64 passed, LLM=0 passed
+  - [CTest] Test failed mismatch: original=1 failed (aviftunetest), LLM=65 failed (all tests Not Run or Failed)
+  - [CTest] All 53 GTest-based tests reported "Not Run" due to missing test executables; 12 script-based tests Failed
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    1573: error: failed to install component: 'rust-src', detected conflict: 'lib/rustlib/src/rust/library/Cargo.lock'
+    1578: error: could not compile `thiserror` (build script)
+    1595: Error: CliError { error: Some(3 jobs failed), exit_code: 101 }
+    1597: FAILED: CMakeFiles/rav1e ext/rav1e/usr/lib/librav1e.a /workspace/build/CMakeFiles/rav1e /workspace/build/ext/rav1e/usr/lib/librav1e.a
+    1602: ninja: build stopped: subcommand failed.
+    1620: Unable to find executable: /workspace/build/tests/aviftest
+    3764: /workspace/build/avifgainmaputil: No such file or directory
+
+  [Root cause classification]
+  - The rav1e Rust encoder failed to compile inside the Docker container due to a `rust-src` component conflict (`detected conflict: 'lib/rustlib/src/rust/library/Cargo.lock'`). This caused `cargo cinstall` to fail during the librav1e.a build step, which in turn aborted the Ninja build before any test binaries were linked.
+  - Because no test executables were produced, CTest found the test registration (from CMake) but could not locate any binaries, reporting all 53 unit-test targets as "Not Run". The 12 shell-script tests (test_cmd_*) partially executed but failed when they tried to invoke avifenc/avifgainmaputil, which also were not built.
+  - In the original CI (GitHub Actions hosted runner), the rav1e build succeeded because the runner provides a clean, pre-configured Rust toolchain without conflicting rust-src artifacts. The LLM installed Rust via rustup inside the Dockerfile as a non-root user (`testuser`) but ran into a pre-installed `rust-src` conflict from the system Rust.
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 65 run, 64 passed, 1 failed, 0 skipped
+    LLM:      65 run, 0 passed, 65 failed, 0 skipped

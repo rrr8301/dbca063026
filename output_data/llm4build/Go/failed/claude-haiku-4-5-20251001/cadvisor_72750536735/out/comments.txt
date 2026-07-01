@@ -1,0 +1,47 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          6
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      test-integration (1.25, ubuntu-24.04, build/config/libipmctl.sh, bookworm)
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+
+--- LLM-Generated Dockerfile ---
+  Base image:   golang:1.25-bookworm
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ go test -c github.com/google/cadvisor/integration/tests/api
+  $ go test -c github.com/google/cadvisor/integration/tests/common
+  $ go test -c github.com/google/cadvisor/integration/tests/metrics
+  $ go test -v github.com/google/cadvisor/integration/tests/api
+  $ go test -v github.com/google/cadvisor/integration/tests/common
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoDefault] Test result mismatch (same count 32): original=(4p/27f/0s), LLM=(0p/31f/0s)
+  - [GoDefault] Tests failed in LLM but passed in original: TestContainerdContainerMemoryStats, TestDockerContainerById, TestDockerContainerNetworkNone, TestOomKillEventConstraint/memory_cgroup_constraint
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    230:--- FAIL: TestDockerContainerNetworkNone (0.01s)
+    182:--- FAIL: TestDockerContainerById (0.01s)
+    254---- FAIL: TestOomKillEventConstraint (0.01s)
+    255:    --- FAIL: TestOomKillEventConstraint/memory_cgroup_constraint (0.01s)
+
+  [Root cause classification]
+  - The cadvisor integration tests (`integration/tests/api`, `integration/tests/common`) are designed to run against a live cAdvisor instance managing real Docker containers. `TestDockerContainerById` and `TestDockerContainerNetworkNone` call the cAdvisor HTTP API to inspect Docker containers by ID and verify network namespace isolation — both require a Docker daemon and a running cAdvisor process, neither of which is present in the Docker build container.
+
+  - `TestOomKillEventConstraint/memory_cgroup_constraint` requires kernel memory cgroup support with OOM event generation, which is unavailable in standard Docker containers (cgroup namespacing restrictions prevent generating OOM events). The 4 tests that passed in the original CI but fail in the LLM represent tests that the original environment could satisfy with Docker + cAdvisor + cgroups, while the LLM's container has none of these capabilities.
+
+  - The overall distribution (4 passed → 0 passed, 27 failed → 31 failed) shows that even the tests the original CI managed to pass (4) now fail in the LLM's restricted environment, confirming that the entire cadvisor integration test suite requires host-level privileges beyond what the Dockerfile provides.
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 32 run, 4 passed, 27 failed, 0 skipped
+    LLM:      32 run, 0 passed, 31 failed, 0 skipped

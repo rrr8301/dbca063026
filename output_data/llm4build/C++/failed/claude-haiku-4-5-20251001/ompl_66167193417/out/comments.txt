@@ -1,0 +1,42 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      ubuntu-latest-x86_64
+  Test command(s) run in original CI:
+    $ actions/checkout@v4
+    $ ashutoshvarma/action-cmake-build@master
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ cmake ../.. \
+  $ -DCMAKE_BUILD_TYPE=Release \
+  $ -DCMAKE_INSTALL_PREFIX=/workspace/install \
+  $ make -j $(nproc)
+  $ ctest --output-on-failure
+
+--- Reason(s) for Non-Reproducibility ---
+  - [CTest] Test run mismatch: original=23, LLM=22
+  - [CTest] Test passed mismatch: original=20, LLM=19
+  - [CTest] Test failed mismatch: original=3, LLM=3
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    The following tests FAILED:
+
+  [Root cause classification]
+  - Missing file or path not found — test data, certificate, or resource file absent in the Docker environment.
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 23 run, 20 passed, 3 failed, 0 skipped
+    LLM:      22 run, 19 passed, 3 failed, 0 skipped

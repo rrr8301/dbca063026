@@ -1,0 +1,49 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          6
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      build-and-test (ubuntu-22.04)
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ cargo +beta test --workspace --profile ci --exclude nu_plugin_*
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ cargo +beta test --workspace --profile ci --exclude nu_plugin_* || TEST_FAILED=1
+
+--- Reason(s) for Non-Reproducibility ---
+  - [cargo] Test run mismatch: original=6496, LLM=5041
+  - [cargo] Test passed mismatch: original=6406, LLM=4977
+  - [cargo] Test failed mismatch: original=0, LLM=2
+  - [cargo] 2 test(s) failed in LLM but not in original: commands::cd::cd_permission_denied_folder, commands::rm::rm_prints_filenames_on_error
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    2968:thread 'kitest-worker-52' (45313) panicked at crates/nu-cli/src/repl.rs:1722:9:
+    6307:thread 'kitest-worker-169' (172) panicked at crates/nu-command/tests/commands/rm.rs:478:9:
+    6307-thread 'kitest-worker-169' (172) panicked at crates/nu-command/tests/commands/rm.rs:478:9:
+    6308-assertion failed: files_exist_at(&file_names, test_dir)
+    2968:thread 'kitest-worker-52' (45313) panicked at crates/nu-cli/src/repl.rs:1722:9:
+    6307:thread 'kitest-worker-169' (172) panicked at crates/nu-command/tests/commands/rm.rs:478:9:
+
+  [Root cause classification]
+  - Permission denied on executable/script — fake compiler or test helper script lacks execute permission in Docker container.
+  - Network connectivity issue — test requires network access or a service (e.g., local server) that is unavailable in Docker.
+  - Database service unavailable or not properly configured — test requires an external database service.
+  - Test timed out — likely due to slower execution in Docker container or a blocking service call that never returns.
+  - Rust panic: 2968:thread 'kitest-worker-52' (45313) panicked at crates/nu-cli/src/repl.rs:1722:9:
+  - Assertion failure: 6308-assertion failed: files_exist_at(&file_names, test_dir)
+
+--- Test Statistics Comparison ---
+  [cargo]
+    Original: 6496 run, 6406 passed, 0 failed, 90 skipped
+    LLM:      5041 run, 4977 passed, 2 failed, 62 skipped

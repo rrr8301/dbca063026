@@ -1,0 +1,50 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   False
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          20
+Original build category: passed
+
+STATUS: BUILD EXECUTION FAILED
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      build_and_test (ubuntu-24.04, 3.11, 22.x, :lint:python:client:common:smoke:stubs:pyodide:eslint-u...
+  Docker image pulled: bitnamilegacy/minio:2025.4.22
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+--- Failure Analysis ---
+  Failure type: Docker build error
+  Failed at Docker build step: 3 of 9
+  Step label:   RUN apt-get update && apt-get install -y     git     curl     g++     make     wget     python3.11     python3.11-ven...
+
+  Original build was passing. LLM failed to reproduce it after 20 attempt(s).
+
+--- Dockerfile Error Context ---
+  Dockerfile:31
+  --------------------
+    29 |     
+    30 |     # Ensure run.sh is present in the build context
+    31 | >>> COPY run.sh /usr/local/bin/run.sh
+    32 |     RUN chmod +x /usr/local/bin/run.sh
+    33 |     
+  --------------------
+
+--- Error Message(s) ---
+  #10 ERROR: failed to calculate checksum of ref bbf0bc14-1281-4098-922e-22d26f66be72::t041q37stqabcwencu6y8m0op: "/run.sh": not found
+  ERROR: failed to solve: failed to compute cache key: failed to calculate checksum of ref bbf0bc14-1281-4098-922e-22d26f66be72::t041q37stqabcwencu6y8m0op: "/run.sh": not found
+
+No test results could be produced due to build failure.
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > #10 ERROR: failed to calculate checksum of ref bbf0bc14-...: "/run.sh": not found
+    > ERROR: failed to solve: failed to compute cache key: ... "/run.sh": not found
+
+  [Root cause classification]
+  - The LLM-generated Dockerfile contains a `COPY run.sh /usr/local/bin/run.sh` instruction, but the pipeline's Docker build context does not include a pre-generated run.sh file at the build context root. The run.sh entrypoint is a harness-generated file that must be present in the build context directory before `docker build` is invoked.
+  - Grist-core is a complex multi-service application (Node 22, Python 3.11, MinIO, Chromium-based browser tests) where the LLM struggled to correctly scaffold the run.sh test entrypoint into a directory the Dockerfile's COPY instruction could reach, causing all 20 attempts to fail at this COPY step.
+  - Because the Docker image could never be built, the lint/smoke/Python/client test suite (the target CI job) was never executed and no test results were produced.

@@ -1,0 +1,56 @@
+Error from docker build
+
+#1 [internal] load .dockerignore
+#1 transferring context: 2B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 964B done
+#2 DONE 0.0s
+
+#3 [auth] library/ubuntu:pull token for registry-1.docker.io
+#3 DONE 0.0s
+
+#4 [internal] load metadata for docker.io/library/ubuntu:24.04
+#4 DONE 0.3s
+
+#5 [ 1/10] FROM docker.io/library/ubuntu:24.04@sha256:c4a8d5503dfb2a3eb8ab5f807da5bc69a85730fb49b5cfca2330194ebcc41c7b
+#5 CACHED
+
+#6 [2/8] RUN apt-get update && apt-get install -y     git wget curl make     python3 python3-pip     && rm -rf /var/lib/apt/lists/*
+#6 CACHED
+
+#7 [3/8] RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain 1.91
+#7 CACHED
+
+#8 [4/8] RUN rustup component add clippy rustfmt
+#8 CACHED
+
+#9 [5/8] RUN wget https://go.dev/dl/go1.23.linux-amd64.tar.gz &&     tar -C /usr/local -xzf go1.23.linux-amd64.tar.gz &&     rm go1.23.linux-amd64.tar.gz
+#9 0.353 --2026-05-06 03:18:45--  https://go.dev/dl/go1.23.linux-amd64.tar.gz
+#9 0.404 Resolving go.dev (go.dev)... 216.239.36.21, 216.239.32.21, 216.239.38.21, ...
+#9 0.405 Connecting to go.dev (go.dev)|216.239.36.21|:443... connected.
+#9 0.438 HTTP request sent, awaiting response... 302 Found
+#9 0.522 Location: https://dl.google.com/go/go1.23.linux-amd64.tar.gz [following]
+#9 0.522 --2026-05-06 03:18:45--  https://dl.google.com/go/go1.23.linux-amd64.tar.gz
+#9 0.522 Resolving dl.google.com (dl.google.com)... 142.251.215.78, 2607:f8b0:4007:80d::200e
+#9 0.542 Connecting to dl.google.com (dl.google.com)|142.251.215.78|:443... connected.
+#9 0.579 HTTP request sent, awaiting response... 404 Not Found
+#9 0.681 2026-05-06 03:18:45 ERROR 404: Not Found.
+#9 0.681 
+#9 ERROR: process "/bin/sh -c wget https://go.dev/dl/go1.23.linux-amd64.tar.gz &&     tar -C /usr/local -xzf go1.23.linux-amd64.tar.gz &&     rm go1.23.linux-amd64.tar.gz" did not complete successfully: exit code: 8
+------
+ > [5/8] RUN wget https://go.dev/dl/go1.23.linux-amd64.tar.gz &&     tar -C /usr/local -xzf go1.23.linux-amd64.tar.gz &&     rm go1.23.linux-amd64.tar.gz:
+404 Not Found
+#9 0.681 2026-05-06 03:18:45 ERROR 404: Not Found.
+#9 0.681 
+------
+Dockerfile:17
+--------------------
+  16 |     # Install Go (use 1.23 as 1.24 is not yet released)
+  17 | >>> RUN wget https://go.dev/dl/go1.23.linux-amd64.tar.gz && \
+  18 | >>>     tar -C /usr/local -xzf go1.23.linux-amd64.tar.gz && \
+  19 | >>>     rm go1.23.linux-amd64.tar.gz
+  20 |     ENV PATH="/usr/local/go/bin:${PATH}"
+--------------------
+ERROR: failed to solve: process "/bin/sh -c wget https://go.dev/dl/go1.23.linux-amd64.tar.gz &&     tar -C /usr/local -xzf go1.23.linux-amd64.tar.gz &&     rm go1.23.linux-amd64.tar.gz" did not complete successfully: exit code: 8

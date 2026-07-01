@@ -1,0 +1,40 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          10
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      coverage-test
+  Test command(s) run in original CI:
+    $ actions/checkout@v4
+
+--- LLM-Generated Dockerfile ---
+  Base image:   golang:1.24-alpine
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ GOPROXY="https://proxy.golang.org,direct" make go.test.coverage
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in original but missing in LLM: Gradle
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > (no error — GoDefault tests passed; Gradle framework absent from LLM output)
+
+  [Root cause classification]
+  - The Gradle framework results in the original CI (4 run, 0 passed, 4 skipped) are not a real Gradle build — they are an artifact of the LLM4Build parser misidentifying test output from the Go test runner as "Gradle" format. The higress repository contains a `plugins/wasm-go/` directory with `.java` or Gradle wrapper files that the parser incorrectly categorizes as Gradle test output. The actual "Gradle" tests are all skipped in the original (0 passed, 4 skipped), meaning they represent skipped WAT/WASM integration tests that require an Envoy proxy environment.
+
+  - The LLM ran only `make go.test.coverage` which executes the Go unit tests (16 packages, all passed). It did not run the Envoy integration test suite that produces the 4 "Gradle-categorized" skipped results. Since all 4 original Gradle results are skipped (not passed), the GoDefault results match perfectly (16/16 passed), making this a parser categorization discrepancy rather than a functional test failure.
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 16 run, 16 passed, 0 failed, 0 skipped
+    LLM:      16 run, 16 passed, 0 failed, 0 skipped
+  [Gradle]
+    Original: 4 run, 0 passed, 0 failed, 4 skipped
+    LLM:      (not present)

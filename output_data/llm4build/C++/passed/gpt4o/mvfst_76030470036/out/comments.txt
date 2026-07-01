@@ -1,0 +1,41 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      build
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ sudo python3 build/fbcode_builder/getdeps.py --allow-system-packages install-system-deps --recursive mvfst
+  $ python3 build/fbcode_builder/getdeps.py --allow-system-packages build --build-type RelWithDebInfo --src-dir=. mvfst --project-install-prefix mvfst:/usr/local
+  $ python3 build/fbcode_builder/getdeps.py --allow-system-packages test --build-type RelWithDebInfo --src-dir=. mvfst --project-install-prefix mvfst:/usr/local
+
+--- Reason(s) for Non-Reproducibility ---
+  - CTest test count mismatch: original=1911, LLM=1896
+  - CTest failure mismatch: original=0 failed, LLM=116 failed
+  - Network-dependent QUIC tests aborted: QuicStreamAsyncTransportTest.*, QuicServerTest.*, ServerTransportParameters.*
+
+--- Root Cause Analysis ---
+  LLM container log shows multiple test subprocess aborts with SIGABRT and EventBase async IO failures:
+    > 0% tests passed, 29 tests failed out of 29
+    > Command '['/usr/bin/ctest', '--output-on-failure', '-j', '88', '--rerun-failed']' returned non-zero exit status 8.
+    > QuicStreamAsyncTransportTest.ReadWrite (Subprocess aborted)
+    > QuicServerTest.NetworkTest (Subprocess aborted)
+
+  Network socket tests fail in Docker due to loopback/UDP restrictions
+  - The mvfst QUIC transport tests (QuicServerTest, QuicStreamAsyncTransportTest) require binding to UDP sockets and establishing real network connections via loopback. Docker containers have restricted network capabilities compared to GitHub Actions runners; specifically, the QUIC server tests that bind to ports and accept connections trigger socket errors (errno=99: Cannot assign requested address) or SIGABRT because the networking stack inside the container does not support the required socket operations. The original CI ran all 1911 tests successfully on a full Ubuntu 24.04 runner.
+
+--- Test Statistics Comparison ---
+  CTest
+    Original: 1911 run, 1911 passed, 0 failed, 0 skipped
+    LLM:      1896 run, 1780 passed, 116 failed, 0 skipped

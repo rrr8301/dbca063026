@@ -1,0 +1,50 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   False
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          20
+Original build category: passed
+
+STATUS: BUILD EXECUTION FAILED
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      build and test on Linux AMD64
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    6
+
+--- Failure Analysis ---
+  Failure type: Docker build error
+  Failed at Docker build step: 5 of 8
+  Step label:   RUN wget https://go.dev/dl/go1.24.linux-amd64.tar.gz &&     tar -C /usr/local -xzf go1.24.linux-amd64.tar.gz &&     r...
+
+  Original build was passing. LLM failed to reproduce it after 20 attempt(s).
+
+--- Dockerfile Error Context ---
+  Dockerfile:17
+  --------------------
+    16 |     # Install Go 1.24
+    17 | >>> RUN wget https://go.dev/dl/go1.24.linux-amd64.tar.gz && \
+    18 | >>>     tar -C /usr/local -xzf go1.24.linux-amd64.tar.gz && \
+    19 | >>>     rm go1.24.linux-amd64.tar.gz
+    20 |     ENV PATH="/usr/local/go/bin:${PATH}"
+  --------------------
+
+--- Error Message(s) ---
+  #8 0.710 2026-05-06 03:18:53 ERROR 404: Not Found.
+  #8 ERROR: process "/bin/sh -c wget https://go.dev/dl/go1.24.linux-amd64.tar.gz &&     tar -C /usr/local -xzf go1.24.linux-amd64.tar.gz &&     rm go1.24.linux-amd64.tar.gz" did not complete successf...
+  ERROR: failed to solve: process "/bin/sh -c wget https://go.dev/dl/go1.24.linux-amd64.tar.gz &&     tar -C /usr/local -xzf go1.24.linux-amd64.tar.gz &&     rm go1.24.linux-amd64.tar.gz" did not com...
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > 2026-05-06 03:18:53 ERROR 404: Not Found.
+    > ERROR: failed to solve: process ".../wget https://go.dev/dl/go1.24.linux-amd64.tar.gz..." did not complete successfully: exit code: 8
+
+  [Root cause classification]
+  - KCL (KusionStack Configuration Language) is a polyglot project: its CI builds both a Rust component and a Go component (the KCL Go SDK). The LLM's Dockerfile attempts to download Go 1.24 manually using `wget https://go.dev/dl/go1.24.linux-amd64.tar.gz`. However, Go 1.24 does not exist — Go's versioning at the time of the run was at Go 1.22/1.23; `go1.24` had not been released. The `go.dev/dl/` server returns a 404 for non-existent release tarballs, causing Docker build step 5 of 8 to fail before the Rust or Go code is ever compiled.
+
+  - After 20 attempts, the LLM kept using the same incorrect Go version string (go1.24) instead of fetching an available release such as go1.22 or go1.23. The correct approach used by the original CI is to install Go via the `actions/setup-go` action, which automatically selects a version matching the `go.mod` constraint. The LLM's hardcoded manual download of a nonexistent version number blocks all compilation and test execution.
+
+No test results could be produced due to build failure.

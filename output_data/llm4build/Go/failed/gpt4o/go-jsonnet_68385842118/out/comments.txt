@@ -1,0 +1,40 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          11
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      Test go1.24.x amd64
+  Test command(s) run in original CI:
+    $ make test
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    6
+
+--- LLM run.sh Test Command(s) ---
+  $ make test  # Ensure all tests run
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoDefault] Test run mismatch: original=16, LLM=14
+  - [GoDefault] Test failed mismatch: original=8, LLM=6
+
+--- Root Cause Analysis ---
+  - [GoDefault] LLM ran 2 fewer tests than original — LLM likely used a narrower test scope or missed some test suites.
+  - Test command differences detected — original CI vs LLM run.sh may use different flags or test selection.
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 16 run, 8 passed, 8 failed, 0 skipped
+    LLM:      14 run, 8 passed, 6 failed, 0 skipped
+  [pytest]
+    Original: 10 run, 10 passed, 0 failed, 0 skipped
+    LLM:      10 run, 10 passed, 0 failed, 0 skipped
+  [unittest]
+    Original: 31 run, 31 passed, 0 failed, 0 skipped
+    LLM:      31 run, 31 passed, 0 failed, 0 skipped

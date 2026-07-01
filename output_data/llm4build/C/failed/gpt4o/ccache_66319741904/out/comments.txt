@@ -1,0 +1,41 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-22.04
+  CI job name:      ubuntu-22.04-clang-14
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    4
+
+--- Reason(s) for Non-Reproducibility ---
+  - [CTest] Test passed mismatch: original=37, LLM=32
+  - [CTest] Test failed mismatch: original=1, LLM=2
+  - [CTest] Test skipped mismatch: original=14, LLM=18
+  - [CTest] 1 test(s) failed in LLM but not in original: test.base
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > Running test suite base.....ccache: error: execute_noreturn of /app/test/fake-compilers/gcc-march-native.sh failed: Permission denied
+    > FAILED
+    > Test suite:     base (line 1689)
+    > Test case:      -march=native, GCC
+    > Failure reason: Expected cache_miss to be 1, actual 0
+    > /usr/local/bin/run.sh: line 19: ci/collect-testdir: Permission denied
+
+  [Root cause classification]
+  - The test.base failure is caused by a file permission issue in the LLM Docker container: the fake-compiler script /app/test/fake-compilers/gcc-march-native.sh does not have the executable bit set after COPY, so ccache cannot execute it when testing the -march=native GCC code path, causing a Permission denied error and a cache_miss count of 0 instead of the expected 1.
+  - The original CI environment (ubuntu-22.04 runner) copies the repository with execute permissions intact from the git checkout, whereas the Docker COPY instruction may strip or not propagate execute bits for test helper scripts. The 4 additional skipped tests in the LLM run (test.inode_cache, test.readonly, test.readonly_direct, test.remote_http) reflect further environment differences such as missing filesystem features or network access restrictions in the container.
+  - Both original and LLM builds use clang-14 on Ubuntu 22.04 (confirmed by "Compiler version: Ubuntu clang version 14.0.0-1ubuntu1.1"), so the compiler itself is not the source of divergence — it is purely the missing executable permission on the fake compiler wrapper script.
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 52 run, 37 passed, 1 failed, 14 skipped
+    LLM:      52 run, 32 passed, 2 failed, 18 skipped

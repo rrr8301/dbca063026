@@ -1,0 +1,52 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          3
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      build and test on Linux AMD64
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    10
+
+--- LLM run.sh Test Command(s) ---
+  $ cargo fmt --check
+  $ make lint-all
+  $ make && make test-grammar
+  $ make test-runtime
+  $ make test
+  $ pip3 install ziglang && cargo install --locked cargo-zigbuild
+  $ cargo zigbuild --target x86_64-unknown-linux-gnu.2.17 -r -p kcl-lib
+
+--- Reason(s) for Non-Reproducibility ---
+  - pytest num_tests_run matches: original=1705, LLM=1705 (identical)
+  - cargo num_tests_run mismatch: original=1640, LLM=368
+  - cargo num_tests_failed mismatch: original=0, LLM=2
+  - cargo num_tests_skipped mismatch: original=27, LLM=0
+
+--- Root Cause Analysis ---
+  The LLM ran a much smaller subset of cargo tests and encountered 2 snapshot/assertion failures.
+    > thread 'completion::tests::complete_unimport_schemas' panicked at insta-1.47.2/src/runtime.rs:719:13:
+    >   snapshot assertion for 'complete_unimport_schemas' failed in line 2266
+    >   To update snapshots run `cargo insta review`
+    > thread 'tests::pkg_mod_test' panicked at crates/tools/src/LSP/src/tests.rs:1937:5:
+    >   assertion `left == right` failed: left: 4, right: 0
+    > test result: FAILED. 172 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.45s
+    > make: *** [Makefile:72: test] Error 101
+
+  Snapshot mismatch and reduced test scope due to different test target: The original CI ran the full cargo test suite (1640 tests including 27 doc-tests that were skipped) via a broad workspace invocation. The LLM's `make test` target only exercises the kcl-language-server crate (368 tests). Two failures occurred: (1) an insta snapshot test for LSP completion that has stale expected output in the container environment, and (2) an LSP package module test that expected 4 diagnostics but got 0, likely because the KCL CLI binary (`kcl`) was installed from a `@main` tip-of-tree commit that may differ from the pinned version used in the original CI. The pytest test counts match exactly (1705/1705), indicating the Python-side tests were faithfully reproduced.
+
+--- Test Statistics Comparison ---
+  pytest
+    Original: 1705 run, 1705 passed, 0 failed, 0 skipped
+    LLM:      1705 run, 1705 passed, 0 failed, 0 skipped
+
+  cargo
+    Original: 1640 run, 1613 passed, 0 failed, 27 skipped
+    LLM:       368 run,  366 passed, 2 failed,  0 skipped

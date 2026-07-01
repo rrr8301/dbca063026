@@ -1,0 +1,39 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   False
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          20
+Original build category: failed
+
+STATUS: BUILD EXECUTION FAILED
+
+--- Original CI Environment ---
+  CI job name:      build
+  Test command(s) run in original CI:
+    $ ./gradlew check --stacktrace
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    6
+
+--- LLM run.sh Test Command(s) ---
+  $ ./gradlew check --stacktrace
+
+--- Reason(s) for Non-Reproducibility ---
+  - [ER=False] Docker build failed: SDKMAN was instructed to install Java version `21.0.0.36-open`, which is an invalid/non-existent version identifier.
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    java 21.0.0.36-open is not available. Possible causes: 21.0.0.36-open is an invalid version
+
+  [Root cause classification]
+  - The LLM attempted to install Java via SDKMAN with the version string `21.0.0.36-open`. This version identifier does not exist in the SDKMAN vendor catalog. The correct SDKMAN version for Java 21 Amazon Corretto (used in the original CI) would be something like `21.0.11.10.1-amzn` or a similar valid identifier.
+
+  - The original CI used Java 21 (Amazon Corretto 21.0.11-10.1) and ran `./gradlew check --stacktrace`. After 20 failed attempts the LLM was unable to find a valid SDKMAN version string for Java 21.
+
+  - The fundamental issue is that SDKMAN version strings have a specific format that the LLM hallucinated incorrectly. Valid alternatives include using `apt-get install openjdk-21-jdk` directly or using a correct SDKMAN version string obtained from `sdk list java`.
+
+--- Test Statistics Comparison ---
+  [No test statistics available — execution failed]
+    Original: (no stats recorded)
+    LLM:      (no stats recorded)

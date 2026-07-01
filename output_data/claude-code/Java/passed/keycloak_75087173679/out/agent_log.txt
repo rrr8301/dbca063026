@@ -1,0 +1,190 @@
+
+[COST] $0.0066 / $2.00  |  tokens: 8,283 / 100,000
+I'll reproduce the Keycloak GitHub Actions CI job. Let me start with **PHASE 1** — gathering context.
+
+**Parsing URL:**
+- Owner: `keycloak`, Repo: `keycloak`, Run ID: `25576969209`, Job ID: `75087173679`
+
+**Fetching job metadata and cloning the repo:**
+[COST] $0.0133 / $2.00  |  tokens: 16,566 / 100,000
+
+[TOOL] Bash {"command": "\ncurl -s -H \"Authorization: token $GITHUB_TOKEN\" \\\n  https://api.github.com/repos/keycloak/keycloak/ac
+
+[COST] $0.0199 / $2.00  |  tokens: 24,849 / 100,000
+[RESULT]
+  {
+    "id": 75087173679,
+    "run_id": 25576969209,
+    "workflow_name": "Keycloak CI",
+    "head_branch": "issue-20649",
+    "run_url": "https://api.github.com/repos/keycloak/keycloak/actions/runs/25576969209",
+    "run_attempt": 1,
+    "node_id": "CR_kwDOAKnDVc8AAAARe4tYLw",
+    "head_sha": "215c5c9ad76e63e045b0e0a12020c1aee27144c8",
+    "url": "https://api.github.com/repos/keycloak/keycloak/actions/jobs/75087173679",
+    "html_url": "https://github.com/keycloak/keycloak/actions/runs/25576969209/job/75087173679",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-05-08T20:12:24Z",
+    "started_at": "2026-05-08T20:12:27Z",
+    "completed_at": "2026-05-08T20:29:17Z",
+    "name": "Java Distribution IT/UT (ubuntu-latest, temurin, 21)",
+    "steps": [
+      {
+        "name": "Set up job",
+  … (30 more)
+
+[COST] $0.0209 / $2.00  |  tokens: 26,096 / 100,000
+
+[TOOL] Bash {"command": "\n\\\ngit clone https://github.com/keycloak/keycloak.git repo && \\\ncd repo && \\\ngit checkout 215c5c9ad7
+
+[COST] $0.0219 / $2.00  |  tokens: 27,343 / 100,000
+[RESULT]
+  Exit code 128
+  Cloning into 'repo'...
+  Updating files:  71% (8974/12513)
+  Updating files:  72% (9010/12513)
+  Updating files:  73% (9135/12513)
+  Updating files:  74% (9260/12513)
+  Updating files:  75% (9385/12513)
+  Updating files:  76% (9510/12513)
+  Updating files:  77% (9636/12513)
+  Updating files:  78% (9761/12513)
+  Updating files:  79% (9886/12513)
+  Updating files:  80% (10011/12513)
+  Updating files:  81% (10136/12513)
+  Updating files:  82% (10261/12513)
+  Updating files:  83% (10386/12513)
+  Updating files:  84% (10511/12513)
+  Updating files:  85% (10637/12513)
+  Updating files:  86% (10762/12513)
+  Updating files:  87% (10887/12513)
+  Updating files:  88% (11012/12513)
+  … (14 more)
+
+[COST] $0.0225 / $2.00  |  tokens: 28,101 / 100,000
+
+[TOOL] Bash {"command": "\ncd /scratch/raian-files/LLM4Build/claude_workdir/keycloak_75087173679/repo && \\\ngit fetch origin 215c5c
+
+[COST] $0.0231 / $2.00  |  tokens: 28,859 / 100,000
+[RESULT]
+  fatal: remote error: upload-pack: not our ref 215c5c9ad76e63e045b0e0a12020c1aee27144c8
+  fatal: the remote end hung up unexpectedly
+
+[COST] $0.0234 / $2.00  |  tokens: 29,139 / 100,000
+
+[TOOL] Bash {"command": "\n\\\nfind .github/workflows -name \"*.yml\" -o -name \"*.yaml\"\n", "description": "Find workflow files"}
+
+[COST] $0.0236 / $2.00  |  tokens: 29,419 / 100,000
+[RESULT]
+  .github/workflows/aurora-delete.yml
+  .github/workflows/ci.yml
+  .github/workflows/codeql-analysis.yml
+  .github/workflows/documentation.yml
+  .github/workflows/guides.yml
+  .github/workflows/js-ci.yml
+  .github/workflows/label.yml
+  .github/workflows/operator-ci.yml
+  .github/workflows/quarkus-next.yml
+  .github/workflows/schedule-nightly.yml
+  .github/workflows/snyk-analysis.yml
+  .github/workflows/stability-base-reruns.yml
+  .github/workflows/stability-base.yml
+  .github/workflows/stability-clustering.yml
+  .github/workflows/stability-js-ci.yml
+  .github/workflows/translation-notify.yml
+  .github/workflows/trivy-analysis.yml
+  .github/workflows/version-compatibility-matrix.yml
+  .github/workflows/weblate.yml
+
+[COST] $0.0239 / $2.00  |  tokens: 29,808 / 100,000
+
+[TOOL] Read {"file_path": "/scratch/raian-files/LLM4Build/claude_workdir/keycloak_75087173679/repo/.github/workflows/ci.yml"}
+
+[COST] $0.0242 / $2.00  |  tokens: 30,197 / 100,000
+[RESULT]
+  1	name: Keycloak CI
+  2	
+  3	on:
+  4	  push:
+  5	    branches-ignore:
+  6	      - main
+  7	      - dependabot/**
+  8	      - copilot/**
+  9	  pull_request:
+  10	  workflow_dispatch:
+  11	
+  12	env:
+  13	  MAVEN_ARGS: "-B -nsu -Daether.connector.http.connectionMaxTtl=25"
+  14	  SUREFIRE_RERUN_FAILING_COUNT: 2
+  15	  SUREFIRE_RETRY: "-Dsurefire.rerunFailingTestsCount=2"
+  16	  KC_TEST_GITHUB_SLOW_METHOD: "10"
+  17	  KC_TEST_GITHUB_SLOW_CLASS: "60"
+  18	
+  19	concurrency:
+  20	  # Only cancel jobs for PR updates
+  … (1365 more)
+
+[COST] $0.0418 / $2.00  |  tokens: 52,157 / 100,000
+Let me check the integration-test-setup action to understand what it does:
+[COST] $0.0594 / $2.00  |  tokens: 74,117 / 100,000
+
+[TOOL] Read {"file_path": "/scratch/raian-files/LLM4Build/claude_workdir/keycloak_75087173679/repo/.github/actions/integration-test-
+
+[COST] $0.0769 / $2.00  |  tokens: 96,077 / 100,000
+[RESULT]
+  1	name: Setup integration test
+  2	description: Download Maven caches needed for integration tests
+  3	
+  4	inputs:
+  5	  jdk-dist:
+  6	    description: JDK distribution
+  7	    required: false
+  8	    default: temurin
+  9	  jdk-version:
+  10	    description: JDK version
+  11	    required: false
+  12	    default: "25"
+  13	
+  14	runs:
+  15	  using: composite
+  16	  steps:
+  17	    - id: update-hosts
+  18	      name: Update /etc/hosts
+  19	      uses: ./.github/actions/update-hosts
+  20	
+  … (36 more)
+
+[COST] $0.0782 / $2.00  |  tokens: 97,648 / 100,000
+
+[TOOL] Read {"file_path": "/scratch/raian-files/LLM4Build/claude_workdir/keycloak_75087173679/repo/.github/actions/java-setup/action
+
+[COST] $0.0795 / $2.00  |  tokens: 99,219 / 100,000
+[RESULT]
+  1	name: Setup Java
+  2	description: Sets up Java.
+  3	
+  4	inputs:
+  5	  distribution:
+  6	    description: Java distribution.
+  7	    required: false
+  8	    default: temurin
+  9	  java-version:
+  10	    description: The Java version that is going to be set up.
+  11	    required: false
+  12	    default: "25"
+  13	
+  14	runs:
+  15	  using: composite
+  16	  steps:
+  17	    - id: setup-java
+  18	      name: Setup Java
+  19	      uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
+  20	      with:
+  … (3 more)
+
+[COST] $0.0801 / $2.00  |  tokens: 100,003 / 100,000
+
+[TOKENS] Limit 100,000 exceeded — stopping.
+[SAVE] Dockerfile copied from /scratch/raian-files/LLM4Build/claude_workdir/keycloak_75087173679/repo/operator/Dockerfile
+[SAVE] run.sh not found
