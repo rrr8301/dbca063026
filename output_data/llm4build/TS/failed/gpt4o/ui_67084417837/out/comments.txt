@@ -1,0 +1,37 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      pnpm test
+  Test command(s) run in original CI:
+    $ pnpm test
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ pnpm test || true  # Ensure all tests run even if some fail
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in original but missing in LLM: GoDefault
+  - [vitest] Test passed mismatch: original=1362, LLM=1357
+  - [vitest] Test failed mismatch: original=1, LLM=6
+
+--- Root Cause Analysis ---
+  - Test command differences detected — original CI vs LLM run.sh may use different flags or test selection.
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 1 run, 0 passed, 1 failed, 0 skipped
+    LLM:      (not present)
+  [vitest]
+    Original: 1364 run, 1362 passed, 1 failed, 1 skipped
+    LLM:      1364 run, 1357 passed, 6 failed, 1 skipped

@@ -1,0 +1,78 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          3
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      build (ubuntu-latest, 17)
+  Test command(s) run in original CI:
+    $ actions/checkout@v5
+    $ actions/setup-java@v4 (java-version: 17)
+    $ ./mvnw -V --file pom.xml --no-transfer-progress -DtrimStackTrace=false \
+        -Djunit.jupiter.execution.parallel.enabled=false \
+        -Dhc.build.toolchain.version="17" -Pdocker
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ mvn -V --file pom.xml --no-transfer-progress -DtrimStackTrace=false \
+      -Djunit.jupiter.execution.parallel.enabled=false \
+      -Dhc.build.toolchain.version="17" -Pdocker -Drat.skip=true -Dlicense.skip=true
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Maven] Test run mismatch: original=2683, LLM=2559
+  - [Maven] Test passed mismatch: original=2671, LLM=2543
+  - [Maven] Test failed mismatch: original=0, LLM=8
+  - [Maven] 8 tests fail in LLM but pass in original:
+    testRequestConfig(String)[1](org.apache.hc.client5.testing.async.TestAsyncConnectionTimeouts)
+    testRequestConfig(String)[2](org.apache.hc.client5.testing.async.TestAsyncConnectionTimeouts)
+    testConnectionConfig(String)[1](org.apache.hc.client5.testing.async.TestAsyncConnectionTimeouts)
+    testConnectionConfig(String)[2](org.apache.hc.client5.testing.async.TestAsyncConnectionTimeouts)
+    testRequestConfig(String)[1](org.apache.hc.client5.testing.sync.TestConnectionTimeouts)
+    testRequestConfig(String)[2](org.apache.hc.client5.testing.sync.TestConnectionTimeouts)
+    testConnectionConfig(String)[1](org.apache.hc.client5.testing.sync.TestConnectionTimeouts)
+    testConnectionConfig(String)[2](org.apache.hc.client5.testing.sync.TestConnectionTimeouts)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    ERROR TestAsyncConnectionTimeouts.testConnectionConfig(String)[1]
+    org.opentest4j.AssertionFailedError: Unexpected type,
+      expected: <org.apache.hc.client5.http.ConnectTimeoutException>
+       but was: <java.net.SocketException>
+    Caused by: java.net.SocketException: Network is unreachable
+
+    ERROR TestConnectionTimeouts.testRequestConfig(String)[1]
+    org.opentest4j.AssertionFailedError: Unexpected exception type thrown,
+      expected: <org.apache.hc.client5.http.ConnectTimeoutException>
+       but was: <java.net.SocketException>
+    Caused by: java.net.SocketException: Network is unreachable
+
+  [Root cause classification]
+  - Docker network stack immediately rejects connections to unreachable hosts → 8 connection
+    timeout tests fail. The `TestAsyncConnectionTimeouts` and `TestConnectionTimeouts` tests
+    configure HTTP connections with a short connect timeout (e.g., 100ms) and connect to a
+    TCP address that should time out (typically a non-routable IP or a host that silently drops
+    packets). The tests assert that `ConnectTimeoutException` is thrown after the timeout period.
+    In Docker's network stack, when the kernel determines a destination IP is not reachable
+    (ENETUNREACH — "Network is unreachable"), it immediately returns an error without waiting
+    for the timeout, raising `java.net.SocketException: Network is unreachable` instead of
+    the expected timeout. The test expects the slow "wait then timeout" behavior of
+    `ConnectTimeoutException`, but Docker delivers the fast "immediate unreachable" behavior
+    of `SocketException`, causing the exception type assertion to fail.
+    In the original CI (GitHub Actions Ubuntu with full network routing), the unreachable
+    address causes a timeout rather than an immediate rejection, so `ConnectTimeoutException`
+    is correctly thrown and the tests pass.
+    The test count mismatch (2683 vs 2559 = 124 fewer) is because the LLM uses system Maven
+    (`mvn`) instead of `./mvnw`, and without the wrapper's pinned version, some tests in
+    downstream modules may be skipped or not resolved correctly.
+
+--- Test Statistics Comparison ---
+  [Maven]
+    Original: 2683 run, 2671 passed, 0 failed, 12 skipped
+    LLM:      2559 run, 2543 passed, 8 failed, 8 skipped

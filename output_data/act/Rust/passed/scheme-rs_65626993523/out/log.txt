@@ -1,0 +1,234 @@
+# command: act push -W .github/workflows/rust.yml --directory project_path/scheme-rs
+
+time="2026-04-15T13:33:35-07:00" level=info msg="Using docker host 'unix:///var/run/docker.sock', and daemon socket 'unix:///var/run/docker.sock'"
+[Rust/build] ⭐ Run Set up job
+[Rust/build] 🚀  Start image=catthehacker/ubuntu:act-latest
+[Rust/build]   🐳  docker pull image=catthehacker/ubuntu:act-latest platform= username= forcePull=true
+[Rust/build]   🐳  docker create image=catthehacker/ubuntu:act-latest platform= entrypoint=["tail" "-f" "/dev/null"] cmd=[] network="host"
+[Rust/build]   🐳  docker run image=catthehacker/ubuntu:act-latest platform= entrypoint=["tail" "-f" "/dev/null"] cmd=[] network="host"
+[Rust/build]   🐳  docker exec cmd=[node --no-warnings -e console.log(process.execPath)] user= workdir=
+[Rust/build]   ✅  Success - Set up job
+[Rust/build]   ☁  git clone 'https://github.com/dtolnay/rust-toolchain' # ref=stable
+[Rust/build] Non-terminating error while running 'git clone': some refs were not updated
+[Rust/build] ⭐ Run Pre dtolnay/rust-toolchain@stable
+[Rust/build]   ✅  Success - Pre dtolnay/rust-toolchain@stable [89.777023ms]
+[Rust/build] ⭐ Run Main actions/checkout@v3
+[Rust/build]   🐳  docker cp src=/mnt/2tbb/mnabil/new-llm4build/LLM4Build/project_path/scheme-rs/. dst=/mnt/2tbb/mnabil/new-llm4build/LLM4Build/project_path/scheme-rs
+[Rust/build]   ✅  Success - Main actions/checkout@v3 [173.287428ms]
+[Rust/build] ⭐ Run Main dtolnay/rust-toolchain@stable
+[Rust/build]   🐳  docker cp src=/home/mnabil/.cache/act/dtolnay-rust-toolchain@stable/ dst=/var/run/act/actions/dtolnay-rust-toolchain@stable/
+[Rust/build] ⭐ Run Main : parse toolchain version
+if [[ -z $toolchain ]]; then
+  # GitHub does not enforce `required: true` inputs itself. https://github.com/actions/runner/issues/1070
+  echo "'toolchain' is a required input" >&2
+  exit 1
+elif [[ $toolchain =~ ^stable' '[0-9]+' '(year|month|week|day)s?' 'ago$ ]]; then
+  if [[ Linux == macOS ]]; then
+    echo "toolchain=1.$((($(date -v-$(sed 's/stable \([0-9]*\) \(.\).*/\1\2/' <<< $toolchain) +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT
+  else
+    echo "toolchain=1.$((($(date --date "${toolchain#stable }" +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT
+  fi
+elif [[ $toolchain =~ ^stable' 'minus' '[0-9]+' 'releases?$ ]]; then
+  echo "toolchain=1.$((($(date +%s)/60/60/24-16569)/7/6-${toolchain//[^0-9]/}))" >> $GITHUB_OUTPUT
+elif [[ $toolchain =~ ^1\.[0-9]+$ ]]; then
+  echo "toolchain=1.$((i=${toolchain#1.}, c=($(date +%s)/60/60/24-16569)/7/6, i+9*i*(10*i<=c)+90*i*(100*i<=c)))" >> $GITHUB_OUTPUT
+else
+  echo "toolchain=$toolchain" >> $GITHUB_OUTPUT
+fi
+[Rust/build]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/1-composite-parse.sh] user= workdir=
+[Rust/build]   ✅  Success - Main : parse toolchain version
+if [[ -z $toolchain ]]; then
+  # GitHub does not enforce `required: true` inputs itself. https://github.com/actions/runner/issues/1070
+  echo "'toolchain' is a required input" >&2
+  exit 1
+elif [[ $toolchain =~ ^stable' '[0-9]+' '(year|month|week|day)s?' 'ago$ ]]; then
+  if [[ Linux == macOS ]]; then
+    echo "toolchain=1.$((($(date -v-$(sed 's/stable \([0-9]*\) \(.\).*/\1\2/' <<< $toolchain) +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT
+  else
+    echo "toolchain=1.$((($(date --date "${toolchain#stable }" +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT
+  fi
+elif [[ $toolchain =~ ^stable' 'minus' '[0-9]+' 'releases?$ ]]; then
+  echo "toolchain=1.$((($(date +%s)/60/60/24-16569)/7/6-${toolchain//[^0-9]/}))" >> $GITHUB_OUTPUT
+elif [[ $toolchain =~ ^1\.[0-9]+$ ]]; then
+  echo "toolchain=1.$((i=${toolchain#1.}, c=($(date +%s)/60/60/24-16569)/7/6, i+9*i*(10*i<=c)+90*i*(100*i<=c)))" >> $GITHUB_OUTPUT
+else
+  echo "toolchain=$toolchain" >> $GITHUB_OUTPUT
+fi
+ [207.300568ms]
+[Rust/build]   ⚙  ::set-output:: toolchain=stable
+[Rust/build] ⭐ Run Main : construct rustup command line
+echo "targets=$(for t in ${targets//,/ }; do echo -n ' --target' $t; done)" >> $GITHUB_OUTPUT
+echo "components=$(for c in ${components//,/ }; do echo -n ' --component' $c; done)" >> $GITHUB_OUTPUT
+echo "downgrade=" >> $GITHUB_OUTPUT
+[Rust/build]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/1-composite-flags.sh] user= workdir=
+[Rust/build]   ✅  Success - Main : construct rustup command line
+echo "targets=$(for t in ${targets//,/ }; do echo -n ' --target' $t; done)" >> $GITHUB_OUTPUT
+echo "components=$(for c in ${components//,/ }; do echo -n ' --component' $c; done)" >> $GITHUB_OUTPUT
+echo "downgrade=" >> $GITHUB_OUTPUT
+ [189.091851ms]
+[Rust/build]   ⚙  ::set-output:: components= --component clippy --component rustfmt
+[Rust/build]   ⚙  ::set-output:: downgrade=
+[Rust/build]   ⚙  ::set-output:: targets=
+[Rust/build] ⭐ Run Main : set $CARGO_HOME
+echo CARGO_HOME=${CARGO_HOME:-"$HOME/.cargo"} >> $GITHUB_ENV
+[Rust/build]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/1-composite-2.sh] user= workdir=
+[Rust/build]   ✅  Success - Main : set $CARGO_HOME
+echo CARGO_HOME=${CARGO_HOME:-"$HOME/.cargo"} >> $GITHUB_ENV
+ [193.241745ms]
+[Rust/build]   ⚙  ::set-env:: CARGO_HOME=/root/.cargo
+[Rust/build] ⭐ Run Main : install rustup if needed
+if ! command -v rustup &>/dev/null; then
+  curl --proto '=https' --tlsv1.2 --retry 10 --retry-connrefused --location --silent --show-error --fail https://sh.rustup.rs | sh -s -- --default-toolchain none -y
+  echo "$CARGO_HOME/bin" >> $GITHUB_PATH
+fi
+[Rust/build]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/1-composite-3.sh] user= workdir=
+[Rust/build]   | info: downloading installer
+[Rust/build]   | warn: It looks like you have an existing rustup settings file at:
+[Rust/build]   | warn: /root/.rustup/settings.toml
+[Rust/build]   | warn: Rustup will install the default toolchain as specified in the settings file,
+[Rust/build]   | warn: instead of the one inferred from the default host triple.
+[Rust/build]   | info: profile set to default
+[Rust/build]   | info: default host triple is x86_64-unknown-linux-gnu
+[Rust/build]   | info: skipping toolchain installation
+[Rust/build]   | 
+[Rust/build]   | 
+[Rust/build]   | Rust is installed now. Great!
+[Rust/build]   | 
+[Rust/build]   | To get started you may need to restart your current shell.
+[Rust/build]   | This would reload your PATH environment variable to include
+[Rust/build]   | Cargo's bin directory ($HOME/.cargo/bin).
+[Rust/build]   | 
+[Rust/build]   | To configure your current shell, you need to source
+[Rust/build]   | the corresponding env file under $HOME/.cargo.
+[Rust/build]   | 
+[Rust/build]   | This is usually done by running one of the following (note the leading DOT):
+[Rust/build]   | . "$HOME/.cargo/env"            # For sh/bash/zsh/ash/dash/pdksh
+[Rust/build]   | source "$HOME/.cargo/env.fish"  # For fish
+[Rust/build]   | source "~/.cargo/env.nu"  # For nushell
+[Rust/build]   | source "$HOME/.cargo/env.tcsh"  # For tcsh
+[Rust/build]   | . "$HOME/.cargo/env.ps1"        # For pwsh
+[Rust/build]   | source "$HOME/.cargo/env.xsh"   # For xonsh
+[Rust/build]   ✅  Success - Main : install rustup if needed
+if ! command -v rustup &>/dev/null; then
+  curl --proto '=https' --tlsv1.2 --retry 10 --retry-connrefused --location --silent --show-error --fail https://sh.rustup.rs | sh -s -- --default-toolchain none -y
+  echo "$CARGO_HOME/bin" >> $GITHUB_PATH
+fi
+ [1.101196384s]
+[Rust/build]   ⚙  ::add-path:: /root/.cargo/bin
+[Rust/build] ⭐ Run Main rustup toolchain install stable
+[Rust/build]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/1-composite-5.sh] user= workdir=
+[Rust/build]   | info: syncing channel updates for stable-x86_64-unknown-linux-gnu
+[Rust/build]   | info: latest update on 2026-03-26 for version 1.94.1 (e408947bf 2026-03-25)
+[Rust/build]   | info: downloading 5 components
+[Rust/build]   | 
+[Rust/build]   | info: default toolchain set to stable-x86_64-unknown-linux-gnu
+[Rust/build]   |   stable-x86_64-unknown-linux-gnu installed - rustc 1.94.1 (e408947bf 2026-03-25)
+[Rust/build]   | 
+[Rust/build]   ✅  Success - Main rustup toolchain install stable [13.006967157s]
+[Rust/build] ⭐ Run Main rustup default stable
+[Rust/build]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/1-composite-6.sh] user= workdir=
+[Rust/build]   | info: using existing install for stable-x86_64-unknown-linux-gnu
+[Rust/build]   | info: default toolchain set to stable-x86_64-unknown-linux-gnu
+[Rust/build]   | 
+[Rust/build]   |   stable-x86_64-unknown-linux-gnu unchanged - rustc 1.94.1 (e408947bf 2026-03-25)
+[Rust/build]   | 
+[Rust/build]   ✅  Success - Main rustup default stable [551.249497ms]
+[Rust/build] ⭐ Run Main : create cachekey
+DATE=$(rustc +stable --version --verbose | sed -ne 's/^commit-date: \(20[0-9][0-9]\)-\([01][0-9]\)-\([0-3][0-9]\)$/\1\2\3/p')
+HASH=$(rustc +stable --version --verbose | sed -ne 's/^commit-hash: //p')
+echo "cachekey=$(echo $DATE$HASH | head -c12)" >> $GITHUB_OUTPUT
+[Rust/build]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/1-composite-rustc-version.sh] user= workdir=
+[Rust/build]   ✅  Success - Main : create cachekey
+DATE=$(rustc +stable --version --verbose | sed -ne 's/^commit-date: \(20[0-9][0-9]\)-\([01][0-9]\)-\([0-3][0-9]\)$/\1\2\3/p')
+HASH=$(rustc +stable --version --verbose | sed -ne 's/^commit-hash: //p')
+echo "cachekey=$(echo $DATE$HASH | head -c12)" >> $GITHUB_OUTPUT
+ [648.477741ms]
+[Rust/build]   ⚙  ::set-output:: cachekey=20260325e408
+[Rust/build] ⭐ Run Main : disable incremental compilation
+if [ -z "${CARGO_INCREMENTAL+set}" ]; then
+  echo CARGO_INCREMENTAL=0 >> $GITHUB_ENV
+fi
+[Rust/build]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/1-composite-8.sh] user= workdir=
+[Rust/build]   ✅  Success - Main : disable incremental compilation
+if [ -z "${CARGO_INCREMENTAL+set}" ]; then
+  echo CARGO_INCREMENTAL=0 >> $GITHUB_ENV
+fi
+ [535.053767ms]
+[Rust/build]   ⚙  ::set-env:: CARGO_INCREMENTAL=0
+[Rust/build] ⭐ Run Main : enable colors in Cargo output
+if [ -z "${CARGO_TERM_COLOR+set}" ]; then
+  echo CARGO_TERM_COLOR=always >> $GITHUB_ENV
+fi
+[Rust/build]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/1-composite-9.sh] user= workdir=
+[Rust/build]   ✅  Success - Main : enable colors in Cargo output
+if [ -z "${CARGO_TERM_COLOR+set}" ]; then
+  echo CARGO_TERM_COLOR=always >> $GITHUB_ENV
+fi
+ [534.47179ms]
+[Rust/build] ⭐ Run Main : enable Cargo sparse registry
+# implemented in 1.66, stabilized in 1.68, made default in 1.70
+if [ -z "${CARGO_REGISTRIES_CRATES_IO_PROTOCOL+set}" -o -f "/tmp"/.implicit_cargo_registries_crates_io_protocol ]; then
+  if rustc +stable --version --verbose | grep -q '^release: 1\.6[89]\.'; then
+    touch "/tmp"/.implicit_cargo_registries_crates_io_protocol || true
+    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse >> $GITHUB_ENV
+  elif rustc +stable --version --verbose | grep -q '^release: 1\.6[67]\.'; then
+    touch "/tmp"/.implicit_cargo_registries_crates_io_protocol || true
+    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=git >> $GITHUB_ENV
+  fi
+fi
+[Rust/build]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/1-composite-10.sh] user= workdir=
+[Rust/build]   ✅  Success - Main : enable Cargo sparse registry
+# implemented in 1.66, stabilized in 1.68, made default in 1.70
+if [ -z "${CARGO_REGISTRIES_CRATES_IO_PROTOCOL+set}" -o -f "/tmp"/.implicit_cargo_registries_crates_io_protocol ]; then
+  if rustc +stable --version --verbose | grep -q '^release: 1\.6[89]\.'; then
+    touch "/tmp"/.implicit_cargo_registries_crates_io_protocol || true
+    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse >> $GITHUB_ENV
+  elif rustc +stable --version --verbose | grep -q '^release: 1\.6[67]\.'; then
+    touch "/tmp"/.implicit_cargo_registries_crates_io_protocol || true
+    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=git >> $GITHUB_ENV
+  fi
+fi
+ [506.789713ms]
+[Rust/build] ⭐ Run Main : work around spurious network errors in curl 8.0
+# https://rust-lang.zulipchat.com/#narrow/stream/246057-t-cargo/topic/timeout.20investigation
+if rustc +stable --version --verbose | grep -q '^release: 1\.7[01]\.'; then
+  echo CARGO_HTTP_MULTIPLEXING=false >> $GITHUB_ENV
+fi
+[Rust/build]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/1-composite-11.sh] user= workdir=
+[Rust/build]   ✅  Success - Main : work around spurious network errors in curl 8.0
+# https://rust-lang.zulipchat.com/#narrow/stream/246057-t-cargo/topic/timeout.20investigation
+if rustc +stable --version --verbose | grep -q '^release: 1\.7[01]\.'; then
+  echo CARGO_HTTP_MULTIPLEXING=false >> $GITHUB_ENV
+fi
+ [600.264513ms]
+[Rust/build] ⭐ Run Main rustc +stable --version --verbose
+[Rust/build]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/1-composite-12.sh] user= workdir=
+[Rust/build]   | rustc 1.94.1 (e408947bf 2026-03-25)
+[Rust/build]   | binary: rustc
+[Rust/build]   | commit-hash: e408947bfd200af42db322daf0fadfe7e26d3bd1
+[Rust/build]   | commit-date: 2026-03-25
+[Rust/build]   | host: x86_64-unknown-linux-gnu
+[Rust/build]   | release: 1.94.1
+[Rust/build]   | LLVM version: 21.1.8
+[Rust/build]   ✅  Success - Main rustc +stable --version --verbose [626.865582ms]
+[Rust/build]   ⚙  ::set-output:: cachekey=20260325e408
+[Rust/build]   ⚙  ::set-output:: name=stable
+[Rust/build]   ✅  Success - Main dtolnay/rust-toolchain@stable [22.21116385s]
+[Rust/build] ⭐ Run Main Install packages
+[Rust/build]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/2] user= workdir=
+[Rust/build]   | Reading package lists...
+[Rust/build]   | Building dependency tree...
+[Rust/build]   | Reading state information...
+[Rust/build]   | E: Unable to locate package libllvm18
+[Rust/build]   | E: Unable to locate package llvm-18
+[Rust/build]   | E: Unable to locate package llvm-18-dev
+[Rust/build]   | E: Unable to locate package libpolly-18-dev
+[Rust/build]   ❌  Failure - Main Install packages [430.349133ms]
+[Rust/build] exitcode '100': failure
+[Rust/build] ⭐ Run Post dtolnay/rust-toolchain@stable
+[Rust/build]   🐳  docker cp src=/home/mnabil/.cache/act/dtolnay-rust-toolchain@stable/ dst=/var/run/act/actions/dtolnay-rust-toolchain@stable/
+[Rust/build]   ✅  Success - Post dtolnay/rust-toolchain@stable [188.478417ms]
+[Rust/build] ⭐ Run Complete job
+[Rust/build]   ✅  Success - Complete job
+[Rust/build] 🏁  Job failed
+Error: Job 'build' failed

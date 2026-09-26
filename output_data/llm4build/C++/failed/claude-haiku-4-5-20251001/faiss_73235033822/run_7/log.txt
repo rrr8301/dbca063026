@@ -1,0 +1,55 @@
+Error from docker build
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 1.38kB 0.0s done
+#1 DONE 0.1s
+
+#2 [internal] load .dockerignore
+#2 transferring context: 46B 0.0s done
+#2 DONE 0.1s
+
+#3 [internal] load metadata for docker.io/library/ubuntu:24.04
+#3 DONE 0.2s
+
+#4 [ 2/10] RUN ln -snf /usr/share/zoneinfo/America/Los_Angeles /etc/localtime && echo America/Los_Angeles > /etc/timezone
+#4 CACHED
+
+#5 [ 1/10] FROM docker.io/library/ubuntu:24.04@sha256:c4a8d5503dfb2a3eb8ab5f807da5bc69a85730fb49b5cfca2330194ebcc41c7b
+#5 CACHED
+
+#6 [3/9] RUN apt-get update && apt-get install -y --no-install-recommends     git     curl     wget     ca-certificates     && rm -rf /var/lib/apt/lists/*
+#6 CACHED
+
+#7 [4/9] RUN curl -fsSL https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -o /tmp/miniconda.sh &&     bash /tmp/miniconda.sh -b -p /opt/miniconda &&     rm /tmp/miniconda.sh
+#7 CACHED
+
+#8 [internal] load build context
+#8 transferring context: 286.19kB 0.2s done
+#8 DONE 0.3s
+
+#9 [5/9] RUN conda config --remove-key channels &&     conda config --add channels conda-forge &&     conda config --set channel_priority strict &&     conda config --set solver libmamba &&     conda config --set remove_pkgs_after_link false &&     conda config --set auto_update_conda false &&     conda config --set show_channel_urls true
+#9 7.058 Unknown key: 'remove_pkgs_after_link'
+#9 7.058 
+#9 7.058 CondaKeyError: 'remove_pkgs_after_link': unknown parameter
+#9 7.058 
+#9 ERROR: process "/bin/sh -c conda config --remove-key channels &&     conda config --add channels conda-forge &&     conda config --set channel_priority strict &&     conda config --set solver libmamba &&     conda config --set remove_pkgs_after_link false &&     conda config --set auto_update_conda false &&     conda config --set show_channel_urls true" did not complete successfully: exit code: 1
+------
+ > [5/9] RUN conda config --remove-key channels &&     conda config --add channels conda-forge &&     conda config --set channel_priority strict &&     conda config --set solver libmamba &&     conda config --set remove_pkgs_after_link false &&     conda config --set auto_update_conda false &&     conda config --set show_channel_urls true:
+#9 7.058 Unknown key: 'remove_pkgs_after_link'
+#9 7.058 
+#9 7.058 CondaKeyError: 'remove_pkgs_after_link': unknown parameter
+#9 7.058 
+------
+Dockerfile:24
+--------------------
+  23 |     # Configure conda to use only conda-forge and remove defaults
+  24 | >>> RUN conda config --remove-key channels && \
+  25 | >>>     conda config --add channels conda-forge && \
+  26 | >>>     conda config --set channel_priority strict && \
+  27 | >>>     conda config --set solver libmamba && \
+  28 | >>>     conda config --set remove_pkgs_after_link false && \
+  29 | >>>     conda config --set auto_update_conda false && \
+  30 | >>>     conda config --set show_channel_urls true
+  31 |     
+--------------------
+ERROR: failed to solve: process "/bin/sh -c conda config --remove-key channels &&     conda config --add channels conda-forge &&     conda config --set channel_priority strict &&     conda config --set solver libmamba &&     conda config --set remove_pkgs_after_link false &&     conda config --set auto_update_conda false &&     conda config --set show_channel_urls true" did not complete successfully: exit code: 1

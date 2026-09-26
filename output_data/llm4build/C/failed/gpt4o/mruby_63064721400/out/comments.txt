@@ -1,0 +1,41 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          5
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      ubuntu-24.04-clang
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    4
+
+Note: Original had test failures; LLM build passed all — failed build has passed.
+
+--- Reason(s) for Non-Reproducibility ---
+  - [mruby] Test run mismatch: original=3714, LLM=1782
+  - [mruby] Test passed mismatch: original=3698, LLM=1773
+  - [mruby] Test failed mismatch: original=6, LLM=0
+  - [mruby] Test skipped mismatch: original=10, LLM=9
+  - [mruby] 6 test(s) failed in original but passed in LLM: mirb -d option, mirb -r option, mirb multi-line, mirb normal operations, regression for #1563 ... (+1 more)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > Total: 1682 / OK: 1673 / Skip: 9
+    > Total: 100 / OK: 100 (bintest host)
+    > (mirb interactive tests not run — mirb binary or test runner not invoked)
+
+  [Root cause classification]
+  - The LLM ran only 1782 tests vs 3714 in the original because the original CI job invokes the full mruby test suite including mirb (the mruby interactive REPL binary) tests, while the LLM only ran `mrbtest` and the bintest host suite, omitting the separate mirb integration tests that cover REPL modes (-d, -r, multi-line) and the regression suite.
+  - The 6 tests that failed in the original (mirb -d option, mirb -r option, mirb multi-line, mirb normal operations, regression for #1563, top level local variables are in file scope) are all mirb-specific tests that test the interactive interpreter behavior; these tests were not executed by the LLM build at all, which is why they appear absent rather than passing.
+  - The root mismatch is that the LLM's rake/make invocation only triggered `mrbtest` and `bintest`, not the full `rake test` target that the original CI uses, which also runs mirb test scripts via a separate test harness.
+
+--- Test Statistics Comparison ---
+  [mruby]
+    Original: 3714 run, 3698 passed, 6 failed, 10 skipped
+    LLM:      1782 run, 1773 passed, 0 failed, 9 skipped

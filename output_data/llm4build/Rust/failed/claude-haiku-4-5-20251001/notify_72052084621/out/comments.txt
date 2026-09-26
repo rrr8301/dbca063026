@@ -1,0 +1,37 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          4
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Reason(s) for Non-Reproducibility ---
+  - [cargo] Test run mismatch: original=73, LLM=157
+  - [cargo] Test passed mismatch: original=70, LLM=154
+  - [cargo] Test failed mismatch: original=1, LLM=0
+  - [cargo] Test skipped mismatch: original=2, LLM=3
+
+--- Test Statistics Comparison ---
+  [cargo] 73 run, 70 passed, 1 failed, 2 skipped
+    Failed: poll::tests::create_dir
+LLM:
+  [cargo] 157 run, 154 passed, 0 failed, 3 skipped
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > test poll::tests::create_dir ... ok   (LLM — test passed)
+    > (Original CI) thread 'poll::tests::create_dir' panicked at notify/src/test.rs:624:17:
+    > Unexpected event. State: ExpectedState { remain: Ordered([Create(Any)]) }
+    > received: [Event { kind: Modify(Metadata(WriteTime)), paths: ["/tmp/.tmpjWVtRM"] }]
+    > test result: FAILED. 69 passed; 1 failed; 2 ignored
+
+  [Root cause classification]
+  - The poll-watcher test creates a directory and expects a Create event, but on the CI
+    kernel it received a Modify(Metadata(WriteTime)) event on the parent directory instead —
+    a race condition between the poll backend's event coalescing and the kernel's inotify
+    delivery order. The test fails in original CI but passes in LLM Docker (fail in original
+    but pass in LLM), making this an inverted result driven by kernel-scheduler non-determinism.
+  - The LLM container used Rust 1.88 on ubuntu:22.04 where the event ordering was consistent;
+    the root cause is a non-deterministic inotify/poll event sequence rather than a code defect.

@@ -1,0 +1,42 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      cli-integration (latest, yarn, CommonJS, ubuntu-latest)
+  Test command(s) run in original CI:
+    $ actions/checkout@v4
+    $ yarn build
+    $ yarn test:integration:cli
+
+--- LLM-Generated Dockerfile ---
+  Base image:   node:latest
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ TEST_FAILED=0
+  $ yarn build || { echo "Build failed"; TEST_FAILED=1; }
+  $ TEST_FAILED=1
+
+--- Reason(s) for Non-Reproducibility ---
+  - [mocha] Test result mismatch (same count 7): original=(6p/1f/0s), LLM=(7p/0f/0s)
+  - [mocha] Tests failed in original but passed in LLM: Generated CLI Integration Tests CommonJS + yarn + node v25.7.0
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    ✔ should generate passing tests (6498ms)
+    7 passing (4m)
+    Integration tests passed
+
+  [Root cause classification]
+  - The failing test "Generated CLI Integration Tests CommonJS + yarn + node v25.7.0" tests oclif's CLI generation with a specific combination: CommonJS module format, yarn package manager, and Node.js v25.7.0. In the original CI (`ubuntu-latest` with the exact `node v25.7.0`), this test fails — likely because Node 25.7.0 introduced a specific behavior change (e.g., in ESM/CJS interop or `require()` semantics) that breaks the generated CLI scaffold under that exact version. The LLM uses `node:latest` which at build time resolves to a different Node.js version than 25.7.0, bypassing the version-specific bug. All 7 integration tests pass in the LLM environment.
+
+--- Test Statistics Comparison ---
+  [mocha]
+    Original: 7 run, 6 passed, 1 failed, 0 skipped
+    LLM:      7 run, 7 passed, 0 failed, 0 skipped

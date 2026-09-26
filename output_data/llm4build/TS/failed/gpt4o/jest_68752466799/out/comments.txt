@@ -1,0 +1,43 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     macos-15-arm64
+  CI job name:      macOS with shard 3/3 / Node v24.x
+
+--- LLM-Generated Dockerfile ---
+  Base image:   node:24
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ yarn workspace jest-environment-node test
+  $ yarn test-ci-partial:parallel --max-workers $CPU_CORES --shard=3/3 && break
+  $ yarn jest-jasmine-ci --max-workers $CPU_CORES --shard=3/3 && break
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoDefault] Test run mismatch: original=3, LLM=47
+  - [GoDefault] Test failed mismatch: original=3, LLM=12
+  - [GoDefault] 6 test(s) failed in LLM but not in original: e2e/__tests__/circusDeclarationErrors.test.ts, e2e/__tests__/consoleAfterTeardown.test.ts, e2e/__tests__/customMatcherStackTrace.test.ts, e2e/__tests__/globals.test.ts, e2e/__tests__/nonSerializableStructuresInequality.test.ts ... (+1 more)
+  - [jest] Test run mismatch: original=5865, LLM=11730
+  - [jest] Test passed mismatch: original=5853, LLM=11547
+  - [jest] Test failed mismatch: original=0, LLM=45
+  - [jest] Test skipped mismatch: original=12, LLM=138
+
+--- Root Cause Analysis ---
+  - [GoDefault] LLM ran 44 more tests than original — LLM likely used a broader test scope or included extra test suites.
+  - [GoDefault] 6 test(s) failed in LLM but not original: e2e/__tests__/circusDeclarationErrors.test.ts, e2e/__tests__/consoleAfterTeardown.test.ts, e2e/__tests__/customMatcherStackTrace.test.ts, e2e/__tests__/globals.test.ts, e2e/__tests__/nonSerializableStructuresInequality.test.ts ... (+1 more)
+  - [jest] LLM ran 5865 more tests than original — LLM likely used a broader test scope or included extra test suites.
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 3 run, 0 passed, 3 failed, 0 skipped
+    LLM:      47 run, 0 passed, 12 failed, 0 skipped
+  [jest]
+    Original: 5865 run, 5853 passed, 0 failed, 12 skipped
+    LLM:      11730 run, 11547 passed, 45 failed, 138 skipped

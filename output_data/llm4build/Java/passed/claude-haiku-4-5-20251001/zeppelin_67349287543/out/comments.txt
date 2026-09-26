@@ -1,0 +1,85 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      core-modules (11)
+  Test command(s) run in original CI:
+    $ actions/checkout@v4
+    $ actions/setup-java@v4 (java-version: 11, Temurin)
+    $ ./mvnw install -Pbuild-distr -DskipTests
+         -pl zeppelin-server,zeppelin-web,spark-submit,spark/scala-2.12,spark/scala-2.13,
+             markdown,angular,shell
+         -am -Pweb-classic -Phelium-dev -Pexamples ${MAVEN_ARGS}
+    $ ./mvnw package -pl zeppelin-plugins -amd ${MAVEN_ARGS}
+         (runs plugin tests: S3, GCS, GitHub, Mongo, K8s, Docker launchers -- 111 tests)
+    $ ./mvnw verify -Pusing-packaged-distr
+         -pl zeppelin-server,zeppelin-web,spark-submit,spark/scala-2.12,spark/scala-2.13,
+             markdown,angular,shell
+         -am -Pweb-classic -Phelium-dev -Pexamples
+         -Dtests.to.exclude=**/org/apache/zeppelin/spark/* -DfailIfNoTests=false
+         (runs zengine, interpreter, zeppelin-server REST API tests -- ~554 additional tests)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ mvn install -Pbuild-distr -DskipTests -pl ... ${MAVEN_ARGS} -Drat.skip=true -Dlicense.skip=true
+  $ mvn package -pl zeppelin-plugins -amd ${MAVEN_ARGS} -Drat.skip=true -Dlicense.skip=true
+  $ if [ -f "testing/env_python_3.9_with_R.yml" ]; then
+        mamba env create -f testing/env_python_3.9_with_R.yml -n python_3_with_R
+        conda activate python_3_with_R
+  $ R -e "IRkernel::installspec()" || echo "Warning: IRkernel installation failed, continuing..."
+  $ mvn verify -Pusing-packaged-distr -pl ... -Dtests.to.exclude=**/org/apache/zeppelin/spark/* ...
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Maven] Test run mismatch: original=665, LLM=111
+  - [Maven] Test passed mismatch: original=647, LLM=111
+  - [Maven] Test failed mismatch: original=0, LLM=0
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > === Installing application with interpreters ===
+    > (mvn install -DskipTests runs successfully)
+    > === Installing and testing plugins ===
+    > [INFO] BUILD SUCCESS (Total time: 01:38 min)
+    > (log.txt ends here -- 5012 lines, no output from conda/mamba or verify steps)
+
+  [Root cause classification]
+  - The `mvn verify` step runs 554 fewer tests in the LLM run compared to original CI,
+    because the LLM log is truncated at 5012 lines (covering only steps 1 and 2), and
+    the conda environment setup (step 3) appears to have either timed out or failed,
+    preventing the verify step (step 5) from executing.
+
+    The LLM run.sh runs 5 steps total; only 2 are visible in log.txt:
+    (1) `mvn install -DskipTests` -- install phase (no tests), builds all specified modules
+    (2) `mvn package -pl zeppelin-plugins` -- plugins step, runs 111 tests successfully
+    (3) `mamba env create -f testing/env_python_3.9_with_R.yml -n python_3_with_R`
+        -- creates a conda environment with Python 3.9, R, and IRkernel for Jupyter notebook
+        tests. This step is not present in the original CI workflow. The environment file
+        `testing/env_python_3.9_with_R.yml` specifies many packages (R, rpy2, IRkernel,
+        pandas, numpy, etc.) that require large downloads and complex dependency resolution.
+        In the Docker container (limited CPU/memory), `mamba env create` likely stalls or
+        exceeds a timeout, causing the run.sh script to stop at this point (set -e).
+    (4) `R -e "IRkernel::installspec()"` -- never reached
+    (5) `mvn verify -Pusing-packaged-distr` -- never reached
+
+    Because the verify step (step 5) never executes, the 554 tests from zeppelin-zengine
+    module (265 tests), zeppelin-interpreter/zeppelin-server REST API tests (190 tests),
+    and other submodule tests never run. Only the 111 plugin tests from step 2 are captured.
+
+    In the original CI, there is no conda environment creation step. The CI uses a pre-built
+    Python/R environment from the GitHub Actions runner or a cached setup. The verify step
+    runs `zeppelin-zengine` tests, `zeppelin-common` tests, and the zeppelin-server
+    integration tests via Maven failsafe plugin, producing 665 total tests.
+
+--- Test Statistics Comparison ---
+  [Maven]
+    Original: 665 run, 647 passed, 0 failed, 18 skipped (plugins: 111, verify: ~554)
+    LLM:      111 run, 111 passed, 0 failed, 0 skipped (plugins step only; verify never ran)

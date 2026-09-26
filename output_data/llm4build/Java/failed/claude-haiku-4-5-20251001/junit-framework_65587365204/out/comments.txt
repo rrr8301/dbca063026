@@ -1,0 +1,55 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          12
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Linux
+  Test command(s) run in original CI:
+    $ actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+    $ ./.github/actions/main-build (sets up GraalVM CE 21, GRAALVM_HOME)
+    $ ./.github/actions/setup-test-jdk (installs Temurin JDK 17.0.18, sets JDK17 env var)
+    $ ./.github/actions/run-gradle (installs Temurin JDK 25, sets JAVA_HOME)
+    $ ./gradlew -Dorg.gradle.java.installations.auto-download=false ... javaToolchains
+        :platform-tooling-support-tests:test build jacocoRootReport --no-configuration-cache
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    6
+
+--- LLM run.sh Test Command(s) ---
+  $ ./gradlew -Dorg.gradle.java.installations.auto-download=false
+      -Pjunit.develocity.predictiveTestSelection.enabled=false
+      -Pjunit.develocity.predictiveTestSelection.selectRemainingTests=true
+      javaToolchains :platform-tooling-support-tests:test build jacocoRootReport
+      --no-configuration-cache
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Gradle] Test run mismatch: original=113, LLM=0
+  - [Gradle] Test passed mismatch: original=110, LLM=0
+  - [Gradle] Test failed mismatch: original=3, LLM=0
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    openjdk version "21" 2023-09-19
+    OpenJDK Runtime Environment GraalVM CE 21+35.1 (build 21+35-jvmci-23.1-b15)
+    openjdk version "17.0.11" 2024-04-16
+    openjdk version "25.0.2" 2026-01-20 LTS
+    + Eclipse Temurin JDK 17 (17.0.11+9) | Location: /opt/jdk17 | Detected by: environment variable 'JDK17'
+    + GraalVM Community JDK 21 (21+35-jvmci-23.1-b15) | Location: /opt/graalvm
+    + Eclipse Temurin JDK 25 (25.0.2+10-LTS) | Location: /opt/jdk25
+    > Task :platform-tooling-support-tests:test
+    (no test output — task completes with 0 tests discovered)
+    BUILD SUCCESSFUL in 5m 18s
+
+  [Root cause classification]
+  - LLM used GraalVM CE 21 as JAVA_HOME instead of Temurin JDK 25 — `platform-tooling-support-tests` finds 0 test classes: In the original CI, `.github/actions/run-gradle` installs Temurin JDK 25.0.2 and sets it as JAVA_HOME before running Gradle, with GraalVM 21 in GRAALVM_HOME and JDK17 env pointing to Temurin 17.0.18. The LLM's run.sh correctly set `JDK17=/opt/jdk17` and `JDK25=/opt/jdk25`, and Gradle's `javaToolchains` task detected all three JDKs. However, JAVA_HOME was set to `/opt/graalvm` (GraalVM CE 21+35) instead of Temurin JDK 25. The `platform-tooling-support-tests:test` and `jupiter-tests:test` tasks ran but discovered 0 test classes — BUILD SUCCESSFUL but no tests run. The junit-framework test suite targets Java 25 as its primary runtime platform; the test classes are compiled to class file version 69.0 (Java 25 bytecode). When the Gradle test worker runs under GraalVM 21 (which supports up to class file version 65.0 / Java 21), it cannot load these test classes and silently discovers 0 tests. The original CI ran all test workers under JDK 25, loading the test classes correctly and running 113 tests.
+
+--- Test Statistics Comparison ---
+  [Gradle]
+    Original: 113 run, 110 passed, 3 failed, 0 skipped
+    LLM:      0 run, 0 passed, 0 failed, 0 skipped

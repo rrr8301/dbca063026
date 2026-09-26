@@ -1,0 +1,45 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Test (ubuntu-latest, 22.x)
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ npm install
+    $ node Makefile mocha
+    $ node Makefile fuzz
+    $ npm run test:emfile
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ node Makefile mocha
+  $ node Makefile fuzz
+  $ NODE_OPTIONS="" npm run test:emfile
+
+--- Reason(s) for Non-Reproducibility ---
+  - [mocha] Test run mismatch: original=38140, LLM=38142
+  - [mocha] Test passed mismatch: original=38129, LLM=38131
+  - [mocha] Test failed mismatch: original=0, LLM=0
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > (no errors — 38142 tests passed; 2 more than original's 38140)
+
+  [Root cause classification]
+  - The 2 extra tests (38142 vs 38140) are mocha test cases that are conditionally skipped based on the Node.js version via `semver.satisfies(process.version, ...)` checks or platform-specific conditions. The original CI ran Node.js 22.x on ubuntu-latest; the LLM ran on `ubuntu:24.04` which ships with a different default Node.js minor version. ESLint's test suite has a small number of tests that are version-gated (e.g., testing behavior of `Array.fromAsync` or other newer APIs), and 2 tests that were skipped on the original CI's exact Node 22.x patch version ran on the LLM's Node 22.y version.
+
+  - Both environments have 0 failures and the same 11 skips, so this is a benign 2-test scope difference from Node.js minor version differences between `ubuntu-latest` (GitHub's runner Node) and `ubuntu:24.04` (Docker). The `NODE_OPTIONS=""` in the LLM's `npm run test:emfile` command clears any inherited Node options that might suppress certain test registrations.
+
+--- Test Statistics Comparison ---
+  [mocha]
+    Original: 38140 run, 38129 passed, 0 failed, 11 skipped
+    LLM:      38142 run, 38131 passed, 0 failed, 11 skipped

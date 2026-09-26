@@ -1,0 +1,42 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          4
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-22.04
+  CI job name:      Ubuntu 22 Clang
+  Test command(s) run in original CI:
+    $ ctest --output-on-failure -C Release
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ ctest --output-on-failure -C Release --test-dir build || true
+
+--- Reason(s) for Non-Reproducibility ---
+  - [CTest] Test run mismatch: original=246, LLM=211
+  - [CTest] Test passed mismatch: original=246, LLM=211
+
+--- Root Cause Analysis ---
+  [Key facts from LLM log.txt]
+    > -- Checking for module 'libzstd'
+    > --   No package 'libzstd' found
+    > -- ZSTD library not found
+    > -- The following features have been disabled: MZ_ZSTD, Enables ZSTD compression
+    > 100% tests passed, 0 tests failed out of 211
+
+  [Root cause classification: Missing optional compression library (libzstd) reduces test count]
+  - The original CI (Ubuntu 22.04 "Clang" job) had libzstd installed, enabling ZSTD compression support and its associated CTest test cases, whereas ubuntu:22.04 in the LLM's Dockerfile does not pre-install libzstd-dev, causing CMake to skip the ZSTD feature.
+  - With ZSTD disabled, 35 ZSTD-specific test cases are not built or registered by CTest, explaining the 246 vs 211 count gap. All 211 remaining tests still pass, so there are no failures — only a scope difference due to the missing library.
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 246 run, 246 passed, 0 failed, 0 skipped
+    LLM:      211 run, 211 passed, 0 failed, 0 skipped

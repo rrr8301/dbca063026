@@ -1,0 +1,60 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          10
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      test
+  Test command(s) run in original CI:
+    $ angular/dev-infra/github-actions/npm/checkout-and-setup-node@ba726e7bca0b08b125ccc6f93c233749e1213c17
+    $ actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+    $ PM=$(jq -r '.packageManager | match("^(npm|pnpm|yarn)@").captures[0].string' package.json || echo "")
+    $ pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320
+    $ pnpm install --frozen-lockfile
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ bazel test --build_tests_only --test_tag_filters=-linker-integration-test --test_tag_filters=-e2e -- //... -//goldens/... -//integration/...
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Bazel] Test run mismatch: original=871, LLM=610
+  - [Bazel] Test passed mismatch: original=871, LLM=536
+  - [Bazel] Test failed mismatch: original=0, LLM=74
+  - [Bazel] 74 test(s) failed in LLM but not in original: //src/aria/private/accordion:unit_tests_chromium, //src/aria/private/accordion:unit_tests_firefox, //src/aria/private/behaviors/expansion:unit_tests_chromium, //src/aria/private/behaviors/expansion:unit_tests_firefox, //src/aria/private/behaviors/grid:unit_tests_chromium, //src/aria/private/behaviors/grid:unit_tests_firefox, //src/aria/private/behaviors/label:unit_tests_chromium, //src/aria/private/behaviors/label:unit_tests_firefox (+66 more)
+  - [jasmine] Test result mismatch (same count 876): original=(871p/0f/5s), LLM=(536p/0f/340s)
+  - [jasmine] Tests failed in LLM but passed in original: //src/aria/private/accordion, //src/aria/private/behaviors/expansion, //src/aria/private/behaviors/grid, //src/aria/private/behaviors/label, //src/aria/private/behaviors/list, //src/aria/private/behaviors/list-focus, //src/aria/private/behaviors/list-navigation, //src/aria/private/behaviors/list-selection (+29 more)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    860:FAIL: //src/cdk/collections:unit_tests_firefox (Exit 1) (see /root/.cache/bazel/_bazel_root/eab0d61a99b6696edb3d2aff87b585e8/execroot/_main/bazel-out/k8-fastbuild/testlogs/src/cdk/collections/unit
+    864-Firefox: |██████████████████████████████| 0/1 test files | 0 passed, 0 failed
+    2468:[27,514 / 28,203] 585 / 876 tests, 49 failed; [Sched] Compiling Angular TS: @@//src/cdk-experimental/scrolling:scrolling; 17s ... (48 actions, 22 running)
+    2469-FAIL: //src/aria/private/grid:unit_tests_firefox (Exit 1) (see /root/.cache/bazel/_bazel_root/eab0d61a99b6696edb3d2aff87b585e8/execroot/_main/bazel-out/k8-fastbuild/testlogs/src/aria/private/grid
+    2517:[27,521 / 28,203] 586 / 876 tests, 50 failed; [Sched] Compiling Angular TS: @@//src/cdk-experimental/scrolling:scrolling; 18s ... (43 actions, 20 running)
+    2518:[27,529 / 28,205] 586 / 876 tests, 50 failed; [Sched] Compiling Angular TS: @@//src/components-examples/cdk/scrolling:scrolling; 19s ... (41 actions, 21 running)
+    2175:FAIL: //src/aria/private/accordion:unit_tests_chromium (Exit 1) (see /root/.cache/bazel/_bazel_root/eab0d61a99b6696edb3d2aff87b585e8/execroot/_main/bazel-out/k8-fastbuild/testlogs/src/aria/privat
+    2179-Chromium: |██████████████████████████████| 0/1 test files | 0 passed, 0 failed
+    2287:FAIL: //src/aria/private/accordion:unit_tests_firefox (Exit 1) (see /root/.cache/bazel/_bazel_root/eab0d61a99b6696edb3d2aff87b585e8/execroot/_main/bazel-out/k8-fastbuild/testlogs/src/aria/private
+    2291-Firefox: |██████████████████████████████| 0/1 test files | 0 passed, 0 failed
+    2653:FAIL: //src/aria/private/behaviors/tree:unit_tests_chromium (Exit 1) (see /root/.cache/bazel/_bazel_root/eab0d61a99b6696edb3d2aff87b585e8/execroot/_main/bazel-out/k8-fastbuild/testlogs/src/aria/p
+    2657-Chromium: |██████████████████████████████| 0/1 test files | 0 passed, 0 failed
+    3166:FAIL: //src/aria/private/tree:unit_tests_chromium (Exit 1) (see /root/.cache/bazel/_bazel_root/eab0d61a99b6696edb3d2aff87b585e8/execroot/_main/bazel-out/k8-fastbuild/testlogs/src/aria/private/tre
+    3170-Chromium: |██████████████████████████████| 0/1 test files | 0 passed, 0 failed
+
+  [Root cause classification]
+  - Test timed out — likely due to slower execution in Docker container or a blocking service call that never returns.
+
+--- Test Statistics Comparison ---
+  [Bazel]
+    Original: 871 run, 871 passed, 0 failed, 0 skipped
+    LLM:      610 run, 536 passed, 74 failed, 0 skipped
+  [jasmine]
+    Original: 876 run, 871 passed, 0 failed, 5 skipped
+    LLM:      876 run, 536 passed, 0 failed, 340 skipped

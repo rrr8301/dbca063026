@@ -1,0 +1,47 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   False
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          20
+Original build category: failed
+
+STATUS: BUILD EXECUTION FAILED
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      build / build (ubuntu-latest)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   golang:1.20
+  RUN steps:    2
+
+--- Failure Analysis ---
+  Failure type: Docker build error
+  Failed at Docker build step: 4 of 5
+  Step label:   RUN go mod tidy
+
+  Original build was already failing. LLM could not reproduce or fix it after 20 attempt(s).
+
+--- Dockerfile Error Context ---
+  Dockerfile:11
+  --------------------
+     9 |     
+    10 |     # Install Go dependencies
+    11 | >>> RUN go mod tidy
+    12 |     
+    13 |     # Build the Go application
+  --------------------
+
+--- Error Message(s) ---
+  #8 ERROR: process "/bin/sh -c go mod tidy" did not complete successfully: exit code: 1
+  ERROR: failed to solve: process "/bin/sh -c go mod tidy" did not complete successfully: exit code: 1
+
+No test results could be produced due to build failure.
+
+--- Root Cause Analysis ---
+  [Actual error from LLM log.txt]
+    > go: errors parsing go.mod:
+    > /app/go.mod:7: invalid go version '1.24.2': must match format 1.23
+
+  [Root cause classification]
+  - Lipgloss's go.mod declares `go 1.24.2`, a three-component patch version string valid only in Go 1.24+ toolchains. The Go 1.20 toolchain in the Dockerfile rejects this format, aborting `go mod tidy` immediately. This is a Go toolchain version mismatch: lipgloss is a terminal styling library that adopted the newer go.mod format, while the LLM chose an outdated base image. Using a golang:1.24 or newer base image (or rewriting the version field to `go 1.24`) would resolve the build failure.

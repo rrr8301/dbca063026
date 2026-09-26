@@ -1,0 +1,36 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          20
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT TESTS NOT REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      HTTP/2 test suite
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    4
+
+--- Test Reproducibility Gap ---
+  Original ran 326 test(s) across [pytest].
+  LLM build produced no test results (empty llm_log_stats).
+
+--- Root Cause ---
+  Reason type: Compilation / linker failure during build
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > ./configure: line 3353: syntax error near unexpected token `Apache,'
+    > ./configure: line 3353: `APR_ENABLE_LAYOUT(Apache, errordir iconsdir htdocsdir cgidir)'
+    > configure.in:207: warning: AC_PROG_CC_C99 is obsolete; use AC_PROG_CC
+    > Error: Configuration failed.
+
+  [Root cause classification]
+  - The httpd configure.in uses the obsolete `APR_ENABLE_LAYOUT` autoconf macro which is incompatible with the newer autoconf version (2.71+) present in ubuntu:22.04. The macro call syntax triggers a parse error when autoconf processes the `configure.in` file, halting configuration before any build or test can proceed. The original CI used a GitHub-hosted ubuntu-24.04 runner with a specific APR/autoconf version combination that accepted this legacy macro; the LLM's choice of ubuntu:22.04 with its system autoconf version introduced the incompatibility.
+
+--- Original Test Statistics (not reproduced) ---
+  [pytest] 326 run, 319 passed, 0 failed, 7 skipped

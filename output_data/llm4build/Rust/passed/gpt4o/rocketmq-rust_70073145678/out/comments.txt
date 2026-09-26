@@ -1,0 +1,30 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          20
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT TESTS NOT REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      Build & Test (ubuntu-latest)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ cargo build --workspace --all-features
+  $ cargo test --workspace --all-features
+
+--- Root Cause Analysis ---
+  The cargo build failed because the protoc compiler did not support proto3 optional fields and missing protobuf well-known type includes.
+    > Error: Custom { kind: Other, error: "protoc failed: raft.proto: This file contains proto3 optional fields, but --experimental_allow_proto3_optional was not set." }
+    > Error: Custom { kind: Other, error: "protoc failed: google/protobuf/duration.proto: File not found. google/protobuf/timestamp.proto: File not found. definition.proto:22:1: Import \"google/protobuf/timestamp.proto\" was not found or had errors." }
+
+  Outdated protoc version and missing well-known type includes: The Dockerfile installed protobuf-compiler from apt, which provides a version of protoc that does not support proto3 optional without the experimental flag, and whose installation lacks the google/protobuf well-known type .proto files in the expected include path. Although the run.sh attempted to set PROTOC_FLAGS and PROTOC_INCLUDE_PATHS, these environment variables are not respected by the prost-build crate in the same way; the build script directly invokes protoc and the experimental flag must be passed through the prost-build API. After 20 attempts, no test output was produced because the workspace build always aborted at the protobuf compilation step.
+
+--- Test Reproducibility Gap ---
+  Test results could not be matched between builds.

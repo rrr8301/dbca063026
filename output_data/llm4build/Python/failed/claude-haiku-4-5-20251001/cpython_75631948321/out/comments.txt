@@ -1,0 +1,30 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   False
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Original build category: failed
+
+STATUS: NEVER REACHED TEST EXECUTION — CPython failed to build a required stdlib module
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    3
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    Error: Failed to build some stdlib modules
+    Checked 115 modules (37 built-in, 76 shared, 1 n/a on linux-x86_64, 0 disabled,
+            1 missing, 0 failed on import)
+    make: *** [Makefile:1793: checksharedmods] Error 1
+
+  [Root cause classification]
+  - Missing Resources (missing system library / dev package).
+    CPython compiled almost completely (115 modules checked) but one shared stdlib module
+    could not be built ("1 missing"), which makes `make` fail the `checksharedmods` gate
+    (Error 1). A missing stdlib C-extension at this stage means a required system development
+    library / header was absent from the image (the usual culprits are -dev packages such as
+    libssl-dev, libffi-dev, libsqlite3-dev, libbz2-dev, liblzma-dev, etc.). Because the build
+    failed, the interpreter/tests were never run, so ER=False and there are no LLM test stats.
+
+--- Test Statistics Comparison ---
+  [unittest]  Original: 505 run, 1 failed   LLM: (build failed; no tests ran)

@@ -1,0 +1,43 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          3
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Linux Build (BINRELOC=no)
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ cd _build
+    $ cd _build
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ make -j $JOBS check
+  $ find . -name 'test-suite.log' -exec cat '{}' ';' >&2
+  $ make -j $JOBS distcheck DISTCHECK_CONFIGURE_FLAGS="$CONFIGURE_FLAGS"
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Autotools] Test result mismatch (same count 732): original=(730p/2f/0s), LLM=(0p/732f/0s)
+  - [Autotools] All 732 tests fail in LLM with exit 126 (Permission denied); original passed 730
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    1040:/bin/bash: line 1: ../../../tests/ctags/runner.sh: Permission denied
+    1041:make[3]: *** [Makefile:1415: check-processing-order] Error 126
+    1452:../../../build-aux/test-driver: line 112: ../../../tests/ctags/runner.sh: Permission denied
+    (same Permission denied error repeated for all 732 ctags tests)
+
+  [Root cause classification]
+  - Missing executable permission on test runner script: `tests/ctags/runner.sh` does not have the execute bit set in the Docker container. When the repository is cloned inside Docker (or COPY'd via the Dockerfile), the execute bit on shell scripts is lost unless explicitly restored with `chmod +x`. Every ctags test invokes `runner.sh` directly, so all 732 tests immediately fail with exit 126 before any test logic runs. The original GitHub Actions checkout preserves file permissions from the repository metadata, so `runner.sh` was executable there.
+
+--- Test Statistics Comparison ---
+  [Autotools]
+    Original: 732 run, 730 passed, 2 failed, 0 skipped
+    LLM:      732 run, 0 passed, 732 failed, 0 skipped

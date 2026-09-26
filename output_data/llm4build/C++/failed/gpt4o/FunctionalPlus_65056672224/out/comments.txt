@@ -1,0 +1,33 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      clang-22
+  Docker image pulled: teeks99/clang-ubuntu:22
+
+--- LLM-Generated Dockerfile ---
+  Base image:   teeks99/clang-ubuntu:22
+  RUN steps:    3
+
+Note: Original had test failures; LLM build passed all — failed build has passed.
+
+--- Reason(s) for Non-Reproducibility ---
+  - [CTest] Test run mismatch: original=39, LLM=423
+  - [CTest] Test passed mismatch: original=0, LLM=423
+  - [CTest] Test failed mismatch: original=39, LLM=0
+  - [CTest] 39 test(s) failed in original but passed in LLM: benchmark_session_test_NOT_BUILT-b858cb2, compare_test_NOT_BUILT-b858cb2, composition_test_NOT_BUILT-b858cb2, container_common_test_NOT_BUILT-b858cb2, container_properties_test_NOT_BUILT-b858cb2 ... (+34 more)
+
+--- Root Cause Analysis ---
+  - [CTest] LLM ran 384 more tests than original — LLM likely used a broader test scope or included extra test suites.
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 39 run, 0 passed, 39 failed, 0 skipped
+    LLM:      423 run, 423 passed, 0 failed, 0 skipped

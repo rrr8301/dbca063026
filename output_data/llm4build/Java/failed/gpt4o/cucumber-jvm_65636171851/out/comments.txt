@@ -1,0 +1,37 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          N/A
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      Build Java 21 - ubuntu-latest
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ mvn install -Pinclude-extra-modules -DskipTests=true -DskipITs=true -D"archetype.test.skip=true" -D"maven.javadoc.skip=true" --batch-mode -D"style.color=always" --show-version
+  $ mvn verify -Pinclude-extra-modules -D"style.color=always" || true
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Maven] Test run mismatch: original=1600, LLM=926
+  - [Maven] Test passed mismatch: original=1522, LLM=855
+  - [Maven] Test failed mismatch: original=4, LLM=2
+  - [Maven] Test skipped mismatch: original=74, LLM=69
+  - [Maven] 4 test(s) failed in original but passed in LLM: test(TestCase)[12](io.cucumber.compatibility.CompatibilityTest), test(TestCase)[22](io.cucumber.compatibility.CompatibilityTest), test(TestCase)[28](io.cucumber.compatibility.CompatibilityTest), test(TestCase)[29](io.cucumber.compatibility.CompatibilityTest)
+  - [Maven] 2 test(s) failed in LLM but not in original: scanForResourcesDirectorySymlink(io.cucumber.core.resource.ResourceScannerTest), scanForResourcesPathSymlink(io.cucumber.core.resource.ResourceScannerTest)
+
+--- Root Cause Analysis ---
+  - [Maven] LLM ran 674 fewer tests than original — LLM likely used a narrower test scope or missed some test suites.
+  - [Maven] 2 test(s) failed in LLM but not original: scanForResourcesDirectorySymlink(io.cucumber.core.resource.ResourceScannerTest), scanForResourcesPathSymlink(io.cucumber.core.resource.ResourceScannerTest)
+
+--- Test Statistics Comparison ---
+  [Maven]
+    Original: 1600 run, 1522 passed, 4 failed, 74 skipped
+    LLM:      926 run, 855 passed, 2 failed, 69 skipped

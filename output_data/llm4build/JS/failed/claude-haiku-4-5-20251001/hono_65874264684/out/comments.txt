@@ -1,0 +1,36 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          20
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT TESTS NOT REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      Main
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    5
+
+--- Test Reproducibility Gap ---
+  Original ran 4207 test(s) across [vitest, GoDefault].
+  LLM build produced no test results (empty llm_log_stats).
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > (compilation / linker failure — no test output produced after 20 attempts)
+
+  [Root cause classification]
+  - The Hono framework's CI job "Main" runs `pnpm test` which invokes vitest across the monorepo. The compilation failure after 20 attempts indicates a TypeScript compilation or bundling step that fails in the LLM's `ubuntu:22.04` environment. Hono is a TypeScript-first edge framework and its test suite compiles `.ts` files using `tsc` or a bundler. The `ubuntu:22.04` image may have an incompatible Node.js version or missing build tools (`python3`, `make`, `gcc`) required for native Node.js addons used in some of Hono's adapters.
+
+  - The GoDefault framework results (3 run, 0 passed, 3 failed) in the original are from a separate Go-based type-checking step in Hono's CI pipeline. Since the LLM produced no test output at all, neither the vitest nor the GoDefault results were reproduced. After 20 attempts, the LLM could not resolve the build failure, likely because the root cause is a missing build dependency or Node.js version incompatibility that requires a different base image.
+
+--- Root Cause ---
+  Reason type: Compilation / linker failure during build
+
+--- Original Test Statistics (not reproduced) ---
+  [vitest] 4204 run, 4168 passed, 3 failed, 33 skipped
+  [GoDefault] 3 run, 0 passed, 3 failed, 0 skipped

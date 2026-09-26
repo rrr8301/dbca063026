@@ -1,0 +1,31 @@
+Error from docker build
+Sending build context to Docker daemon  283.8MB
+
+Step 1/12 : FROM ubuntu:24.04
+ ---> f794f40ddfff
+Step 2/12 : ENV TZ=America/Los_Angeles
+ ---> Using cache
+ ---> d5211b0cd2dd
+Step 3/12 : RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+ ---> Using cache
+ ---> 2523fc131e36
+Step 4/12 : RUN apt-get update && apt-get install -y --no-install-recommends     git     curl     ca-certificates     wget     && rm -rf /var/lib/apt/lists/*
+ ---> Using cache
+ ---> 5b424be75c2c
+Step 5/12 : WORKDIR /workspace
+ ---> Using cache
+ ---> c6d64bb90377
+Step 6/12 : COPY . .
+ ---> 0923e6991ac5
+Step 7/12 : RUN GO_VERSION=$(cat .go-version | tr -d ' \n\r') &&     echo "Attempting to download Go version: $GO_VERSION" &&     if ! curl -fsSL https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz -o go.tar.gz; then         echo "Failed to download go${GO_VERSION}.linux-amd64.tar.gz, trying without 'go' prefix";         GO_VERSION=$(echo $GO_VERSION | sed 's/^go//') &&         curl -fsSL https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz -o go.tar.gz;     fi &&     tar -C /usr/local -xzf go.tar.gz &&     rm go.tar.gz
+ ---> Running in 3cbad4f0426a
+Attempting to download Go version: 1.25
+[91mcurl: (22) The requested URL returned error: 404
+[0mFailed to download go1.25.linux-amd64.tar.gz, trying without 'go' prefix
+[91mcurl: (22) The requested URL returned error: 404
+[0m
+DEPRECATED: The legacy builder is deprecated and will be removed in a future release.
+            Install the buildx component to build images with BuildKit:
+            https://docs.docker.com/go/buildx/
+
+The command '/bin/sh -c GO_VERSION=$(cat .go-version | tr -d ' \n\r') &&     echo "Attempting to download Go version: $GO_VERSION" &&     if ! curl -fsSL https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz -o go.tar.gz; then         echo "Failed to download go${GO_VERSION}.linux-amd64.tar.gz, trying without 'go' prefix";         GO_VERSION=$(echo $GO_VERSION | sed 's/^go//') &&         curl -fsSL https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz -o go.tar.gz;     fi &&     tar -C /usr/local -xzf go.tar.gz &&     rm go.tar.gz' returned a non-zero code: 22

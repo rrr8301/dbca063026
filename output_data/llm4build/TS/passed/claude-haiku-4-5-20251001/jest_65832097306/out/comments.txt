@@ -1,0 +1,45 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Node LTS on Ubuntu with coverage (3/4)
+  Test command(s) run in original CI:
+    $ actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+    $ yarn build:js
+    $ git config --global --add safe.directory "/home/runner/work/jest/jest"
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ retry_command yarn jest-coverage \
+  $ --config jest.config.ci.mjs \
+
+--- Reason(s) for Non-Reproducibility ---
+  - [jest] Test run mismatch: original=1744, LLM=5604
+  - [jest] Test passed mismatch: original=1737, LLM=5508
+  - [jest] Test failed mismatch: original=0, LLM=75
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    (No specific error messages captured — test failures are due to
+    running the full suite rather than a specific shard)
+
+  [Root cause classification]
+  - The original CI ran shard 3/4 of the Jest test suite (job name "Node LTS on Ubuntu with coverage (3/4)"), which selected 1,744 tests — approximately one quarter of the full suite. The original passed all 1,737 non-skipped tests. The LLM ran the entire test suite without applying the `--shard=3/4` flag, executing 5,604 tests — the full suite across all shards — and encountered 75 failures.
+
+  - The LLM's run script called `yarn jest-coverage --config jest.config.ci.mjs` without the `--shard 3/4` argument. The `jest.config.ci.mjs` configuration handles sharding through a command-line parameter rather than a built-in default; without it, jest runs all test files. The 75 failures are tests that pass when the Jest monorepo's full environment is properly set up in a pristine CI runner but fail in the LLM's Docker container, likely due to test isolation issues, snapshot mismatches, or timing sensitivities that only manifest when all shards run together.
+
+  - The original CI used sharding precisely to distribute test load across 4 parallel runners; each shard ran a subset of tests that was verified to pass. The LLM's full-suite run (5,604 tests) exposed failures that were isolated to specific shards or that only appear when running under different environment conditions than the original shard 3/4 context.
+
+--- Test Statistics Comparison ---
+  [jest]
+    Original: 1744 run, 1737 passed, 0 failed, 7 skipped
+    LLM:      5604 run, 5508 passed, 75 failed, 21 skipped

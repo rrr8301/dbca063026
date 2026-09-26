@@ -1,0 +1,34 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      test
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    5
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > AssertionError [ERR_ASSERTION]: false == true  (cli.test.js:315 — "scripts with non standard extension")
+    > Error: BrokenSpawn  (core.test.js:330 — "handles `nothrow` option")
+    > 2 failing tests vs 1 in original; 264 passed vs 265 in original
+
+  [Root cause classification]
+  - The LLM used ubuntu:latest which resolved a different Node.js version than the original CI's "test" job on ubuntu-24.04. The "scripts with non standard extension" test failure indicates the container's shell does not support executing scripts with non-.js/.ts extensions the way the original environment did (likely a PATH or shebang interpreter resolution difference). The BrokenSpawn error for the "nothrow" test points to a missing or differently configured subprocess spawning environment. One test that originally failed now passes in the LLM, while two new tests fail — indicating a net shift of one failure caused by environment-level shell/Node differences.
+
+--- Reason(s) for Non-Reproducibility ---
+  - [node:test] Test passed mismatch: original=265, LLM=264
+  - [node:test] Test failed mismatch: original=1, LLM=2
+
+--- Test Statistics Comparison ---
+  [node:test]
+    Original: 267 run, 265 passed, 1 failed, 1 skipped
+    LLM:      267 run, 264 passed, 2 failed, 1 skipped

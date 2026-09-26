@@ -1,0 +1,35 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          20
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT TESTS NOT REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Ubuntu Clang AARCH64 MSAN
+  Test command(s) run in original CI:
+    $ ctest --verbose -C Release -E benchmark_zlib --output-on-failure --max-width 120 -j 5
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ ctest --verbose -C Release -E benchmark_zlib --output-on-failure --max-width 120 -j 5
+
+--- Test Reproducibility Gap ---
+  Original ran 77 test(s) across [CTest].
+  LLM build produced no test results (empty llm_log_stats).
+
+--- Root Cause ---
+  Reason type: Compilation / linker failure during build
+  Build stopped at step 2124 of 2177
+  Key error(s) from build/test log:
+    FAILED: libcxx/src/CMakeFiles/cxx_shared.dir/charconv.cpp.o
+    /workspace/llvm-project/runtimes/cmake/Modules/../../../libc/src/__support/macros/sanitizer.h:38:10: fatal error: 'sanitizer/msan_interface.h' file not found
+    ninja: build stopped: subcommand failed.
+
+--- Original Test Statistics (not reproduced) ---
+  [CTest] 77 run, 76 passed, 1 failed, 0 skipped

@@ -1,0 +1,77 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          4
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      test (3.11)
+  Test command(s) run in original CI:
+    $ pip install -r requirements-dev.txt
+    $ pip install pytest-github-actions-annotate-failures
+    $ pytest tests
+
+--- LLM-Generated Dockerfile ---
+  Base image:   python:3.11-slim
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ export TESTS_SKIP_REQUIRES_DOCKER=true
+  $ pytest --tb=short
+
+--- Reason(s) for Non-Reproducibility ---
+  - [pytest] Test run mismatch: original=11851, LLM=3 (11848 fewer tests)
+  - [pytest] Test passed mismatch: original=11771, LLM=0
+  - [pytest] Test failed mismatch: original=1, LLM=3
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > _ ERROR collecting moto/stepfunctions/parser/asl/component/test_state/program/test_state_program.py _
+    > ImportError while importing test module '...test_state_program.py'.
+    >     import boto3
+    > E   ModuleNotFoundError: No module named 'boto3'
+    >
+    > _ ERROR collecting moto/stepfunctions/parser/asl/component/test_state/state/test_state_state_props.py _
+    >     import boto3
+    > E   ModuleNotFoundError: No module named 'boto3'
+    >
+    > _ ERROR collecting moto/stepfunctions/parser/asl/static_analyser/test_state/test_state_analyser.py _
+    >     import boto3
+    > E   ModuleNotFoundError: No module named 'boto3'
+    >
+    > ERROR moto/stepfunctions/parser/asl/component/test_state/program/test_state_program.py
+    > ERROR moto/stepfunctions/parser/asl/component/test_state/state/test_state_state_props.py
+    > ERROR moto/stepfunctions/parser/asl/static_analyser/test_state/test_state_analyser.py
+
+  [Root cause classification]
+  - boto3 not installed → pytest discovers internal ASL test files that import boto3, causing
+    3 collection errors; only 3 "tests" run vs 11851 in the original CI
+
+    The moto project (a mock AWS SDK library) has test files embedded within its source tree,
+    specifically under `moto/stepfunctions/parser/asl/`. These are parser unit tests that import
+    `boto3` directly. The LLM Dockerfile installs only `pytest-github-actions-annotate-failures`
+    (and its dependencies) but does NOT install moto's full test dependencies. Without `boto3`
+    installed, pytest cannot import these three test files during collection:
+      - `moto/stepfunctions/parser/asl/component/test_state/program/test_state_program.py`
+      - `moto/stepfunctions/parser/asl/component/test_state/state/test_state_state_props.py`
+      - `moto/stepfunctions/parser/asl/static_analyser/test_state/test_state_analyser.py`
+
+    The run.sh uses `pytest --tb=short` without a specific test path, so pytest recursively
+    discovers ALL test files from the working directory — including these internal source-tree
+    tests. Since only 3 collection errors are found before the rest aborts, the LLM run reports
+    "3 tests run, 3 failed" (collection errors counted as failures by the stats parser) vs the
+    original CI's 11851 tests.
+
+    The original CI installs the full `requirements-dev.txt` which includes `boto3` and all
+    other moto test dependencies, then runs `pytest tests` (pointing to the `tests/` directory
+    specifically, not the source tree), so the 11851 actual unit tests in `tests/` are collected
+    and run correctly.
+
+--- Test Statistics Comparison ---
+  [pytest]
+    Original: 11851 run, 11771 passed, 1 failed, 77 skipped, 2 xfailed
+    LLM:      3 run, 0 passed, 3 failed, 0 skipped
+    (LLM's 3 "failed" are import-time collection errors; 0 actual test functions ran)

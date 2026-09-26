@@ -1,0 +1,42 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Tests (24, ubuntu-latest)
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ pnpm/action-setup@v4
+    $ pnpm install --frozen-lockfile
+    $ pnpm playwright install chromium
+    $ pnpm test
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ pnpm test
+
+--- Reason(s) for Non-Reproducibility ---
+  - [vitest] Test result mismatch (same count 7409): original=(7325p/23f/61s), LLM=(7236p/23f/150s)
+  - [vitest] Tests failed in LLM but passed in original: packages/svelte/tests/runtime-browser/test.ts
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > (packages/svelte/tests/runtime-browser/test.ts failed — browser not available)
+
+  [Root cause classification]
+  - `packages/svelte/tests/runtime-browser/test.ts` requires a real Chromium browser to execute Svelte components in the actual browser runtime. The original CI explicitly ran `pnpm playwright install chromium` before `pnpm test`, which installs the Playwright Chromium binary and makes it available for vitest's browser mode. The LLM's `pnpm test` was run without this prerequisite step, so vitest cannot launch the browser to run the runtime-browser tests.
+
+  - The 89 extra skips (150 vs 61) are individual test cases within the `runtime-browser` test file that get registered but then skipped because no browser instance can be launched. The test file itself still "fails" at the package level because Playwright throws when trying to launch Chromium. The total test count (7409) is the same in both environments because the test file is always discovered by vitest's glob, but in the LLM environment the browser tests skip/fail instead of running. The 23 failures in both environments are pre-existing non-browser test failures unrelated to this discrepancy.
+
+--- Test Statistics Comparison ---
+  [vitest]
+    Original: 7409 run, 7325 passed, 23 failed, 61 skipped
+    LLM:      7409 run, 7236 passed, 23 failed, 150 skipped

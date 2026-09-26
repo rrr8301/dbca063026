@@ -1,0 +1,34 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      build-syncthing / Build and test (ubuntu-latest, ~1.25.0)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ go test ./... || true  # Ensure all tests run even if some fail
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoDefault] Test run mismatch: original=794, LLM=50
+  - [GoDefault] Test passed mismatch: original=744, LLM=44
+  - [GoDefault] Test failed mismatch: original=0, LLM=6
+  - [GoDefault] 6 test(s) failed in LLM but not in original: github.com/syncthing/syncthing/cmd/infra/strelaypoolsrv, github.com/syncthing/syncthing/cmd/syncthing, github.com/syncthing/syncthing/cmd/syncthing/generate, github.com/syncthing/syncthing/lib/api, github.com/syncthing/syncthing/lib/api/auto ... (+1 more)
+
+--- Root Cause Analysis ---
+  - [GoDefault] LLM ran 744 fewer tests than original — LLM likely used a narrower test scope or missed some test suites.
+  - [GoDefault] 6 test(s) failed in LLM but not original: github.com/syncthing/syncthing/cmd/infra/strelaypoolsrv, github.com/syncthing/syncthing/cmd/syncthing, github.com/syncthing/syncthing/cmd/syncthing/generate, github.com/syncthing/syncthing/lib/api, github.com/syncthing/syncthing/lib/api/auto ... (+1 more)
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 794 run, 744 passed, 0 failed, 0 skipped
+    LLM:      50 run, 44 passed, 6 failed, 0 skipped

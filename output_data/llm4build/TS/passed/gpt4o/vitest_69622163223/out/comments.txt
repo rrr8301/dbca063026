@@ -1,0 +1,36 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      Build&Test: node-24, ubuntu-latest
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    6
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in LLM but not in original: GoDefault
+  - [vitest] Test run mismatch: original=7172, LLM=970
+  - [vitest] Test passed mismatch: original=6774, LLM=954
+  - [vitest] Test failed mismatch: original=0, LLM=7
+  - [vitest] Test skipped mismatch: original=398, LLM=9
+  - [vitest] 1 test(s) failed in LLM but not in original: test/global-setup.test.ts
+
+--- Root Cause Analysis ---
+  - [vitest] LLM ran 6202 fewer tests than original — LLM likely used a narrower test scope or missed some test suites.
+  - [vitest] 1 test(s) failed in LLM but not original: test/global-setup.test.ts
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: (not present)
+    LLM:      7 run, 0 passed, 7 failed, 0 skipped
+  [vitest]
+    Original: 7172 run, 6774 passed, 0 failed, 398 skipped
+    LLM:      970 run, 954 passed, 7 failed, 9 skipped

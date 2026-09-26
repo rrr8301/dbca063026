@@ -1,0 +1,57 @@
+Error from docker build
+
+#1 [ 1/10] FROM docker.io/library/ubuntu:22.04
+#1 CACHED
+
+#2 [2/9] RUN ln -snf /usr/share/zoneinfo/America/Los_Angeles /etc/localtime && echo America/Los_Angeles > /etc/timezone
+#2 CACHED
+
+#3 [internal] load .dockerignore
+#3 transferring context: 2B done
+#3 DONE 0.0s
+
+#4 [internal] load build definition from Dockerfile
+#4 transferring dockerfile: 1.09kB done
+#4 DONE 0.0s
+
+#5 [internal] load metadata for docker.io/library/ubuntu:22.04
+#5 DONE 0.0s
+
+#6 [internal] load build context
+#6 transferring context: 1.25MB 0.6s done
+#6 DONE 0.7s
+
+#7 [ 3/11] RUN apt-get update && apt-get install -y     git     curl     build-essential     && rm -rf /var/lib/apt/lists/*
+#7 CACHED
+
+#8 [ 4/11] RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+#8 CACHED
+
+#9 [ 5/11] WORKDIR /workspace
+#9 CACHED
+
+#10 [ 6/11] COPY . .
+#10 DONE 1.9s
+
+#11 [ 7/11] RUN git config --global --add safe.directory '*'
+#11 DONE 0.4s
+
+#12 [ 8/11] RUN useradd -m testuser && chown -R testuser /workspace
+#12 DONE 4.5s
+
+#13 [ 9/11] RUN /root/.cargo/bin/rustup install stable
+#13 0.621 /bin/sh: 1: /root/.cargo/bin/rustup: Permission denied
+#13 ERROR: process "/bin/sh -c /root/.cargo/bin/rustup install stable" did not complete successfully: exit code: 126
+------
+ > [ 9/11] RUN /root/.cargo/bin/rustup install stable:
+#13 0.621 /bin/sh: 1: /root/.cargo/bin/rustup: Permission denied
+------
+Dockerfile:40
+--------------------
+  38 |     
+  39 |     # Ensure Rust environment is available for the non-root user
+  40 | >>> RUN /root/.cargo/bin/rustup install stable
+  41 |     RUN /root/.cargo/bin/rustup default stable
+  42 |     RUN echo 'source $HOME/.cargo/env' >> /home/testuser/.bashrc
+--------------------
+ERROR: failed to solve: process "/bin/sh -c /root/.cargo/bin/rustup install stable" did not complete successfully: exit code: 126

@@ -1,0 +1,52 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          3
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      test-packages (2, 3)
+  Test command(s) run in original CI:
+    $ actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+    $ ./.github/actions/build
+    $ pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320
+    $ pnpm install
+    $ pnpm turbo --concurrency=100% --filter "!./integrations/{java,rust,dotnet,docker,fastapi,django-ninja}/**" --filter "!./projects/proxy-scalar-com/**" --filter './packages/**' build
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ pnpm script run test-servers &
+  $ TEST_SERVER_PID=$!
+  $ kill $TEST_SERVER_PID 2>/dev/null || true
+  $ TEST_FAILED=0
+  $ pnpm turbo "${args[@]}" test || TEST_FAILED=1
+
+--- Reason(s) for Non-Reproducibility ---
+  - [vitest] Test result mismatch (same count 4384): original=(4350p/0f/34s), LLM=(4349p/1f/34s)
+  - [vitest] Tests failed in LLM but passed in original: src/v2/features/modal/Modal.test.ts
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > [proxy-server] Error: spawn go ENOENT
+    >     at onErrorNT (node:internal/child_process:483:16)
+    >   syscall: 'spawn go'
+    > [proxy-server] > proxy-scalar-com@0.1.0 dev: `cross-env ENV=dev PORT=5051 go run main.go`
+    > ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  proxy-scalar-com@0.1.0 dev: cross-env CI=1 pnpm --filter proxy-scalar-com dev exited with code 1
+
+  [Root cause classification]
+  - The single vitest failure is `src/v2/features/modal/Modal.test.ts`. The scalar test suite starts a local proxy server (`projects/proxy-scalar-com`) as part of the integration test setup. This server is written in Go and launched via `go run main.go`. The LLM's Docker image (`ubuntu:22.04`) does not have Go installed, so `spawn go` fails with `ENOENT` (no such file or directory for the `go` binary). Without the proxy server running on port 5051, tests that make requests through the proxy fail.
+
+  - The `Modal.test.ts` failure is likely one of the integration tests that exercises the API reference proxy functionality — the modal component renders API documentation and may make test requests through the scalar proxy server at localhost:5051. When the proxy server fails to start, modal integration tests that depend on it fail, while the 4,349 other tests that don't use the proxy pass normally.
+
+  - The original CI filtered out proxy-scalar-com with `--filter "!./projects/proxy-scalar-com/**"` in the build command, but the test run script started the proxy server separately with `pnpm script run test-servers`. The CI runner had Go installed, allowing the proxy to start successfully. The LLM's run.sh attempted the same `test-servers` startup but Go was unavailable, causing the proxy to fail and creating the Modal test dependency failure.
+
+--- Test Statistics Comparison ---
+  [vitest]
+    Original: 4384 run, 4350 passed, 0 failed, 34 skipped
+    LLM:      4384 run, 4349 passed, 1 failed, 34 skipped

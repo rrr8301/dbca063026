@@ -1,0 +1,44 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      ubuntu-latest clang Debug dll:on -Denable_gc_assertions=on -Denable_large_config=on -Denable_redirect_malloc=on -Denable_rwlock=on -DCFLAGS_EXTRA=-DIGNORE_FREE
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ cmake -B /home/runner/work/bdwgc/bdwgc/build -S /home/runner/work/bdwgc/bdwgc -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=clang -DGC_BUILD_SHARED_LIBS=on -Denable_werror=on -Werror=dev -Denable_gc_assertions=on -Denable_large_config=on -Denable_redirect_malloc=on -Denable_rwlock=on -DCFLAGS_EXTRA=-DIGNORE_FREE
+    $ cmake --build /home/runner/work/bdwgc/bdwgc/build --config Debug --verbose --parallel
+    $ ctest --build-config Debug --verbose --parallel 8
+    $ GC_USE_GETWRITEWATCH=0 ctest --build-config Debug --verbose
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ cmake -B /workspace/repo/build \
+  $ -DCMAKE_BUILD_TYPE=Debug \
+  $ -DCMAKE_C_COMPILER=clang \
+  $ cmake --build /workspace/repo/build \
+  $ ctest --build-config Debug --verbose --parallel 8
+
+--- Reason(s) for Non-Reproducibility ---
+  - [CTest] Test result mismatch (same count 36): original=(35p/1f/0s), LLM=(36p/0f/0s)
+  - [CTest] Tests failed in original but passed in LLM: threadleaktest
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    (All 36 CTest tests reported Passed in LLM run)
+
+  [Root cause classification]
+  - Missing cmake flags: The original CI built with `-DGC_BUILD_SHARED_LIBS=on -Denable_gc_assertions=on -Denable_large_config=on -Denable_redirect_malloc=on -Denable_rwlock=on -DCFLAGS_EXTRA=-DIGNORE_FREE`. The LLM's cmake command omitted all these flags, using only `-DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=clang`. The `threadleaktest` CTest test likely exercises GC thread leak detection code paths that are only enabled when `Denable_gc_assertions=on` and `Denable_rwlock=on` are set. Without these flags, the GC assertions that trigger the thread leak failure don't execute, so the test passes. The original CI also ran a second `GC_USE_GETWRITEWATCH=0 ctest` pass that the LLM omitted.
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 36 run, 35 passed, 1 failed, 0 skipped
+    LLM:      36 run, 36 passed, 0 failed, 0 skipped

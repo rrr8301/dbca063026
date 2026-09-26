@@ -1,0 +1,41 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      unit-tests
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ make test_unit &&
+    $ ipdxco/gotest-json-to-junit-xml@v1
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ make test_unit
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoRace] Test run mismatch: original=1767, LLM=7
+  - [GoRace] Test passed mismatch: original=1142, LLM=7
+  - [GoRace] Test failed mismatch: original=1, LLM=0
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    (no specific test error messages — LLM's 7 tests all passed)
+
+  [Root cause classification]
+  - The kubo (IPFS) `make test_unit` target runs a large test harness that orchestrates many packages using the IPFS test infrastructure — including file system tests, bitswap protocol tests, DHT tests, and IPFS node lifecycle tests. The 1767 tests in the original CI (with 624 skipped) come from this full test harness spanning all kubo subsystems. The LLM ran `make test_unit` but only 7 tests executed, suggesting the test harness requires IPFS-specific build prerequisites (like prebuilt IPFS binaries or a properly initialised IPFS repo) that aren't set up in the Docker container.
+
+  - The 624 skipped tests in the original and 0 skipped in the LLM confirm this: the original test harness has explicit skips for slow/integration tests, while the LLM's minimal run only executed the handful of tests that don't need the broader IPFS infrastructure. The GoRace framework (race detector enabled) also indicates the original used `go test -race`, which the LLM's `make test_unit` may not have matched exactly in the subset that ran.
+
+--- Test Statistics Comparison ---
+  [GoRace]
+    Original: 1767 run, 1142 passed, 1 failed, 624 skipped
+    LLM:      7 run, 7 passed, 0 failed, 0 skipped

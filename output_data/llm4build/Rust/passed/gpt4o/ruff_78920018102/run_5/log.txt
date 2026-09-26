@@ -1,0 +1,69 @@
+Error from docker build
+
+#1 [ 1/10] FROM docker.io/library/ubuntu:22.04
+#1 CACHED
+
+#2 [2/9] RUN ln -snf /usr/share/zoneinfo/America/Los_Angeles /etc/localtime && echo America/Los_Angeles > /etc/timezone
+#2 CACHED
+
+#3 [internal] load .dockerignore
+#3 transferring context: 2B done
+#3 DONE 0.0s
+
+#4 [internal] load build definition from Dockerfile
+#4 transferring dockerfile: 1.43kB done
+#4 DONE 0.0s
+
+#5 [internal] load metadata for docker.io/library/ubuntu:22.04
+#5 DONE 0.0s
+
+#6 [internal] load build context
+#6 transferring context: 2.96MB 1.3s done
+#6 DONE 1.3s
+
+#7 [ 4/16] RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+#7 CACHED
+
+#8 [ 5/16] RUN /root/.cargo/bin/cargo install cargo-insta uv
+#8 CACHED
+
+#9 [ 6/16] RUN /root/.cargo/bin/cargo install --locked cargo-nextest
+#9 CACHED
+
+#10 [ 7/16] RUN useradd -m testuser
+#10 CACHED
+
+#11 [ 3/16] RUN apt-get update && apt-get install -y     git     curl     wget     build-essential     libssl-dev     pkg-config     mold
+#11 CACHED
+
+#12 [ 8/16] WORKDIR /workspace
+#12 CACHED
+
+#13 [ 9/16] COPY . /workspace
+#13 DONE 3.7s
+
+#14 [10/16] RUN chown -R testuser /workspace
+#14 DONE 9.0s
+
+#15 [11/16] RUN git config --global --add safe.directory '*'
+#15 DONE 0.6s
+
+#16 [12/16] RUN echo 'source $HOME/.cargo/env' >> /home/testuser/.bashrc
+#16 DONE 0.4s
+
+#17 [13/16] RUN chmod +x /root/.cargo/bin/rustup-init
+#17 0.414 chmod: cannot access '/root/.cargo/bin/rustup-init': No such file or directory
+#17 ERROR: process "/bin/sh -c chmod +x /root/.cargo/bin/rustup-init" did not complete successfully: exit code: 1
+------
+ > [13/16] RUN chmod +x /root/.cargo/bin/rustup-init:
+#17 0.414 chmod: cannot access '/root/.cargo/bin/rustup-init': No such file or directory
+------
+Dockerfile:45
+--------------------
+  43 |     # Ensure Rust environment is set up for testuser
+  44 |     USER root
+  45 | >>> RUN chmod +x /root/.cargo/bin/rustup-init
+  46 |     RUN /root/.cargo/bin/rustup-init -y --no-modify-path
+  47 |     USER testuser
+--------------------
+ERROR: failed to solve: process "/bin/sh -c chmod +x /root/.cargo/bin/rustup-init" did not complete successfully: exit code: 1

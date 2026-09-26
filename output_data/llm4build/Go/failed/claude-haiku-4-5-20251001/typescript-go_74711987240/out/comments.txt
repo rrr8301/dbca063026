@@ -1,0 +1,45 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          3
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      test (ubuntu-latest)
+  Test command(s) run in original CI:
+    $ actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+    $ npm ci
+    $ go install gotest.tools/gotestsum@latest
+    $ npx hereby test
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    7
+
+--- LLM run.sh Test Command(s) ---
+  $ npx hereby test
+  $ npx hereby test:benchmarks
+  $ npx hereby test:tools
+  $ npx hereby test:api
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoRace] Test run mismatch: original=145056, LLM=10902
+  - [GoRace] Test passed mismatch: original=142504, LLM=6770
+  - [GoRace] Test failed mismatch: original=3, LLM=0
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    ExecaError: Command failed with exit code 1: gotestsum --format-hide-empty-pkg --hide-summary skipped -- '-coverprofile=/workspace/coverage/coverage.tests.out' '-coverpkg=./...' ./...
+
+  [Root cause classification]
+  - The typescript-go repository is the TypeScript compiler rewritten in Go, with 145,056 tests in the original CI — these are all TypeScript conformance and compiler tests that run via `npx hereby test`. The LLM ran 4 `hereby` targets (`test`, `test:benchmarks`, `test:tools`, `test:api`) producing only 10,902 tests because `test:benchmarks`, `test:tools`, and `test:api` are supplementary targets that don't include the full TypeScript compiler test corpus.
+
+  - The `ExecaError` from `gotestsum ... '-coverpkg=./...' ./...` shows the underlying Go coverage measurement failed (exit code 1) — this happens when a Go package imports CGO that the Alpine-based environment can't build, or when `-coverpkg=./...` tries to instrument all packages including ones with build constraints. The original CI ran `npx hereby test` which invokes a carefully constructed gotestsum command that avoids the coverage measurement issue by using a different coverage profile path. The 134,154 missing tests are all the TypeScript compiler conformance tests that only run through the `hereby test` target's special Go test harness, not through the 4 additional targets the LLM added.
+
+--- Test Statistics Comparison ---
+  [GoRace]
+    Original: 145056 run, 142504 passed, 3 failed, 2549 skipped
+    LLM:      10902 run, 6770 passed, 0 failed, 4132 skipped

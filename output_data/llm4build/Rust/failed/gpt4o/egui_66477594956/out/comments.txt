@@ -1,0 +1,36 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     macos-15-arm64
+  CI job name:      Run tests
+  Test command(s) run in original CI:
+    $ cargo test --all-features
+
+--- LLM-Generated Dockerfile ---
+  Base image:   rust:1.92
+  RUN steps:    2
+
+--- LLM run.sh Test Command(s) ---
+  $ cargo test --all-features
+
+--- Reason(s) for Non-Reproducibility ---
+  - [cargo] Test run mismatch: original=97, LLM=45
+  - [cargo] Test passed mismatch: original=95, LLM=43
+  - [cargo] 1 test(s) failed in original but passed in LLM: text_edit_halign
+  - [cargo] 1 test(s) failed in LLM but not in original: test_demo_app
+
+--- Root Cause Analysis ---
+  - [cargo] LLM ran 52 fewer tests than original — LLM likely used a narrower test scope or missed some test suites.
+  - [cargo] 1 test(s) failed in LLM but not original: test_demo_app
+
+--- Test Statistics Comparison ---
+  [cargo]
+    Original: 97 run, 95 passed, 1 failed, 1 skipped
+    LLM:      45 run, 43 passed, 1 failed, 1 skipped

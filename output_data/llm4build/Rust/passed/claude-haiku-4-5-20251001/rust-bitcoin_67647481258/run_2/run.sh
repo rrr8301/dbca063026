@@ -1,0 +1,1 @@
+cargo rbmt test stable recent

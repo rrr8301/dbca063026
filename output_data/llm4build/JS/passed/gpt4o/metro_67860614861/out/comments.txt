@@ -1,0 +1,31 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      test (ubuntu-latest, 20.19.4, true) / Tests [Node.js 20.19.4, ubuntu-latest, Ignoring yarn.lock]
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    6
+
+--- LLM run.sh Test Command(s) ---
+  $ until yarn jest --ci --maxWorkers 4 --reporters=default --reporters=jest-junit --rootdir='./'; do
+
+--- Reason(s) for Non-Reproducibility ---
+  - [jest] Test run mismatch: original=2462, LLM=2463
+  - [jest] Test passed mismatch: original=2436, LLM=2437
+
+--- Root Cause Analysis ---
+  - [jest] LLM ran 1 more tests than original — LLM likely used a broader test scope or included extra test suites.
+
+--- Test Statistics Comparison ---
+  [jest]
+    Original: 2462 run, 2436 passed, 0 failed, 26 skipped
+    LLM:      2463 run, 2437 passed, 0 failed, 26 skipped

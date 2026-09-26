@@ -1,0 +1,84 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          5
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      build
+  Test command(s) run in original CI:
+    $ uv sync --group=test
+    $ uv run --with=pytest-run-parallel pytest --iterations=8 --parallel-threads=auto
+        --ignore=computer_vision/cnn_classification.py
+        --ignore=dynamic_programming/k_means_clustering_tensorflow.py
+        ... (other ignores) ...
+        --cov-report=term-missing:skip-covered --cov=. .
+    $ scripts/build_directory_md.py 2>&1 | tee DIRECTORY.md
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    6
+
+--- LLM run.sh Test Command(s) ---
+  $ uv sync --group=test
+  $ uv run --with=pytest-run-parallel pytest --iterations=8 --parallel-threads=auto
+      --ignore=... --cov=. . || TEST_FAILED=1
+
+--- Reason(s) for Non-Reproducibility ---
+  - [pytest] Test run mismatch: original=2361, LLM=23 (2338 fewer tests)
+  - [pytest] Test passed mismatch: original=2361, LLM=0
+  - [pytest] Test failed mismatch: original=0, LLM=23
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > collected 2021 items / 23 errors
+    >
+    > ERROR collecting computer_vision/flip_augmentation.py
+    >   ImportError: libGL.so.1: cannot open shared object file: No such file or directory
+    > ERROR collecting computer_vision/harris_corner.py
+    >   ImportError: libGL.so.1: cannot open shared object file: No such file or directory
+    > ERROR collecting digital_image_processing/convert_to_negative.py
+    >   ImportError: libGL.so.1: cannot open shared object file: No such file or directory
+    > ... (19 more libGL.so.1 errors covering all OpenCV-dependent modules)
+    >
+    > ERROR collecting fractals/sierpinski_triangle.py
+    >   ModuleNotFoundError: No module named 'tkinter'
+    > ERROR collecting fractals/vicsek.py
+    >   ModuleNotFoundError: No module named 'tkinter'
+    >
+    > !!!!!!!!!!!!!!!!!!! Interrupted: 23 errors during collection !!!!!!!!!!!!!!!!!!!
+    > ============================= 23 errors in 54.07s ==============================
+
+  [Root cause classification]
+  Two missing system libraries cause collection errors that abort pytest entirely:
+
+  (1) Missing libGL.so.1 (OpenGL shared library) — 21 collection errors
+    The Python algorithms repository (TheAlgorithms/Python) includes computer vision and
+    image processing algorithms that import OpenCV (`import cv2`). OpenCV on Linux requires
+    `libGL.so.1` (part of the OpenGL Mesa library, package `libgl1-mesa-glx` or `libgl1`).
+    The LLM Dockerfile (`ubuntu:latest`) installs only `libhdf5-dev` as a system library
+    but not `libgl1-mesa-glx`. At collection time, pytest tries to import 21 modules
+    (computer_vision/*.py, digital_image_processing/*.py, data_compression/
+    peak_signal_to_noise_ratio.py) which import cv2, triggering:
+      `ImportError: libGL.so.1: cannot open shared object file: No such file or directory`
+    These 21 errors count as collection errors in the summary.json (num_tests_failed=23).
+
+  (2) Missing tkinter — 2 collection errors
+    Two fractal modules (fractals/sierpinski_triangle.py, fractals/vicsek.py) import
+    `tkinter` for visualization. `ubuntu:latest` with Python from the deadsnakes PPA does
+    not include the `python3-tk` package, so `import tkinter` raises:
+      `ModuleNotFoundError: No module named 'tkinter'`
+
+  Pytest aborts with "Interrupted: 23 errors during collection" after encountering the
+  collection errors, and 0 tests actually run (the 23 in summary.json are all collection
+  errors, not test failures from running test functions). The original CI (ubuntu-latest
+  GitHub Actions runner) has `libgl1-mesa-glx` and `python3-tk` pre-installed.
+
+--- Test Statistics Comparison ---
+  [pytest]
+    Original: 2361 run, 2361 passed, 0 failed, 0 skipped
+    LLM:      23 run, 0 passed, 23 failed, 0 skipped
+    (LLM's 23 "failed" are collection errors counted by the stats parser; 0 test functions ran)

@@ -1,0 +1,1750 @@
+# command: act push -W .github/workflows/ci.yml --directory project_path/ratatui -j test-docs --matrix os:ubuntu-latest --matrix backend:termion
+
+time="2026-05-10T14:18:10-07:00" level=info msg="Using docker host 'unix:///var/run/docker.sock', and daemon socket 'unix:///var/run/docker.sock'"
+[Continuous Integration/Test Docs] ⭐ Run Set up job
+[Continuous Integration/Test Docs] 🚀  Start image=catthehacker/ubuntu:act-latest
+[Continuous Integration/Test Docs]   🐳  docker pull image=catthehacker/ubuntu:act-latest platform= username= forcePull=true
+[Continuous Integration/Test Docs] using DockerAuthConfig authentication for docker pull
+[Continuous Integration/Test Docs]   🐳  docker create image=catthehacker/ubuntu:act-latest platform= entrypoint=["tail" "-f" "/dev/null"] cmd=[] network="host"
+[Continuous Integration/Test Docs]   🐳  docker run image=catthehacker/ubuntu:act-latest platform= entrypoint=["tail" "-f" "/dev/null"] cmd=[] network="host"
+[Continuous Integration/Test Docs]   🐳  docker exec cmd=[node --no-warnings -e console.log(process.execPath)] user= workdir=
+[Continuous Integration/Test Docs]   ✅  Success - Set up job
+[Continuous Integration/Test Docs]   ☁  git clone 'https://github.com/dtolnay/rust-toolchain' # ref=3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9
+[Continuous Integration/Test Docs] ⭐ Run Pre dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9
+[Continuous Integration/Test Docs]   ✅  Success - Pre dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9 [265.227275ms]
+[Continuous Integration/Test Docs]   ☁  git clone 'https://github.com/taiki-e/install-action' # ref=85b24a67ef0c632dfefad70b9d5ce8fddb040754
+[Continuous Integration/Test Docs] ⭐ Run Pre taiki-e/install-action@85b24a67ef0c632dfefad70b9d5ce8fddb040754
+[Continuous Integration/Test Docs]   ✅  Success - Pre taiki-e/install-action@85b24a67ef0c632dfefad70b9d5ce8fddb040754 [286.533547ms]
+[Continuous Integration/Test Docs]   ☁  git clone 'https://github.com/Swatinem/rust-cache' # ref=c19371144df3bb44fab255c43d04cbc2ab54d1c4
+[Continuous Integration/Test Docs] ⭐ Run Main actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+[Continuous Integration/Test Docs]   🐳  docker cp src=/scratch/raian-files/LLM4Build/project_path/ratatui/. dst=/scratch/raian-files/LLM4Build/project_path/ratatui
+[Continuous Integration/Test Docs]   ✅  Success - Main actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd [1.199239129s]
+[Continuous Integration/Test Docs] ⭐ Run Main dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9
+[Continuous Integration/Test Docs]   🐳  docker cp src=/home/mnabil/.cache/act/dtolnay-rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9/ dst=/var/run/act/actions/dtolnay-rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9/
+[Continuous Integration/Test Docs] ⭐ Run Main : parse toolchain version
+if [[ -z $toolchain ]]; then
+  # GitHub does not enforce `required: true` inputs itself. https://github.com/actions/runner/issues/1070
+  echo "'toolchain' is a required input" >&2
+  exit 1
+elif [[ $toolchain =~ ^stable' '[0-9]+' '(year|month|week|day)s?' 'ago$ ]]; then
+  if [[ Linux == macOS ]]; then
+    echo "toolchain=1.$((($(date -v-$(sed 's/stable \([0-9]*\) \(.\).*/\1\2/' <<< $toolchain) +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT
+  else
+    echo "toolchain=1.$((($(date --date "${toolchain#stable }" +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT
+  fi
+elif [[ $toolchain =~ ^stable' 'minus' '[0-9]+' 'releases?$ ]]; then
+  echo "toolchain=1.$((($(date +%s)/60/60/24-16569)/7/6-${toolchain//[^0-9]/}))" >> $GITHUB_OUTPUT
+elif [[ $toolchain =~ ^1\.[0-9]+$ ]]; then
+  echo "toolchain=1.$((i=${toolchain#1.}, c=($(date +%s)/60/60/24-16569)/7/6, i+9*i*(10*i<=c)+90*i*(100*i<=c)))" >> $GITHUB_OUTPUT
+else
+  echo "toolchain=$toolchain" >> $GITHUB_OUTPUT
+fi
+[Continuous Integration/Test Docs]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/1-composite-parse.sh] user= workdir=
+[Continuous Integration/Test Docs]   ✅  Success - Main : parse toolchain version
+if [[ -z $toolchain ]]; then
+  # GitHub does not enforce `required: true` inputs itself. https://github.com/actions/runner/issues/1070
+  echo "'toolchain' is a required input" >&2
+  exit 1
+elif [[ $toolchain =~ ^stable' '[0-9]+' '(year|month|week|day)s?' 'ago$ ]]; then
+  if [[ Linux == macOS ]]; then
+    echo "toolchain=1.$((($(date -v-$(sed 's/stable \([0-9]*\) \(.\).*/\1\2/' <<< $toolchain) +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT
+  else
+    echo "toolchain=1.$((($(date --date "${toolchain#stable }" +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT
+  fi
+elif [[ $toolchain =~ ^stable' 'minus' '[0-9]+' 'releases?$ ]]; then
+  echo "toolchain=1.$((($(date +%s)/60/60/24-16569)/7/6-${toolchain//[^0-9]/}))" >> $GITHUB_OUTPUT
+elif [[ $toolchain =~ ^1\.[0-9]+$ ]]; then
+  echo "toolchain=1.$((i=${toolchain#1.}, c=($(date +%s)/60/60/24-16569)/7/6, i+9*i*(10*i<=c)+90*i*(100*i<=c)))" >> $GITHUB_OUTPUT
+else
+  echo "toolchain=$toolchain" >> $GITHUB_OUTPUT
+fi
+ [388.154836ms]
+[Continuous Integration/Test Docs]   ⚙  ::set-output:: toolchain=stable
+[Continuous Integration/Test Docs] ⭐ Run Main : construct rustup command line
+echo "targets=$(for t in ${targets//,/ }; do echo -n ' --target' $t; done)" >> $GITHUB_OUTPUT
+echo "components=$(for c in ${components//,/ }; do echo -n ' --component' $c; done)" >> $GITHUB_OUTPUT
+echo "downgrade=" >> $GITHUB_OUTPUT
+[Continuous Integration/Test Docs]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/1-composite-flags.sh] user= workdir=
+[Continuous Integration/Test Docs]   ✅  Success - Main : construct rustup command line
+echo "targets=$(for t in ${targets//,/ }; do echo -n ' --target' $t; done)" >> $GITHUB_OUTPUT
+echo "components=$(for c in ${components//,/ }; do echo -n ' --component' $c; done)" >> $GITHUB_OUTPUT
+echo "downgrade=" >> $GITHUB_OUTPUT
+ [346.219722ms]
+[Continuous Integration/Test Docs]   ⚙  ::set-output:: targets=
+[Continuous Integration/Test Docs]   ⚙  ::set-output:: components=
+[Continuous Integration/Test Docs]   ⚙  ::set-output:: downgrade=
+[Continuous Integration/Test Docs] ⭐ Run Main : set $CARGO_HOME
+echo CARGO_HOME=${CARGO_HOME:-"$HOME/.cargo"} >> $GITHUB_ENV
+[Continuous Integration/Test Docs]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/1-composite-2.sh] user= workdir=
+[Continuous Integration/Test Docs]   ✅  Success - Main : set $CARGO_HOME
+echo CARGO_HOME=${CARGO_HOME:-"$HOME/.cargo"} >> $GITHUB_ENV
+ [355.142363ms]
+[Continuous Integration/Test Docs]   ⚙  ::set-env:: CARGO_HOME=/root/.cargo
+[Continuous Integration/Test Docs] ⭐ Run Main : install rustup if needed
+if ! command -v rustup &>/dev/null; then
+  curl --proto '=https' --tlsv1.2 --retry 10 --retry-connrefused --location --silent --show-error --fail https://sh.rustup.rs | sh -s -- --default-toolchain none -y
+  echo "$CARGO_HOME/bin" >> $GITHUB_PATH
+fi
+[Continuous Integration/Test Docs]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/1-composite-3.sh] user= workdir=
+[Continuous Integration/Test Docs]   | info: downloading installer
+[Continuous Integration/Test Docs]   | warn: It looks like you have an existing rustup settings file at:
+[Continuous Integration/Test Docs]   | warn: /root/.rustup/settings.toml
+[Continuous Integration/Test Docs]   | warn: Rustup will install the default toolchain as specified in the settings file,
+[Continuous Integration/Test Docs]   | warn: instead of the one inferred from the default host triple.
+[Continuous Integration/Test Docs]   | info: profile set to default
+[Continuous Integration/Test Docs]   | info: default host triple is x86_64-unknown-linux-gnu
+[Continuous Integration/Test Docs]   | info: skipping toolchain installation
+[Continuous Integration/Test Docs]   | 
+[Continuous Integration/Test Docs]   | 
+[Continuous Integration/Test Docs]   | Rust is installed now. Great!
+[Continuous Integration/Test Docs]   | 
+[Continuous Integration/Test Docs]   | To get started you may need to restart your current shell.
+[Continuous Integration/Test Docs]   | This would reload your PATH environment variable to include
+[Continuous Integration/Test Docs]   | Cargo's bin directory ($HOME/.cargo/bin).
+[Continuous Integration/Test Docs]   | 
+[Continuous Integration/Test Docs]   | To configure your current shell, you need to source
+[Continuous Integration/Test Docs]   | the corresponding env file under $HOME/.cargo.
+[Continuous Integration/Test Docs]   | 
+[Continuous Integration/Test Docs]   | This is usually done by running one of the following (note the leading DOT):
+[Continuous Integration/Test Docs]   | . "$HOME/.cargo/env"            # For sh/bash/zsh/ash/dash/pdksh
+[Continuous Integration/Test Docs]   | source "$HOME/.cargo/env.fish"  # For fish
+[Continuous Integration/Test Docs]   | source "~/.cargo/env.nu"  # For nushell
+[Continuous Integration/Test Docs]   | source "$HOME/.cargo/env.tcsh"  # For tcsh
+[Continuous Integration/Test Docs]   | . "$HOME/.cargo/env.ps1"        # For pwsh
+[Continuous Integration/Test Docs]   | source "$HOME/.cargo/env.xsh"   # For xonsh
+[Continuous Integration/Test Docs]   ✅  Success - Main : install rustup if needed
+if ! command -v rustup &>/dev/null; then
+  curl --proto '=https' --tlsv1.2 --retry 10 --retry-connrefused --location --silent --show-error --fail https://sh.rustup.rs | sh -s -- --default-toolchain none -y
+  echo "$CARGO_HOME/bin" >> $GITHUB_PATH
+fi
+ [971.787007ms]
+[Continuous Integration/Test Docs]   ⚙  ::add-path:: /root/.cargo/bin
+[Continuous Integration/Test Docs] ⭐ Run Main rustup toolchain install stable
+[Continuous Integration/Test Docs]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/1-composite-5.sh] user= workdir=
+[Continuous Integration/Test Docs]   | info: syncing channel updates for stable-x86_64-unknown-linux-gnu
+[Continuous Integration/Test Docs]   | info: latest update on 2026-04-16 for version 1.95.0 (59807616e 2026-04-14)
+[Continuous Integration/Test Docs]   | info: downloading 3 components
+[Continuous Integration/Test Docs]   | 
+[Continuous Integration/Test Docs]   |   stable-x86_64-unknown-linux-gnu installed - rustc 1.95.0 (59807616e 2026-04-14)
+[Continuous Integration/Test Docs]   | 
+[Continuous Integration/Test Docs]   | info: default toolchain set to stable-x86_64-unknown-linux-gnu
+[Continuous Integration/Test Docs]   ✅  Success - Main rustup toolchain install stable [10.399904612s]
+[Continuous Integration/Test Docs] ⭐ Run Main rustup default stable
+[Continuous Integration/Test Docs]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/1-composite-6.sh] user= workdir=
+[Continuous Integration/Test Docs]   | info: using existing install for stable-x86_64-unknown-linux-gnu
+[Continuous Integration/Test Docs]   | info: default toolchain set to stable-x86_64-unknown-linux-gnu
+[Continuous Integration/Test Docs]   | 
+[Continuous Integration/Test Docs]   |   stable-x86_64-unknown-linux-gnu unchanged - rustc 1.95.0 (59807616e 2026-04-14)
+[Continuous Integration/Test Docs]   | 
+[Continuous Integration/Test Docs]   | info: note that the toolchain 'stable-x86_64-unknown-linux-gnu' is currently in use (overridden by '/scratch/raian-files/LLM4Build/project_path/ratatui/rust-toolchain.toml')
+[Continuous Integration/Test Docs]   ✅  Success - Main rustup default stable [404.216537ms]
+[Continuous Integration/Test Docs] ⭐ Run Main : create cachekey
+DATE=$(rustc +stable --version --verbose | sed -ne 's/^commit-date: \(20[0-9][0-9]\)-\([01][0-9]\)-\([0-3][0-9]\)$/\1\2\3/p')
+HASH=$(rustc +stable --version --verbose | sed -ne 's/^commit-hash: //p')
+echo "cachekey=$(echo $DATE$HASH | head -c12)" >> $GITHUB_OUTPUT
+[Continuous Integration/Test Docs]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/1-composite-rustc-version.sh] user= workdir=
+[Continuous Integration/Test Docs]   ✅  Success - Main : create cachekey
+DATE=$(rustc +stable --version --verbose | sed -ne 's/^commit-date: \(20[0-9][0-9]\)-\([01][0-9]\)-\([0-3][0-9]\)$/\1\2\3/p')
+HASH=$(rustc +stable --version --verbose | sed -ne 's/^commit-hash: //p')
+echo "cachekey=$(echo $DATE$HASH | head -c12)" >> $GITHUB_OUTPUT
+ [424.805525ms]
+[Continuous Integration/Test Docs]   ⚙  ::set-output:: cachekey=202604145980
+[Continuous Integration/Test Docs] ⭐ Run Main : disable incremental compilation
+if [ -z "${CARGO_INCREMENTAL+set}" ]; then
+  echo CARGO_INCREMENTAL=0 >> $GITHUB_ENV
+fi
+[Continuous Integration/Test Docs]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/1-composite-8.sh] user= workdir=
+[Continuous Integration/Test Docs]   ✅  Success - Main : disable incremental compilation
+if [ -z "${CARGO_INCREMENTAL+set}" ]; then
+  echo CARGO_INCREMENTAL=0 >> $GITHUB_ENV
+fi
+ [364.126605ms]
+[Continuous Integration/Test Docs]   ⚙  ::set-env:: CARGO_INCREMENTAL=0
+[Continuous Integration/Test Docs] ⭐ Run Main : enable colors in Cargo output
+if [ -z "${CARGO_TERM_COLOR+set}" ]; then
+  echo CARGO_TERM_COLOR=always >> $GITHUB_ENV
+fi
+[Continuous Integration/Test Docs]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/1-composite-9.sh] user= workdir=
+[Continuous Integration/Test Docs]   ✅  Success - Main : enable colors in Cargo output
+if [ -z "${CARGO_TERM_COLOR+set}" ]; then
+  echo CARGO_TERM_COLOR=always >> $GITHUB_ENV
+fi
+ [360.893516ms]
+[Continuous Integration/Test Docs]   ⚙  ::set-env:: CARGO_TERM_COLOR=always
+[Continuous Integration/Test Docs] ⭐ Run Main : enable Cargo sparse registry
+# implemented in 1.66, stabilized in 1.68, made default in 1.70
+if [ -z "${CARGO_REGISTRIES_CRATES_IO_PROTOCOL+set}" -o -f "/tmp"/.implicit_cargo_registries_crates_io_protocol ]; then
+  if rustc +stable --version --verbose | grep -q '^release: 1\.6[89]\.'; then
+    touch "/tmp"/.implicit_cargo_registries_crates_io_protocol || true
+    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse >> $GITHUB_ENV
+  elif rustc +stable --version --verbose | grep -q '^release: 1\.6[67]\.'; then
+    touch "/tmp"/.implicit_cargo_registries_crates_io_protocol || true
+    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=git >> $GITHUB_ENV
+  fi
+fi
+[Continuous Integration/Test Docs]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/1-composite-10.sh] user= workdir=
+[Continuous Integration/Test Docs]   ✅  Success - Main : enable Cargo sparse registry
+# implemented in 1.66, stabilized in 1.68, made default in 1.70
+if [ -z "${CARGO_REGISTRIES_CRATES_IO_PROTOCOL+set}" -o -f "/tmp"/.implicit_cargo_registries_crates_io_protocol ]; then
+  if rustc +stable --version --verbose | grep -q '^release: 1\.6[89]\.'; then
+    touch "/tmp"/.implicit_cargo_registries_crates_io_protocol || true
+    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse >> $GITHUB_ENV
+  elif rustc +stable --version --verbose | grep -q '^release: 1\.6[67]\.'; then
+    touch "/tmp"/.implicit_cargo_registries_crates_io_protocol || true
+    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=git >> $GITHUB_ENV
+  fi
+fi
+ [402.750635ms]
+[Continuous Integration/Test Docs] ⭐ Run Main : work around spurious network errors in curl 8.0
+# https://rust-lang.zulipchat.com/#narrow/stream/246057-t-cargo/topic/timeout.20investigation
+if rustc +stable --version --verbose | grep -q '^release: 1\.7[01]\.'; then
+  echo CARGO_HTTP_MULTIPLEXING=false >> $GITHUB_ENV
+fi
+[Continuous Integration/Test Docs]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/1-composite-11.sh] user= workdir=
+[Continuous Integration/Test Docs]   ✅  Success - Main : work around spurious network errors in curl 8.0
+# https://rust-lang.zulipchat.com/#narrow/stream/246057-t-cargo/topic/timeout.20investigation
+if rustc +stable --version --verbose | grep -q '^release: 1\.7[01]\.'; then
+  echo CARGO_HTTP_MULTIPLEXING=false >> $GITHUB_ENV
+fi
+ [364.998463ms]
+[Continuous Integration/Test Docs] ⭐ Run Main rustc +stable --version --verbose
+[Continuous Integration/Test Docs]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/1-composite-12.sh] user= workdir=
+[Continuous Integration/Test Docs]   | rustc 1.95.0 (59807616e 2026-04-14)
+[Continuous Integration/Test Docs]   | binary: rustc
+[Continuous Integration/Test Docs]   | commit-hash: 59807616e1fa2540724bfbac14d7976d7e4a3860
+[Continuous Integration/Test Docs]   | commit-date: 2026-04-14
+[Continuous Integration/Test Docs]   | host: x86_64-unknown-linux-gnu
+[Continuous Integration/Test Docs]   | release: 1.95.0
+[Continuous Integration/Test Docs]   | LLVM version: 22.1.2
+[Continuous Integration/Test Docs]   ✅  Success - Main rustc +stable --version --verbose [383.259292ms]
+[Continuous Integration/Test Docs]   ⚙  ::set-output:: cachekey=202604145980
+[Continuous Integration/Test Docs]   ⚙  ::set-output:: name=stable
+[Continuous Integration/Test Docs]   ✅  Success - Main dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9 [19.900256453s]
+[Continuous Integration/Test Docs] ⭐ Run Main taiki-e/install-action@85b24a67ef0c632dfefad70b9d5ce8fddb040754
+[Continuous Integration/Test Docs]   🐳  docker cp src=/home/mnabil/.cache/act/taiki-e-install-action@85b24a67ef0c632dfefad70b9d5ce8fddb040754/ dst=/var/run/act/actions/taiki-e-install-action@85b24a67ef0c632dfefad70b9d5ce8fddb040754/
+[Continuous Integration/Test Docs] ⭐ Run Main set -eu
+if ! command -v bash >/dev/null; then
+  if grep -Eq '^ID=alpine' /etc/os-release; then
+    printf '::group::Install packages required for install-action (bash)\n'
+    # NB: sync with apk_install in main.sh
+    if command -v sudo >/dev/null; then
+      sudo apk --no-cache add bash
+    elif command -v doas >/dev/null; then
+      doas apk --no-cache add bash
+    else
+      apk --no-cache add bash
+    fi
+    printf '::endgroup::\n'
+  else
+    printf '::error::install-action requires bash\n'
+    exit 1
+  fi
+fi
+bash --noprofile --norc "${GITHUB_ACTION_PATH:?}/main.sh"
+[Continuous Integration/Test Docs]   🐳  docker exec cmd=[sh -e /var/run/act/workflow/2-composite-0.sh] user= workdir=
+[Continuous Integration/Test Docs]   | info: host platform: x86_64_linux
+[Continuous Integration/Test Docs]   | info: installing cargo-hack@latest
+[Continuous Integration/Test Docs]   | info: downloading https://github.com/taiki-e/cargo-hack/releases/download/v0.6.44/cargo-hack-x86_64-unknown-linux-musl.tar.gz
+[Continuous Integration/Test Docs]   | info: verifying sha256 checksum for cargo-hack-x86_64-unknown-linux-musl.tar.gz
+[Continuous Integration/Test Docs]   | info: cargo-hack installed at /root/.cargo/bin/cargo-hack
+[Continuous Integration/Test Docs]   | + cargo-hack hack --version
+[Continuous Integration/Test Docs]   | cargo-hack 0.6.44
+[Continuous Integration/Test Docs]   | 
+[Continuous Integration/Test Docs]   ✅  Success - Main set -eu
+if ! command -v bash >/dev/null; then
+  if grep -Eq '^ID=alpine' /etc/os-release; then
+    printf '::group::Install packages required for install-action (bash)\n'
+    # NB: sync with apk_install in main.sh
+    if command -v sudo >/dev/null; then
+      sudo apk --no-cache add bash
+    elif command -v doas >/dev/null; then
+      doas apk --no-cache add bash
+    else
+      apk --no-cache add bash
+    fi
+    printf '::endgroup::\n'
+  else
+    printf '::error::install-action requires bash\n'
+    exit 1
+  fi
+fi
+bash --noprofile --norc "${GITHUB_ACTION_PATH:?}/main.sh"
+ [1.247225735s]
+[Continuous Integration/Test Docs]   ✅  Success - Main taiki-e/install-action@85b24a67ef0c632dfefad70b9d5ce8fddb040754 [2.997271067s]
+[Continuous Integration/Test Docs] ⭐ Run Main Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4
+[Continuous Integration/Test Docs]   🐳  docker cp src=/home/mnabil/.cache/act/Swatinem-rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4/ dst=/var/run/act/actions/Swatinem-rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4/
+[Continuous Integration/Test Docs]   🐳  docker exec cmd=[/opt/acttoolcache/node/24.15.0/x64/bin/node /var/run/act/actions/Swatinem-rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4/dist/restore/index.js] user= workdir=
+[Continuous Integration/Test Docs]   | (node:337) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+[Continuous Integration/Test Docs]   | (Use `node --trace-deprecation ...` to show where the warning was created)
+[Continuous Integration/Test Docs]   ❓  ::group::Cache Configuration
+[Continuous Integration/Test Docs]   | Cache Provider:
+[Continuous Integration/Test Docs]   |     github
+[Continuous Integration/Test Docs]   | Workspaces:
+[Continuous Integration/Test Docs]   |     /scratch/raian-files/LLM4Build/project_path/ratatui
+[Continuous Integration/Test Docs]   | Cache Paths:
+[Continuous Integration/Test Docs]   |     /root/.cargo/bin
+[Continuous Integration/Test Docs]   |     /root/.cargo/.crates.toml
+[Continuous Integration/Test Docs]   |     /root/.cargo/.crates2.json
+[Continuous Integration/Test Docs]   |     /root/.cargo/registry
+[Continuous Integration/Test Docs]   |     /root/.cargo/git
+[Continuous Integration/Test Docs]   |     /scratch/raian-files/LLM4Build/project_path/ratatui/target
+[Continuous Integration/Test Docs]   | Restore Key:
+[Continuous Integration/Test Docs]   |     v0-rust-test-docs-Linux-x64-267d10fb
+[Continuous Integration/Test Docs]   | Cache Key:
+[Continuous Integration/Test Docs]   |     v0-rust-test-docs-Linux-x64-267d10fb-5832ec2f
+[Continuous Integration/Test Docs]   | .. Prefix:
+[Continuous Integration/Test Docs]   |   - v0-rust-test-docs-Linux-x64
+[Continuous Integration/Test Docs]   | .. Environment considered:
+[Continuous Integration/Test Docs]   |   - Rust Versions:
+[Continuous Integration/Test Docs]   |     - 1.95.0 x86_64-unknown-linux-gnu 59807616e1fa2540724bfbac14d7976d7e4a3860
+[Continuous Integration/Test Docs]   |     - 1.95.0 x86_64-unknown-linux-gnu 59807616e1fa2540724bfbac14d7976d7e4a3860
+[Continuous Integration/Test Docs]   |   - CARGO_HOME
+[Continuous Integration/Test Docs]   |   - CARGO_INCREMENTAL
+[Continuous Integration/Test Docs]   |   - CARGO_TERM_COLOR
+[Continuous Integration/Test Docs]   | .. Lockfiles considered:
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/.cargo/config.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/Cargo.lock
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/advanced-widget-impl/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/async-github/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/calendar-explorer/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/canvas/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/chart/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/color-explorer/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/colors-rgb/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/constraint-explorer/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/constraints/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/custom-widget/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/demo/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/demo2/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/flex/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/gauge/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/hello-world/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/hyperlink/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/inline/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/input-form/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/minimal/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/modifiers/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/mouse-drawing/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/panic/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/popup/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/release-header/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/scrollbar/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/table/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/todo-list/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/tracing/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/user-input/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/volatility-surface/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/weather/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/widget-ref-container/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/concepts/state/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/ratatui-core/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/ratatui-crossterm/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/ratatui-macros/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/ratatui-termion/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/ratatui-termwiz/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/ratatui-widgets/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/ratatui/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/rust-toolchain.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/xtask/Cargo.toml
+[Continuous Integration/Test Docs]   ❓  ::endgroup::
+[Continuous Integration/Test Docs]   | 
+[Continuous Integration/Test Docs]   | ... Restoring cache ...
+[Continuous Integration/Test Docs]   | No cache found.
+[Continuous Integration/Test Docs]   ✅  Success - Main Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 [1.22798012s]
+[Continuous Integration/Test Docs]   ⚙  ::set-env:: CACHE_ON_FAILURE=false
+[Continuous Integration/Test Docs]   ⚙  ::set-env:: CARGO_INCREMENTAL=0
+[Continuous Integration/Test Docs]   ⚙  ::set-output:: cache-hit=false
+[Continuous Integration/Test Docs] ⭐ Run Main cargo xtask test-docs
+[Continuous Integration/Test Docs]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/4] user= workdir=
+[Continuous Integration/Test Docs]   | [1m[92m    Updating[0m crates.io index
+[Continuous Integration/Test Docs]   | [1m[92m Downloading[0m crates ...
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m anstyle-parse v1.0.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m clap v4.6.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m sharded-slab v0.1.7
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m nu-ansi-term v0.50.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m utf8parse v0.2.2
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m os_pipe v1.2.2
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m lazy_static v1.5.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m tracing-error v0.2.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m is_terminal_polyfill v1.70.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m sigchld v0.2.4
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m strsim v0.11.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m indenter v0.3.4
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m color-spantrace v0.3.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m once_cell v1.21.3
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m eyre v0.6.12
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m shared_thread v0.2.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m rustc-demangle v0.1.26
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m signal-hook-registry v1.4.6
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m clap-verbosity-flag v3.0.4
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m duct v1.1.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m shared_child v1.1.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m tracing-log v0.2.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m unicode-ident v1.0.18
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m tracing-attributes v0.1.31
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m owo-colors v4.2.2
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m smallvec v1.15.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m signal-hook v0.3.18
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m tracing-core v0.1.36
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m log v0.4.27
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m miniz_oxide v0.8.9
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m memchr v2.7.5
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m quote v1.0.45
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m proc-macro2 v1.0.106
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m pin-project-lite v0.2.16
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m clap_derive v4.6.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m clap_builder v4.6.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m thread_local v1.1.9
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m tracing-subscriber v0.3.23
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m heck v0.5.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m backtrace v0.3.75
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m gimli v0.31.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m anstream v1.0.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m syn v2.0.117
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m object v0.36.7
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m addr2line v0.24.2
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m colorchoice v1.0.4
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m clap_lex v1.0.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m cfg-if v1.0.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m anstyle-query v1.1.4
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m anstyle v1.0.14
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m adler2 v2.0.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m tracing v0.1.44
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m color-eyre v0.6.5
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m libc v0.2.175
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m proc-macro2 v1.0.106
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m unicode-ident v1.0.18
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m quote v1.0.45
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m libc v0.2.175
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m once_cell v1.21.3
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m cfg-if v1.0.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m utf8parse v0.2.2
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m signal-hook v0.3.18
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m log v0.4.27
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m lazy_static v1.5.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m colorchoice v1.0.4
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m anstyle-query v1.1.4
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m object v0.36.7
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m is_terminal_polyfill v1.70.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m pin-project-lite v0.2.16
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m owo-colors v4.2.2
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m anstyle v1.0.14
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m smallvec v1.15.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m nu-ansi-term v0.50.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m gimli v0.31.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m eyre v0.6.12
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m adler2 v2.0.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m clap_lex v1.0.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m strsim v0.11.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m color-spantrace v0.3.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m heck v0.5.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m memchr v2.7.5
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m indenter v0.3.4
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m rustc-demangle v0.1.26
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m shared_thread v0.2.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m thread_local v1.1.9
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m anstyle-parse v1.0.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m sharded-slab v0.1.7
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m miniz_oxide v0.8.9
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m tracing-core v0.1.36
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m anstream v1.0.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m clap_builder v4.6.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m tracing-log v0.2.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m tracing-subscriber v0.3.23
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m signal-hook-registry v1.4.6
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m os_pipe v1.2.2
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m syn v2.0.117
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m sigchld v0.2.4
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m shared_child v1.1.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m duct v1.1.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m addr2line v0.24.2
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m backtrace v0.3.75
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m tracing-attributes v0.1.31
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m clap_derive v4.6.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m tracing v0.1.44
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m tracing-error v0.2.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m color-eyre v0.6.5
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m clap v4.6.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m clap-verbosity-flag v3.0.4
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m xtask v0.0.0 (/scratch/raian-files/LLM4Build/project_path/ratatui/xtask)
+[Continuous Integration/Test Docs]   | [1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 7.18s
+[Continuous Integration/Test Docs]   | [1m[92m     Running[0m `target/debug/xtask test-docs`
+[Continuous Integration/Test Docs]   | [32m INFO[0m [2mxtask[0m[2m:[0m running command: Cmd(["cargo", "hack", "--workspace", "--ignore-private", "--exclude", "ratatui-crossterm", "test", "--doc", "--all-features"])
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `xtask`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `advanced-widget-impl`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `async-github`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `calendar-explorer`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `canvas`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `chart`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `color-explorer`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `colors-rgb`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `constraint-explorer`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `constraints`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `custom-widget`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `demo`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `demo2`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `flex`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `gauge`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `hello-world`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `hyperlink`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `inline`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `input-form`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `minimal`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `modifiers`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `mouse-drawing`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `panic`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `popup`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `release-header`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `scrollbar`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `table`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `todo-list`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `tracing`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `user-input`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `volatility-surface`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `weather`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `widget-ref-container`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `ratatui-state-examples`
+[Continuous Integration/Test Docs]   ❓  ::group::running `cargo test --doc --all-features` on ratatui (1/6)
+[Continuous Integration/Test Docs]   | [1m[92m Downloading[0m crates ...
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m approx v0.5.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m alloca v0.4.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m atomic v0.6.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m cpufeatures v0.2.17
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m equivalent v1.0.2
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m critical-section v1.2.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m either v1.15.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m futures-io v0.3.31
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m futures-sink v0.3.31
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m mac_address v1.1.8
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m lab v0.11.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m getrandom v0.4.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m litrs v1.0.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m wezterm-dynamic-derive v0.1.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m lru v0.16.3
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m futures-task v0.3.31
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m hashbrown v0.16.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m half v2.6.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m wezterm-blob-leases v0.1.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m wezterm-color-types v0.3.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m wezterm-dynamic v0.2.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m zmij v1.0.2
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m wezterm-input-types v0.1.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m yansi v1.0.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m wezterm-bidi v0.2.3
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m walkdir v2.5.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m memmem v0.1.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m crossterm v0.28.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m lock_api v0.4.13
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m indexmap v2.10.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m linux-raw-sys v0.4.15
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m libm v0.2.15
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m thiserror-impl v1.0.69
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m toml_edit v0.22.27
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m tokio-macros v2.6.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m rstest v0.26.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m unicode-width v0.2.2
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m vtparse v0.6.2
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m toml_datetime v0.6.11
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m uuid v0.8.2
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m uuid v1.18.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m rstest_macros v0.26.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m plotters v0.3.7
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m oorandom v11.1.5
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m winnow v0.7.12
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m time-core v0.1.8
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m zerocopy v0.8.26
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m time v0.3.47
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m tracing-appender v0.2.4
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m serde_derive v1.0.228
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m version_check v0.9.5
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m termios v0.3.3
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m thiserror-impl v2.0.18
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m rand v0.10.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m parking_lot_core v0.9.11
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m termwiz v0.23.3
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m terminfo v0.9.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m relative-path v1.9.3
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m pest v2.8.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m unicode-truncate v2.0.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m num-conv v0.2.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m portable-atomic-util v0.2.6
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m pin-utils v0.1.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m siphasher v1.0.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m deltae v0.3.2
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m linux-raw-sys v0.9.4
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m matchers v0.2.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m fast-srgb8 v1.0.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m palette v0.7.6
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m rustix v0.38.44
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m regex v1.11.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m strum v0.28.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m phf_codegen v0.11.3
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m tokio v1.50.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m pest_derive v2.8.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m nom v7.1.3
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m memoffset v0.9.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m serde v1.0.228
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m rand v0.8.5
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m pretty_assertions v1.4.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m serde_core v1.0.228
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m rustix v1.0.8
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m page_size v0.6.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m ordered-float v4.6.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m time-macros v0.2.27
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m slab v0.4.11
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m signal-hook-mio v0.2.4
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m semver v1.0.26
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m portable-atomic v1.13.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m plotters-svg v0.3.7
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m unicode-segmentation v1.12.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m typenum v1.18.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m termion v4.0.6
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m shlex v1.3.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m scopeguard v1.2.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m regex-automata v0.4.9
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m rand_core v0.9.3
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m pest_generator v2.8.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m parking_lot v0.12.4
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m numtoa v0.2.4
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m num_threads v0.1.7
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m tinytemplate v1.2.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m syn v1.0.109
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m serde_json v1.0.149
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m regex-syntax v0.8.5
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m rayon-core v1.13.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m rayon v1.11.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m proc-macro-crate v3.3.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m nix v0.29.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m minimal-lexical v0.2.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m hashbrown v0.15.5
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m ucd-trie v0.1.7
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m thiserror v2.0.18
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m rand_core v0.6.4
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m plotters-backend v0.3.7
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m num-traits v0.2.19
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m mio v1.0.4
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m rand_core v0.10.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m rand_chacha v0.10.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m rand v0.9.2
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m phf_macros v0.11.3
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m phf_generator v0.11.3
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m phf v0.11.3
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m pest_meta v2.8.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m palette_derive v0.7.6
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m num-derive v0.4.2
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m simplerand v1.6.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m ryu v1.0.20
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m rustc_version v0.4.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m rand_chacha v0.9.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m ppv-lite86 v0.2.21
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m phf_shared v0.11.3
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m thiserror v1.0.69
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m strum_macros v0.28.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m static_assertions v1.1.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m rustversion v1.0.22
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m sha2 v0.10.9
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m same-file v1.0.6
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m powerfmt v0.2.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m darling_core v0.23.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m futures-executor v0.3.31
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m line-clipping v0.3.7
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m itoa v1.0.15
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m glob v0.3.3
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m futures-util v0.3.31
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m foldhash v0.1.5
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m fixedbitset v0.4.2
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m finl_unicode v1.3.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m fakeit v1.4.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m diff v0.1.13
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m derive_more-impl v2.0.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m fancy-regex v0.11.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m ident_case v1.0.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m hex v0.4.3
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m generic-array v0.14.7
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m futures-channel v0.3.31
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m by_address v1.2.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m itertools v0.13.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m getrandom v0.2.16
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m crossterm v0.29.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m criterion v0.8.2
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m castaway v0.2.4
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m aho-corasick v1.1.3
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m kasuari v0.4.12
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m itertools v0.14.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m getrandom v0.3.3
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m futures-timer v3.0.3
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m futures-macro v0.3.31
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m fnv v1.0.7
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m futures-core v0.3.31
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m filedescriptor v0.8.3
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m darling_macro v0.23.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m indoc v2.0.7
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m futures v0.3.31
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m euclid v0.22.11
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m errno v0.3.13
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m crossbeam-channel v0.5.15
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m cpufeatures v0.3.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m cc v1.2.33
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m bytemuck v1.23.2
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m instability v0.3.12
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m deranged v0.5.3
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m darling v0.23.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m chacha20 v0.10.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m bit-vec v0.6.3
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m base64 v0.22.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m foldhash v0.2.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m document-features v0.2.12
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m digest v0.10.7
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m derive_more v2.0.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m criterion-plot v0.8.2
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m compact_str v0.9.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m bitflags v2.11.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m csscolorparser v0.6.2
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m crypto-common v0.1.6
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m crossbeam-utils v0.8.21
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m crossbeam-epoch v0.9.18
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m crossbeam-deque v0.8.6
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m ciborium-ll v0.2.2
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m ciborium-io v0.2.2
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m anyhow v1.0.99
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m allocator-api2 v0.2.21
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m convert_case v0.7.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m ciborium v0.2.2
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m cast v0.3.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m bitflags v1.3.2
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m block-buffer v0.10.4
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m cfg_aliases v0.2.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m autocfg v1.5.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m anes v0.1.6
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m bit-set v0.5.3
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m libc v0.2.175
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m memchr v2.7.5
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m serde_core v1.0.228
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m autocfg v1.5.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m serde v1.0.228
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m thiserror v2.0.18
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m equivalent v1.0.2
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m siphasher v1.0.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m itoa v1.0.15
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m rand_core v0.6.4
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m regex-syntax v0.8.5
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m unicode-segmentation v1.12.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m either v1.15.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m portable-atomic v1.13.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m version_check v0.9.5
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m getrandom v0.3.3
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m rustversion v1.0.22
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m typenum v1.18.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m thiserror v1.0.69
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m allocator-api2 v0.2.21
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m libm v0.2.15
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m foldhash v0.2.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m portable-atomic-util v0.2.6
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m syn v1.0.109
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m crossbeam-utils v0.8.21
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m signal-hook v0.3.18
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m by_address v1.2.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m ident_case v1.0.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m palette v0.7.6
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m cfg_aliases v0.2.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m futures-core v0.3.31
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m fast-srgb8 v1.0.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m indoc v2.0.7
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m static_assertions v1.1.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m unicode-width v0.2.2
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m ryu v1.0.20
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m ucd-trie v0.1.7
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m instability v0.3.12
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m zerocopy v0.8.26
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m critical-section v1.2.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m parking_lot_core v0.9.11
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m semver v1.0.26
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m powerfmt v0.2.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m scopeguard v1.2.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m bytemuck v1.23.2
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m hashbrown v0.15.5
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m lab v0.11.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m bit-vec v0.6.3
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m time-core v0.1.8
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m anyhow v1.0.99
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m cpufeatures v0.2.17
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m shlex v1.3.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m zmij v1.0.2
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m num_threads v0.1.7
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m rustix v1.0.8
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m minimal-lexical v0.2.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m rustix v0.38.44
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m num-conv v0.2.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m futures-sink v0.3.31
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m serde_json v1.0.149
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m rayon-core v1.13.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m deltae v0.3.2
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m rand_core v0.10.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m litrs v1.0.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m slab v0.4.11
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m linux-raw-sys v0.9.4
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m futures-io v0.3.31
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m pin-utils v0.1.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m bitflags v1.3.2
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m toml_datetime v0.6.11
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m linux-raw-sys v0.4.15
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m phf_shared v0.11.3
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m rand v0.8.5
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m fnv v1.0.7
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m winnow v0.7.12
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m futures-task v0.3.31
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m half v2.6.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m vtparse v0.6.2
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m numtoa v0.2.4
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m generic-array v0.14.7
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m hashbrown v0.16.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m itertools v0.14.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m nix v0.29.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m deranged v0.5.3
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m futures-channel v0.3.31
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m base64 v0.22.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m hex v0.4.3
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m fixedbitset v0.4.2
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m memmem v0.1.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m finl_unicode v1.3.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m ciborium-io v0.2.2
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m getrandom v0.4.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m plotters-backend v0.3.7
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m itertools v0.13.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m same-file v1.0.6
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m cpufeatures v0.3.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m glob v0.3.3
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m cast v0.3.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m relative-path v1.9.3
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m simplerand v1.6.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m syn v2.0.117
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m aho-corasick v1.1.3
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m num-traits v0.2.19
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m memoffset v0.9.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m lock_api v0.4.13
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m atomic v0.6.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m convert_case v0.7.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m cc v1.2.33
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m bit-set v0.5.3
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m nom v7.1.3
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m clap_builder v4.6.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m object v0.36.7
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m oorandom v11.1.5
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m anes v0.1.6
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m yansi v1.0.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m diff v0.1.13
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m futures-timer v3.0.3
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m ciborium-ll v0.2.2
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m walkdir v2.5.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m chacha20 v0.10.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m plotters-svg v0.3.7
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m document-features v0.2.12
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m phf_generator v0.11.3
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m pretty_assertions v1.4.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m castaway v0.2.4
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m rustc_version v0.4.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m indexmap v2.10.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m phf_codegen v0.11.3
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m crossbeam-epoch v0.9.18
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m crossbeam-channel v0.5.15
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m terminfo v0.9.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m lru v0.16.3
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m rstest_macros v0.26.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m crossbeam-deque v0.8.6
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m ordered-float v4.6.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m euclid v0.22.11
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m plotters v0.3.7
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m alloca v0.4.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m unicode-truncate v2.0.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m crypto-common v0.1.6
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m block-buffer v0.10.4
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m signal-hook-registry v1.4.6
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m mio v1.0.4
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m time v0.3.47
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m termios v0.3.3
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m getrandom v0.2.16
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m page_size v0.6.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m digest v0.10.7
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m regex-automata v0.4.9
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m criterion-plot v0.8.2
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m rayon v1.11.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m rand_core v0.9.3
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m uuid v0.8.2
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m rand v0.10.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m toml_edit v0.22.27
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m sha2 v0.10.9
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m parking_lot v0.12.4
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m ppv-lite86 v0.2.21
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m signal-hook-mio v0.2.4
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m clap v4.6.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m rand_chacha v0.9.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m rand_chacha v0.10.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m rand v0.9.2
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m wezterm-dynamic-derive v0.1.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m bitflags v2.11.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m line-clipping v0.3.7
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m fakeit v1.4.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m proc-macro-crate v3.3.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m backtrace v0.3.75
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m darling_core v0.23.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m regex v1.11.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m serde_derive v1.0.228
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m thiserror-impl v2.0.18
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m thiserror-impl v1.0.69
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m strum_macros v0.28.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m palette_derive v0.7.6
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m phf_macros v0.11.3
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m tracing-attributes v0.1.31
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m futures-macro v0.3.31
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m derive_more-impl v2.0.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m num-derive v0.4.2
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m tokio-macros v2.6.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m matchers v0.2.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m mac_address v1.1.8
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m phf v0.11.3
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m tokio v1.50.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m derive_more v2.0.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m csscolorparser v0.6.2
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m futures-util v0.3.31
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m fancy-regex v0.11.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m tracing v0.1.44
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m wezterm-dynamic v0.2.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m filedescriptor v0.8.3
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m kasuari v0.4.12
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m pest v2.8.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m tracing-subscriber v0.3.23
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m wezterm-bidi v0.2.3
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m strum v0.28.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m darling_macro v0.23.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m darling v0.23.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m pest_meta v2.8.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m tracing-error v0.2.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m tracing-appender v0.2.4
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m color-spantrace v0.3.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m color-eyre v0.6.5
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m compact_str v0.9.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m uuid v1.18.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m wezterm-color-types v0.3.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m wezterm-input-types v0.1.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m crossterm v0.28.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m termion v4.0.6
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m crossterm v0.29.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m tinytemplate v1.2.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m ciborium v0.2.2
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m pest_generator v2.8.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m wezterm-blob-leases v0.1.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m futures-executor v0.3.31
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m rstest v0.26.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m futures v0.3.31
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m criterion v0.8.2
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m pest_derive v2.8.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m termwiz v0.23.3
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m ratatui-core v0.1.0 (/scratch/raian-files/LLM4Build/project_path/ratatui/ratatui-core)
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m ratatui-widgets v0.3.0 (/scratch/raian-files/LLM4Build/project_path/ratatui/ratatui-widgets)
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m ratatui-termion v0.1.0 (/scratch/raian-files/LLM4Build/project_path/ratatui/ratatui-termion)
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m ratatui-crossterm v0.1.0 (/scratch/raian-files/LLM4Build/project_path/ratatui/ratatui-crossterm)
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m ratatui-termwiz v0.1.0 (/scratch/raian-files/LLM4Build/project_path/ratatui/ratatui-termwiz)
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m ratatui-macros v0.7.0 (/scratch/raian-files/LLM4Build/project_path/ratatui/ratatui-macros)
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m ratatui v0.30.0 (/scratch/raian-files/LLM4Build/project_path/ratatui/ratatui)
+[Continuous Integration/Test Docs]   | [1m[92m    Finished[0m `test` profile [unoptimized + debuginfo] target(s) in 13.31s
+[Continuous Integration/Test Docs]   | [1m[92m   Doc-tests[0m ratatui
+[Continuous Integration/Test Docs]   | 
+[Continuous Integration/Test Docs]   | running 41 tests
+[Continuous Integration/Test Docs]   | test ratatui/src/init.rs - init (line 52) - compile ... ok
+[Continuous Integration/Test Docs]   | test ratatui/src/init.rs - init (line 67) - compile ... ok
+[Continuous Integration/Test Docs]   | test ratatui/src/init.rs - init (line 83) - compile ... ok
+[Continuous Integration/Test Docs]   | test ratatui/src/init.rs - init::init (line 295) - compile ... ok
+[Continuous Integration/Test Docs]   | test ratatui/src/init.rs - init::init_with_options (line 374) - compile ... ok
+[Continuous Integration/Test Docs]   | test ratatui/src/init.rs - init::restore (line 454) - compile ... ok
+[Continuous Integration/Test Docs]   | test ratatui/src/init.rs - init::run (line 165) - compile ... ok
+[Continuous Integration/Test Docs]   | test ratatui/src/init.rs - init::run (line 182) - compile ... ok
+[Continuous Integration/Test Docs]   | test ratatui/src/init.rs - init::run (line 206) - compile ... ok
+[Continuous Integration/Test Docs]   | test ratatui/src/init.rs - init::try_init (line 326) - compile ... ok
+[Continuous Integration/Test Docs]   | test ratatui/src/init.rs - init::try_init_with_options (line 416) - compile ... ok
+[Continuous Integration/Test Docs]   | test ratatui/src/init.rs - init::try_restore (line 483) - compile ... ok
+[Continuous Integration/Test Docs]   | test ratatui/src/lib.rs - (line 128) - compile ... ok
+[Continuous Integration/Test Docs]   | test ratatui/src/lib.rs - (line 152) - compile ... ok
+[Continuous Integration/Test Docs]   | test ratatui/src/lib.rs - (line 202) - compile ... ok
+[Continuous Integration/Test Docs]   | test ratatui/src/lib.rs - (line 229) - compile ... ok
+[Continuous Integration/Test Docs]   | test ratatui/src/lib.rs - (line 254) - compile ... ok
+[Continuous Integration/Test Docs]   | test ratatui/src/lib.rs - (line 296) - compile ... ok
+[Continuous Integration/Test Docs]   | test ratatui/src/lib.rs - (line 38) - compile ... ok
+[Continuous Integration/Test Docs]   | test ratatui/src/prelude.rs - prelude (line 13) - compile ... ok
+[Continuous Integration/Test Docs]   | test ratatui/src/widgets.rs - widgets (line 114) ... ok
+[Continuous Integration/Test Docs]   | test ratatui/src/widgets.rs - widgets (line 362) ... ok
+[Continuous Integration/Test Docs]   | test ratatui/src/widgets.rs - widgets (line 152) ... ok
+[Continuous Integration/Test Docs]   | test ratatui/src/prelude.rs - prelude (line 20) ... ok
+[Continuous Integration/Test Docs]   | test ratatui/src/widgets.rs - widgets (line 197) ... ok
+[Continuous Integration/Test Docs]   | test ratatui/src/widgets.rs - widgets (line 132) ... ok
+[Continuous Integration/Test Docs]   | test ratatui/src/widgets.rs - widgets (line 260) ... ok
+[Continuous Integration/Test Docs]   | test ratatui/src/widgets.rs - widgets (line 214) ... ok
+[Continuous Integration/Test Docs]   | test ratatui/src/widgets.rs - widgets (line 239) ... ok
+[Continuous Integration/Test Docs]   | test ratatui/src/widgets.rs - widgets (line 386) ... ok
+[Continuous Integration/Test Docs]   | test ratatui/src/widgets.rs - widgets (line 414) ... ok
+[Continuous Integration/Test Docs]   | test ratatui/src/widgets.rs - widgets (line 462) ... ok
+[Continuous Integration/Test Docs]   | test ratatui/src/widgets.rs - widgets::FrameExt::render_widget_ref (line 705) ... ok
+[Continuous Integration/Test Docs]   | test ratatui/src/widgets.rs - widgets (line 438) ... ok
+[Continuous Integration/Test Docs]   | test ratatui/src/widgets.rs - widgets (line 515) ... ok
+[Continuous Integration/Test Docs]   | test ratatui/src/widgets.rs - widgets::FrameExt::render_stateful_widget_ref (line 734) ... ok
+[Continuous Integration/Test Docs]   | test ratatui/src/widgets.rs - widgets (line 569) ... ok
+[Continuous Integration/Test Docs]   | test ratatui/src/widgets.rs - widgets (line 544) ... ok
+[Continuous Integration/Test Docs]   | test ratatui/src/widgets/widget_ref.rs - widgets::widget_ref::Option<W> (line 139) ... ok
+[Continuous Integration/Test Docs]   | test ratatui/src/widgets/widget_ref.rs - widgets::widget_ref::WidgetRef (line 34) ... ok
+[Continuous Integration/Test Docs]   | test ratatui/src/widgets/stateful_widget_ref.rs - widgets::stateful_widget_ref::StatefulWidgetRef (line 29) ... ok
+[Continuous Integration/Test Docs]   | 
+[Continuous Integration/Test Docs]   | test result: ok. 41 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+[Continuous Integration/Test Docs]   | 
+[Continuous Integration/Test Docs]   | 
+[Continuous Integration/Test Docs]   | running 1 test
+[Continuous Integration/Test Docs]   | test ratatui/src/widgets.rs - widgets (line 631) ... ignored
+[Continuous Integration/Test Docs]   | 
+[Continuous Integration/Test Docs]   | test result: ok. 0 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.00s
+[Continuous Integration/Test Docs]   | 
+[Continuous Integration/Test Docs]   | all doctests ran in 0.78s; merged doctests compilation took 0.76s
+[Continuous Integration/Test Docs]   ❓  ::endgroup::
+[Continuous Integration/Test Docs]   ❓  ::group::running `cargo test --doc --all-features` on ratatui-core (2/6)
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m serde_core v1.0.228
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m memchr v2.7.5
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m thiserror v2.0.18
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m serde v1.0.228
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m critical-section v1.2.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m futures-util v0.3.31
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m kasuari v0.4.12
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m aho-corasick v1.1.3
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m regex-automata v0.4.9
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m bitflags v2.11.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m serde_json v1.0.149
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m compact_str v0.9.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m regex v1.11.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m ratatui-core v0.1.0 (/scratch/raian-files/LLM4Build/project_path/ratatui/ratatui-core)
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m rstest_macros v0.26.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m rstest v0.26.1
+[Continuous Integration/Test Docs]   | [1m[92m    Finished[0m `test` profile [unoptimized + debuginfo] target(s) in 5.00s
+[Continuous Integration/Test Docs]   | [1m[92m   Doc-tests[0m ratatui_core
+[Continuous Integration/Test Docs]   | 
+[Continuous Integration/Test Docs]   | running 185 tests
+[Continuous Integration/Test Docs]   | test ratatui-core/src/backend.rs - backend (line 27) ... ignored
+[Continuous Integration/Test Docs]   | test ratatui-core/src/backend.rs - backend::Backend::clear (line 260) ... ignored
+[Continuous Integration/Test Docs]   | test ratatui-core/src/backend.rs - backend::Backend::clear_region (line 284) ... ignored
+[Continuous Integration/Test Docs]   | test ratatui-core/src/backend.rs - backend::Backend::hide_cursor (line 183) ... ignored
+[Continuous Integration/Test Docs]   | test ratatui-core/src/backend.rs - backend::Backend::set_cursor_position (line 220) ... ignored
+[Continuous Integration/Test Docs]   | test ratatui-core/src/backend.rs - backend::Backend::size (line 307) ... ignored
+[Continuous Integration/Test Docs]   | test ratatui-core/src/backend/test.rs - backend::test::TestBackend (line 22) ... ignored
+[Continuous Integration/Test Docs]   | test ratatui-core/src/buffer/buffer.rs - buffer::buffer::Buffer::index_mut (line 554) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/buffer/buffer.rs - buffer::buffer::Buffer (line 22) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/buffer/buffer.rs - buffer::buffer::Buffer::cell_mut (line 196) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/buffer/buffer.rs - buffer::buffer::Buffer::cell (line 167) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/buffer/buffer.rs - buffer::buffer::Buffer::index_of (line 225) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/buffer/buffer.rs - buffer::buffer::Buffer::index (line 526) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/buffer/buffer.rs - buffer::buffer::Buffer::pos_of (line 299) - should panic ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/layout.rs - layout (line 223) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/layout.rs - layout (line 116) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/buffer/buffer.rs - buffer::buffer::Buffer::pos_of (line 285) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/buffer/cell.rs - buffer::cell::Cell::merge_symbol (line 119) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/buffer/buffer.rs - buffer::buffer::Buffer::index_of (line 238) - should panic ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/layout.rs - layout (line 150) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/layout.rs - layout (line 240) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/layout.rs - layout (line 163) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/layout.rs - layout (line 100) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/layout.rs - layout (line 258) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/layout/constraint.rs - layout::constraint::Constraint (line 49) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/layout/layout.rs - layout::layout::Layout::flex (line 490) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/layout/layout.rs - layout::layout::Layout::horizontal_margin (line 437) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/layout/layout.rs - layout::layout::Layout (line 176) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/layout.rs - layout (line 136) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/layout.rs - layout (line 84) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/layout/layout.rs - layout::layout::Layout::horizontal (line 289) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/layout/layout.rs - layout::layout::Layout::split (line 674) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/layout/position.rs - layout::position::Position (line 37) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/layout/constraint.rs - layout::constraint::Constraint::from_lengths (line 250) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/layout/constraint.rs - layout::constraint::Constraint::from_ratios (line 268) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/layout/layout.rs - layout::layout::Layout::new (line 235) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/layout/layout.rs - layout::layout::Layout::margin (line 415) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/layout/layout.rs - layout::layout::Layout::areas (line 568) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/layout/constraint.rs - layout::constraint::Constraint::from_fills (line 340) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/layout/constraint.rs - layout::constraint::Constraint::from_percentages (line 286) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/layout/constraint.rs - layout::constraint::Constraint::from_mins (line 322) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/layout/constraint.rs - layout::constraint::Constraint::from_maxes (line 304) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/layout/layout.rs - layout::layout::Layout::spacing (line 530) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/layout/layout.rs - layout::layout::Layout::spacers (line 635) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/layout/margin.rs - layout::margin::Margin (line 21) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/layout/layout.rs - layout::layout::Layout::split_with_spacers (line 706) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/layout/layout.rs - layout::layout::Layout::spacing (line 540) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/layout/layout.rs - layout::layout::Layout::try_areas (line 603) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/style.rs - style::Style::from (line 610) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/layout/layout.rs - layout::layout::Layout::direction (line 335) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/style/stylize.rs - style::stylize::Stylize (line 203) ... ignored
+[Continuous Integration/Test Docs]   | test ratatui-core/src/style/stylize.rs - style::stylize::Stylize (line 209) ... ignored
+[Continuous Integration/Test Docs]   | test ratatui-core/src/style/stylize.rs - style::stylize::Stylize (line 218) ... ignored
+[Continuous Integration/Test Docs]   | test ratatui-core/src/style/stylize.rs - style::stylize::color (line 99) ... ignored
+[Continuous Integration/Test Docs]   | test ratatui-core/src/style/stylize.rs - style::stylize::modifier (line 149) ... ignored
+[Continuous Integration/Test Docs]   | test ratatui-core/src/terminal.rs - terminal (line 13) ... ignored
+[Continuous Integration/Test Docs]   | test ratatui-core/src/terminal.rs - terminal::Terminal (line 162) ... ignored
+[Continuous Integration/Test Docs]   | test ratatui-core/src/terminal.rs - terminal::Terminal (line 196) ... ignored
+[Continuous Integration/Test Docs]   | test ratatui-core/src/terminal.rs - terminal::Terminal (line 61) ... ignored
+[Continuous Integration/Test Docs]   | test ratatui-core/src/terminal.rs - terminal::Terminal (line 120) - compile ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/terminal/frame.rs - terminal::frame::Frame<'_>::count (line 181) ... ignored
+[Continuous Integration/Test Docs]   | test ratatui-core/src/terminal/frame.rs - terminal::frame::Frame<'_>::render_stateful_widget (line 107) ... ignored
+[Continuous Integration/Test Docs]   | test ratatui-core/src/terminal/buffers.rs - terminal::buffers::Terminal<B>::get_frame (line 23) - compile ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/terminal/frame.rs - terminal::frame::Frame<'_>::render_widget (line 80) ... ignored
+[Continuous Integration/Test Docs]   | test ratatui-core/src/terminal/init.rs - terminal::init::Terminal<B>::new (line 25) - compile ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/terminal/init.rs - terminal::init::Terminal<B>::with_options (line 82) - compile ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/terminal/inline.rs - terminal::inline::Terminal<B>::insert_before (line 72) - compile ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/terminal/render.rs - terminal::render::Terminal<B>::draw (line 47) - compile ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/terminal/render.rs - terminal::render::Terminal<B>::try_draw (line 136) - compile ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/text.rs - text (line 21) ... ignored
+[Continuous Integration/Test Docs]   | test ratatui-core/src/text/line.rs - text::line::Line (line 153) ... ignored
+[Continuous Integration/Test Docs]   | test ratatui-core/src/text/line.rs - text::line::Line (line 165) ... ignored
+[Continuous Integration/Test Docs]   | test ratatui-core/src/text/span.rs - text::span::Span (line 88) ... ignored
+[Continuous Integration/Test Docs]   | test ratatui-core/src/layout/constraint.rs - layout::constraint::Constraint::from (line 363) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/layout/layout.rs - layout::layout::Layout::constraints (line 370) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/text/text.rs - text::text::Text (line 114) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/layout/rect.rs - layout::rect::Rect::try_layout (line 632) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/style/color.rs - style::color::Color (line 269) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/text/text.rs - text::text::Text (line 165) ... ignored
+[Continuous Integration/Test Docs]   | test ratatui-core/src/text/text.rs - text::text::Text (line 178) ... ignored
+[Continuous Integration/Test Docs]   | test ratatui-core/src/text/text.rs - text::text::Text (line 133) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/text/text.rs - text::text::Text (line 151) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/text/text.rs - text::text::Text (line 73) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/text/text.rs - text::text::Text<'a>::alignment (line 409) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/text/text.rs - text::text::Text<'a>::alignment (line 423) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/text/text.rs - text::text::Text<'a>::centered (line 482) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/text/text.rs - text::text::Text<'a>::height (line 297) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/text/text.rs - text::text::Text<'a>::left_aligned (line 462) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/text/text.rs - text::text::Text<'a>::patch_style (line 349) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/text/text.rs - text::text::Text<'a>::push_line (line 529) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/text/text.rs - text::text::Text<'a>::push_span (line 548) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/text/text.rs - text::text::Text<'a>::raw (line 233) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/text/text.rs - text::text::Text<'a>::reset_style (line 380) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/text/text.rs - text::text::Text<'a>::right_aligned (line 502) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/text/text.rs - text::text::Text<'a>::style (line 319) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/widgets/stateful_widget.rs - widgets::stateful_widget::StatefulWidget (line 26) ... ignored
+[Continuous Integration/Test Docs]   | test ratatui-core/src/widgets/widget.rs - widgets::widget::Widget (line 40) ... ignored
+[Continuous Integration/Test Docs]   | test ratatui-core/src/text/text.rs - text::text::Text<'a>::styled (line 259) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/text/text.rs - text::text::Text<'a>::width (line 283) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/widgets/widget.rs - widgets::widget::Widget (line 56) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/style.rs - style::Style::fg (line 327) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/text/span.rs - text::span::Span (line 73) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/layout/layout.rs - layout::layout::Layout::vertical (line 269) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/layout/rect.rs - layout::rect::Rect (line 75) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/text/span.rs - text::span::Span<'a>::reset_style (line 254) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/layout/rect.rs - layout::rect::Rect::centered_horizontally (line 504) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/layout/rect.rs - layout::rect::Rect (line 92) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/layout/rect.rs - layout::rect::Rect (line 123) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/text/span.rs - text::span::Span<'a>::style (line 207) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/style.rs - style::Style::from (line 625) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/style.rs - style::Style::remove_modifier (line 420) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/text/line.rs - text::line::Line (line 123) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/style.rs - style::Style::bg (line 344) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/style/palette_conversion.rs - style::palette_conversion::Color (line 36) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/layout/rect.rs - layout::rect::Rect::layout (line 574) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/text/line.rs - text::line::Line<'a>::raw (line 242) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/style.rs - style::Style (line 144) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/style.rs - style::Style::has_modifier (line 440) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/layout/rect.rs - layout::rect::Rect::centered_vertically (line 522) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/text/line.rs - text::line::Line<'a>::reset_style (line 525) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/text/masked.rs - text::masked::Masked (line 13) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/text/line.rs - text::line::Line<'a>::styled (line 273) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/symbols/merge.rs - symbols::merge::MergeStrategy::merge (line 289) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/text/line.rs - text::line::Line<'a>::styled_graphemes (line 455) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/layout/rect.rs - layout::rect::Rect (line 111) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/layout/rect.rs - layout::rect::Rect::as_position (line 479) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/style/palette_conversion.rs - style::palette_conversion::Color (line 15) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/style.rs - style::Style::from (line 680) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/style/color.rs - style::color::Color (line 45) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/text/span.rs - text::span::Span (line 44) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/style/color.rs - style::color::Color::deserialize (line 171) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/text/span.rs - text::span::Span<'a>::styled (line 151) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/text/line.rs - text::line::Line<'a>::width (line 433) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/style.rs - style (line 15) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/style/palette/tailwind.rs - style::palette::tailwind (line 270) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/text/span.rs - text::span::Span<'a>::into_left_aligned_line (line 322) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/layout/layout.rs - layout::layout::Layout::flex (line 500) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/text/line.rs - text::line::Line<'a>::patch_style (line 499) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/layout/rect.rs - layout::rect::Rect::positions (line 459) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/layout/rect.rs - layout::rect::Rect::centered (line 540) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/style.rs - style::Style (line 133) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/text/line.rs - text::line::Line (line 106) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/symbols/merge.rs - symbols::merge::MergeStrategy::Fuzzy (line 250) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/style.rs - style::Style (line 155) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/text/line.rs - text::line::Line<'a>::spans (line 305) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/symbols/merge.rs - symbols::merge::MergeStrategy::Replace (line 86) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/text/span.rs - text::span::Span<'a>::content (line 181) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/symbols/merge.rs - symbols::merge::MergeStrategy (line 48) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/layout/rect.rs - layout::rect::Rect::new (line 174) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/style.rs - style::Style (line 172) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/style.rs - style::Style::underline_color (line 369) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/text/span.rs - text::span::Span (line 58) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/text/line.rs - text::line::Line (line 81) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/text/span.rs - text::span::Span<'a>::into_centered_line (line 342) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/text/line.rs - text::line::Line<'a>::left_aligned (line 383) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/layout/layout.rs - layout::layout::Layout::vertical_margin (line 456) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/style.rs - style::Style::add_modifier (line 398) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/text/span.rs - text::span::Span<'a>::patch_style (line 230) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/layout/rect.rs - layout::rect::Rect::clamp (line 379) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/layout/rect.rs - layout::rect::Rect::layout_vec (line 605) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/layout/rect.rs - layout::rect::Rect::columns (line 436) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/style.rs - style::Style::from (line 645) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/text/line.rs - text::line::Line<'a>::alignment (line 356) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/text/line.rs - text::line::Line<'a>::centered (line 401) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/text/span.rs - text::span::Span<'a>::into_right_aligned_line (line 362) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/style/color.rs - style::color::Color::from_hsl (line 391) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/style.rs - style::Style::from (line 572) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/style.rs - style::Style (line 210) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/text/line.rs - text::line::Line<'a>::right_aligned (line 419) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/text/line.rs - text::line::Line<'a>::style (line 334) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/text/line.rs - text::line::Line<'a>::push_span (line 556) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/text/span.rs - text::span::Span<'a>::styled_graphemes (line 285) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/text/span.rs - text::span::Span<'a>::raw (line 125) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/layout/rect.rs - layout::rect::Rect::rows (line 402) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/symbols/merge.rs - symbols::merge::MergeStrategy::Exact (line 144) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/layout/size.rs - layout::size::Size (line 33) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/style.rs - style::Style::from (line 663) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/layout/rect.rs - layout::rect::Rect::contains (line 349) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/style.rs - style::Style::from (line 587) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/style.rs - style::Modifier (line 96) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/text/line.rs - text::line::Line (line 137) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/style/color.rs - style::color::Color::from_hsluv (line 444) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/style.rs - style (line 43) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/style.rs - style::Style::patch (line 459) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-core/src/style/palette/material.rs - style::palette::material (line 405) ... ok
+[Continuous Integration/Test Docs]   | 
+[Continuous Integration/Test Docs]   | test result: ok. 158 passed; 0 failed; 27 ignored; 0 measured; 0 filtered out; finished in 0.14s
+[Continuous Integration/Test Docs]   | 
+[Continuous Integration/Test Docs]   | all doctests ran in 1.15s; merged doctests compilation took 1.00s
+[Continuous Integration/Test Docs]   ❓  ::endgroup::
+[Continuous Integration/Test Docs]   ❓  ::group::running `cargo test --doc --all-features` on ratatui-macros (3/6)
+[Continuous Integration/Test Docs]   | [1m[92m Downloading[0m crates ...
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m termcolor v1.4.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m toml_datetime v0.7.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m serde_spanned v1.0.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m toml v0.9.5
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m toml_writer v1.0.2
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m trybuild v1.0.115
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m dissimilar v1.0.10
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m target-triple v1.0.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m toml_parser v1.0.2
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m serde v1.0.228
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m strsim v0.11.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m thiserror v2.0.18
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m either v1.15.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m bitflags v2.11.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m target-triple v1.0.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m winnow v0.7.12
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m toml_writer v1.0.2
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m termcolor v1.4.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m glob v0.3.3
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m dissimilar v1.0.10
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m syn v2.0.117
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m compact_str v0.9.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m line-clipping v0.3.7
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m itertools v0.14.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m serde_spanned v1.0.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m toml_datetime v0.7.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m unicode-truncate v2.0.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m toml_parser v1.0.2
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m toml v0.9.5
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m darling_core v0.23.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m thiserror-impl v2.0.18
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m strum_macros v0.28.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m serde_derive v1.0.228
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m kasuari v0.4.12
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m darling_macro v0.23.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m strum v0.28.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m ratatui-core v0.1.0 (/scratch/raian-files/LLM4Build/project_path/ratatui/ratatui-core)
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m darling v0.23.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m instability v0.3.12
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m trybuild v1.0.115
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m ratatui-widgets v0.3.0 (/scratch/raian-files/LLM4Build/project_path/ratatui/ratatui-widgets)
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m ratatui-macros v0.7.0 (/scratch/raian-files/LLM4Build/project_path/ratatui/ratatui-macros)
+[Continuous Integration/Test Docs]   | [1m[92m    Finished[0m `test` profile [unoptimized + debuginfo] target(s) in 6.21s
+[Continuous Integration/Test Docs]   | [1m[92m   Doc-tests[0m ratatui_macros
+[Continuous Integration/Test Docs]   | 
+[Continuous Integration/Test Docs]   | running 26 tests
+[Continuous Integration/Test Docs]   | test ratatui-macros/src/layout.rs - layout::constraint (line 8) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-macros/src/lib.rs - (line 24) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-macros/src/layout.rs - layout::constraints (line 51) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-macros/src/layout.rs - layout::horizontal (line 193) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-macros/src/layout.rs - layout::constraints (line 57) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-macros/src/layout.rs - layout::vertical (line 172) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-macros/src/lib.rs - (line 104) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-macros/src/lib.rs - (line 32) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-macros/src/lib.rs - (line 75) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-macros/src/lib.rs - (line 45) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-macros/src/row.rs - row::row (line 26) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-macros/src/lib.rs - (line 83) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-macros/src/lib.rs - (line 58) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-macros/src/line.rs - line::line (line 19) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-macros/src/line.rs - line::line (line 26) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-macros/src/row.rs - row::row (line 19) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-macros/src/line.rs - line::line (line 9) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-macros/src/row.rs - row::row (line 33) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-macros/src/span.rs - span::span (line 13) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-macros/src/span.rs - span::span (line 70) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-macros/src/span.rs - span::span (line 86) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-macros/src/row.rs - row::row (line 9) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-macros/src/text.rs - text::text (line 19) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-macros/src/text.rs - text::text (line 9) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-macros/src/text.rs - text::text (line 26) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-macros/src/lib.rs - (line 91) ... ok
+[Continuous Integration/Test Docs]   | 
+[Continuous Integration/Test Docs]   | test result: ok. 26 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+[Continuous Integration/Test Docs]   | 
+[Continuous Integration/Test Docs]   | 
+[Continuous Integration/Test Docs]   | running 2 tests
+[Continuous Integration/Test Docs]   | test ratatui-macros/src/span.rs - span::span (line 62) - compile fail ... ok
+[Continuous Integration/Test Docs]   | test ratatui-macros/src/span.rs - span::span (line 78) - compile fail ... ok
+[Continuous Integration/Test Docs]   | 
+[Continuous Integration/Test Docs]   | test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+[Continuous Integration/Test Docs]   | 
+[Continuous Integration/Test Docs]   | all doctests ran in 0.63s; merged doctests compilation took 0.57s
+[Continuous Integration/Test Docs]   ❓  ::endgroup::
+[Continuous Integration/Test Docs]   ❓  ::group::running `cargo test --doc --all-features` on ratatui-widgets (4/6)
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m memchr v2.7.5
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m log v0.4.27
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m parking_lot_core v0.9.11
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m time v0.3.47
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m tracing v0.1.44
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m tracing-subscriber v0.3.23
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m darling_core v0.23.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m signal-hook v0.3.18
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m line-clipping v0.3.7
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m rustix v1.0.8
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m kasuari v0.4.12
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m mio v1.0.4
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m parking_lot v0.12.4
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m ratatui-core v0.1.0 (/scratch/raian-files/LLM4Build/project_path/ratatui/ratatui-core)
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m signal-hook-mio v0.2.4
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m aho-corasick v1.1.3
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m crossterm v0.29.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m tracing-error v0.2.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m color-spantrace v0.3.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m color-eyre v0.6.5
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m regex-automata v0.4.9
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m darling_macro v0.23.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m darling v0.23.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m instability v0.3.12
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m ratatui-widgets v0.3.0 (/scratch/raian-files/LLM4Build/project_path/ratatui/ratatui-widgets)
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m ratatui-crossterm v0.1.0 (/scratch/raian-files/LLM4Build/project_path/ratatui/ratatui-crossterm)
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m regex v1.11.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m rstest_macros v0.26.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m ratatui-macros v0.7.0 (/scratch/raian-files/LLM4Build/project_path/ratatui/ratatui-macros)
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m ratatui v0.30.0 (/scratch/raian-files/LLM4Build/project_path/ratatui/ratatui)
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m rstest v0.26.1
+[Continuous Integration/Test Docs]   | [1m[92m    Finished[0m `test` profile [unoptimized + debuginfo] target(s) in 4.90s
+[Continuous Integration/Test Docs]   | [1m[92m   Doc-tests[0m ratatui_widgets
+[Continuous Integration/Test Docs]   | 
+[Continuous Integration/Test Docs]   | running 225 tests
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/as_ref.rs - as_ref::impl_as_ref (line 17) ... ignored
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/barchart.rs - barchart::BarChart<'a>::bar_gap (line 305) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/as_ref.rs - as_ref::impl_as_ref (line 8) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/barchart.rs - barchart::BarChart (line 55) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/barchart.rs - barchart::BarChart (line 77) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/barchart.rs - barchart::BarChart<'a>::data (line 207) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/barchart.rs - barchart::BarChart<'a>::grouped (line 179) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/barchart.rs - barchart::BarChart<'a>::horizontal (line 162) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/barchart.rs - barchart::BarChart<'a>::max (line 252) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/barchart.rs - barchart::BarChart<'a>::new (line 137) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/barchart.rs - barchart::BarChart<'a>::max (line 241) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/barchart/bar.rs - barchart::bar::Bar<'a>::with_label (line 73) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/barchart/bar.rs - barchart::bar::Bar<'a>::new (line 52) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/barchart/bar.rs - barchart::bar::Bar (line 24) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/barchart/bar.rs - barchart::bar::Bar<'a>::label (line 119) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/barchart/bar.rs - barchart::bar::Bar<'a>::text_value (line 179) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/barchart/bar.rs - barchart::bar::Bar<'a>::label (line 110) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/block.rs - block::Block (line 107) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/barchart/bar_group.rs - barchart::bar_group::BarGroup (line 15) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/barchart/bar_group.rs - barchart::bar_group::BarGroup<'a>::label (line 74) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/barchart/bar_group.rs - barchart::bar_group::BarGroup<'a>::with_label (line 50) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/block.rs - block::Block (line 188) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/barchart/bar_group.rs - barchart::bar_group::BarGroup<'a>::label (line 83) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/barchart/bar_group.rs - barchart::bar_group::BarGroup<'a>::new (line 33) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/block.rs - block::Block<'a>::border_set (line 611) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/block.rs - block::Block (line 131) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/block.rs - block::Block (line 159) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/block.rs - block::Block (line 167) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/block.rs - block::Block (line 148) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/block.rs - block::Block<'a>::border_type (line 589) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/block.rs - block::Block (line 180) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/block.rs - block::Block<'a>::bordered (line 282) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/block.rs - block::Block<'a>::border_style (line 506) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/block.rs - block::Block<'a>::merge_borders (line 669) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/block.rs - block::Block<'a>::padding (line 632) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/block.rs - block::Block<'a>::borders (line 568) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/block.rs - block::Block<'a>::inner (line 711) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/block.rs - block::Block<'a>::style (line 534) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/block.rs - block::Block<'a>::title_position (line 478) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/block.rs - block::Block<'a>::title_alignment (line 452) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/block.rs - block::Block<'a>::title_bottom (line 405) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/block/padding.rs - block::padding::Padding (line 12) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/block.rs - block::TitlePosition (line 244) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/canvas.rs - canvas::Painter<'_,'_>::bounds (line 486) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/canvas.rs - canvas::Canvas (line 688) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/borders.rs - borders::border (line 220) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/block.rs - block::Block<'a>::title_top (line 376) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/canvas.rs - canvas::Painter<'_,'_>::paint (line 469) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/borders.rs - borders::border (line 229) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/canvas.rs - canvas::Painter<'_,'_>::get_point (line 427) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/canvas.rs - canvas::Canvas<'a,F>::marker (line 824) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/chart.rs - chart::Chart<'a>::hidden_legend_constraints (line 656) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/canvas.rs - canvas::Context<'a>::new (line 546) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/chart.rs - chart::Chart<'a>::y_axis (line 624) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/paragraph.rs - paragraph::Paragraph<'a>::line_count (line 320) ... ignored
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/paragraph.rs - paragraph::Paragraph<'a>::line_width (line 375) ... ignored
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/block.rs - block::Block<'a>::padding (line 644) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/list/state.rs - list::state::ListState::offset (line 89) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table.rs - table::Table (line 77) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table.rs - table::Table<'a>::block (line 479) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table.rs - table::Table<'a>::cell_highlight_style (line 628) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table.rs - table::Table<'a>::column_highlight_style (line 603) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table.rs - table::Table<'a>::column_spacing (line 456) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table.rs - table::Table<'a>::flex (line 707) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table.rs - table::Table<'a>::footer (line 399) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table.rs - table::Table<'a>::header (line 376) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table.rs - table::Table<'a>::highlight_spacing (line 681) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table.rs - table::Table<'a>::highlight_style (line 549) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table.rs - table::Table<'a>::highlight_symbol (line 647) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table.rs - table::Table<'a>::new (line 307) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table.rs - table::Table<'a>::row_highlight_style (line 578) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table.rs - table::Table<'a>::rows (line 350) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table.rs - table::Table<'a>::style (line 506) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table.rs - table::Table<'a>::style (line 519) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table.rs - table::Table<'a>::widths (line 427) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table/cell.rs - table::cell::Cell (line 20) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table/cell.rs - table::cell::Cell (line 40) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table/cell.rs - table::cell::Cell<'a>::column_span (line 124) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table/cell.rs - table::cell::Cell<'a>::content (line 97) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table/cell.rs - table::cell::Cell<'a>::style (line 151) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table/cell.rs - table::cell::Cell<'a>::new (line 65) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table/cell.rs - table::cell::Cell<'a>::style (line 161) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table/row.rs - table::row::Row (line 21) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table/row.rs - table::row::Row (line 29) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table/row.rs - table::row::Row (line 41) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table/row.rs - table::row::Row (line 54) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table/row.rs - table::row::Row (line 63) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table/row.rs - table::row::Row<'a>::bottom_margin (line 192) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table/row.rs - table::row::Row<'a>::cells (line 122) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/list.rs - list::List<'a>::scroll_padding (line 408) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/paragraph.rs - paragraph::Paragraph<'a>::left_aligned (line 266) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/list.rs - list::List<'a>::style (line 271) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/chart.rs - chart::Axis (line 29) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/chart.rs - chart::Chart<'a>::legend_position (line 712) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/borders.rs - borders::border (line 209) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/chart.rs - chart::Dataset (line 307) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/paragraph.rs - paragraph::Paragraph<'a>::right_aligned (line 298) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table.rs - table::Table (line 201) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/chart.rs - chart::Chart (line 467) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/list/item.rs - list::item::ListItem (line 49) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/chart.rs - chart::Chart<'a>::hidden_legend_constraints (line 667) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/list.rs - list::List (line 72) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/list/state.rs - list::state::ListState::with_selected (line 74) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table.rs - table::Table (line 166) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table/row.rs - table::row::Row<'a>::new (line 91) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table/state.rs - table::state::TableState::new (line 66) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table/row.rs - table::row::Row<'a>::style (line 216) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table/state.rs - table::state::TableState::offset (line 165) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table/row.rs - table::row::Row<'a>::top_margin (line 172) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table/state.rs - table::state::TableState (line 26) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table/row.rs - table::row::Row<'a>::style (line 226) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table/state.rs - table::state::TableState::offset_mut (line 179) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table/state.rs - table::state::TableState::scroll_up_by (line 488) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table/state.rs - table::state::TableState::select (line 275) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table/state.rs - table::state::TableState::scroll_left_by (line 525) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table/state.rs - table::state::TableState::select_column (line 292) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table/state.rs - table::state::TableState::select_first_column (line 419) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table/state.rs - table::state::TableState::scroll_right_by (line 507) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table/state.rs - table::state::TableState::select_first (line 402) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table/state.rs - table::state::TableState::select_cell (line 307) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table/state.rs - table::state::TableState::select_last_column (line 452) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table/state.rs - table::state::TableState::scroll_down_by (line 469) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table/state.rs - table::state::TableState::select_next (line 330) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table/state.rs - table::state::TableState::select_last (line 435) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table/state.rs - table::state::TableState::select_next_column (line 348) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table/state.rs - table::state::TableState::select_previous (line 365) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table/state.rs - table::state::TableState::selected_mut (line 244) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table/state.rs - table::state::TableState::selected (line 195) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table/state.rs - table::state::TableState::selected_cell (line 226) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table/state.rs - table::state::TableState::select_previous_column (line 383) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table/state.rs - table::state::TableState::selected_column_mut (line 260) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table/state.rs - table::state::TableState::selected_column (line 211) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/tabs.rs - tabs::Tabs<'_>::width_cjk (line 486) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table/state.rs - table::state::TableState::with_selected_cell (line 141) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table/state.rs - table::state::TableState::with_selected (line 102) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table/state.rs - table::state::TableState::with_offset (line 85) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table/state.rs - table::state::TableState::with_selected_column (line 122) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/tabs.rs - tabs::Tabs (line 28) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/tabs.rs - tabs::Tabs<'_>::width (line 458) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/tabs.rs - tabs::Tabs (line 45) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/tabs.rs - tabs::Tabs<'_>::default (line 84) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/tabs.rs - tabs::Tabs<'a>::divider (line 264) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/tabs.rs - tabs::Tabs<'a>::divider (line 271) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/tabs.rs - tabs::Tabs<'a>::select (line 208) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/tabs.rs - tabs::Tabs<'a>::titles (line 160) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/tabs.rs - tabs::Tabs<'a>::padding (line 298) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/tabs.rs - tabs::Tabs<'a>::padding (line 292) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/tabs.rs - tabs::Tabs<'a>::padding_left (line 321) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/tabs.rs - tabs::Tabs<'a>::new (line 122) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/tabs.rs - tabs::Tabs<'a>::new (line 115) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/tabs.rs - tabs::Tabs<'a>::select (line 216) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/tabs.rs - tabs::Tabs<'a>::padding_right (line 342) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/tabs.rs - tabs::Tabs<'a>::titles (line 168) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/chart.rs - chart::Dataset<'a>::style (line 414) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/list/state.rs - list::state::ListState::selected (line 119) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/list/item.rs - list::item::ListItem (line 22) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/list/item.rs - list::item::ListItem (line 61) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/chart.rs - chart::Chart<'a>::new (line 547) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table.rs - table::Table (line 146) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/chart.rs - chart::Chart<'a>::new (line 538) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/list.rs - list::List<'a>::block (line 233) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/list/state.rs - list::state::ListState (line 22) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/list/item.rs - list::item::ListItem<'a>::new (line 95) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/list/state.rs - list::state::ListState::select_next (line 171) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/list/item.rs - list::item::ListItem (line 29) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/chart.rs - chart::Axis<'a>::labels (line 100) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/chart.rs - chart::Chart<'a>::legend_position (line 720) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/list/item.rs - list::item::ListItem (line 39) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table/row.rs - table::row::Row<'a>::height (line 152) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/list/state.rs - list::state::ListState::offset_mut (line 103) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/paragraph.rs - paragraph::Paragraph<'a>::centered (line 282) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/list.rs - list::List<'a>::highlight_style (line 319) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/list/state.rs - list::state::ListState::scroll_down_by (line 242) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/gauge.rs - gauge::LineGauge (line 253) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/list/state.rs - list::state::ListState::with_offset (line 57) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table.rs - table::Table (line 116) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/list/state.rs - list::state::ListState::select_first (line 207) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/table.rs - table::Table (line 182) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/logo.rs - logo::RatatuiLogo (line 44) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/logo.rs - logo::RatatuiLogo::size (line 106) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/logo.rs - logo::RatatuiLogo (line 27) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/logo.rs - logo::RatatuiLogo::tiny (line 121) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/sparkline.rs - sparkline::Sparkline<'a>::data (line 169) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/list.rs - list::List<'a>::items (line 208) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/list.rs - list::List<'a>::new (line 177) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/block.rs - block::Block<'a>::title (line 334) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/list.rs - list::List<'a>::highlight_symbol (line 294) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/chart.rs - chart::Axis<'a>::style (line 130) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/list.rs - list::List<'a>::highlight_spacing (line 365) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/list/state.rs - list::state::ListState::scroll_up_by (line 261) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/list.rs - list::List (line 96) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/list.rs - list::List<'a>::style (line 258) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/logo.rs - logo::RatatuiLogo::small (line 134) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/paragraph.rs - paragraph::Wrap (line 95) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/clear.rs - clear::Clear (line 13) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/logo.rs - logo::RatatuiLogo::new (line 93) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/list.rs - list::List<'a>::new (line 163) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/paragraph.rs - paragraph::Paragraph<'a>::style (line 190) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/list.rs - list::List<'a>::new (line 155) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/list/item.rs - list::item::ListItem<'a>::width (line 192) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/paragraph.rs - paragraph::Paragraph<'a>::block (line 169) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/list.rs - list::List<'a>::direction (line 388) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/list/state.rs - list::state::ListState::select_previous (line 189) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/list/item.rs - list::item::ListItem<'a>::new (line 105) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/sparkline.rs - sparkline::Sparkline<'a>::data (line 183) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/list/item.rs - list::item::ListItem<'a>::width (line 199) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/list/item.rs - list::item::ListItem<'a>::style (line 147) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/sparkline.rs - sparkline::Sparkline<'a>::data (line 195) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/list/item.rs - list::item::ListItem<'a>::height (line 178) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/paragraph.rs - paragraph::Paragraph (line 52) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/chart.rs - chart::Chart<'a>::x_axis (line 600) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/list/item.rs - list::item::ListItem<'a>::new (line 87) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/list/state.rs - list::state::ListState::selected_mut (line 135) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/paragraph.rs - paragraph::Paragraph<'a>::wrap (line 210) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/list/state.rs - list::state::ListState::select (line 151) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/scrollbar.rs - scrollbar::Scrollbar (line 41) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/list/item.rs - list::item::ListItem<'a>::style (line 136) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/list/item.rs - list::item::ListItem<'a>::height (line 169) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/list/state.rs - list::state::ListState::select_last (line 224) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/gauge.rs - gauge::Gauge (line 30) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/chart.rs - chart::Chart<'a>::hidden_legend_constraints (line 678) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/list.rs - list::List (line 49) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/paragraph.rs - paragraph::Paragraph<'a>::new (line 138) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/paragraph.rs - paragraph::Paragraph<'a>::alignment (line 248) ... ok
+[Continuous Integration/Test Docs]   | test ratatui-widgets/src/sparkline.rs - sparkline::Sparkline (line 51) ... ok
+[Continuous Integration/Test Docs]   | 
+[Continuous Integration/Test Docs]   | test result: ok. 222 passed; 0 failed; 3 ignored; 0 measured; 0 filtered out; finished in 0.13s
+[Continuous Integration/Test Docs]   | 
+[Continuous Integration/Test Docs]   | all doctests ran in 1.25s; merged doctests compilation took 1.11s
+[Continuous Integration/Test Docs]   ❓  ::endgroup::
+[Continuous Integration/Test Docs]   ❓  ::group::running `cargo test --doc --all-features` on ratatui-termwiz (5/6)
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m serde_core v1.0.228
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m serde v1.0.228
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m getrandom v0.3.3
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m regex-automata v0.4.9
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m compact_str v0.9.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m wezterm-dynamic v0.2.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m kasuari v0.4.12
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m wezterm-bidi v0.2.3
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m regex v1.11.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m fancy-regex v0.11.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m bitflags v2.11.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m nix v0.29.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m ratatui-core v0.1.0 (/scratch/raian-files/LLM4Build/project_path/ratatui/ratatui-core)
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m line-clipping v0.3.7
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m rstest_macros v0.26.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m uuid v1.18.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m wezterm-color-types v0.3.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m wezterm-input-types v0.1.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m ratatui-widgets v0.3.0 (/scratch/raian-files/LLM4Build/project_path/ratatui/ratatui-widgets)
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m mac_address v1.1.8
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m wezterm-blob-leases v0.1.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m rstest v0.26.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m termwiz v0.23.3
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m ratatui-termwiz v0.1.0 (/scratch/raian-files/LLM4Build/project_path/ratatui/ratatui-termwiz)
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m ratatui v0.30.0 (/scratch/raian-files/LLM4Build/project_path/ratatui/ratatui)
+[Continuous Integration/Test Docs]   | [1m[92m    Finished[0m `test` profile [unoptimized + debuginfo] target(s) in 8.62s
+[Continuous Integration/Test Docs]   | [1m[92m   Doc-tests[0m ratatui_termwiz
+[Continuous Integration/Test Docs]   | 
+[Continuous Integration/Test Docs]   | running 2 tests
+[Continuous Integration/Test Docs]   | test ratatui-termwiz/src/lib.rs - TermwizBackend (line 69) - compile ... ok
+[Continuous Integration/Test Docs]   | test ratatui-termwiz/src/lib.rs - TermwizBackend::new (line 110) - compile ... ok
+[Continuous Integration/Test Docs]   | 
+[Continuous Integration/Test Docs]   | test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+[Continuous Integration/Test Docs]   | 
+[Continuous Integration/Test Docs]   | all doctests ran in 0.46s; merged doctests compilation took 0.45s
+[Continuous Integration/Test Docs]   ❓  ::endgroup::
+[Continuous Integration/Test Docs]   ❓  ::group::running `cargo test --doc --all-features` on ratatui-termion (6/6)
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m serde_core v1.0.228
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m serde v1.0.228
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m thiserror v2.0.18
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m strum v0.28.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m kasuari v0.4.12
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m ratatui-core v0.1.0 (/scratch/raian-files/LLM4Build/project_path/ratatui/ratatui-core)
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m termion v4.0.6
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m ratatui-termion v0.1.0 (/scratch/raian-files/LLM4Build/project_path/ratatui/ratatui-termion)
+[Continuous Integration/Test Docs]   | [1m[92m    Finished[0m `test` profile [unoptimized + debuginfo] target(s) in 2.96s
+[Continuous Integration/Test Docs]   | [1m[92m   Doc-tests[0m ratatui_termion
+[Continuous Integration/Test Docs]   | 
+[Continuous Integration/Test Docs]   | running 2 tests
+[Continuous Integration/Test Docs]   | test ratatui-termion/src/lib.rs - TermionBackend (line 68) ... ignored
+[Continuous Integration/Test Docs]   | test ratatui-termion/src/lib.rs - TermionBackend<W>::new (line 115) ... ignored
+[Continuous Integration/Test Docs]   | 
+[Continuous Integration/Test Docs]   | test result: ok. 0 passed; 0 failed; 2 ignored; 0 measured; 0 filtered out; finished in 0.00s
+[Continuous Integration/Test Docs]   | 
+[Continuous Integration/Test Docs]   | all doctests ran in 0.23s; merged doctests compilation took 0.23s
+[Continuous Integration/Test Docs]   ❓  ::endgroup::
+[Continuous Integration/Test Docs]   | [32m INFO[0m [2mxtask[0m[2m:[0m running command: Cmd(["cargo", "test", "--package", "ratatui-crossterm", "--doc", "--no-default-features", "--features", "serde,underline-color,scrolling-regions,unstable,unstable-backend-writer,crossterm_0_28"])
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m bitflags v2.11.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m rustix v0.38.44
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m ratatui-core v0.1.0 (/scratch/raian-files/LLM4Build/project_path/ratatui/ratatui-core)
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m crossterm v0.28.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m ratatui-crossterm v0.1.0 (/scratch/raian-files/LLM4Build/project_path/ratatui/ratatui-crossterm)
+[Continuous Integration/Test Docs]   | [1m[92m    Finished[0m `test` profile [unoptimized + debuginfo] target(s) in 1.75s
+[Continuous Integration/Test Docs]   | [1m[92m   Doc-tests[0m ratatui_crossterm
+[Continuous Integration/Test Docs]   | 
+[Continuous Integration/Test Docs]   | running 2 tests
+[Continuous Integration/Test Docs]   | test ratatui-crossterm/src/lib.rs - CrosstermBackend (line 115) ... ignored
+[Continuous Integration/Test Docs]   | test ratatui-crossterm/src/lib.rs - CrosstermBackend<W>::new (line 171) ... ignored
+[Continuous Integration/Test Docs]   | 
+[Continuous Integration/Test Docs]   | test result: ok. 0 passed; 0 failed; 2 ignored; 0 measured; 0 filtered out; finished in 0.00s
+[Continuous Integration/Test Docs]   | 
+[Continuous Integration/Test Docs]   | all doctests ran in 0.22s; merged doctests compilation took 0.22s
+[Continuous Integration/Test Docs]   | [32m INFO[0m [2mxtask[0m[2m:[0m running command: Cmd(["cargo", "test", "--package", "ratatui-crossterm", "--doc", "--no-default-features", "--features", "serde,underline-color,scrolling-regions,unstable,unstable-backend-writer,crossterm_0_29"])
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m rustix v1.0.8
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m crossterm v0.29.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m ratatui-crossterm v0.1.0 (/scratch/raian-files/LLM4Build/project_path/ratatui/ratatui-crossterm)
+[Continuous Integration/Test Docs]   | [1m[92m    Finished[0m `test` profile [unoptimized + debuginfo] target(s) in 1.60s
+[Continuous Integration/Test Docs]   | [1m[92m   Doc-tests[0m ratatui_crossterm
+[Continuous Integration/Test Docs]   | 
+[Continuous Integration/Test Docs]   | running 2 tests
+[Continuous Integration/Test Docs]   | test ratatui-crossterm/src/lib.rs - CrosstermBackend (line 115) ... ignored
+[Continuous Integration/Test Docs]   | test ratatui-crossterm/src/lib.rs - CrosstermBackend<W>::new (line 171) ... ignored
+[Continuous Integration/Test Docs]   | 
+[Continuous Integration/Test Docs]   | test result: ok. 0 passed; 0 failed; 2 ignored; 0 measured; 0 filtered out; finished in 0.00s
+[Continuous Integration/Test Docs]   | 
+[Continuous Integration/Test Docs]   | all doctests ran in 0.21s; merged doctests compilation took 0.21s
+[Continuous Integration/Test Docs]   ✅  Success - Main cargo xtask test-docs [58.43538212s]
+[Continuous Integration/Test Docs] ⭐ Run Post Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4
+[Continuous Integration/Test Docs]   🐳  docker exec cmd=[/opt/acttoolcache/node/24.15.0/x64/bin/node /var/run/act/actions/Swatinem-rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4/dist/save/index.js] user= workdir=
+[Continuous Integration/Test Docs]   ❓  ::group::Cache Configuration
+[Continuous Integration/Test Docs]   | Cache Provider:
+[Continuous Integration/Test Docs]   |     github
+[Continuous Integration/Test Docs]   | Workspaces:
+[Continuous Integration/Test Docs]   |     /scratch/raian-files/LLM4Build/project_path/ratatui
+[Continuous Integration/Test Docs]   | Cache Paths:
+[Continuous Integration/Test Docs]   |     /root/.cargo/bin
+[Continuous Integration/Test Docs]   |     /root/.cargo/.crates.toml
+[Continuous Integration/Test Docs]   |     /root/.cargo/.crates2.json
+[Continuous Integration/Test Docs]   |     /root/.cargo/registry
+[Continuous Integration/Test Docs]   |     /root/.cargo/git
+[Continuous Integration/Test Docs]   |     /scratch/raian-files/LLM4Build/project_path/ratatui/target
+[Continuous Integration/Test Docs]   | Restore Key:
+[Continuous Integration/Test Docs]   |     v0-rust-test-docs-Linux-x64-267d10fb
+[Continuous Integration/Test Docs]   | Cache Key:
+[Continuous Integration/Test Docs]   |     v0-rust-test-docs-Linux-x64-267d10fb-5832ec2f
+[Continuous Integration/Test Docs]   | .. Prefix:
+[Continuous Integration/Test Docs]   |   - v0-rust-test-docs-Linux-x64
+[Continuous Integration/Test Docs]   | .. Environment considered:
+[Continuous Integration/Test Docs]   |   - Rust Versions:
+[Continuous Integration/Test Docs]   |     - 1.95.0 x86_64-unknown-linux-gnu 59807616e1fa2540724bfbac14d7976d7e4a3860
+[Continuous Integration/Test Docs]   |     - 1.95.0 x86_64-unknown-linux-gnu 59807616e1fa2540724bfbac14d7976d7e4a3860
+[Continuous Integration/Test Docs]   |   - CARGO_HOME
+[Continuous Integration/Test Docs]   |   - CARGO_INCREMENTAL
+[Continuous Integration/Test Docs]   |   - CARGO_TERM_COLOR
+[Continuous Integration/Test Docs]   | .. Lockfiles considered:
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/.cargo/config.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/Cargo.lock
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/advanced-widget-impl/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/async-github/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/calendar-explorer/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/canvas/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/chart/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/color-explorer/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/colors-rgb/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/constraint-explorer/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/constraints/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/custom-widget/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/demo/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/demo2/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/flex/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/gauge/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/hello-world/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/hyperlink/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/inline/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/input-form/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/minimal/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/modifiers/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/mouse-drawing/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/panic/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/popup/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/release-header/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/scrollbar/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/table/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/todo-list/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/tracing/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/user-input/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/volatility-surface/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/weather/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/widget-ref-container/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/concepts/state/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/ratatui-core/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/ratatui-crossterm/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/ratatui-macros/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/ratatui-termion/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/ratatui-termwiz/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/ratatui-widgets/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/ratatui/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/rust-toolchain.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/xtask/Cargo.toml
+[Continuous Integration/Test Docs]   ❓  ::endgroup::
+[Continuous Integration/Test Docs]   | 
+[Continuous Integration/Test Docs]   | (node:8743) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+[Continuous Integration/Test Docs]   | (Use `node --trace-deprecation ...` to show where the warning was created)
+[Continuous Integration/Test Docs]   | ... Cleaning /scratch/raian-files/LLM4Build/project_path/ratatui/target ...
+[Continuous Integration/Test Docs]   | ... Cleaning cargo registry (cache-all-crates: false) ...
+[Continuous Integration/Test Docs]   | ... Cleaning cargo/bin ...
+[Continuous Integration/Test Docs]   | ... Cleaning cargo git cache ...
+[Continuous Integration/Test Docs]   | ... Saving cache ...
+[Continuous Integration/Test Docs]   | [command]/usr/bin/tar --posix -cf cache.tzst --exclude cache.tzst -P -C /scratch/raian-files/LLM4Build/project_path/ratatui --files-from manifest.txt --use-compress-program zstdmt
+[Continuous Integration/Test Docs]   | Cache Size: ~499 MB (523220860 B)
+[Continuous Integration/Test Docs]   | Cache saved successfully
+[Continuous Integration/Test Docs]   ✅  Success - Post Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 [6.871239262s]
+[Continuous Integration/Test Docs] ⭐ Run Post taiki-e/install-action@85b24a67ef0c632dfefad70b9d5ce8fddb040754
+[Continuous Integration/Test Docs]   🐳  docker cp src=/home/mnabil/.cache/act/taiki-e-install-action@85b24a67ef0c632dfefad70b9d5ce8fddb040754/ dst=/var/run/act/actions/taiki-e-install-action@85b24a67ef0c632dfefad70b9d5ce8fddb040754/
+[Continuous Integration/Test Docs]   ✅  Success - Post taiki-e/install-action@85b24a67ef0c632dfefad70b9d5ce8fddb040754 [1.221615718s]
+[Continuous Integration/Test Docs] ⭐ Run Post dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9
+[Continuous Integration/Test Docs]   🐳  docker cp src=/home/mnabil/.cache/act/dtolnay-rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9/ dst=/var/run/act/actions/dtolnay-rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9/
+[Continuous Integration/Test Docs]   ✅  Success - Post dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9 [165.684465ms]
+[Continuous Integration/Test Docs] ⭐ Run Complete job
+[Continuous Integration/Test Docs] Cleaning up container for job Test Docs
+[Continuous Integration/Test Docs]   ✅  Success - Complete job
+[Continuous Integration/Test Docs] 🏁  Job succeeded

@@ -1,0 +1,44 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Build and test on ubuntu-latest
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ actions/setup-java@v5 (java-version: 25, zulu)
+    $ gradle/actions/setup-gradle@v5
+    $ ./gradlew build
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ ./gradlew build
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Gradle] Test run mismatch: original=778, LLM=0
+  - [Gradle] Test passed mismatch: original=766, LLM=0
+  - [Gradle] Test failed mismatch: original=1, LLM=0
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    Could not determine the dependencies of task ':sample-app:compileDebugJavaWithJavac'.
+    > SDK location not found. Define a valid SDK location with an ANDROID_HOME environment variable
+      or by setting the sdk.dir path in your project's local properties file at '/workspace/local.properties'.
+    BUILD FAILED in 1m 41s
+    7 actionable tasks: 7 executed
+
+  [Root cause classification]
+  - Android SDK not installed in Docker container — ANDROID_HOME not set: The NullAway project includes a `sample-app` Android subproject that requires the Android SDK to compile. GitHub Actions runners come with the Android SDK pre-installed and `ANDROID_HOME` set (pointing to `/usr/local/lib/android/sdk`). The LLM's Dockerfile installs only `openjdk-25-jdk` but does not install the Android SDK or set `ANDROID_HOME`. Gradle's Android plugin (AGP) attempts to locate the SDK via `ANDROID_HOME` env var or `local.properties` file, finds neither, and throws "SDK location not found" when processing `:sample-app:compileDebugJavaWithJavac`. Only 7 tasks execute (Gradle initialization tasks) before aborting, preventing any of the 778 JVM-side tests from running. The original CI ran `:guava-recent-unit-tests:test`, `:jdk-recent-unit-tests:test`, and `:nullaway:test` successfully (778 tests), failing only on `JSpecifyJDKModelsTest > listContainingNullsWithModel`.
+
+--- Test Statistics Comparison ---
+  [Gradle]
+    Original: 778 run, 766 passed, 1 failed, 11 skipped
+    LLM:      0 run, 0 passed, 0 failed, 0 skipped

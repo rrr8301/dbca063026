@@ -1,0 +1,72 @@
+Error from docker build
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 1.47kB done
+#1 DONE 0.0s
+
+#2 [internal] load .dockerignore
+#2 transferring context: 2B done
+#2 DONE 0.0s
+
+#3 [auth] library/ubuntu:pull token for registry-1.docker.io
+#3 DONE 0.0s
+
+#4 [internal] load metadata for docker.io/library/ubuntu:22.04
+#4 DONE 0.3s
+
+#5 [ 1/16] FROM docker.io/library/ubuntu:22.04@sha256:4f838adc7181d9039ac795a7d0aba05a9bd9ecd480d294483169c5def983b64d
+#5 DONE 0.0s
+
+#6 [internal] load build context
+#6 transferring context: 725.04kB 0.2s done
+#6 DONE 0.3s
+
+#7 [ 5/16] RUN /root/.cargo/bin/rustup toolchain install stable --profile minimal --component clippy
+#7 CACHED
+
+#8 [ 6/16] RUN /root/.cargo/bin/rustup default stable
+#8 CACHED
+
+#9 [ 2/16] RUN echo "UTC" > /etc/timezone &&     ln -sf /usr/share/zoneinfo/UTC /etc/localtime &&     apt-get update &&     apt-get install -y tzdata
+#9 CACHED
+
+#10 [ 3/16] RUN apt-get update &&     apt-get install -y curl gcc clang libudev-dev libgbm-dev libxkbcommon-dev libegl1-mesa-dev libwayland-dev libinput-dev libdbus-1-dev libsystemd-dev libseat-dev libpipewire-0.3-dev libpango1.0-dev git
+#10 CACHED
+
+#11 [ 4/16] RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+#11 CACHED
+
+#12 [ 7/16] WORKDIR /workspace
+#12 CACHED
+
+#13 [ 8/16] COPY . /workspace
+#13 DONE 0.8s
+
+#14 [ 9/16] RUN git config --global --add safe.directory '*'
+#14 DONE 0.3s
+
+#15 [10/16] COPY run.sh /workspace/run.sh
+#15 DONE 0.0s
+
+#16 [11/16] RUN chmod +x /workspace/run.sh
+#16 DONE 0.4s
+
+#17 [12/16] RUN useradd -m testuser && chown -R testuser /workspace
+#17 DONE 1.8s
+
+#18 [13/16] RUN /root/.cargo/bin/rustup target add x86_64-unknown-linux-gnu
+#18 0.397 /bin/sh: 1: /root/.cargo/bin/rustup: Permission denied
+#18 ERROR: process "/bin/sh -c /root/.cargo/bin/rustup target add x86_64-unknown-linux-gnu" did not complete successfully: exit code: 126
+------
+ > [13/16] RUN /root/.cargo/bin/rustup target add x86_64-unknown-linux-gnu:
+#18 0.397 /bin/sh: 1: /root/.cargo/bin/rustup: Permission denied
+------
+Dockerfile:39
+--------------------
+  37 |     
+  38 |     # Ensure the Rust environment is available for the testuser
+  39 | >>> RUN /root/.cargo/bin/rustup target add x86_64-unknown-linux-gnu
+  40 |     RUN /root/.cargo/bin/rustup component add clippy
+  41 |     RUN echo 'source $HOME/.cargo/env' >> /home/testuser/.bashrc
+--------------------
+ERROR: failed to solve: process "/bin/sh -c /root/.cargo/bin/rustup target add x86_64-unknown-linux-gnu" did not complete successfully: exit code: 126

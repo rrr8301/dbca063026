@@ -1,0 +1,56 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Ubuntu GCC ASAN
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ cmake -S . -B . -D MZ_SANITIZER=Address \
+    $ cmake --build . --config Release
+    $ ctest --output-on-failure -C Release
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ cmake -S . -B . \
+  $ -D MZ_SANITIZER=Address \
+  $ -D MZ_BUILD_TESTS=ON \
+  $ -D MZ_BUILD_UNIT_TESTS=ON \
+  $ ctest --output-on-failure -C Release || TEST_FAILED=1
+
+--- Reason(s) for Non-Reproducibility ---
+  - [CTest] Test run mismatch: original=139, LLM=82
+  - [CTest] Test passed mismatch: original=120, LLM=71
+  - [CTest] Test failed mismatch: original=19, LLM=11
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    163:==856==ERROR: LeakSanitizer: detected memory leaks
+    166:    #0 0x7fab2c52a340 in calloc (asan_malloc_linux.cpp)
+    192:==870==ERROR: LeakSanitizer: detected memory leaks
+    (all 11 failures are LeakSanitizer memory leak errors in erase tests)
+    484:   6 - raw-erase-generic (Failed)
+    485:  13 - deflate-erase-generic (Failed)
+    486:  20 - ppmd-erase-generic (Failed)
+    487:  27 - raw-erase-span (Failed)
+    488:  34 - deflate-erase-span (Failed)
+    489:  41 - ppmd-erase-span (Failed)
+    490:  48 - deflate-erase-zipcd (Failed)
+    (+ raw-erase-pkcrypt, deflate-erase-pkcrypt, ppmd-erase-pkcrypt, ppmd-erase-zipcd)
+
+  [Root cause classification]
+  - Fewer tests in LLM: The LLM added `-D MZ_BUILD_UNIT_TESTS=ON` which restricts the CTest set to unit tests only (82 tests), whereas the original CI ran the full integration+unit test suite (139 tests) with only `-D MZ_SANITIZER=Address`. The extra 57 tests in the original are integration tests excluded by the `MZ_BUILD_UNIT_TESTS` flag.
+  - LeakSanitizer memory leaks in erase tests: All 11 LLM failures are `*-erase-*` tests that trigger LeakSanitizer because the zip entry erasure code has memory leaks detectable with ASAN's leak sanitizer. The original CI had 19 failures including these same erase tests plus additional integration test failures. The LLM has fewer total failures because it ran a smaller test set, but the erase tests that did run exhibit the same LeakSanitizer issue.
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 139 run, 120 passed, 19 failed, 0 skipped
+    LLM:      82 run, 71 passed, 11 failed, 0 skipped

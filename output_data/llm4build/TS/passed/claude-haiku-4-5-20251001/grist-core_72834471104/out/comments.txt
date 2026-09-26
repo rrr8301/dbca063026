@@ -1,0 +1,54 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   False
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          20
+Original build category: passed
+
+STATUS: BUILD EXECUTION FAILED
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      build_and_test (ubuntu-24.04, 3.11, 22.x, :lint:python:client:common:smoke:stubs:pyodide:eslint-u...
+  Docker image pulled: bitnamilegacy/minio:2025.4.22
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    6
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > #12 0.914 ERROR: [Errno 2] No such file or directory: 'install'
+    > #12 ERROR: process "/bin/sh -c yarn install" did not complete successfully: exit code: 1
+    > ERROR: failed to solve: process "/bin/sh -c yarn install" did not complete successfully: exit code: 1
+
+  [Root cause classification]
+  - Identical root cause to `grist-core_66345565134` (the failed-category counterpart). The Docker build fails at step 8 of 9 because `yarn` is not installed. `ERROR: [Errno 2] No such file or directory: 'install'` is the POSIX errno 2 (ENOENT) error from the shell when `yarn install` is invoked and no `yarn` binary exists on PATH. The LLM's Dockerfile installed Python and Node.js but did not install yarn as a global npm package (`npm install -g yarn`) or via corepack.
+
+  - The grist-core project requires Python 3.11, Node.js 22.x, yarn, and external services (MinIO via `bitnamilegacy/minio:2025.4.22`). The original CI passed all tests in its full build-and-test matrix. Despite 20 retry attempts, every Dockerfile variant the LLM generated failed at the yarn installation step, unable to correctly set up the yarn dependency before invoking `yarn install`.
+
+  - This is the passed-category counterpart of `grist-core_66345565134` — a different CI job (`build_and_test` with a different test filter) but the same underlying Docker build failure. Both builds fail for the same reason: missing yarn binary.
+
+--- Failure Analysis ---
+  Failure type: Docker build error
+  Failed at Docker build step: 8 of 9
+  Step label:   RUN yarn install
+
+  Original build was passing. LLM failed to reproduce it after 20 attempt(s).
+
+--- Dockerfile Error Context ---
+  Dockerfile:47
+  --------------------
+    45 |
+    46 |     # Install Node.js dependencies
+    47 | >>> RUN yarn install
+    48 |
+    49 |     # Install Python dependencies
+  --------------------
+
+--- Error Message(s) ---
+  #12 0.914 ERROR: [Errno 2] No such file or directory: 'install'
+  #12 ERROR: process "/bin/sh -c yarn install" did not complete successfully: exit code: 1
+  ERROR: failed to solve: process "/bin/sh -c yarn install" did not complete successfully: exit code: 1
+
+No test results could be produced due to build failure.

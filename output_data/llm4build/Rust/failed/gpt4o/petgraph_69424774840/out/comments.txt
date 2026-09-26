@@ -1,0 +1,47 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          10
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Tests petgraph (Rust beta)
+  Test command(s) run in original CI:
+    $ cargo nextest run --package petgraph --verbose
+    $ cargo nextest run --package petgraph --all-features --verbose
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    9
+
+--- LLM run.sh Test Command(s) ---
+  $ cargo nextest run --package petgraph --verbose
+  $ cargo nextest run --package petgraph --all-features --verbose
+
+--- Reason(s) for Non-Reproducibility ---
+  - [nexttest] Test run mismatch: original=728, LLM=783
+  - [nexttest] Test failed mismatch: original=1, LLM=0
+  - [nexttest] The original failing test `petgraph::quickcheck test_spfa_undir` did NOT fail in LLM run
+  - [nexttest] LLM ran 55 more tests (783 vs 728) due to all-features enabling additional test cases
+
+--- Root Cause Analysis ---
+  [Actual error messages from original CI log]
+    2685:FAIL [   0.120s] (375/433) petgraph::quickcheck test_spfa_undir
+    2689:test test_spfa_undir ... FAILED
+    2694:failures: test_spfa_undir
+    2696:test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 68 filtered out; finished in 0.11s
+
+  [Root cause classification]
+  - `test_spfa_undir` is a QuickCheck-based randomized property test for the Shortest Path Faster Algorithm on undirected graphs. It failed in the original CI (Rust beta) but passed in the LLM environment. This is a flaky / non-deterministic test — QuickCheck generates random inputs and the failure depends on which random seed happens to trigger the bug.
+
+  - The LLM ran 783 tests vs 728 original (the first `nextest run` without `--all-features` ran 433, the second with `--all-features` ran 350 more). The original ran 295 + 433 = 728. The difference of 55 is explained by the all-features pass discovering additional feature-gated tests.
+
+  - The QuickCheck test `test_spfa_undir` is inherently non-deterministic; different runs may or may not catch the bug depending on the random seed, machine speed, and Rust beta version used.
+
+--- Test Statistics Comparison ---
+  [nexttest]
+    Original: 728 run, 727 passed, 1 failed, 0 skipped
+    LLM:      783 run, 783 passed, 0 failed, 0 skipped

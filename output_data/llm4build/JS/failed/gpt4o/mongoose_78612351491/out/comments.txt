@@ -1,0 +1,45 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      run-tests (node 20)
+  Test command(s) run in original CI:
+    $ MONGOMS_VERSION=7.0.12 npm run create-separate-require-instance
+    $ npm run test:ci --reporter min
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    7
+
+--- LLM run.sh Test Command(s) ---
+  $ MONGOMS_VERSION=7.0.12 && npm install && npm run create-separate-require-instance && npm run test:ci
+
+--- Reason(s) for Non-Reproducibility ---
+  - [mocha] Test failed mismatch: original=1, LLM=0
+  - [mocha] Test passed mismatch: original=4345, LLM=4348
+  - [mocha] Test skipped mismatch: original=45, LLM=43
+  - The 1 original failure was not reproduced: "supports overwriting `session` in save()" in Model > 3.6 features > bug fixes > sessions (gh-6362)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    4348 passing (2m)
+    43 pending
+    (Downloading MongoDB 8.2.6 via mongodb-memory-server)
+
+  [Root cause classification]
+  - The LLM set `MONGOMS_VERSION=7.0.12` as a shell variable but the variable assignment syntax used (`MONGOMS_VERSION=7.0.12 && npm install`) may not have propagated the variable correctly. The log shows that mongodb-memory-server downloaded MongoDB 8.2.6 rather than 7.0.12 as intended, indicating the version pin was not applied.
+
+  - The single original failure (`supports overwriting 'session' in save()`) was an assertion error specific to session handling behavior. With MongoDB 8.2.6 running instead of 7.0.12, this session-related test passed, masking the original failure that only occurs on MongoDB 7.0.12.
+
+  - The 2-test difference in pass count (4348 vs 4345) and the 2-test difference in pending (43 vs 45) suggest slight test suite configuration variations between the LLM and original environments, likely due to the different MongoDB version being used.
+
+--- Test Statistics Comparison ---
+  [mocha]
+    Original: 4391 run, 4345 passed, 1 failed, 45 skipped
+    LLM:      4391 run, 4348 passed, 0 failed, 43 skipped

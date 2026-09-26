@@ -1,0 +1,46 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      test (1.26.x, windows-latest)
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ go test -shuffle=on ./...
+    $ go test -race -shuffle=on ./...
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ go test -shuffle=on ./...
+  $ go test -race -shuffle=on ./...
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoDefault] Test run mismatch: original=16, LLM=9
+  - [GoDefault] Test passed mismatch: original=15, LLM=8
+  - [GoDefault] Test failed mismatch: original=1, LLM=1
+  - [GoDefault] 1 test(s) failed in LLM but not in original: github.com/valyala/fasthttp/tcplisten
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    28---- FAIL: TestConfigDeferAccept (0.27s)
+    30---- FAIL: TestConfigFastOpen (0.26s)
+    32---- FAIL: TestConfigReusePort (0.28s)
+    34---- FAIL: TestConfigAll (0.27s)
+
+  [Root cause classification]
+  - The original CI ran on `windows-latest` with Go 1.26.x. The LLM ran the identical `go test -shuffle=on ./...` and `go test -race -shuffle=on ./...` commands on Linux. The 7 fewer test packages (9 vs 16) are packages that have `//go:build windows` or `//go:build !linux` build constraints and are simply not compiled on Linux — they disappear from `./...` scope entirely.
+
+  - The `tcplisten` package fails on Linux with `TestConfigDeferAccept`, `TestConfigFastOpen`, `TestConfigReusePort`, and `TestConfigAll` because these tests exercise advanced TCP socket options (`SO_DEFER_ACCEPT`, `TCP_FASTOPEN_CONNECT`, `SO_REUSEPORT`) that require specific kernel module support or kernel version features. Inside Docker's default network namespace, some of these options are restricted or return `ENOPROTOOPT`, causing all 4 tests to fail in ~0.27s (they attempt the socket option and immediately get an error). The original CI on Windows had none of these Linux-specific socket option tests in scope, so its 1 failure was a different test.
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 16 run, 15 passed, 1 failed, 0 skipped
+    LLM:      9 run, 8 passed, 1 failed, 0 skipped

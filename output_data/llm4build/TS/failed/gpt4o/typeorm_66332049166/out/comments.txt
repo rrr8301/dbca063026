@@ -1,0 +1,36 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          20
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT TESTS NOT REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      tests-linux (24) / mysql_mariadb
+  Docker image pulled: mysql:5.7.44
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    7
+
+--- Test Reproducibility Gap ---
+  Original ran 1417 test(s) across [mocha].
+  LLM build produced no test results (empty llm_log_stats).
+
+--- Root Cause ---
+  Reason type: Test runner executed but produced no parseable output
+  Last log output before stopping:
+    ELIFECYCLE  Command failed with exit code 1.
+    Running tests for sap...
+    > typeorm@1.0.0-pre test:ci /app
+    > mocha --bail
+    Warning: Cannot find any files matching pattern "./build/compiled/test/**/*.test.{js,ts}"
+    Warning: Cannot find any files matching pattern "build/compiled/test/utils/test-setup.js" at the absolute path "/app/build/compiled/test/utils/test-setup.js"
+    No test file(s) found with the given pattern, exiting with code 1
+    ELIFECYCLE  Command failed with exit code 1.
+
+--- Original Test Statistics (not reproduced) ---
+  [mocha] 1417 run, 1393 passed, 1 failed, 23 skipped

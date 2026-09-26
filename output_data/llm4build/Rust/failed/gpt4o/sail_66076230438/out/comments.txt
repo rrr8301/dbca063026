@@ -1,0 +1,31 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   False
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          20
+Original build category: failed
+
+STATUS: BUILD EXECUTION FAILED
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      Rust Tests / Test
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    9
+
+--- Failure Analysis ---
+  Failure type: Build error
+
+  Original build was already failing. LLM could not reproduce or fix it after 20 attempt(s).
+
+No test results could be produced due to build failure.
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > Step 14/16: COPY run.sh /usr/local/bin/run.sh
+    > COPY failed: file not found in build context or excluded by .dockerignore: stat run.sh: file does not exist
+
+  [Root cause classification]
+  - The lakehq/sail project (a Spark-compatible SQL execution engine in Rust) requires Python 3.11, grcov, cargo-nextest, and a custom run.sh script for its test harness. The LLM-generated Dockerfile attempted to COPY run.sh into the image, but run.sh was not present in the Docker build context directory, indicating the LLM invented a script path that does not exist in the repository root. The CI workflow also uses a custom RUSTC_WORKSPACE_WRAPPER script and Python 3.11 with a requirements.txt for coverage tooling, none of which were correctly reproduced.

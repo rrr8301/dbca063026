@@ -1,0 +1,34 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          N/A
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      Build and test on ubuntu-latest
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    5
+
+--- Reason(s) for Non-Reproducibility ---
+  - Mismatch detected but specific difference could not be determined from available data.
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > A problem occurred evaluating root project 'app'.
+    > NullAway only builds on JDK 21 or higher now. Detected 17.0.8. Please upgrade to JDK 21 or later.
+    > BUILD FAILED in 1s (build.gradle line: 55)
+    > Original: 38 tasks executed + 41 up-to-date (366s); LLM: 7 tasks executed (79s, did_tests_fail=true)
+
+  [Root cause classification]
+  Hard JDK version guard in the build script rejects JDK 17. NullAway enforces a minimum JDK 21 requirement enforced as an explicit check at build-file evaluation time (build.gradle line 55), causing the entire build to abort before any compilation or tests run. The LLM-generated Dockerfile installed JDK 17 (ubuntu:latest default) instead of JDK 21, which the CI runner (ubuntu-24.04, Java 21 job) uses, making it impossible to reproduce any test results.
+
+--- Test Statistics Comparison ---
+  [Gradle]
+    Original: 0 run, 0 passed, 0 failed, 0 skipped
+    LLM:      0 run, 0 passed, 0 failed, 0 skipped

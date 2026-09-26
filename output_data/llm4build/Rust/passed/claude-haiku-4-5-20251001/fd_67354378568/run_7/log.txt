@@ -1,0 +1,46 @@
+Error from docker build
+
+#1 [internal] load .dockerignore
+#1 transferring context: 2B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 1.04kB done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/ubuntu:24.04
+#3 DONE 0.1s
+
+#4 [1/8] FROM docker.io/library/ubuntu:24.04@sha256:c4a8d5503dfb2a3eb8ab5f807da5bc69a85730fb49b5cfca2330194ebcc41c7b
+#4 DONE 0.0s
+
+#5 [2/8] RUN ln -snf /usr/share/zoneinfo/America/Los_Angeles /etc/localtime && echo America/Los_Angeles > /etc/timezone
+#5 CACHED
+
+#6 [3/8] RUN apt-get update && apt-get install -y --no-install-recommends     git     curl     wget     build-essential     pkg-config     make     && rm -rf /var/lib/apt/lists/*
+#6 CACHED
+
+#7 [internal] load build context
+#7 transferring context: 108.50kB 0.1s done
+#7 DONE 0.1s
+
+#8 [4/8] RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | bash -s -- -y --default-toolchain stable &&     chmod -R a+w "/root/.cargo" &&     ls -la "/root/.cargo/bin/" &&     "/root/.cargo/bin/rustc" --version &&     "/root/.cargo/bin/cargo" --version
+#8 0.345 curl: (77) error setting certificate file: /etc/ssl/certs/ca-certificates.crt
+#8 0.349 chmod: cannot access '/root/.cargo': No such file or directory
+#8 ERROR: process "/bin/sh -c curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | bash -s -- -y --default-toolchain stable &&     chmod -R a+w \"${CARGO_HOME}\" &&     ls -la \"${CARGO_HOME}/bin/\" &&     \"${CARGO_HOME}/bin/rustc\" --version &&     \"${CARGO_HOME}/bin/cargo\" --version" did not complete successfully: exit code: 1
+------
+ > [4/8] RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | bash -s -- -y --default-toolchain stable &&     chmod -R a+w "/root/.cargo" &&     ls -la "/root/.cargo/bin/" &&     "/root/.cargo/bin/rustc" --version &&     "/root/.cargo/bin/cargo" --version:
+#8 0.345 curl: (77) error setting certificate file: /etc/ssl/certs/ca-certificates.crt
+#8 0.349 chmod: cannot access '/root/.cargo': No such file or directory
+------
+Dockerfile:24
+--------------------
+  23 |     # Install Rust toolchain with proper shell execution
+  24 | >>> RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | bash -s -- -y --default-toolchain stable && \
+  25 | >>>     chmod -R a+w "${CARGO_HOME}" && \
+  26 | >>>     ls -la "${CARGO_HOME}/bin/" && \
+  27 | >>>     "${CARGO_HOME}/bin/rustc" --version && \
+  28 | >>>     "${CARGO_HOME}/bin/cargo" --version
+  29 |     
+--------------------
+ERROR: failed to solve: process "/bin/sh -c curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | bash -s -- -y --default-toolchain stable &&     chmod -R a+w \"${CARGO_HOME}\" &&     ls -la \"${CARGO_HOME}/bin/\" &&     \"${CARGO_HOME}/bin/rustc\" --version &&     \"${CARGO_HOME}/bin/cargo\" --version" did not complete successfully: exit code: 1

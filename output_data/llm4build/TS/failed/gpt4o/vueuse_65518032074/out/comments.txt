@@ -1,0 +1,35 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      test (20.x)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    7
+
+--- LLM run.sh Test Command(s) ---
+  $ pnpm test:attw
+
+--- Reason(s) for Non-Reproducibility ---
+  - [vitest] Test run mismatch: original=1502, LLM=1716
+  - [vitest] Test passed mismatch: original=1492, LLM=1687
+  - [vitest] Test skipped mismatch: original=9, LLM=28
+
+--- Root Cause Analysis ---
+  - [vitest] LLM ran 214 more tests than original — LLM likely used a broader test scope or included extra test suites.
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 1 run, 0 passed, 1 failed, 0 skipped
+    LLM:      1 run, 0 passed, 1 failed, 0 skipped
+  [vitest]
+    Original: 1502 run, 1492 passed, 1 failed, 9 skipped
+    LLM:      1716 run, 1687 passed, 1 failed, 28 skipped

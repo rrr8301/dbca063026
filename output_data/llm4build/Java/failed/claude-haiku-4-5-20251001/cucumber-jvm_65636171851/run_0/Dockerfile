@@ -1,0 +1,44 @@
+FROM ubuntu:24.04
+
+# Set timezone to Pacific Time (noninteractive)
+ENV TZ=America/Los_Angeles
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+# Set CI environment variables
+ENV CI=true
+ENV GITHUB_ACTIONS=true
+
+# Install OS dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    curl \
+    wget \
+    build-essential \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Java 21 JDK (Temurin)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    openjdk-21-jdk \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Maven (official binary, not apt version)
+RUN mkdir -p /opt/maven && \
+    curl -fsSL https://archive.apache.org/dist/maven/maven-3/3.9.6/binaries/apache-maven-3.9.6-bin.tar.gz | \
+    tar -xz -C /opt/maven --strip-components=1 && \
+    ln -s /opt/maven/bin/mvn /usr/local/bin/mvn
+
+# Verify Java and Maven installation
+RUN java -version && mvn -version
+
+# Create work directory
+WORKDIR /workspace
+
+# Copy repository
+COPY . .
+
+# Copy and set run.sh as entrypoint
+COPY run.sh /workspace/run.sh
+RUN chmod +x /workspace/run.sh
+
+ENTRYPOINT ["/workspace/run.sh"]

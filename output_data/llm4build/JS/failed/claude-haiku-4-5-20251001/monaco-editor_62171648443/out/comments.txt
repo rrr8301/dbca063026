@@ -1,0 +1,51 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT TESTS NOT REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      CI
+  Test command(s) run in original CI:
+    $ npm test
+
+--- LLM-Generated Dockerfile ---
+  Base image:   node:20
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ npx playwright install --with-deps
+  $ npm test
+
+--- Test Reproducibility Gap ---
+  Original ran 173 test(s) across [node:test, GoDefault].
+  LLM build produced no test results (empty llm_log_stats).
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > Could not find '/workspace/src/languages/definitions/*/*.test.ts'
+
+  [Root cause classification]
+  - The monaco-editor test command `node --import tsx --require ./test/test-setup.js --test "src/languages/definitions/*/*.test.ts"` uses Node.js's built-in test runner (`--test`) with a glob pattern to discover test files. The glob pattern resolves relative to the working directory at the time `npm run test:grammars` executes. In the LLM's Docker container, the TypeScript source files (`*.test.ts`) under `src/languages/definitions/` are not found because the repository structure requires the source tree to be intact at that exact path depth — the build step (`npm run build`) produces the `out/` compiled directory but doesn't affect the source `src/` directory layout.
+
+  - The `ts-node ./build/check-samples` step runs first and may fail silently when the compiled samples are absent or when TypeScript configuration differs. Then `npm run test:grammars` runs the glob pattern but Node.js v20's `--test` flag does not expand shell globs — the pattern is passed as-is to the Node.js test runner API which expects the files to already exist at that literal path. Since no files match, zero test output is produced and TR=False. The original CI used Ubuntu 24.04 (matching the monaco-editor team's dev environment) where the test infrastructure was validated.
+
+--- Root Cause ---
+  Reason type: Test runner executed but produced no parseable output
+  Last log output before stopping:
+    [32mcreated [1mout[22m in [1m3.4s[22m[39m
+    ADDING ThirdPartyNotices from ./ThirdPartyNotices.txt
+    Step 5: Running unit tests...
+    > monaco-editor@0.55.1 test
+    > ts-node ./build/check-samples && npm run test:grammars
+    > monaco-editor@0.55.1 test:grammars
+    > node --import tsx --require ./test/test-setup.js --test "src/languages/definitions/*/*.test.ts"
+    Could not find '/workspace/src/languages/definitions/*/*.test.ts'
+
+--- Original Test Statistics (not reproduced) ---
+  [node:test] 87 run, 86 passed, 1 failed, 0 skipped
+  [GoDefault] 86 run, 86 passed, 0 failed, 0 skipped

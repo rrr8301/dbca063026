@@ -1,0 +1,52 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          5
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Run tests and lints
+  Test command(s) run in original CI:
+    $ ory/ci/checkout@master
+    $ actions/checkout@v2
+    $ npm install
+    $ make install
+    $ make test-coverage
+
+--- LLM-Generated Dockerfile ---
+  Base image:   golang:1.26-alpine
+  RUN steps:    7
+
+--- LLM run.sh Test Command(s) ---
+  $ make install
+  $ make test-coverage
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoDefault] Test run mismatch: original=69, LLM=31
+  - [GoDefault] Test passed mismatch: original=69, LLM=28
+  - [GoDefault] Test failed mismatch: original=0, LLM=3
+  - [GoDefault] 3 test(s) failed in LLM but not in original: github.com/ory/kratos/continuity, github.com/ory/kratos/driver, github.com/ory/kratos/driver/config
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    1523:--- FAIL: TestDriverDefault_Strategies (0.00s)
+    1524:    --- FAIL: TestDriverDefault_Strategies/case=settings (0.40s)
+    1525:        --- FAIL: TestDriverDefault_Strategies/case=settings/run=4 (0.01s)
+    1527:                	Error Trace:	/workspace/driver/config/config.go:376
+    31:        	            	error=Invalid configuration
+    27:        	Error Trace:	/workspace/continuity/manager_test.go:48
+    28-        	Error:      	Received unexpected error:
+    73:FAIL	github.com/ory/kratos/continuity	2.238s
+
+  [Root cause classification]
+  - Two distinct failure causes reduce the test count from 69 to 31 (38 packages missing) and produce 3 failures. First, `golang:1.26-alpine` uses a newer Go compiler version whose `go vet` exports a different binary package format than what the `go/packages` tool in Kratos's test infrastructure expects — the same `cmp` package export data version mismatch seen in the failed-category counterpart `kratos_73757361242`. Packages that fail to typecheck during `make test-coverage` are silently dropped, accounting for the 38 missing packages.
+
+  - `continuity` fails at `manager_test.go:48` with "Received unexpected error" — the continuity manager persists session state in PostgreSQL and the test cannot connect to the database (no PostgreSQL server running). `driver` and `driver/config` fail because `TestDriverDefault_Strategies/case=settings/run=4` hits an "Invalid configuration" error at `config.go:376` — the Kratos driver requires a database DSN in the configuration, and without PostgreSQL the DSN is invalid. The original CI used `ory/ci/checkout@master` which provisions PostgreSQL and all required services automatically.
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 69 run, 69 passed, 0 failed, 0 skipped
+    LLM:      31 run, 28 passed, 3 failed, 0 skipped

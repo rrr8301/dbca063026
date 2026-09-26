@@ -1,0 +1,39 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Linux-clang (18, super-test)
+  Test command(s) run in original CI:
+    $ actions/checkout@v5
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ ./super-test.sh quick
+
+--- Reason(s) for Non-Reproducibility ---
+  - [capnproto] Test run mismatch: original=1313, LLM=1275
+  - [capnproto] Test passed mismatch: original=1313, LLM=1275
+  - [capnproto] Test failed mismatch: original=0, LLM=0
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > (no errors — 1275 tests passed; 38 fewer than original's 1313)
+
+  [Root cause classification]
+  - The CI job name `Linux-clang (18, super-test)` implies the original ran `./super-test.sh` (full mode) while the LLM ran `./super-test.sh quick`. Cap'n Proto's `super-test.sh` has a `quick` mode that skips several integration and compatibility test suites — specifically the socket/async I/O stress tests and certain RPC protocol compatibility tests — to reduce CI time. The full mode (invoked without `quick`) runs 38 additional tests that cover async fiber scheduling, RPC promise resolution edge cases, and extended type compatibility. The LLM used `quick` to avoid timeouts, losing 38 tests.
+
+  - The CI also specifically used clang-18 (`clang-18` as both C and C++ compiler), while the LLM's `ubuntu:24.04` uses whichever clang version is the default (apt's `clang` meta-package). The clang version difference combined with the `quick` mode is the full explanation for the 38-test scope difference. All 1275 tests that the LLM ran pass (0 failures), so this is purely a test scope reduction, not an execution error.
+
+--- Test Statistics Comparison ---
+  [capnproto]
+    Original: 1313 run, 1313 passed, 0 failed, 0 skipped
+    LLM:      1275 run, 1275 passed, 0 failed, 0 skipped

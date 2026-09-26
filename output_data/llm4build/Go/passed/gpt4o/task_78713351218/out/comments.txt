@@ -1,0 +1,47 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          9
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Test (1.26.x, ubuntu-latest)
+  Test command(s) run in original CI:
+    $ go install gotest.tools/gotestsum@latest
+    $ gotestsum -f 'github-actions' ./...
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    7
+
+--- LLM run.sh Test Command(s) ---
+  $ go test ./...
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoDefault] Test run mismatch: original=622 (GoRace), LLM=12 (GoDefault)
+  - [GoDefault] Test passed mismatch: original=622, LLM=11
+  - [GoDefault] Test failed mismatch: original=0, LLM=1
+  - 1 test failed in LLM but not in original: github.com/go-task/task/v3/experiments (build failed)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    # github.com/go-task/task/v3/experiments
+    experiments/errors.go:19:45: fmt.Sprintf format %q has arg err.Value of wrong type int
+    FAIL	github.com/go-task/task/v3/experiments [build failed]
+
+  [Root cause classification]
+  - The LLM specified Go version 1.26.0 in the Dockerfile, which does not exist (as of this writing, Go 1.26.x was not released). The actual Go version installed would differ from the intended version, and the `experiments` package compiled with a different Go version exposed a type mismatch: `fmt.Sprintf` format `%q` was applied to an `int` value in `experiments/errors.go:19:45`.
+
+  - The original CI ran on Go 1.26.x (a released version) using `gotestsum -f github-actions ./...` against the GoRace framework (622 tests), which passed entirely. The LLM used plain `go test ./...` without the race detector, targeting only 12 packages, and the invalid Go version caused a compile error in the `experiments` package.
+
+  - The significant test count difference (622 vs 12) also suggests the LLM may have run tests against a subset of the repository rather than the full test suite.
+
+--- Test Statistics Comparison ---
+  [GoRace] (original)
+    Original: 622 run, 622 passed, 0 failed, 0 skipped
+
+  [GoDefault] (LLM)
+    LLM:      12 run, 11 passed, 1 failed, 0 skipped

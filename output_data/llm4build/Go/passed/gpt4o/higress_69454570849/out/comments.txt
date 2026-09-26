@@ -1,0 +1,35 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          17
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-22.04
+  CI job name:      coverage-test
+
+--- LLM-Generated Dockerfile ---
+  Base image:   golang:1.25
+  RUN steps:    4
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in original but missing in LLM: Gradle
+  - [GoDefault] Test run mismatch: original=16, LLM=23
+  - [GoDefault] Test passed mismatch: original=16, LLM=4
+  - [GoDefault] Test failed mismatch: original=0, LLM=19
+  - [GoDefault] 19 test(s) failed in LLM but not in original: github.com/alibaba/higress/v2/cmd/higress, github.com/alibaba/higress/v2/pkg/bootstrap, github.com/alibaba/higress/v2/pkg/cmd, github.com/alibaba/higress/v2/pkg/ingress/config, github.com/alibaba/higress/v2/pkg/ingress/kube/annotations ... (+14 more)
+
+--- Root Cause Analysis ---
+  - [GoDefault] LLM ran 7 more tests than original — LLM likely used a broader test scope or included extra test suites.
+  - [GoDefault] 19 test(s) failed in LLM but not original: github.com/alibaba/higress/v2/cmd/higress, github.com/alibaba/higress/v2/pkg/bootstrap, github.com/alibaba/higress/v2/pkg/cmd, github.com/alibaba/higress/v2/pkg/ingress/config, github.com/alibaba/higress/v2/pkg/ingress/kube/annotations ... (+14 more)
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 16 run, 16 passed, 0 failed, 0 skipped
+    LLM:      23 run, 4 passed, 19 failed, 0 skipped
+  [Gradle]
+    Original: 4 run, 0 passed, 0 failed, 4 skipped
+    LLM:      (not present)

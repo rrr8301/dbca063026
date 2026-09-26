@@ -1,0 +1,47 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          8
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      FreeRTOS-Kernel Main Branch
+  Test command(s) run in original CI:
+    $ actions/checkout@v3
+    $ actions/checkout@v3
+    $ sudo apt-get install lcov cflow ruby doxygen build-essential unifdef
+    $ make -C FreeRTOS/Test/CMock clean
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:20.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ make -C FreeRTOS/Test/CMock clean
+  $ make -C FreeRTOS/Test/CMock ENABLE_SANITIZER=1 run_col_formatted || SANITIZER_FAILED=1
+  $ make -C FreeRTOS/Test/CMock clean
+  $ make -C FreeRTOS/Test/CMock lcovhtml || COVERAGE_FAILED=1
+  $ lcov --config-file FreeRTOS/Test/CMock/lcovrc --summary FreeRTOS/Test/CMock/build/cmock_test.info > FreeRTOS/Test/CMock/build/cmock_test_summary.txt || SUMMARY_FAILED=1
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Unity] Test run mismatch: original=215, LLM=968
+  - [Unity] Test passed mismatch: original=213, LLM=968
+  - [Unity] Test failed mismatch: original=2, LLM=0
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    200:Running Unit Tests with ENABLE_SANITIZER=1...
+    (sanitizer run: 484 Unity tests, all passed)
+    (coverage run with lcovhtml: 484 Unity tests, all passed)
+    (total reported: 968 = 484 sanitizer + 484 coverage)
+
+  [Root cause classification]
+  - Test scope mismatch: The LLM's run.sh ran both the sanitizer test suite (`ENABLE_SANITIZER=1`) AND the coverage (lcov) test suite sequentially, producing 968 Unity tests (484 × 2). The original CI ran only the sanitizer suite (215 tests at that commit). The Unity test parser counted both runs and summed them. Additionally, the original CI failed 2 tests in the sanitizer suite that pass in the LLM run, possibly due to a newer code version that fixed those failures, or platform differences (the original CI may have run at a different commit with a known bug in the timers or tasks modules).
+
+--- Test Statistics Comparison ---
+  [Unity]
+    Original: 215 run, 213 passed, 2 failed, 0 skipped
+    LLM:      968 run, 968 passed, 0 failed, 0 skipped

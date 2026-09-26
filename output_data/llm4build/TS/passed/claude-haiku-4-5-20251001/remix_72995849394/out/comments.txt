@@ -1,0 +1,50 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          10
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT TESTS NOT REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      test (ubuntu-latest)
+  Test command(s) run in original CI:
+    $ pnpm test
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    7
+
+--- Test Reproducibility Gap ---
+  Original ran 42 test(s) across [node:test].
+  LLM build produced no test results (empty llm_log_stats).
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > packages/async-context-middleware test: Node.js v24.14.1
+    > ELIFECYCLE  Test failed. See above for more details.
+    > Some tests failed with exit code: 1
+
+  [Root cause classification]
+  - The test run exits with ELIFECYCLE failure, producing no parseable node:test output for the result parser. The LLM ran tests for the `packages/async-context-middleware` package (which uses Node.js's built-in `node:test` runner), but the test suite failed at runtime before emitting the standard TAP/node:test summary that the parser requires.
+
+  - The `ELIFECYCLE` error indicates the node:test process itself exited with a non-zero code. The Remix framework's `async-context-middleware` package tests likely depend on specific Node.js async context propagation behavior or middleware integration that differs between Node.js versions or environments. The LLM used `ubuntu:24.04` and Node.js v24.14.1, while the original CI used the `ubuntu-24.04` runner with a potentially different Node.js patch version or pre-configured async hooks.
+
+  - After 10 attempts, the LLM could not produce parseable test output. The original CI ran 42 node:test tests (all passed, 2 skipped), indicating a working node:test environment. The TR=False classification means no test count comparison is possible, but the ELIFECYCLE exit suggests actual test failures rather than a mere output format issue.
+
+--- Root Cause ---
+  Reason type: Test runner executed but produced no parseable output
+  Last log output before stopping:
+    packages/async-context-middleware test: Node.js v24.14.1
+    ELIFECYCLE  Test failed. See above for more details.
+    + TEST_EXIT_CODE=1
+    + '[' '!' -z 1 ']'
+    + '[' 1 -ne 0 ']'
+    + echo 'Some tests failed with exit code: 1'
+    + exit 1
+    Some tests failed with exit code: 1
+
+--- Original Test Statistics (not reproduced) ---
+  [node:test] 42 run, 42 passed, 0 failed, 2 skipped

@@ -1,0 +1,78 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          11
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Java 11 / core
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ actions/setup-java@v5 (java-version: 11)
+    $ mvn -T 1C -B clean install -DskipTests
+    $ TEST_MODULES=$(./.github/workflows/stage.sh core)
+    $ mvn -B verify $TEST_MODULES -Ptest-coverage -Ptest-core
+        -Dlog.dir=... -Dlog4j.configurationFile=.../tools/ci/log4j.properties
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ mvn -T 1C -B clean install -DskipTests
+  $ for MODULE in core flink spark3 lake:
+  $   TEST_MODULES=$(./.github/workflows/stage.sh "$MODULE")
+  $   mvn -B verify $TEST_MODULES -Ptest-coverage -Ptest-"$MODULE"
+  $       -Dlog.dir=/tmp/fluss-logs -Dlog4j.configurationFile=.../tools/ci/log4j.properties
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Maven] Test run mismatch: original=2610, LLM=143
+    (Note: stats parser undercounts LLM — actual total from log is ~8352 tests across all 4 modules)
+  - [Maven] Test failed mismatch: original=1, LLM=1 (but different failing test in different module)
+  - [Maven] 1 test fails in LLM but not in original:
+    testUnionReadWithAddColumn(org.apache.fluss.lake.paimon.flink.FlinkUnionReadPrimaryKeyTableITCase)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    ERROR FlinkUnionReadPrimaryKeyTableITCase.testUnionReadWithAddColumn
+      Time elapsed: 208.62 s
+      java.lang.IllegalStateException:
+        MiniCluster is not yet running or has already been shut down.
+      at org.apache.fluss.lake.paimon.flink.FlinkUnionReadPrimaryKeyTableITCase.testUnionReadWithAddColumn
+        (FlinkUnionReadPrimaryKeyTableITCase.java:1015)
+    Tests run: 38, Failures: 0, Errors: 1, Skipped: 0
+    BUILD FAILURE (lake module)
+
+  [From original CI log]
+    ERROR TableChangeWatcherTest.testTableChanges
+    (org.apache.fluss.server.coordinator.event.watcher.TableChangeWatcherTest)
+    (in core module)
+
+  [Root cause classification]
+  - LLM runs all 4 CI job partitions (core, flink, spark3, lake) instead of only `core`; the
+    `lake` module's Flink MiniCluster integration test fails in Docker with
+    `MiniCluster is not yet running or has already been shut down`:
+    Fluss uses `stage.sh` to partition its test suite into 4 jobs. The original CI is
+    "Java 11 / core" which only runs the `core` partition (all modules excluding flink/spark/lake).
+    The LLM's run.sh iterates over all 4 partitions (core, flink, spark3, lake), running a
+    broader test suite than the original CI. The `core` and `flink` and `spark3` partitions all
+    pass in the LLM (8352 total tests across all partitions). The `lake` module fails at
+    `FlinkUnionReadPrimaryKeyTableITCase.testUnionReadWithAddColumn` with `IllegalStateException:
+    MiniCluster is not yet running or has already been shut down` after 208 seconds. This test
+    spins up Flink's embedded MiniCluster for an integration test; in the Docker container,
+    resource constraints or slower I/O cause the MiniCluster lifecycle to time out — the cluster
+    shuts down before the test can submit and complete its job. The summary.json count of 143 is
+    an undercounting artifact (stats parser only captures counts from modules that print a failure
+    summary line); the actual test count across all LLM modules is ~8352. The original CI's 1
+    failure (`testTableChanges` in `TableChangeWatcherTest`) is in the core partition — that
+    particular test either passes in the LLM's environment or produces a different outcome
+    under LLM's resource conditions.
+
+--- Test Statistics Comparison ---
+  [Maven]
+    Original: 2610 run, 2606 passed, 1 failed, 3 skipped
+    LLM:      143 run, 142 passed, 1 failed, 0 skipped
+    (LLM actual count is ~8352 across all 4 module partitions — see root cause note)

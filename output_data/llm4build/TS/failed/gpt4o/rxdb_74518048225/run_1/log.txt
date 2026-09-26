@@ -1,0 +1,1807 @@
+Found '/app/.nvmrc' with version <24.15.0>
+Now using node v24.15.0 (npm v11.12.1)
+
+> rxdb@17.2.0 test:replication-google-drive
+> npm run transpile && cross-env DEFAULT_STORAGE=dexie tsx ./node_modules/mocha/bin/mocha --config ./config/.mocharc.cjs ./test/replication-google-drive.test.ts
+
+
+> rxdb@17.2.0 transpile
+> npm run build:version && node scripts/transpile.mjs && cp ./scripts/module_package.json test_tmp/package.json
+
+
+> rxdb@17.2.0 build:version
+> node ./scripts/update-version-variable.mjs
+
+# transpiling.. (this takes some time on first run)
+# Many files changed (630), running full build via npm scripts...
+[0]
+[0] > rxdb@17.2.0 build:cjs
+[0] > npm run build:version && rimraf -rf --max-retries=3 dist/cjs && cross-env NODE_ENV=es5 babel src --out-dir dist/cjs --source-maps --extensions ".ts,.tsx,.js"
+[0]
+[2]
+[2] > rxdb@17.2.0 build:test
+[2] > npm run build:version && rimraf -rf --max-retries=3 test_tmp && cross-env NODE_ENV=es6 babel test --out-dir test_tmp --source-maps --extensions ".ts,.tsx,.js" && cp ./scripts/module_package.json test_tmp/package.json
+[2]
+[1]
+[1] > rxdb@17.2.0 build:esm
+[1] > npm run build:version && rimraf -rf --max-retries=3 dist/esm && cross-env NODE_ENV=es6 babel src --out-dir dist/esm --source-maps --extensions ".ts,.tsx,.js" && cp ./scripts/module_package_no_side.json dist/esm/package.json
+[1]
+[0]
+[0] > rxdb@17.2.0 build:version
+[0] > node ./scripts/update-version-variable.mjs
+[0]
+[2]
+[2] > rxdb@17.2.0 build:version
+[2] > node ./scripts/update-version-variable.mjs
+[2]
+[1]
+[1] > rxdb@17.2.0 build:version
+[1] > node ./scripts/update-version-variable.mjs
+[1]
+[2] Successfully compiled 86 files with Babel (2738ms).
+[2] npm run build:test exited with code 0
+[1] Successfully compiled 272 files with Babel (2903ms).
+[1] npm run build:esm exited with code 0
+[0] Successfully compiled 272 files with Babel (3590ms).
+[0] npm run build:cjs exited with code 0
+# transpiling DONE (88 CPUs)
+DEFAULT_STORAGE: dexie
+# use RxStorage: dexie
+-------------- RxDB dev-mode warning -------------------------------
+you are seeing this because you use the RxDB dev-mode plugin https://rxdb.info/dev-mode.html?console=dev-mode
+This is great in development mode, because it will run many checks to ensure
+that you use RxDB correct. If you see this in production mode,
+you did something wrong because the dev-mode plugin will decrease the performance.
+
+🤗 Hint: To get the most out of RxDB, check out the Premium Plugins
+to get access to faster storages and more professional features: https://rxdb.info/premium/?console=dev-mode
+
+You can disable this warning by calling disableWarnings() from the dev-mode plugin.
+---------------------------------------------------------------------
+
+
+  replication-google-drive.test.ts
+    init
+Server is running on http://localhost:39381
+      ✔ import WebRTC polyfills on Node.js (40ms)
+    helpers
+      ensureFolderExists()
+        ✔ should create the folder (213ms)
+        ✔ create the same folder on two different parents (210ms)
+        ✔ should use the existing folder when called twice (190ms)
+        ✔ when called in parallel, it should still use the same folder (131ms)
+      createEmptyFile()
+        ✔ should create the file (150ms)
+        ✔ creating the same file twice should not create two files (series) (239ms)
+        ✔ creating the same file twice should not create two files (parallel) (190ms)
+      fillFileIfEtagMatches()
+        ✔ should write data into the file (260ms)
+      readFolder()
+        ✔ should find the subfolders (282ms)
+    init
+      ✔ should throw if folderPath is missing or root
+      ✔ must not throw (300ms)
+      ✔ calling twice must result in same identifier (488ms)
+      ✔ calling in parallel must result in same identifier (327ms)
+    transaction
+      ✔ must not throw to open and close a transaction (148ms)
+      ✔ should not start transaction if already running (99ms)
+      ✔ isTransactionTimedOut() should be false on new transaction (39ms)
+      ✔ isTransactionTimedOut() should return true after some time (501ms)
+      ✔ should close expired transaction from other instance (1014ms)
+      ✔ on parallel calls each at one point should have the tx lock (424ms)
+      ✔ closing timed out in parallel should work (1726ms)
+    document handling
+      ✔ insertDocumentFiles()
+      ✔ getDocumentFiles() (54ms)
+      ✔ fetchDocumentContents() (102ms)
+      ✔ fetchDocumentContents() after updateDocumentFiles() (85ms)
+      ✔ updateDocumentFiles() should throw GDR20 on stale etag (82ms)
+    downstream
+      ✔ fetchChanges() should get one document
+      ✔ fetchChanges() should be able to iterate over the checkpoint (295ms)
+    upstream
+      fetchConflicts()
+        ✔ should not have a conflict on inserts
+      WAL file
+        ✔ should write to the wal file (42ms)
+        ✔ should throw on conflict (52ms)
+        ✔ should read the wal content (86ms)
+        ✔ should not crash processing empty wal file
+        ✔ process a non-empty wal file with inserts (268ms)
+        ✔ process a non-empty wal file with updates (362ms)
+      full push batch
+        ✔ should process a full batch with conflict handling (452ms)
+    non-live replication
+-------------- RxDB Open Core RxStorage -------------------------------
+You are using the free Dexie.js based RxStorage implementation from RxDB https://rxdb.info/rx-storage-dexie.html?console=dexie
+While this is a great option, we want to let you know that there are faster storage solutions available in our premium plugins.
+For professional users and production environments, we highly recommend considering these premium options to enhance performance and reliability.
+ https://rxdb.info/premium/?console=dexie
+If you already purchased premium access you can disable this log by calling the setPremiumFlag() function from rxdb-premium/plugins/shared.
+---------------------------------------------------------------------
+      ✔ should keep the master state as default conflict handler (2351ms)
+    WebRTC signaling
+      ✔ should emit signaling data (40ms)
+      ✔ should not throw (78ms)
+      ✔ two clients should now about each other (187ms)
+    live replication
+{
+    "c1": [
+ensureCollectionsHaveEqualState(initial) states not equal (c1:humans, c2:humans):
+        {
+            "id": "a-init",
+            "name": "colA init",
+            "age": 58,
+            "updatedAt": 1778207604655
+        }
+    ],
+    "c2": [
+        {
+            "id": "a-init",
+            "name": "colA init",
+            "age": 58,
+            "updatedAt": 1778207604655
+        },
+        {
+            "id": "b-init",
+            "name": "colB init",
+            "age": 28,
+            "updatedAt": 1778207604662
+        }
+    ]
+}
+----------
+{
+    "c1": [
+        {
+            "id": "a-init",
+            "name": "colA init",
+            "age": 58,
+            "updatedAt": 1778207604655
+        }
+    ],
+    "c2": [
+        {
+            "id": "a-init",
+ensureCollectionsHaveEqualState(initial) states not equal (c1:humans, c2:humans):
+            "name": "colA init",
+            "age": 58,
+            "updatedAt": 1778207604655
+        },
+        {
+            "id": "b-init",
+            "name": "colB init",
+            "age": 28,
+            "updatedAt": 1778207604662
+        }
+    ]
+}
+----------
+{
+    "c1": [
+        {
+ensureCollectionsHaveEqualState(initial) states not equal (c1:humans, c2:humans):
+            "id": "a-init",
+            "name": "colA init",
+            "age": 58,
+            "updatedAt": 1778207604655
+        }
+    ],
+    "c2": [
+        {
+            "id": "a-init",
+            "name": "colA init",
+            "age": 58,
+            "updatedAt": 1778207604655
+        },
+        {
+            "id": "b-init",
+            "name": "colB init",
+            "age": 28,
+            "updatedAt": 1778207604662
+        }
+    ]
+}
+----------
+{
+    "c1": [
+        {
+            "id": "a-init",
+            "name": "colA init",
+ensureCollectionsHaveEqualState(initial) states not equal (c1:humans, c2:humans):
+            "age": 58,
+            "updatedAt": 1778207604655
+        }
+    ],
+    "c2": [
+        {
+            "id": "a-init",
+            "name": "colA init",
+            "age": 58,
+            "updatedAt": 1778207604655
+        },
+        {
+            "id": "b-init",
+            "name": "colB init",
+            "age": 28,
+            "updatedAt": 1778207604662
+        }
+    ]
+}
+----------
+{
+    "c1": [
+ensureCollectionsHaveEqualState(insert) states not equal (c1:humans, c2:humans):
+        {
+            "id": "a-init",
+            "name": "colA init",
+            "age": 58,
+            "updatedAt": 1778207604655
+        },
+        {
+            "id": "b-init",
+            "name": "colB init",
+            "age": 28,
+            "updatedAt": 1778207604662
+        },
+        {
+            "id": "insert",
+            "name": "InsertName",
+            "age": 60,
+            "updatedAt": 1778207606271
+        }
+    ],
+    "c2": [
+        {
+            "id": "a-init",
+            "name": "colA init",
+            "age": 58,
+            "updatedAt": 1778207604655
+        },
+        {
+            "id": "b-init",
+            "name": "colB init",
+            "age": 28,
+            "updatedAt": 1778207604662
+        }
+    ]
+}
+----------
+ensureCollectionsHaveEqualState(insert) states not equal (c1:humans, c2:humans):
+{
+    "c1": [
+        {
+            "id": "a-init",
+            "name": "colA init",
+            "age": 58,
+            "updatedAt": 1778207604655
+        },
+        {
+            "id": "b-init",
+            "name": "colB init",
+            "age": 28,
+            "updatedAt": 1778207604662
+        },
+        {
+            "id": "insert",
+            "name": "InsertName",
+            "age": 60,
+            "updatedAt": 1778207606271
+        }
+    ],
+    "c2": [
+        {
+            "id": "a-init",
+            "name": "colA init",
+            "age": 58,
+            "updatedAt": 1778207604655
+        },
+        {
+            "id": "b-init",
+            "name": "colB init",
+            "age": 28,
+            "updatedAt": 1778207604662
+        }
+    ]
+}
+----------
+{
+    "c1": [
+        {
+ensureCollectionsHaveEqualState(insert) states not equal (c1:humans, c2:humans):
+            "id": "a-init",
+            "name": "colA init",
+            "age": 58,
+            "updatedAt": 1778207604655
+        },
+        {
+            "id": "b-init",
+            "name": "colB init",
+            "age": 28,
+            "updatedAt": 1778207604662
+        },
+        {
+            "id": "insert",
+            "name": "InsertName",
+            "age": 60,
+            "updatedAt": 1778207606271
+        }
+    ],
+    "c2": [
+        {
+            "id": "a-init",
+            "name": "colA init",
+            "age": 58,
+            "updatedAt": 1778207604655
+        },
+        {
+            "id": "b-init",
+            "name": "colB init",
+            "age": 28,
+            "updatedAt": 1778207604662
+        }
+    ]
+}
+----------
+{
+    "c1": [
+        {
+            "id": "a-init",
+            "name": "colA init",
+            "age": 58,
+            "updatedAt": 1778207604655
+        },
+        {
+ensureCollectionsHaveEqualState(insert) states not equal (c1:humans, c2:humans):
+            "id": "b-init",
+            "name": "colB init",
+            "age": 28,
+            "updatedAt": 1778207604662
+        },
+        {
+            "id": "insert",
+            "name": "InsertName",
+            "age": 60,
+            "updatedAt": 1778207606271
+        }
+    ],
+    "c2": [
+        {
+            "id": "a-init",
+            "name": "colA init",
+            "age": 58,
+            "updatedAt": 1778207604655
+        },
+        {
+            "id": "b-init",
+            "name": "colB init",
+            "age": 28,
+            "updatedAt": 1778207604662
+        }
+    ]
+}
+----------
+{
+    "c1": [
+        {
+            "id": "a-init",
+            "name": "colA init",
+            "age": 58,
+            "updatedAt": 1778207604655
+ensureCollectionsHaveEqualState(delete) states not equal (c1:humans, c2:humans):
+        },
+        {
+            "id": "b-init",
+            "name": "colB init",
+            "age": 28,
+            "updatedAt": 1778207604662
+        },
+        {
+            "id": "insert",
+            "name": "InsertName",
+            "age": 60,
+            "updatedAt": 1778207606271
+        }
+    ],
+    "c2": [
+        {
+            "id": "b-init",
+            "name": "colB init",
+            "age": 28,
+            "updatedAt": 1778207604662
+        },
+        {
+            "id": "insert",
+            "name": "InsertName",
+            "age": 60,
+            "updatedAt": 1778207606271
+        }
+    ]
+}
+----------
+{
+    "c1": [
+        {
+            "id": "a-init",
+ensureCollectionsHaveEqualState(delete) states not equal (c1:humans, c2:humans):
+            "name": "colA init",
+            "age": 58,
+            "updatedAt": 1778207604655
+        },
+        {
+            "id": "b-init",
+            "name": "colB init",
+            "age": 28,
+            "updatedAt": 1778207604662
+        },
+        {
+            "id": "insert",
+            "name": "InsertName",
+            "age": 60,
+            "updatedAt": 1778207606271
+        }
+    ],
+    "c2": [
+        {
+            "id": "b-init",
+            "name": "colB init",
+            "age": 28,
+            "updatedAt": 1778207604662
+        },
+        {
+            "id": "insert",
+            "name": "InsertName",
+            "age": 60,
+            "updatedAt": 1778207606271
+        }
+    ]
+}
+----------
+{
+    "c1": [
+        {
+            "id": "a-init",
+            "name": "colA init",
+            "age": 58,
+            "updatedAt": 1778207604655
+        },
+        {
+ensureCollectionsHaveEqualState(delete) states not equal (c1:humans, c2:humans):
+            "id": "b-init",
+            "name": "colB init",
+            "age": 28,
+            "updatedAt": 1778207604662
+        },
+        {
+            "id": "insert",
+            "name": "InsertName",
+            "age": 60,
+            "updatedAt": 1778207606271
+        }
+    ],
+    "c2": [
+        {
+            "id": "b-init",
+            "name": "colB init",
+            "age": 28,
+            "updatedAt": 1778207604662
+        },
+        {
+            "id": "insert",
+            "name": "InsertName",
+            "age": 60,
+            "updatedAt": 1778207606271
+        }
+    ]
+}
+----------
+ensureCollectionsHaveEqualState(delete) states not equal (c1:humans, c2:humans):
+{
+    "c1": [
+        {
+            "id": "a-init",
+            "name": "colA init",
+            "age": 58,
+            "updatedAt": 1778207604655
+        },
+        {
+            "id": "b-init",
+            "name": "colB init",
+            "age": 28,
+            "updatedAt": 1778207604662
+        },
+        {
+            "id": "insert",
+            "name": "InsertName",
+            "age": 60,
+            "updatedAt": 1778207606271
+        }
+    ],
+    "c2": [
+        {
+            "id": "b-init",
+            "name": "colB init",
+            "age": 28,
+            "updatedAt": 1778207604662
+        },
+        {
+            "id": "insert",
+            "name": "InsertName",
+            "age": 60,
+            "updatedAt": 1778207606271
+        }
+    ]
+}
+----------
+{
+    "c1": [
+        {
+ensureCollectionsHaveEqualState(insert many) states not equal (c1:humans, c2:humans):
+            "id": "b-init",
+            "name": "colB init",
+            "age": 28,
+            "updatedAt": 1778207604662
+        },
+        {
+            "id": "insert",
+            "name": "InsertName",
+            "age": 60,
+            "updatedAt": 1778207606271
+        },
+        {
+            "id": "8FÜ😃lMF4",
+            "name": "insert-many",
+            "age": 31,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "O💩6tthäYcV",
+            "name": "insert-many",
+            "age": 99,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "Vo🍌dGCh",
+            "name": "insert-many",
+            "age": 16,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "hs6WAiu4Pah",
+            "name": "insert-many",
+            "age": 86,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "trxLm💩ZS",
+            "name": "insert-many",
+            "age": 84,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "xR2äK🍌üB",
+            "name": "insert-many",
+            "age": 63,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "zJÄW😃V😊i5",
+            "name": "insert-many",
+            "age": 18,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "}]oJzxqSÖI]",
+            "name": "insert-many",
+            "age": 44,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "ÜNQg'Ygqö",
+            "name": "insert-many",
+            "age": 32,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "äMSg058]kk",
+            "name": "insert-many",
+            "age": 15,
+            "updatedAt": 1778207607313
+        }
+    ],
+    "c2": [
+        {
+            "id": "b-init",
+            "name": "colB init",
+            "age": 28,
+            "updatedAt": 1778207604662
+        },
+        {
+            "id": "insert",
+            "name": "InsertName",
+            "age": 60,
+            "updatedAt": 1778207606271
+        }
+    ]
+}
+----------
+{
+    "c1": [
+        {
+            "id": "b-init",
+            "name": "colB init",
+ensureCollectionsHaveEqualState(insert many) states not equal (c1:humans, c2:humans):
+            "age": 28,
+            "updatedAt": 1778207604662
+        },
+        {
+            "id": "insert",
+            "name": "InsertName",
+            "age": 60,
+            "updatedAt": 1778207606271
+        },
+        {
+            "id": "8FÜ😃lMF4",
+            "name": "insert-many",
+            "age": 31,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "O💩6tthäYcV",
+            "name": "insert-many",
+            "age": 99,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "Vo🍌dGCh",
+            "name": "insert-many",
+            "age": 16,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "hs6WAiu4Pah",
+            "name": "insert-many",
+            "age": 86,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "trxLm💩ZS",
+            "name": "insert-many",
+            "age": 84,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "xR2äK🍌üB",
+            "name": "insert-many",
+            "age": 63,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "zJÄW😃V😊i5",
+            "name": "insert-many",
+            "age": 18,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "}]oJzxqSÖI]",
+            "name": "insert-many",
+            "age": 44,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "ÜNQg'Ygqö",
+            "name": "insert-many",
+            "age": 32,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "äMSg058]kk",
+            "name": "insert-many",
+            "age": 15,
+            "updatedAt": 1778207607313
+        }
+    ],
+    "c2": [
+        {
+            "id": "b-init",
+            "name": "colB init",
+            "age": 28,
+            "updatedAt": 1778207604662
+        },
+        {
+            "id": "insert",
+            "name": "InsertName",
+            "age": 60,
+            "updatedAt": 1778207606271
+        }
+    ]
+}
+----------
+{
+    "c1": [
+        {
+ensureCollectionsHaveEqualState(insert many) states not equal (c1:humans, c2:humans):
+            "id": "b-init",
+            "name": "colB init",
+            "age": 28,
+            "updatedAt": 1778207604662
+        },
+        {
+            "id": "insert",
+            "name": "InsertName",
+            "age": 60,
+            "updatedAt": 1778207606271
+        },
+        {
+            "id": "8FÜ😃lMF4",
+            "name": "insert-many",
+            "age": 31,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "O💩6tthäYcV",
+            "name": "insert-many",
+            "age": 99,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "Vo🍌dGCh",
+            "name": "insert-many",
+            "age": 16,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "hs6WAiu4Pah",
+            "name": "insert-many",
+            "age": 86,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "trxLm💩ZS",
+            "name": "insert-many",
+            "age": 84,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "xR2äK🍌üB",
+            "name": "insert-many",
+            "age": 63,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "zJÄW😃V😊i5",
+            "name": "insert-many",
+            "age": 18,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "}]oJzxqSÖI]",
+            "name": "insert-many",
+            "age": 44,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "ÜNQg'Ygqö",
+            "name": "insert-many",
+            "age": 32,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "äMSg058]kk",
+            "name": "insert-many",
+            "age": 15,
+            "updatedAt": 1778207607313
+        }
+    ],
+    "c2": [
+        {
+            "id": "b-init",
+            "name": "colB init",
+            "age": 28,
+            "updatedAt": 1778207604662
+        },
+        {
+            "id": "insert",
+            "name": "InsertName",
+            "age": 60,
+            "updatedAt": 1778207606271
+        }
+    ]
+}
+----------
+{
+ensureCollectionsHaveEqualState(insert parallel) states not equal (c1:humans, c2:humans):
+    "c1": [
+        {
+            "id": "b-init",
+            "name": "colB init",
+            "age": 28,
+            "updatedAt": 1778207604662
+        },
+        {
+            "id": "insert",
+            "name": "InsertName",
+            "age": 60,
+            "updatedAt": 1778207606271
+        },
+        {
+            "id": "8FÜ😃lMF4",
+            "name": "insert-many",
+            "age": 31,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "O💩6tthäYcV",
+            "name": "insert-many",
+            "age": 99,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "Vo🍌dGCh",
+            "name": "insert-many",
+            "age": 16,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "hs6WAiu4Pah",
+            "name": "insert-many",
+            "age": 86,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "trxLm💩ZS",
+            "name": "insert-many",
+            "age": 84,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "xR2äK🍌üB",
+            "name": "insert-many",
+            "age": 63,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "zJÄW😃V😊i5",
+            "name": "insert-many",
+            "age": 18,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "}]oJzxqSÖI]",
+            "name": "insert-many",
+            "age": 44,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "ÜNQg'Ygqö",
+            "name": "insert-many",
+            "age": 32,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "äMSg058]kk",
+            "name": "insert-many",
+            "age": 15,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "U]vMdlSiE",
+            "name": "insert-parallel-A",
+            "age": 99,
+            "updatedAt": 1778207607660
+        }
+    ],
+    "c2": [
+        {
+            "id": "b-init",
+            "name": "colB init",
+            "age": 28,
+            "updatedAt": 1778207604662
+        },
+        {
+            "id": "insert",
+            "name": "InsertName",
+            "age": 60,
+            "updatedAt": 1778207606271
+        },
+        {
+            "id": "8FÜ😃lMF4",
+            "name": "insert-many",
+            "age": 31,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "O💩6tthäYcV",
+            "name": "insert-many",
+            "age": 99,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "Vo🍌dGCh",
+            "name": "insert-many",
+            "age": 16,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "hs6WAiu4Pah",
+            "name": "insert-many",
+            "age": 86,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "trxLm💩ZS",
+            "name": "insert-many",
+            "age": 84,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "xR2äK🍌üB",
+            "name": "insert-many",
+            "age": 63,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "zJÄW😃V😊i5",
+            "name": "insert-many",
+            "age": 18,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "}]oJzxqSÖI]",
+            "name": "insert-many",
+            "age": 44,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "ÜNQg'Ygqö",
+            "name": "insert-many",
+            "age": 32,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "äMSg058]kk",
+            "name": "insert-many",
+            "age": 15,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "s3lXBBRHu]bi",
+            "name": "insert-parallel-B",
+            "age": 55,
+            "updatedAt": 1778207607660
+        }
+    ]
+}
+----------
+ensureCollectionsHaveEqualState(insert parallel) states not equal (c1:humans, c2:humans):
+{
+    "c1": [
+        {
+            "id": "b-init",
+            "name": "colB init",
+            "age": 28,
+            "updatedAt": 1778207604662
+        },
+        {
+            "id": "insert",
+            "name": "InsertName",
+            "age": 60,
+            "updatedAt": 1778207606271
+        },
+        {
+            "id": "8FÜ😃lMF4",
+            "name": "insert-many",
+            "age": 31,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "O💩6tthäYcV",
+            "name": "insert-many",
+            "age": 99,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "Vo🍌dGCh",
+            "name": "insert-many",
+            "age": 16,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "hs6WAiu4Pah",
+            "name": "insert-many",
+            "age": 86,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "trxLm💩ZS",
+            "name": "insert-many",
+            "age": 84,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "xR2äK🍌üB",
+            "name": "insert-many",
+            "age": 63,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "zJÄW😃V😊i5",
+            "name": "insert-many",
+            "age": 18,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "}]oJzxqSÖI]",
+            "name": "insert-many",
+            "age": 44,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "ÜNQg'Ygqö",
+            "name": "insert-many",
+            "age": 32,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "äMSg058]kk",
+            "name": "insert-many",
+            "age": 15,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "U]vMdlSiE",
+            "name": "insert-parallel-A",
+            "age": 99,
+            "updatedAt": 1778207607660
+        }
+    ],
+    "c2": [
+        {
+            "id": "b-init",
+            "name": "colB init",
+            "age": 28,
+            "updatedAt": 1778207604662
+        },
+        {
+            "id": "insert",
+            "name": "InsertName",
+            "age": 60,
+            "updatedAt": 1778207606271
+        },
+        {
+            "id": "8FÜ😃lMF4",
+            "name": "insert-many",
+            "age": 31,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "O💩6tthäYcV",
+            "name": "insert-many",
+            "age": 99,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "Vo🍌dGCh",
+            "name": "insert-many",
+            "age": 16,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "hs6WAiu4Pah",
+            "name": "insert-many",
+            "age": 86,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "trxLm💩ZS",
+            "name": "insert-many",
+            "age": 84,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "xR2äK🍌üB",
+            "name": "insert-many",
+            "age": 63,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "zJÄW😃V😊i5",
+            "name": "insert-many",
+            "age": 18,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "}]oJzxqSÖI]",
+            "name": "insert-many",
+            "age": 44,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "ÜNQg'Ygqö",
+            "name": "insert-many",
+            "age": 32,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "äMSg058]kk",
+            "name": "insert-many",
+            "age": 15,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "s3lXBBRHu]bi",
+            "name": "insert-parallel-B",
+            "age": 55,
+            "updatedAt": 1778207607660
+        }
+    ]
+}
+----------
+ensureCollectionsHaveEqualState(insert parallel) states not equal (c1:humans, c2:humans):
+{
+    "c1": [
+        {
+            "id": "b-init",
+            "name": "colB init",
+            "age": 28,
+            "updatedAt": 1778207604662
+        },
+        {
+            "id": "insert",
+            "name": "InsertName",
+            "age": 60,
+            "updatedAt": 1778207606271
+        },
+        {
+            "id": "8FÜ😃lMF4",
+            "name": "insert-many",
+            "age": 31,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "O💩6tthäYcV",
+            "name": "insert-many",
+            "age": 99,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "Vo🍌dGCh",
+            "name": "insert-many",
+            "age": 16,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "hs6WAiu4Pah",
+            "name": "insert-many",
+            "age": 86,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "trxLm💩ZS",
+            "name": "insert-many",
+            "age": 84,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "xR2äK🍌üB",
+            "name": "insert-many",
+            "age": 63,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "zJÄW😃V😊i5",
+            "name": "insert-many",
+            "age": 18,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "}]oJzxqSÖI]",
+            "name": "insert-many",
+            "age": 44,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "ÜNQg'Ygqö",
+            "name": "insert-many",
+            "age": 32,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "äMSg058]kk",
+            "name": "insert-many",
+            "age": 15,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "U]vMdlSiE",
+            "name": "insert-parallel-A",
+            "age": 99,
+            "updatedAt": 1778207607660
+        }
+    ],
+    "c2": [
+        {
+            "id": "b-init",
+            "name": "colB init",
+            "age": 28,
+            "updatedAt": 1778207604662
+        },
+        {
+            "id": "insert",
+            "name": "InsertName",
+            "age": 60,
+            "updatedAt": 1778207606271
+        },
+        {
+            "id": "8FÜ😃lMF4",
+            "name": "insert-many",
+            "age": 31,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "O💩6tthäYcV",
+            "name": "insert-many",
+            "age": 99,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "Vo🍌dGCh",
+            "name": "insert-many",
+            "age": 16,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "hs6WAiu4Pah",
+            "name": "insert-many",
+            "age": 86,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "trxLm💩ZS",
+            "name": "insert-many",
+            "age": 84,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "xR2äK🍌üB",
+            "name": "insert-many",
+            "age": 63,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "zJÄW😃V😊i5",
+            "name": "insert-many",
+            "age": 18,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "}]oJzxqSÖI]",
+            "name": "insert-many",
+            "age": 44,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "ÜNQg'Ygqö",
+            "name": "insert-many",
+            "age": 32,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "äMSg058]kk",
+            "name": "insert-many",
+            "age": 15,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "s3lXBBRHu]bi",
+            "name": "insert-parallel-B",
+            "age": 55,
+            "updatedAt": 1778207607660
+        }
+    ]
+}
+----------
+ensureCollectionsHaveEqualState(insert parallel) states not equal (c1:humans, c2:humans):
+{
+    "c1": [
+        {
+            "id": "b-init",
+            "name": "colB init",
+            "age": 28,
+            "updatedAt": 1778207604662
+        },
+        {
+            "id": "insert",
+            "name": "InsertName",
+            "age": 60,
+            "updatedAt": 1778207606271
+        },
+        {
+            "id": "8FÜ😃lMF4",
+            "name": "insert-many",
+            "age": 31,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "O💩6tthäYcV",
+            "name": "insert-many",
+            "age": 99,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "Vo🍌dGCh",
+            "name": "insert-many",
+            "age": 16,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "hs6WAiu4Pah",
+            "name": "insert-many",
+            "age": 86,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "trxLm💩ZS",
+            "name": "insert-many",
+            "age": 84,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "xR2äK🍌üB",
+            "name": "insert-many",
+            "age": 63,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "zJÄW😃V😊i5",
+            "name": "insert-many",
+            "age": 18,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "}]oJzxqSÖI]",
+            "name": "insert-many",
+            "age": 44,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "ÜNQg'Ygqö",
+            "name": "insert-many",
+            "age": 32,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "äMSg058]kk",
+            "name": "insert-many",
+            "age": 15,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "U]vMdlSiE",
+            "name": "insert-parallel-A",
+            "age": 99,
+            "updatedAt": 1778207607660
+        }
+    ],
+    "c2": [
+        {
+            "id": "b-init",
+            "name": "colB init",
+            "age": 28,
+            "updatedAt": 1778207604662
+        },
+        {
+            "id": "insert",
+            "name": "InsertName",
+            "age": 60,
+            "updatedAt": 1778207606271
+        },
+        {
+            "id": "8FÜ😃lMF4",
+            "name": "insert-many",
+            "age": 31,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "O💩6tthäYcV",
+            "name": "insert-many",
+            "age": 99,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "Vo🍌dGCh",
+            "name": "insert-many",
+            "age": 16,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "hs6WAiu4Pah",
+            "name": "insert-many",
+            "age": 86,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "trxLm💩ZS",
+            "name": "insert-many",
+            "age": 84,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "xR2äK🍌üB",
+            "name": "insert-many",
+            "age": 63,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "zJÄW😃V😊i5",
+            "name": "insert-many",
+            "age": 18,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "}]oJzxqSÖI]",
+            "name": "insert-many",
+            "age": 44,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "ÜNQg'Ygqö",
+            "name": "insert-many",
+            "age": 32,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "äMSg058]kk",
+            "name": "insert-many",
+            "age": 15,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "s3lXBBRHu]bi",
+            "name": "insert-parallel-B",
+            "age": 55,
+            "updatedAt": 1778207607660
+        }
+    ]
+}
+----------
+ensureCollectionsHaveEqualState(insert parallel) states not equal (c1:humans, c2:humans):
+{
+    "c1": [
+        {
+            "id": "b-init",
+            "name": "colB init",
+            "age": 28,
+            "updatedAt": 1778207604662
+        },
+        {
+            "id": "insert",
+            "name": "InsertName",
+            "age": 60,
+            "updatedAt": 1778207606271
+        },
+        {
+            "id": "8FÜ😃lMF4",
+            "name": "insert-many",
+            "age": 31,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "O💩6tthäYcV",
+            "name": "insert-many",
+            "age": 99,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "Vo🍌dGCh",
+            "name": "insert-many",
+            "age": 16,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "hs6WAiu4Pah",
+            "name": "insert-many",
+            "age": 86,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "trxLm💩ZS",
+            "name": "insert-many",
+            "age": 84,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "xR2äK🍌üB",
+            "name": "insert-many",
+            "age": 63,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "zJÄW😃V😊i5",
+            "name": "insert-many",
+            "age": 18,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "}]oJzxqSÖI]",
+            "name": "insert-many",
+            "age": 44,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "ÜNQg'Ygqö",
+            "name": "insert-many",
+            "age": 32,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "äMSg058]kk",
+            "name": "insert-many",
+            "age": 15,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "U]vMdlSiE",
+            "name": "insert-parallel-A",
+            "age": 99,
+            "updatedAt": 1778207607660
+        }
+    ],
+    "c2": [
+        {
+            "id": "b-init",
+            "name": "colB init",
+            "age": 28,
+            "updatedAt": 1778207604662
+        },
+        {
+            "id": "insert",
+            "name": "InsertName",
+            "age": 60,
+            "updatedAt": 1778207606271
+        },
+        {
+            "id": "8FÜ😃lMF4",
+            "name": "insert-many",
+            "age": 31,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "O💩6tthäYcV",
+            "name": "insert-many",
+            "age": 99,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "Vo🍌dGCh",
+            "name": "insert-many",
+            "age": 16,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "hs6WAiu4Pah",
+            "name": "insert-many",
+            "age": 86,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "trxLm💩ZS",
+            "name": "insert-many",
+            "age": 84,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "xR2äK🍌üB",
+            "name": "insert-many",
+            "age": 63,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "zJÄW😃V😊i5",
+            "name": "insert-many",
+            "age": 18,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "}]oJzxqSÖI]",
+            "name": "insert-many",
+            "age": 44,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "ÜNQg'Ygqö",
+            "name": "insert-many",
+            "age": 32,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "äMSg058]kk",
+            "name": "insert-many",
+            "age": 15,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "s3lXBBRHu]bi",
+            "name": "insert-parallel-B",
+            "age": 55,
+            "updatedAt": 1778207607660
+        }
+    ]
+}
+----------
+ensureCollectionsHaveEqualState(insert parallel) states not equal (c1:humans, c2:humans):
+{
+    "c1": [
+        {
+            "id": "b-init",
+            "name": "colB init",
+            "age": 28,
+            "updatedAt": 1778207604662
+        },
+        {
+            "id": "insert",
+            "name": "InsertName",
+            "age": 60,
+            "updatedAt": 1778207606271
+        },
+        {
+            "id": "8FÜ😃lMF4",
+            "name": "insert-many",
+            "age": 31,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "O💩6tthäYcV",
+            "name": "insert-many",
+            "age": 99,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "Vo🍌dGCh",
+            "name": "insert-many",
+            "age": 16,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "hs6WAiu4Pah",
+            "name": "insert-many",
+            "age": 86,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "trxLm💩ZS",
+            "name": "insert-many",
+            "age": 84,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "xR2äK🍌üB",
+            "name": "insert-many",
+            "age": 63,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "zJÄW😃V😊i5",
+            "name": "insert-many",
+            "age": 18,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "}]oJzxqSÖI]",
+            "name": "insert-many",
+            "age": 44,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "ÜNQg'Ygqö",
+            "name": "insert-many",
+            "age": 32,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "äMSg058]kk",
+            "name": "insert-many",
+            "age": 15,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "U]vMdlSiE",
+            "name": "insert-parallel-A",
+            "age": 99,
+            "updatedAt": 1778207607660
+        }
+    ],
+    "c2": [
+        {
+            "id": "b-init",
+            "name": "colB init",
+            "age": 28,
+            "updatedAt": 1778207604662
+        },
+        {
+            "id": "insert",
+            "name": "InsertName",
+            "age": 60,
+            "updatedAt": 1778207606271
+        },
+        {
+            "id": "8FÜ😃lMF4",
+            "name": "insert-many",
+            "age": 31,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "O💩6tthäYcV",
+            "name": "insert-many",
+            "age": 99,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "Vo🍌dGCh",
+            "name": "insert-many",
+            "age": 16,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "hs6WAiu4Pah",
+            "name": "insert-many",
+            "age": 86,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "trxLm💩ZS",
+            "name": "insert-many",
+            "age": 84,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "xR2äK🍌üB",
+            "name": "insert-many",
+            "age": 63,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "zJÄW😃V😊i5",
+            "name": "insert-many",
+            "age": 18,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "}]oJzxqSÖI]",
+            "name": "insert-many",
+            "age": 44,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "ÜNQg'Ygqö",
+            "name": "insert-many",
+            "age": 32,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "äMSg058]kk",
+            "name": "insert-many",
+            "age": 15,
+            "updatedAt": 1778207607313
+        },
+        {
+            "id": "U]vMdlSiE",
+            "name": "insert-parallel-A",
+            "age": 99,
+            "updatedAt": 1778207607660
+        },
+        {
+            "id": "s3lXBBRHu]bi",
+            "name": "insert-parallel-B",
+            "age": 55,
+            "updatedAt": 1778207607660
+        }
+    ]
+}
+----------
+      ✔ should realtime sync on both sides (4090ms)
+
+
+  41 passing (24s)
+

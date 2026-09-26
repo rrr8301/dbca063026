@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# Activate Rust environment
+source $HOME/.cargo/env
+
+# Configure mold
+mkdir -p .cargo
+echo "[target.x86_64-unknown-linux-gnu]" > .cargo/config.toml
+echo "linker = \"clang\"" >> .cargo/config.toml
+echo "rustflags = [\"-C\", \"link-arg=-fuse-ld=/usr/local/bin/mold\"]" >> .cargo/config.toml
+
+# Build the project
+cargo build --workspace --features rocksdb --tests --locked
+
+# Run tests
+cargo nextest run --workspace --features rocksdb --profile ci --locked

@@ -1,0 +1,43 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Run tests
+  Test command(s) run in original CI:
+    $ actions/checkout@v5
+    $ pnpm/action-setup@v4
+    $ pnpm install
+    $ pnpm run build
+    $ pnpm run test
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ pnpm run build
+  $ pnpm run test
+
+--- Reason(s) for Non-Reproducibility ---
+  - [jest] Test result mismatch (same count 53): original=(53p/0f/0s), LLM=(0p/53f/0s)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    FAIL src/__tests__/e2e/v2/search.test.ts
+    FAIL src/__tests__/e2e/v2/crawl.test.ts
+    Error: API key is required for the cloud API. Set FIRECRAWL_API_KEY env or pass apiKey.
+    > throw new Error("API key is required for the cloud API. Set FIRECRAWL_API_KEY env or pass apiKey.");
+
+  [Root cause classification]
+  - All 53 LLM tests fail because `FIRECRAWL_API_KEY` is not set in the Docker environment. The test suite makes live HTTP calls to the Firecrawl cloud API, which requires a valid API key passed via `${{ secrets.FIRECRAWL_API_KEY }}` in the GitHub Actions workflow. Without the secret, every test throws the missing-key error immediately. The original CI passed (53/53) with the secret available. Same root cause as the related failed-category run (firecrawl_72558345058), which uses a slightly newer SDK version (4.19.0 vs. 4.18.0).
+
+--- Test Statistics Comparison ---
+  [jest]
+    Original: 53 run, 53 passed, 0 failed, 0 skipped
+    LLM:      53 run, 0 passed, 53 failed, 0 skipped

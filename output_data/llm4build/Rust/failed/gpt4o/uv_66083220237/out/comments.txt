@@ -1,0 +1,36 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          4
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      test / cargo test on linux
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    6
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoDefault] Test run mismatch: original=42, LLM=538
+  - [GoDefault] Test failed mismatch: original=42, LLM=538
+  - [cargo] Test run mismatch: original=27108, LLM=1322380
+  - [cargo] Test failed mismatch: original=42, LLM=538
+  - [cargo] Test skipped mismatch: original=27066, LLM=1321842
+  - [cargo] 248 test(s) failed in LLM but not in original: auth::add_package_native_auth, auth::add_package_native_auth_realm, auth::login_native_auth, auth::login_native_auth_url, auth::login_token_native_auth ... (+243 more)
+
+--- Root Cause Analysis ---
+  - [GoDefault] LLM ran 496 more tests than original — LLM likely used a broader test scope or included extra test suites.
+  - [cargo] LLM ran 1295272 more tests than original — LLM likely used a broader test scope or included extra test suites.
+  - [cargo] 248 test(s) failed in LLM but not original: auth::add_package_native_auth, auth::add_package_native_auth_realm, auth::login_native_auth, auth::login_native_auth_url, auth::login_token_native_auth ... (+243 more)
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 42 run, 0 passed, 42 failed, 0 skipped
+    LLM:      538 run, 0 passed, 538 failed, 0 skipped
+  [cargo]
+    Original: 27108 run, 0 passed, 42 failed, 27066 skipped
+    LLM:      1322380 run, 0 passed, 538 failed, 1321842 skipped

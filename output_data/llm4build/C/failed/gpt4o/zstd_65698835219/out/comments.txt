@@ -1,0 +1,39 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          20
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      check-32bit
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    3
+
+--- Reason(s) for Non-Reproducibility ---
+  - [shell-tests] Test passed mismatch: original=42, LLM=40
+  - [shell-tests] Test failed mismatch: original=2, LLM=4
+  - [shell-tests] 6 test(s) failed in LLM but not in original: cltools/zstdless.sh, cltools/zstdless.sh.check_exit, cltools/zstdless.sh.check_stderr, cltools/zstdless.sh.check_stdout, file-stat/compress-file-to-dir-without-write-perm.sh ... (+1 more)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > FAIL: cltools/zstdless.sh
+    > FAIL: determinism/basic.sh
+    > FAIL: determinism/multithread.sh
+    > FAIL: file-stat/compress-file-to-dir-without-write-perm.sh
+    > FAILED 4 / 44 tests!
+
+  [Root cause classification]
+  - The cltools/zstdless.sh test fails because the LLM's build environment (ubuntu:latest, 64-bit) lacks the `less` pager utility; zstdless.sh is a wrapper script that pipes zstd output through `less`, and without `less` installed the script fails immediately with "less: command not found". The original check-32bit CI job on ubuntu-24.04 has `less` pre-installed as part of the standard runner environment.
+  - The file-stat/compress-file-to-dir-without-write-perm.sh test fails because it tests behavior when compressing to a directory that lacks write permission; the test runs as root inside the Docker container, and root bypasses permission checks, causing the file stat trace output to differ from the expected output (which assumes a non-root user that gets "Permission denied").
+  - The original CI's check-32bit job uses a 32-bit toolchain (gcc-multilib, libc6-dev-i386) to build zstd in 32-bit mode, while the LLM used a standard 64-bit build; this architecture difference causes the determinism tests to produce slightly different compressed output sizes that fail stdout comparison checks, as 32-bit integer overflow behavior in the reference compression differs from 64-bit.
+
+--- Test Statistics Comparison ---
+  [shell-tests]
+    Original: 44 run, 42 passed, 2 failed, 0 skipped
+    LLM:      44 run, 40 passed, 4 failed, 0 skipped

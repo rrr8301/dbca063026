@@ -1,0 +1,45 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          4
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      Build & Test (linux-x64)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    6
+
+--- LLM run.sh Test Command(s) ---
+  $ python3 -m pytest python/tests/ || true
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in original but missing in LLM: CTest, GTest
+  - Framework(s) in LLM but not in original: pytest
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 128 run, 122 passed, 6 failed, 0 skipped
+    LLM:      (not present)
+  [GTest]
+    Original: 37 run, 24 passed, 13 failed, 0 skipped
+    LLM:      (not present)
+  [pytest]
+    Original: (not present)
+    LLM:      20 run, 0 passed, 20 failed, 0 skipped
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > CMake Error: thirdparty/googletest and thirdparty/gflags — add_subdirectory targets missing
+    > ERROR: Failed building wheel for zvec (pyproject.toml did not run successfully)
+    > /usr/bin/ld: cannot find -lzvec_ailego / -lzvec_core / -lzvec_db / -larrow / -lparquet
+    > ModuleNotFoundError: No module named 'numpy' (20 pytest collection errors)
+    > ImportError while importing test module (distance_helper imports numpy)
+
+  [Root cause classification]
+  The LLM completely missed the correct build system for zvec, which requires CTest and GTest via CMake with third-party dependencies (Apache Arrow, Parquet, RocksDB, roaring, antlr4-runtime, glog). Instead the LLM attempted to build via Python's `pip install zvec` (which failed due to missing CMake submodule targets) and then ran Python pytest tests that all failed on import because numpy was not installed and the native zvec C++ extension was never built. The original CI ran 128 CTest + 37 GTest tests against the native C++ library, while the LLM produced zero C++ tests and 20 failing Python import errors, demonstrating a fundamental build system misidentification rather than a test-level discrepancy.

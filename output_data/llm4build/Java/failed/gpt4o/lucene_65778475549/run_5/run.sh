@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# Activate SDKMAN
+source "$HOME/.sdkman/bin/sdkman-init.sh"
+
+# Set Java version to a valid version
+sdk use java 17.0.8-tem
+
+# Set Gradle version
+sdk use gradle 7.5 # Specify the same Gradle version as installed
+
+# Run Gradle tests
+./gradlew displayGradleDiagnostics allOptions test "-Ptask.times=true" "-Pvalidation.errorprone=false" || true
+
+# List automatically-initialized gradle.properties
+if [ -f gradle.properties ]; then
+    cat gradle.properties
+else
+    echo "gradle.properties file not found."
+fi

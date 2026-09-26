@@ -1,0 +1,34 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          N/A
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      build with 3.14 (py 3.14 on ubuntu-22.04, x64=0)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ pytest -n auto --tb=short --maxfail=20 tests examples
+
+--- Reason(s) for Non-Reproducibility ---
+  - [pytest] Test run mismatch: original=41258, LLM=41255
+  - [pytest] Test passed mismatch: original=18620, LLM=18618
+  - [pytest] Test failed mismatch: original=1, LLM=2
+  - [pytest] Test skipped mismatch: original=22637, LLM=22635
+  - [pytest] 1 test(s) failed in LLM but not in original: tests/traceback_test.py
+
+--- Root Cause Analysis ---
+  - [pytest] LLM ran 3 fewer tests than original — LLM likely used a narrower test scope or missed some test suites.
+  - [pytest] 1 test(s) failed in LLM but not original: tests/traceback_test.py
+
+--- Test Statistics Comparison ---
+  [pytest]
+    Original: 41258 run, 18620 passed, 1 failed, 22637 skipped
+    LLM:      41255 run, 18618 passed, 2 failed, 22635 skipped

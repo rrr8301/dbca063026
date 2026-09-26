@@ -1,0 +1,64 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      build
+  Test command(s) run in original CI:
+    $ actions/checkout@v4
+    $ actions/setup-java@v4 (java-version: 21)
+    $ ./gradlew build
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ ./gradlew build
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Gradle] Test run mismatch: original=0, LLM=779
+  - [Gradle] Test passed mismatch: original=0, LLM=576
+  - [Gradle] Test failed mismatch: original=0, LLM=203
+  - [Gradle] Task executed mismatch: original=157, LLM=83
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    MaestroJobTemplateDaoTest > testGetJobTemplates FAILED
+    java.lang.ExceptionInInitializerError
+    Caused by: com.zaxxer.hikari.pool.HikariPool$PoolInitializationException:
+      Failed to initialize pool: Could not find a valid Docker environment.
+      Please see logs and check configuration
+    Caused by: java.lang.IllegalStateException: Could not find a valid Docker environment.
+      Please see logs and check configuration
+      at org.testcontainers.dockerclient.DockerClientProviderStrategy.getFirstValidStrategy(...)
+      at org.testcontainers.DockerClientFactory.getOrInitializeStrategy(...)
+      at org.testcontainers.containers.GenericContainer.start(...)
+      at org.testcontainers.jdbc.ContainerDatabaseDriver.connect(...)
+
+  [Root cause classification]
+  - No `/var/run/docker.sock` in Docker container → Testcontainers cannot start PostgreSQL
+    → 203 database-backed tests fail. The Maestro test suite uses Testcontainers
+    (`org.testcontainers:postgresql`) to spin up an ephemeral PostgreSQL container for DAO
+    tests (`MaestroJobTemplateDaoTest` and similar). Testcontainers requires a Docker daemon
+    socket (`/var/run/docker.sock`) to launch the database container. Since the LLM Docker
+    container runs without Docker-in-Docker and no socket is mounted, Testcontainers throws
+    `IllegalStateException: Could not find a valid Docker environment`, which propagates as
+    `ExceptionInInitializerError` in each test class that depends on the database, causing
+    203 test failures. The original CI (GitHub Actions runner) has a Docker daemon available
+    and Testcontainers can successfully launch the PostgreSQL container, so all tests pass.
+    Additionally, the original CI runs 157 Gradle tasks (entire `build` completes successfully)
+    vs 83 tasks in the LLM (build aborts when `:maestro-engine:test` fails, leaving subsequent
+    module tasks unexecuted). The original CI reports 0 tests in the stats extractor because
+    the test result XML files may not be captured in the expected location, or because the CI
+    build uses a different Gradle test reporting configuration.
+
+--- Test Statistics Comparison ---
+  [Gradle]
+    Original: 0 run, 0 passed,   0 failed, 0 skipped (157 tasks executed)
+    LLM:    779 run, 576 passed, 203 failed, 0 skipped  (83 tasks executed)

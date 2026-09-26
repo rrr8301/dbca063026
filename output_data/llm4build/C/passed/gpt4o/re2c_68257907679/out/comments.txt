@@ -1,0 +1,39 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          20
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT TESTS NOT REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      linux-gcc-ootree
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    7
+
+--- Test Reproducibility Gap ---
+  Original ran 1186 test(s) across [Autotools, HardSoftError].
+  LLM build produced no test results (empty llm_log_stats).
+
+--- Root Cause ---
+  [Actual error from LLM log.txt]
+    > re2c 4.5
+    > /app
+    > /usr/local/bin/run.sh: line 49: ../configure: No such file or directory
+    > find: '../src': No such file or directory
+    > make: *** No targets specified and no makefile found.  Stop.
+    > make: *** No rule to make target 'check'.  Stop.
+    > Warning: run_tests.py not found, skipping skeleton tests.
+
+  [Root cause classification: Out-of-tree build directory path error — configure not found relative to BUILD_DIR]
+  - The LLM's run.sh performs a fast in-tree build first (./configure → make install → make distclean), then attempts an out-of-tree full build by creating `.build/linux-gcc-ootree-full/` and cd-ing into it. The `../configure` path from inside this directory is wrong because `make distclean` already removed configure from the source root after the first build step, leaving nothing to configure from.
+  - With no valid Makefile generated in the out-of-tree directory, `make check` and `make install` both fail immediately, and `run_tests.py` is searched for relative to `../` (which no longer contains the source tree), so it is not found and skeleton tests are skipped entirely.
+  - The first fast build did complete successfully (re2c 4.5 binary installed), but the test suite lives in the full out-of-tree build that was never properly configured, causing zero parseable test results against the original's 1186 tests (Autotools + HardSoftError frameworks).
+
+--- Original Test Statistics (not reproduced) ---
+  [Autotools] 7 run, 7 passed, 0 failed, 0 skipped
+  [HardSoftError] 1179 run, 883 passed, 0 failed, 383 skipped

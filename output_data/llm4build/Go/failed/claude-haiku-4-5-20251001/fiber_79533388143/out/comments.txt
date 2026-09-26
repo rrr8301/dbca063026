@@ -1,0 +1,31 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: TESTS RAN, BUT THE RACE-DETECTOR FAILURE COUNT DIVERGES (Number=False)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    testing.go:1712: race detected during execution of test   (repeated)
+    (GoRace suite: 137 failing tests in LLM vs 7 in the original CI)
+
+  [Root cause classification]
+  - Flaky and Non-deterministic Tests (data races).
+    Both runs execute the same suites. The plain test pass is close (GoDefault 14 vs 15
+    failures), but the race-detector pass diverges massively: the original CI reported 7
+    GoRace failures, the container reported 137. Go's race detector is inherently
+    timing/scheduling-dependent — the set of races it observes depends on goroutine
+    interleaving, CPU core count, and load, which differ between the GitHub runner and the
+    Docker host. The large, non-deterministic difference in race-detected failures (not a
+    deterministic code difference) makes the run non-reproducible.
+
+--- Test Statistics Comparison ---
+  [GoDefault]  Original: 8 run, 14 failed     LLM: 8 run, 15 failed
+  [GoRace]     Original: 1560 run, 7 failed   LLM: 1560 run, 137 failed

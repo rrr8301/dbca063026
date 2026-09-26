@@ -1,0 +1,53 @@
+FROM ubuntu:24.04
+
+# Set timezone to Pacific Time (noninteractive)
+ENV TZ=America/Los_Angeles
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+# Set CI environment variables
+ENV CI=true
+ENV GITHUB_ACTIONS=true
+
+# Set UTF-8 locale
+ENV LANG=C.UTF-8
+ENV LC_ALL=C.UTF-8
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    curl \
+    wget \
+    ca-certificates \
+    build-essential \
+    gcc \
+    make \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Go 1.26 from official binary
+RUN curl -fsSL https://go.dev/dl/go1.26.linux-amd64.tar.gz -o /tmp/go.tar.gz && \
+    tar -C /usr/local -xzf /tmp/go.tar.gz && \
+    rm /tmp/go.tar.gz
+
+# Set Go environment variables
+ENV PATH=/usr/local/go/bin:$PATH
+ENV GOPATH=/home/testuser/go
+ENV GOROOT=/usr/local/go
+
+# Create work directory
+WORKDIR /workspace
+
+# Copy repository
+COPY . /workspace
+
+# Configure git safe directory to avoid ownership errors
+RUN git config --global --add safe.directory '*'
+
+# Create non-root user and transfer ownership
+RUN useradd -m testuser && \
+    chown -R testuser:testuser /workspace
+
+# Switch to non-root user
+USER testuser
+
+# Set entrypoint
+ENTRYPOINT ["/bin/bash", "/workspace/run.sh"]

@@ -1,0 +1,55 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Test on Node.js Latest (with coverage)
+  Test command(s) run in original CI:
+    $ actions/checkout@v4
+    $ yarn c8 jest --ci
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    6
+
+--- LLM run.sh Test Command(s) ---
+  $ yarn c8 jest --ci
+  $ yarn test:esm
+
+--- Reason(s) for Non-Reproducibility ---
+  - [jest] Test run mismatch: original=36556, LLM=26
+  - [jest] Test passed mismatch: original=36003, LLM=4
+  - [jest] Test failed mismatch: original=532, LLM=21
+  - [jest] 236 test(s) failed in LLM but not in original: codemods/babel-plugin-codemod-object-assign-to-object-spread/test/index.js, codemods/babel-plugin-codemod-optional-catch-binding/test/index.js, eslint/babel-eslint-parser/test/typescript-estree.test.js, eslint/babel-eslint-tests/test/integration/duplicated-babel-parser.js, eslint/babel-eslint-tests/test/integration/eslint-plugin-import.js, eslint/babel-eslint-tests/test/integration/eslint/rules/strict.js, eslint/babel-eslint-tests/test/integration/parser-override.js, packages/babel-build-external-helpers/test/batch-test-runner/0.js (+228 more)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > FAIL eslint/babel-eslint-tests/test/integration/eslint/verify.js
+    >   ● Test suite failed to run
+    >     Cannot find module '/workspace/eslint/babel-eslint-tests/node_modules/@babel/eslint-parser/lib/index.js'
+    > FAIL packages/babel-generator/test/index.js
+    >   ● Test suite failed to run
+    >     Cannot find module '/workspace/node_modules/@babel/parser/lib/index.js'
+    > FAIL packages/babel-traverse/test/scope.js
+    >   ● Test suite failed to run
+    >     Cannot find module '/workspace/node_modules/@babel/parser/lib/index.js'
+    > FAIL packages/babel-parser/test/misc.js
+    >   ● Test suite failed to run
+    >     Cannot find module '/workspace/packages/babel-parser/lib/index.js'
+
+  [Root cause classification]
+  - The original CI ran 36,556 tests while the LLM ran only 26. The catastrophic reduction is caused by the LLM skipping the `yarn build` (monorepo compilation) step before running `yarn c8 jest --ci`. The Babel monorepo stores compiled JavaScript in `packages/*/lib/` directories that are generated from TypeScript/Flow sources during the build phase. When `yarn c8 jest --ci` runs without these `lib/` directories present, virtually every test file fails with "Test suite failed to run" / "Cannot find module '...lib/index.js'", and jest exits early after a small number of collected test cases (26 total).
+
+  - The original CI command shown (`$ yarn c8 jest --ci`) appears as just the test step, but the Babel CI workflow includes a prerequisite `yarn build` step that compiles all packages and populates the `lib/` directories. The LLM reproduced only the test invocation without the build, leaving the compiled output absent. The YN0004 warnings visible in the LLM log ("build scripts have been disabled") compound the problem: Yarn Berry with the `--frozen-lockfile` or `--immutable` flag disables postinstall build scripts for npm dependencies, which means packages like `esbuild` that need native compilation also fail to self-build during install.
+
+  - Of the 26 tests the LLM did run, 21 failed and 4 passed. These represent a small subset of tests that happen not to import from `lib/` paths (e.g., tests for fixture runners or pure-JS utilities). The 532 failures in the original CI are genuine pre-existing test failures in the Babel monorepo at that commit — the original CI was in the "failed" category precisely because of those 532 failing tests. The LLM's 21 failures are a completely different set caused by missing build artifacts.
+
+--- Test Statistics Comparison ---
+  [jest]
+    Original: 36556 run, 36003 passed, 532 failed, 21 skipped
+    LLM:      26 run, 4 passed, 21 failed, 1 skipped

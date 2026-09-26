@@ -1,0 +1,46 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          7
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      ubuntu (19, ubuntu-24.04)
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ make
+    $ make installcheck
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ make
+  $ sudo --preserve-env=PG_CONFIG make install
+  $ TEST_DIR="/tmp/pgtest/pgvector"
+  $ rm -rf "$TEST_DIR"
+  $ cp -r /workspace "$TEST_DIR"
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in original but missing in LLM: tap
+  - [ProveTAP] Test result mismatch (same count 14): original=(8p/6f/0s), LLM=(14p/0f/0s)
+  - [ProveTAP] Tests failed in original but passed in LLM: ivfflat_bit, ivfflat_halfvec, ivfflat_vector, sparsevec, vector_type
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    (All 14 ProveTAP tests passed in LLM; original CI used PostgreSQL 19 dev build)
+
+  [Root cause classification]
+  - PostgreSQL version difference: The original CI job (`ubuntu (19, ubuntu-24.04)`) uses PostgreSQL 19 (development branch). The 6 failures (`ivfflat_bit`, `ivfflat_halfvec`, `ivfflat_vector`, `sparsevec`, `vector_type`) in the original CI indicate that these vector index types exposed bugs or incompatibilities in PostgreSQL 19 dev. The LLM installed a stable PostgreSQL release (likely 16 or 17 from ubuntu:24.04 repos), where these tests pass. Additionally, the LLM did not run the `tap` framework tests (14 tap tests all pass in original, not present in LLM) — the LLM ran `make installcheck` differently, losing the TAP test output.
+
+--- Test Statistics Comparison ---
+  [ProveTAP]
+    Original: 14 run, 8 passed, 6 failed, 0 skipped
+    LLM:      14 run, 14 passed, 0 failed, 0 skipped
+  [tap]
+    Original: 14 run, 14 passed, 0 failed, 0 skipped
+    LLM:      (not present)

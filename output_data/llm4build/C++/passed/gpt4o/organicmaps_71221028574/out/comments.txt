@@ -1,0 +1,36 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      ubuntu-24.04 gcc-13 Debug
+  Test command(s) run in original CI:
+    $ ctest -j$(nproc --all) -L "omim-test" -E "$CTEST_EXCLUDE_REGEX" --output-on-failure
+    $ ctest -R "drape_tests|drape_frontend_tests|shaders_tests" --verbose
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ env QT_QPA_PLATFORM="offscreen" ctest -R "drape_tests|drape_frontend_tests|shaders_tests" --verbose || true
+
+--- Reason(s) for Non-Reproducibility ---
+  - [CTest] Test passed mismatch: original=38, LLM=2
+  - [CTest] Test failed mismatch: original=0, LLM=36
+  - [CTest] 36 test(s) failed in LLM but not in original: address_parser_tests, base_tests, bsdiff_tests, coding_tests, descriptions_tests ... (+31 more)
+
+--- Root Cause Analysis ---
+  - [CTest] 36 test(s) failed in LLM but not original: address_parser_tests, base_tests, bsdiff_tests, coding_tests, descriptions_tests ... (+31 more)
+  - Test command differences detected — original CI vs LLM run.sh may use different flags or test selection.
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 38 run, 38 passed, 0 failed, 0 skipped
+    LLM:      38 run, 2 passed, 36 failed, 0 skipped

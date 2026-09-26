@@ -1,0 +1,44 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          20
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT TESTS NOT REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      build
+  Test command(s) run in original CI:
+    $ make test-source-headers
+    $ make test-coverage
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ make test-source-headers || true
+  $ make test-coverage || true
+  $ make test-source-headers || true
+  $ make test-coverage || true
+
+--- Test Reproducibility Gap ---
+  Original ran 58 test(s) across [GoDefault].
+  LLM build produced no test results (empty llm_log_stats).
+
+--- Root Cause ---
+  Reason type: Test runner executed but produced no parseable output
+  Last log output before stopping:
+    helm.sh/helm/v4/pkg/kube imports
+    k8s.io/client-go/util/csaupgrade imports
+    sigs.k8s.io/structured-merge-diff/v6/fieldpath imports
+    iter: package iter is not in GOROOT (/usr/local/go/src/iter)
+    helm.sh/helm/v4/pkg/provenance imports
+    github.com/ProtonMail/go-crypto/openpgp imports
+    golang.org/x/crypto/sha3 imports
+    crypto/sha3: package crypto/sha3 is not in GOROOT (/usr/local/go/src/crypto/sha3)
+
+--- Original Test Statistics (not reproduced) ---
+  [GoDefault] 58 run, 58 passed, 0 failed, 0 skipped

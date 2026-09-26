@@ -1,0 +1,55 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Leader Lock Tests (w/Redis)
+  Test command(s) run in original CI:
+    $ '/runner/warpbuild-agent/tools/github/hooks/prerun.sh'
+    $ actions/checkout@v6
+    $ : set $CARGO_HOME
+    $ : enable colors in Cargo output
+    $ : enable Cargo sparse registry
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ TEST1_FAILED=0
+  $ TEST2_FAILED=0
+  $ cargo test --package fuel-core --lib service::adapters::consensus_module::poa::tests:: --features leader_lock -- --test-threads=1 --nocapture || TEST1_FAILED=1
+  $ cargo test --package fuel-core-tests --test integration_tests leader_lock --features leader_lock -- --test-threads=1 --nocapture || TEST2_FAILED=1
+
+--- Reason(s) for Non-Reproducibility ---
+  - [cargo] Test run mismatch: original=37, LLM=45
+  - [cargo] Test passed mismatch: original=36, LLM=43
+  - [cargo] Test failed mismatch: original=1, LLM=2
+  - [cargo] 2 test(s) failed in LLM but not in original: leader_lock::leader_lock__two_producers__when_second_starts_after_first_shutdown_then_second_builds_on_redis_height, service::adapters::consensus_module::poa::tests::unreconciled_blocks__when_redis_node_restarts_and_loses_data__drops_block_below_quorum
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    2110:thread 'leader_lock::leader_lock__two_producers__when_second_starts_after_first_shutdown_then_second_builds_on_redis_height' (42367) panicked at tests/tests/leader_lock.rs:306:5:
+    2111-assertion `left == right` failed: Second producer should first produce block at height 2 by reconciling Redis stream
+    1214:thread 'service::adapters::consensus_module::poa::tests::unreconciled_blocks__when_redis_node_restarts_and_loses_data__drops_block_below_quorum' (15347) panicked at crates/fuel-core/src/service/a
+    1214:thread 'service::adapters::consensus_module::poa::tests::unreconciled_blocks__when_redis_node_restarts_and_loses_data__drops_block_below_quorum' (15347) panicked at crates/fuel-core/src/service/a
+    2110:thread 'leader_lock::leader_lock__two_producers__when_second_starts_after_first_shutdown_then_second_builds_on_redis_height' (42367) panicked at tests/tests/leader_lock.rs:306:5:
+
+  [Root cause classification]
+  - Network connectivity issue — test requires network access or a service (e.g., local server) that is unavailable in Docker.
+  - Required environment variable not set — test reads a specific env var that was present in original CI but not in Docker container.
+  - Database service unavailable or not properly configured — test requires an external database service.
+  - Test timed out — likely due to slower execution in Docker container or a blocking service call that never returns.
+  - I/O error — test encountered a system-level I/O failure, possibly due to filesystem permissions or missing mount points.
+  - Rust panic: 2110:thread 'leader_lock::leader_lock__two_producers__when_second_starts_after_first_shutdown_then_second_builds_on_redis_height' (42367) panicked at tests/tests/leader_lock.rs:306:5:
+  - Assertion failure: 2111-assertion `left == right` failed: Second producer should first produce block at height 2 by reconciling Redis stream
+
+--- Test Statistics Comparison ---
+  [cargo]
+    Original: 37 run, 36 passed, 1 failed, 0 skipped
+    LLM:      45 run, 43 passed, 2 failed, 0 skipped

@@ -1,0 +1,39 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          N/A
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      unit-tests (ubuntu-latest, 3.13)
+  Docker image pulled: redis
+
+--- LLM-Generated Dockerfile ---
+  Base image:   python:3.11-slim
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ poetry run pytest tests/units --cov --no-cov-on-fail --cov-report= --cov-fail-under=0
+  $ poetry run pytest tests/units --cov --no-cov-on-fail --cov-report=
+  $ poetry run pytest tests/units --cov --no-cov-on-fail --cov-report=
+  $ poetry run pytest tests/units --cov --no-cov-on-fail --cov-report=
+
+--- Reason(s) for Non-Reproducibility ---
+  - [pytest] Test run mismatch: original=12074, LLM=3574
+  - [pytest] Test passed mismatch: original=12016, LLM=3448
+  - [pytest] Test failed mismatch: original=0, LLM=91
+  - [pytest] Test skipped mismatch: original=58, LLM=35
+  - [pytest] 5 test(s) failed in LLM but not in original: tests/units/reflex_cli/utils/test_hosting.py, tests/units/reflex_cli/v2/test_apps.py, tests/units/reflex_cli/v2/test_project.py, tests/units/reflex_cli/v2/test_secrets.py, tests/units/reflex_cli/v2/test_vmtypes_regions.py
+
+--- Root Cause Analysis ---
+  - [pytest] LLM ran 8500 fewer tests than original — LLM likely used a narrower test scope or missed some test suites.
+  - [pytest] 5 test(s) failed in LLM but not original: tests/units/reflex_cli/utils/test_hosting.py, tests/units/reflex_cli/v2/test_apps.py, tests/units/reflex_cli/v2/test_project.py, tests/units/reflex_cli/v2/test_secrets.py, tests/units/reflex_cli/v2/test_vmtypes_regions.py
+
+--- Test Statistics Comparison ---
+  [pytest]
+    Original: 12074 run, 12016 passed, 0 failed, 58 skipped
+    LLM:      3574 run, 3448 passed, 91 failed, 35 skipped

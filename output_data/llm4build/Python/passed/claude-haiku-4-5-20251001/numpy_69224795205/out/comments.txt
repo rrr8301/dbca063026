@@ -1,0 +1,38 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          5
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      smoke_test (3.12)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    6
+
+--- Reason(s) for Non-Reproducibility ---
+  - [pytest] Test passed mismatch: original=45919, LLM=45918
+  - [pytest] Test skipped mismatch: original=1085, LLM=1086
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > XPASS numpy/lib/tests/test_arraypad.py::TestLinearRamp::test_object_array
+    > = 45918 passed, 1086 skipped, 2845 deselected, 33 xfailed, 1 xpassed in 267.35s
+
+  [Root cause classification]
+  - The 1-test passed/skipped swap has two components. First, `test_object_array` in `TestLinearRamp` (arraypad) is marked `@pytest.mark.xfail` — expected to fail. In the original CI's exact Python 3.12.x environment and numpy build, the test fails as expected (counted as xfailed, so 34 xfailed total), and the xpassed count is 0. The LLM's Docker runs a marginally different Python 3.12.y minor version or numpy Meson build variant where the underlying `np.pad` object-array edge case behaves differently, causing the test to unexpectedly pass (xpassed). Because pytest's xpassed counter is separate from the passed counter in the summary line, the LLM shows 45918 passed + 1 xpassed instead of 45919 passed — the same effective pass rate, just reported differently.
+
+  - The 1 extra skip (1086 vs 1085) is a different test that depended on an optional library (e.g., `cffi`, `numba`, or `scipy`) that is present in the original CI's runner image but absent in the LLM's Docker container. The `[GoDefault]` rows (108 failed in both) are a parser mis-classification: the meson build log contains 108 C feature probe failures (checking for `isfinite`, `isinf`, `isnan`, `signbit` builtins) whose output accidentally matches the Go test output format — both environments produce the exact same 108 parser artefacts, confirming the meson build is equally reproduced in both.
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 108 run, 0 passed, 108 failed, 0 skipped
+    LLM:      108 run, 0 passed, 108 failed, 0 skipped
+  [pytest]
+    Original: 47038 run, 45919 passed, 0 failed, 1085 skipped
+    LLM:      47038 run, 45918 passed, 0 failed, 1086 skipped

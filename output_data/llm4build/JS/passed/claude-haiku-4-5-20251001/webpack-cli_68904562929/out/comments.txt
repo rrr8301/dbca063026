@@ -1,0 +1,41 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          3
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Test - ubuntu-latest - Node v22.x, Webpack latest, DevServer latest
+  Test command(s) run in original CI:
+    $ actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+    $ pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320
+    $ npm ci --ignore-scripts
+    $ npm run build -- --sourceMap true
+    $ npm run test:coverage -- --ci
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ npm run build -- --sourceMap true
+  $ npm run test:coverage -- --ci
+
+--- Reason(s) for Non-Reproducibility ---
+  - [jest] Test result mismatch (same count 708): original=(707p/0f/1s), LLM=(697p/10f/1s)
+  - [jest] Tests failed in LLM but passed in original: test/create-webpack-app/init/init.test.js (196.41 s)
+  - [jest] Tests failed in original but passed in LLM: Unknown
+
+--- Root Cause Analysis ---
+  [Root cause classification]
+  - `test/create-webpack-app/init/init.test.js` takes 196.41 seconds to fail in the LLM — over 3 minutes — indicating that the test is hanging waiting for a network resource. This test runs webpack-cli's project scaffolding command (`webpack-cli init` or `npx create-webpack-app`), which downloads an npm package template from the npm registry. In the LLM's Docker environment, npm registry access is blocked or throttled, causing the `npm init webpack` subprocess to hang until jest's timeout is reached. The original CI (ubuntu-latest with full npm registry access) completed the scaffolding quickly and the test passed in all 10 sub-cases.
+
+  - The 10 failures (vs 1 test file failure at the package level) indicate the `init.test.js` file contains 10 individual test cases — each testing a different scaffolding option or template (e.g., TypeScript, JavaScript, with/without CSS). All 10 fail in the LLM because they all invoke the npm registry-dependent scaffolding process. This is the same root cause as the failed-category counterpart `webpack-cli_66203145807` (same test, 147.608s vs 196.41s, same npm registry dependency).
+
+--- Test Statistics Comparison ---
+  [jest]
+    Original: 708 run, 707 passed, 0 failed, 1 skipped
+    LLM:      708 run, 697 passed, 10 failed, 1 skipped

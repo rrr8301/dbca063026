@@ -1,0 +1,54 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          20
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT TESTS NOT REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      ubuntu-latest / Node.js 22.13.0 / Test
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ pnpm test 2>&1 || EXIT_CODE=$?
+
+--- Test Reproducibility Gap ---
+  Original ran 4180 test(s) across [jest].
+  LLM build produced no test results (empty llm_log_stats).
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > pnpm/artifacts/exe prepare: Done
+    > Done in 7.7s using pnpm v11.0.0-rc.5
+    > Installing git hooks...
+    > No compiled artifacts found, proceeding with tests...
+    > Running tests...
+    > Tests completed with exit code: 1
+
+  [Root cause classification]
+  - The test runner reports "No compiled artifacts found, proceeding with tests..." before exiting with code 1. This indicates the pnpm build artifacts (compiled TypeScript → `dist/pnpm.mjs` and related executables) were not built before the tests ran. The pnpm repository's test infrastructure checks for pre-compiled artifacts in the `artifacts/` or `dist/` directories and proceeds without them (in a degraded mode), but the tests that depend on the executable CLI binary then fail.
+
+  - This is the passed-category counterpart to `pnpm_66211211820` (failed), which showed `Error: Cannot find module '/workspace/pnpm/dist/pnpm.mjs'` explicitly. In this run (after 20 attempts), the LLM managed to avoid the hard module-not-found crash but still failed to build the pnpm binary before running tests, causing a more graceful but still failing test run. The "Tests completed with exit code: 1" with no parseable jest output means jest failed before outputting results, likely due to the same missing artifact dependency.
+
+  - After 20 attempts, the LLM could not correctly reproduce the full build-then-test pipeline for pnpm. The original CI (job "ubuntu-latest / Node.js 22.13.0 / Test") ran 4,180 jest tests with 4,130 passing, indicating a properly built pnpm artifact was available. The LLM's test run produces no parseable jest statistics because the test process exits before jest can emit its results.
+
+--- Root Cause ---
+  Reason type: Test runner executed but produced no parseable output
+  Last log output before stopping:
+    pnpm/artifacts/exe prepare$ node prepare.js
+    . prepare: Done
+    pnpm/artifacts/exe prepare: Done
+    Done in 7.7s using pnpm v11.0.0-rc.5
+    Installing git hooks...
+    No compiled artifacts found, proceeding with tests...
+    Running tests...
+    Tests completed with exit code: 1
+
+--- Original Test Statistics (not reproduced) ---
+  [jest] 4180 run, 4130 passed, 0 failed, 50 skipped

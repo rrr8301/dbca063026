@@ -1,0 +1,41 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          16
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      Ubuntu latest wxGTK 3
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ git submodule update --init --recursive
+  $ sed -i 's/sudo //g' ./ci/github-pre-build.sh && ./ci/github-pre-build.sh
+  $ mk-build-deps -t "apt-get --yes" --install --remove
+  $ cmake -B build -DCMAKE_BUILD_TYPE=Release
+  $ cmake --build build --config Release
+  $ cd build && make run-tests
+
+--- Reason(s) for Non-Reproducibility ---
+  - GTest test count mismatch: original=72, LLM=60
+  - GTest failure mismatch: original=1 failed (DateTimeFormatTest.LocalTimezoneCETSwedish), LLM=0 failed
+
+--- Root Cause Analysis ---
+  LLM container log shows the build and GTest execution completed successfully with 60 tests passing:
+    > [  PASSED  ] 52 tests.
+    > [  PASSED  ] 8 tests.
+
+  Timezone locale mismatch and test suite incompleteness
+  - The original CI run on Ubuntu 24.04 included 72 GTest tests including DateTimeFormatTest.LocalTimezoneCETSwedish which failed because the Swedish/CET timezone locale was not correctly configured in the CI environment. The LLM reproduced only 60 tests on Ubuntu 22.04 (12 fewer), likely because some timezone-dependent and locale-dependent tests were either not compiled or not discovered due to differences in the system's timezone database and wxGTK library version between Ubuntu 22.04 and 24.04.
+
+--- Test Statistics Comparison ---
+  GTest
+    Original: 72 run, 71 passed, 1 failed, 0 skipped
+    LLM:      60 run, 60 passed, 0 failed, 0 skipped

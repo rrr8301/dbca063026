@@ -1,0 +1,34 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      ubuntu-24.04 gcc-13 Debug
+  Test command(s) run in original CI:
+    $ ctest -L "omim-test" -E "$CTEST_EXCLUDE_REGEX" --output-on-failure
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ ctest -L "omim-test" -E "$CTEST_EXCLUDE_REGEX" --output-on-failure
+
+--- Reason(s) for Non-Reproducibility ---
+  - [CTest] Test passed mismatch: original=35, LLM=1
+  - [CTest] Test failed mismatch: original=1, LLM=35
+  - [CTest] 34 test(s) failed in LLM but not in original: OmimStopTestServer, address_parser_tests, base_tests, bsdiff_tests, coding_tests ... (+29 more)
+
+--- Root Cause Analysis ---
+  - [CTest] 34 test(s) failed in LLM but not original: OmimStopTestServer, address_parser_tests, base_tests, bsdiff_tests, coding_tests ... (+29 more)
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 36 run, 35 passed, 1 failed, 0 skipped
+    LLM:      36 run, 1 passed, 35 failed, 0 skipped

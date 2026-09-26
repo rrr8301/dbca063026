@@ -1,0 +1,87 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      run / 3.14 / ubuntu-latest
+  Test command(s) run in original CI:
+    $ pip install -r requirements_test.txt -r requirements_test_min.txt -r requirements_test_pre_commit.txt
+    $ python -m pytest --durations=10 --benchmark-disable --cov --cov-report= tests/
+    (Python 3.14.3, pytest-9.0.2, python-discovery-1.1.0)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    2
+
+--- LLM run.sh Test Command(s) ---
+  $ pip install -r requirements_test.txt
+  $ pip install -r requirements_test_min.txt
+  $ pip install -r requirements_test_pre_commit.txt
+  $ python -m pytest --durations=10 --benchmark-disable --cov --cov-report= tests/
+  (Python 3.14.5, pytest-9.0.3, python-discovery-1.3.1)
+
+--- Reason(s) for Non-Reproducibility ---
+  - [pytest] Test run mismatch: original=2298, LLM=2297 (1 fewer test collected in LLM)
+  - [pytest] Skip count mismatch: original=214 skipped, LLM=299 skipped (85 more skips in LLM)
+  - [pytest] Same test fails in both: test_do_not_import_files_from_local_directory[args1]
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > FAILED tests/test_self.py::TestRunTC::test_do_not_import_files_from_local_directory[args1]
+    >   subprocess.CalledProcessError: Command '['.../python', '-m', 'pylint',
+    >     '-j2', '--disable=import-error,unused-import', 'astroid.py']'
+    >     returned non-zero exit status 1.
+    >   BrokenPipeError: [Errno 32] Broken pipe
+    >   ModuleNotFoundError: No module named 'completely_unknown'
+    > (same failure in original CI, pre-existing)
+
+  [Root cause classification]
+  Python minor version bump (3.14.3 → 3.14.5) plus pytest/python-discovery version differences
+  cause 85 more test skips and 1 fewer test collected
+
+  The original CI runs Python 3.14.3 (from pyenv/hostedtoolcache) with pytest-9.0.2 and
+  python-discovery-1.1.0. The LLM Docker installs the latest from pip, getting Python 3.14.5
+  with pytest-9.0.3 and python-discovery-1.3.1.
+
+  (1) 85 more skips in LLM (299 vs 214)
+    pylint's test suite has many tests conditional on Python version behavior — specifically
+    tests that check pylint's output for specific code patterns on specific Python versions.
+    When Python 3.14.5 introduces new warnings, deprecations, or AST parsing changes compared
+    to 3.14.3, tests that previously produced specific expected output on 3.14.3 now skip on
+    3.14.5 because the expected output file doesn't match the current Python version. pylint
+    uses `.txt` expected output files tied to Python version ranges; tests are skipped when
+    no matching expected output file exists for the running Python version.
+
+    Additionally, `python-discovery` (1.3.1 vs 1.1.0) can find a different set of Python
+    interpreters on the system. Some pylint tests are parametrized based on which Python
+    versions are discoverable — if python-discovery 1.3.1 discovers additional or fewer
+    interpreters on the ubuntu:24.04 image vs the GitHub Actions runner, the parametrized
+    test variants change.
+
+  (2) 1 fewer test collected in LLM (2297 vs 2298)
+    The single missing test is likely a parametrized test variant whose test ID changes
+    between Python 3.14.3 and 3.14.5, or a test that is conditionally included based on
+    available Python version ranges. With python-discovery 1.3.1 finding a different Python
+    version set on ubuntu:24.04 vs ubuntu-latest runner, one parametrized version of a test
+    may not be generated.
+
+  (3) Pre-existing failure (same in both): test_do_not_import_files_from_local_directory[args1]
+    This test runs pylint with `-j2` (parallel mode via multiprocessing forkserver) on a
+    file that imports from a non-existent module (`completely_unknown`). The test expects
+    pylint to suppress the import error. In both Python 3.14.3 and 3.14.5, the multiprocessing
+    forkserver fails to start the pylint worker subprocess correctly (`BrokenPipeError: [Errno 32]
+    Broken pipe`), causing a `CalledProcessError` and test failure. This is a pre-existing
+    compatibility issue between pylint's parallel mode and Python 3.14's forkserver.
+
+--- Test Statistics Comparison ---
+  [pytest]
+    Original: 2298 run, 2078 passed, 1 failed, 214 skipped  (Python 3.14.3, pytest-9.0.2)
+    LLM:      2297 run, 1992 passed, 1 failed, 299 skipped  (Python 3.14.5, pytest-9.0.3)
+    (85 more skips in LLM: Python 3.14.5 version-conditional skip markers;
+     1 fewer test: parametrization difference from python-discovery 1.3.1;
+     same failure: test_do_not_import_files_from_local_directory parallelism bug on Python 3.14)

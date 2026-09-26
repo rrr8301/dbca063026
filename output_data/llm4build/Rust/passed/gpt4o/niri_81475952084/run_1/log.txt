@@ -1,0 +1,61 @@
+Error from docker build
+
+#1 [internal] load .dockerignore
+#1 transferring context: 2B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 1.05kB done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/ubuntu:24.04
+#3 DONE 0.2s
+
+#4 [ 1/10] FROM docker.io/library/ubuntu:24.04@sha256:786a8b558f7be160c6c8c4a54f9a57274f3b4fb1491cf65146521ae77ff1dc54
+#4 DONE 0.0s
+
+#5 [ 2/10] RUN echo "UTC" > /etc/timezone &&     ln -sf /usr/share/zoneinfo/UTC /etc/localtime &&     apt-get update &&     apt-get install -y --no-install-recommends tzdata &&     apt-get install -y --no-install-recommends     curl gcc clang libudev-dev libgbm-dev libxkbcommon-dev libegl1-mesa-dev     libwayland-dev libinput-dev libdbus-1-dev libsystemd-dev libseat-dev     libpipewire-0.3-dev libpango1.0-dev libdisplay-info-dev git &&     rm -rf /var/lib/apt/lists/*
+#5 CACHED
+
+#6 [internal] load build context
+#6 transferring context: 725.60kB 0.2s done
+#6 DONE 0.2s
+
+#7 [ 3/10] RUN useradd -m testuser
+#7 DONE 0.4s
+
+#8 [ 4/10] WORKDIR /home/testuser
+#8 DONE 0.0s
+
+#9 [ 5/10] RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+#9 0.341 curl: (77) error setting certificate file: /etc/ssl/certs/ca-certificates.crt
+#9 DONE 0.4s
+
+#10 [ 6/10] WORKDIR /workspace
+#10 DONE 0.0s
+
+#11 [ 7/10] COPY . /workspace
+#11 DONE 0.8s
+
+#12 [ 8/10] RUN git config --global --add safe.directory '*'
+#12 DONE 0.4s
+
+#13 [ 9/10] COPY run.sh /workspace/run.sh
+#13 DONE 0.0s
+
+#14 [10/10] RUN chmod +x /workspace/run.sh
+#14 0.307 chmod: changing permissions of '/workspace/run.sh': Operation not permitted
+#14 ERROR: process "/bin/sh -c chmod +x /workspace/run.sh" did not complete successfully: exit code: 1
+------
+ > [10/10] RUN chmod +x /workspace/run.sh:
+#14 0.307 chmod: changing permissions of '/workspace/run.sh': Operation not permitted
+------
+Dockerfile:33
+--------------------
+  31 |     
+  32 |     COPY run.sh /workspace/run.sh
+  33 | >>> RUN chmod +x /workspace/run.sh
+  34 |     
+  35 |     ENTRYPOINT ["/workspace/run.sh"]
+--------------------
+ERROR: failed to solve: process "/bin/sh -c chmod +x /workspace/run.sh" did not complete successfully: exit code: 1

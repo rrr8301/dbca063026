@@ -1,0 +1,86 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Rust tests (ubuntu-latest, latest)
+  Platform:         GitHub Actions ubuntu-latest
+  Test command(s) run in original CI:
+    $ cargo nextest run --workspace --locked
+      (1104 total tests across workspace, 1 failed)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  Architecture: x86_64 (Docker runs on x86_64 host)
+  RUN steps:    several
+  Rust version: 1.93.0 (explicitly pinned)
+
+--- LLM run.sh Test Command(s) ---
+  $ cargo nextest run --workspace --locked
+    (same command; same Rust version 1.93.0)
+
+--- Reason(s) for Non-Reproducibility ---
+  - [nexttest] Test run mismatch: original=648, LLM=798 (150 more tests ran in LLM before cancellation)
+  - [nexttest] Same test fails in both: qr::qr_tests::test_withdraw_verifycontact_without_invite
+  - Same failure reason: "Got empty InviteNumber token" at src/token.rs:34:5
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > thread 'qr::qr_tests::test_withdraw_verifycontact_without_invite' (38744) panicked at src/token.rs:34:5:
+    > Got empty InviteNumber token
+    > stack backtrace:
+    >   2: deltachat::token::save::{{closure}}
+    >        at ./src/tools.rs:834:9
+    >   3: deltachat::qr::set_config_from_qr::{{closure}}
+    >        at ./src/qr.rs:929:14
+    >   4: deltachat::qr::qr_tests::test_withdraw_verifycontact::{{closure}}
+    >        at ./src/qr/qr_tests.rs:485:37
+    >   5: deltachat::qr::qr_tests::test_withdraw_verifycontact_without_invite::{{closure}}
+    >        at ./src/qr/qr_tests.rs:456:39
+    >
+    > Cancelling due to test failure: 87 tests still running
+
+  [Root cause classification]
+  Pre-existing test bug in deltachat's QR code: both original CI and LLM fail the identical test
+  `qr::qr_tests::test_withdraw_verifycontact_without_invite` with the same panic message
+  "Got empty InviteNumber token" at `src/token.rs:34:5`.
+
+  The test exercises a scenario where a contact verification QR code is "withdrawn" without
+  having an associated invite. The `token::save` function at `src/tools.rs:834` asserts that
+  the `InviteNumber` token is non-empty, but `set_config_from_qr` at `src/qr.rs:929` calls
+  `token::save` with an empty `InviteNumber` in the "withdraw without invite" path, triggering
+  the panic. This is the same assertion failure in both environments with identical stack traces.
+
+  The FR=False classification stems from the test COUNT difference, not a difference in WHICH
+  test fails:
+  - Original CI nextest ran 648 tests before cancellation
+  - LLM nextest ran 798 tests before cancellation (150 more)
+
+  The nextest count difference arises because nextest runs tests in parallel and cancels
+  remaining tests on first failure. The failing test `test_withdraw_verifycontact_without_invite`
+  was reached at position 644/1104 in the original CI run and at position 710/1104 in the LLM
+  run (in parallel nextest execution). Since the LLM reached the failing test further into the
+  run with more threads completing first, more tests had already been recorded as complete when
+  the cancellation occurred. This is a non-deterministic ordering artifact of nextest's parallel
+  test execution — both runs are identical in substance: the same pre-existing bug fails the
+  same test.
+
+  Architecture: both use x86_64. Rust version 1.93.0 used in both environments.
+
+--- Test Statistics Comparison ---
+  [cargo]
+    Original: 1 run, 0 passed, 1 failed
+      (1 failure: qr::qr_tests::test_withdraw_verifycontact_without_invite — "Got empty InviteNumber token")
+    LLM:      1 run, 0 passed, 1 failed
+      (1 failure: qr::qr_tests::test_withdraw_verifycontact_without_invite — same panic)
+  [nexttest]
+    Original: 648 run, 646 passed, 1 failed, 1 skipped
+      (cancelled at position 644/1104; remaining 456 tests not run)
+    LLM:      798 run, 796 passed, 1 failed, 1 skipped
+      (cancelled at position 710/1104; remaining 306 tests not run)
+      (same pre-existing failure; count difference is parallel execution ordering artifact)

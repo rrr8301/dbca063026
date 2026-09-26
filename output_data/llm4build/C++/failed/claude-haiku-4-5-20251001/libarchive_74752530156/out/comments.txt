@@ -1,0 +1,42 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Ubuntu (autotools, mbedtls)
+  Test command(s) run in original CI:
+    $ actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
+    $ sudo apt-get install -y autoconf automake build-essential cmake git libssl-dev nettle-dev libmbedtls-dev libacl1-dev libbz2-dev liblzma-dev liblz4-dev libzstd-dev lzop pkg-config zlib1g-dev
+    $ ./build/ci/build.sh -a autogen
+    $ ./build/ci/build.sh -a configure
+    $ ./build/ci/build.sh -a build
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ ./build/ci/build.sh -a test
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Autotools] Test result mismatch (same count 5): original=(4p/1f/0s), LLM=(3p/2f/0s)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    FAIL: bsdtar_test — test_extract_tar_absolute_paths (1 failures)
+    FAIL: libarchive_test — test_read_format_7zip_encryption_partially (1 failures), test_read_format_rar5_bad_tables (1 failures)
+    Tests failed: 2 / Assertions failed: 2
+    make: *** [Makefile:16810: test-suite.log] Error 1
+
+  [Root cause classification]
+  - Different tests fail in each environment. The original CI fails `test_extract_tar_absolute_paths` in bsdtar (an absolute-path security test whose behavior may depend on the underlying OS/kernel configuration). The LLM environment fails `test_read_format_7zip_encryption_partially` and `test_read_format_rar5_bad_tables` — both are encryption/compression format tests whose failures are likely due to a different version of libmbedtls (Ubuntu 24.04 ships a newer mbedTLS than the original CI runner) causing subtly different AES or hash behavior in the encrypted archive parsing routines. The failure count is the same (2 in each, counting across test suites), but the specific failing tests differ, reflecting mbedTLS version and OS differences.
+
+--- Test Statistics Comparison ---
+  [Autotools]
+    Original: 5 run, 4 passed, 1 failed, 0 skipped
+    LLM:      5 run, 3 passed, 2 failed, 0 skipped

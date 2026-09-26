@@ -1,0 +1,44 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      unit-test
+  Test command(s) run in original CI:
+    $ pnpm test:coverage
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ pnpm test:coverage || true
+  $ pnpm test:check:tsc || true
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoDefault] Test run mismatch: original=1, LLM=2
+  - [GoDefault] Test failed mismatch: original=1, LLM=2
+  - [GoDefault] 1 test(s) failed in LLM but not in original: packages/mermaid/scripts/docs.spec.ts
+  - [vitest] Test run mismatch: original=3806, LLM=3838
+  - [vitest] Test passed mismatch: original=3790, LLM=3824
+  - [vitest] Test skipped mismatch: original=15, LLM=13
+
+--- Root Cause Analysis ---
+  - [GoDefault] LLM ran 1 more tests than original — LLM likely used a broader test scope or included extra test suites.
+  - [GoDefault] 1 test(s) failed in LLM but not original: packages/mermaid/scripts/docs.spec.ts
+  - [vitest] LLM ran 32 more tests than original — LLM likely used a broader test scope or included extra test suites.
+  - Test command differences detected — original CI vs LLM run.sh may use different flags or test selection.
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 1 run, 0 passed, 1 failed, 0 skipped
+    LLM:      2 run, 0 passed, 2 failed, 0 skipped
+  [vitest]
+    Original: 3806 run, 3790 passed, 1 failed, 15 skipped
+    LLM:      3838 run, 3824 passed, 1 failed, 13 skipped

@@ -1,0 +1,43 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          3
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-22.04
+  CI job name:      Linux Build (BINRELOC=no)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    4
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Autotools] Test passed mismatch: original=730, LLM=0
+  - [Autotools] Test failed mismatch: original=2, LLM=732
+  - [GoDefault] Test run mismatch: original=1, LLM=366
+  - [GoDefault] Test failed mismatch: original=1, LLM=366
+  - [GoDefault] 365 test(s) failed in LLM but not in original: 1795612.js.tags, 1850914.js.tags, 1878155.js.tags, 1880687.js.tags, 2023624.js.tags ... (+360 more)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > ../../../tests/ctags/runner.sh ../../src/geany --result ../../../tests/ctags/process_order.c.tags ...
+    > /bin/bash: line 1: ../../../tests/ctags/runner.sh: Permission denied
+    > ../../../build-aux/test-driver: line 112: ../../../tests/ctags/runner.sh: Permission denied
+    > FAIL: *.tags (exit status: 126)  [repeated for all 732 Autotools tests]
+
+  [Root cause classification]
+  - All 732 Autotools ctags tests fail with exit status 126 (Permission denied) because the test runner script tests/ctags/runner.sh does not have the executable bit set in the Docker container after COPY. The Docker COPY instruction does not preserve file permissions from the source, so the shell script that orchestrates each ctags comparison test cannot be executed, causing every test to fail immediately.
+  - The original CI ubuntu-22.04 runner checks out the repository via git, which preserves execute permissions recorded in the git index. In Docker, COPY strips executable bits unless explicitly set, so running make check triggers 732 permission failures instead of the expected 730 passes and 2 failures.
+  - The GoDefault tests show 365 more entries in the LLM run because the test runner, encountering failures from runner.sh, invokes a fallback path that enumerates all .tags test input files individually (366 total) rather than running the single process_order test that the original CI counted. All fail for the same Permission denied reason.
+
+--- Test Statistics Comparison ---
+  [Autotools]
+    Original: 732 run, 730 passed, 2 failed, 0 skipped
+    LLM:      732 run, 0 passed, 732 failed, 0 skipped
+  [GoDefault]
+    Original: 1 run, 0 passed, 1 failed, 0 skipped
+    LLM:      366 run, 0 passed, 366 failed, 0 skipped

@@ -1,0 +1,63 @@
+Error from docker build
+
+#1 [ 1/10] FROM docker.io/library/ubuntu:22.04
+#1 CACHED
+
+#2 [2/9] RUN ln -snf /usr/share/zoneinfo/America/Los_Angeles /etc/localtime && echo America/Los_Angeles > /etc/timezone
+#2 CACHED
+
+#3 [internal] load .dockerignore
+#3 transferring context: 2B done
+#3 DONE 0.0s
+
+#4 [internal] load build definition from Dockerfile
+#4 transferring dockerfile: 1.40kB done
+#4 DONE 0.0s
+
+#5 [internal] load metadata for docker.io/library/ubuntu:22.04
+#5 DONE 0.0s
+
+#6 [internal] load build context
+#6 transferring context: 307.58kB 0.1s done
+#6 DONE 0.2s
+
+#7 [ 4/13] RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+#7 CACHED
+
+#8 [ 5/13] RUN useradd -m testuser
+#8 CACHED
+
+#9 [ 3/13] RUN apt-get update && apt-get install -y     git     cmake     ninja-build     gcc     g++     libaom-dev     libdav1d-dev     libsvtav1enc-dev     libjpeg-turbo8-dev     libxml2     libyuv-dev     libpng-dev     nasm     imagemagick     python3     python3-pip     curl     pkg-config     meson     && rm -rf /var/lib/apt/lists/*
+#9 CACHED
+
+#10 [ 6/13] WORKDIR /workspace
+#10 CACHED
+
+#11 [ 7/13] COPY . /workspace
+#11 DONE 1.4s
+
+#12 [ 8/13] RUN chown -R testuser /workspace
+#12 DONE 1.8s
+
+#13 [ 9/13] RUN git config --global --add safe.directory '*'
+#13 DONE 0.6s
+
+#14 [10/13] RUN echo 'export PATH="/home/testuser/.cargo/bin:/root/.cargo/bin:${PATH}"' >> /home/testuser/.bashrc
+#14 DONE 0.5s
+
+#15 [11/13] RUN /root/.cargo/bin/rustup install stable
+#15 0.353 /bin/sh: 1: /root/.cargo/bin/rustup: Permission denied
+#15 ERROR: process "/bin/sh -c /root/.cargo/bin/rustup install stable" did not complete successfully: exit code: 126
+------
+ > [11/13] RUN /root/.cargo/bin/rustup install stable:
+#15 0.353 /bin/sh: 1: /root/.cargo/bin/rustup: Permission denied
+------
+Dockerfile:52
+--------------------
+  50 |     
+  51 |     # Install Rust for the testuser
+  52 | >>> RUN /root/.cargo/bin/rustup install stable
+  53 |     RUN /root/.cargo/bin/rustup target add x86_64-unknown-linux-gnu
+  54 |     
+--------------------
+ERROR: failed to solve: process "/bin/sh -c /root/.cargo/bin/rustup install stable" did not complete successfully: exit code: 126

@@ -1,0 +1,65 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      build with 3.11 (py 3.11 on ubuntu-22.04, x64=1)
+  Test command(s) run in original CI:
+    $ actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+    $ uv pip install '.[minimum-jaxlib]' -r build/test-requirements.txt
+    $ pytest -n auto --tb=short --maxfail=20 tests examples || true
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ uv pip install --system '.[minimum-jaxlib]' -r build/test-requirements.txt
+  $ pytest -n auto --tb=short --maxfail=20 tests examples || true
+
+--- Reason(s) for Non-Reproducibility ---
+  - [pytest] Test result mismatch (same count 44491): original=(20392p/0f/24099s), LLM=(20391p/1f/24099s)
+  - [pytest] 1 test(s) failed in LLM but not in original:
+    TracebackTest::testTracebackFromFrames (tests/traceback_test.py)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > [gw9] linux -- Python 3.11.0 /usr/bin/python
+    > /usr/lib/python3.11/traceback.py:353: in _walk_tb_with_full_positions
+    >     positions = _get_code_position(tb.tb_frame.f_code, tb.tb_lasti)
+    > /usr/lib/python3.11/traceback.py:367: in _get_code_position
+    >     return next(itertools.islice(positions_gen, instruction_index // 2, None))
+    > E   StopIteration
+    > The above exception was the direct cause of the following exception:
+    > /usr/lib/python3.11/traceback.py:416: in _extract_from_extended_frame_gen
+    >     for f, (lineno, end_lineno, colno, end_colno) in frame_gen:
+    > E   RuntimeError: generator raised StopIteration
+    > FAILED tests/traceback_test.py::TracebackTest::testTracebackFromFrames
+
+  [Root cause classification]
+  - Python 3.11.0 bug in traceback._get_code_position triggers RuntimeError
+    The Docker container uses `ubuntu:22.04` which ships Python 3.11.0 (the first
+    public release). The original CI uses a GitHub Actions ubuntu-22.04 runner with
+    a more recent Python 3.11.x (3.11.5+) installed via actions/setup-python.
+    `testTracebackFromFrames` tests JAX's traceback manipulation by calling
+    `traceback.format_tb(tb)` on a JAX-generated traceback. This invokes the
+    CPython `_walk_tb_with_full_positions()` path, which calls `_get_code_position()`
+    (`traceback.py:367`):
+      `return next(itertools.islice(positions_gen, instruction_index // 2, None))`
+    In Python 3.11.0, when `instruction_index // 2` exceeds the length of
+    `positions_gen`, `next()` raises a bare `StopIteration`. Because this happens
+    inside a generator function (`_extract_from_extended_frame_gen`), PEP 479
+    (Python 3.7+) converts the `StopIteration` into `RuntimeError: generator
+    raised StopIteration`. This CPython bug was fixed in Python 3.11.1 by adding
+    proper bounds checking / default value handling in `_get_code_position`.
+    On the CI runner with Python 3.11.5+, the fix is present and the test passes.
+
+--- Test Statistics Comparison ---
+  [pytest]
+    Original: 44491 run, 20392 passed, 0 failed, 24099 skipped
+    LLM:      44491 run, 20391 passed, 1 failed, 24099 skipped

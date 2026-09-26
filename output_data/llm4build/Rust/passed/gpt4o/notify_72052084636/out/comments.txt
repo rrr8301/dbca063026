@@ -1,0 +1,48 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          20
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Test ubuntu-latest - nightly
+  Test command(s) run in original CI:
+    $ rm -f rust-toolchain.toml
+    $ rustup override set nightly
+    $ cargo build --verbose
+    $ cargo build --examples --verbose
+    $ cargo test --verbose
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    8
+
+--- LLM run.sh Test Command(s) ---
+  $ rm -f /workspace/rust-toolchain.toml
+  $ cargo build --verbose
+  $ cargo build --examples --verbose
+  $ cargo test --verbose
+
+--- Reason(s) for Non-Reproducibility ---
+  - [cargo] TR=False: LLM test run produced no output (empty llm_log_stats)
+  - [cargo] The run.sh failed immediately with `/home/testuser/.cargo/env: No such file or directory`
+  - [cargo] Zero tests ran in LLM environment despite ER=True (Docker container built successfully)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    1:/bin/bash: line 1: /home/testuser/.cargo/env: No such file or directory
+
+  [Root cause classification]
+  - The Dockerfile installs Rust via `rustup` for the non-root `testuser` at `/home/testuser/.cargo`, but the ENTRYPOINT uses an absolute path reference `/bin/bash -c "source /home/testuser/.cargo/env && exec /workspace/run.sh"` and the run.sh also sources `$HOME/.cargo/env`. The actual Rust installation was done as `USER testuser` in the Dockerfile but the `rustup install` step ran as a RUN command that referenced the home directory via `$HOME` which resolved correctly during build time, yet at container runtime the cargo env file was missing — indicating the rustup installation for the non-root user did not persist correctly.
+
+  - After 20 attempts the LLM was unable to fix the Rust environment sourcing issue for the non-root user in the notify (nightly) configuration. This is a Docker build-time vs runtime environment variable resolution problem: `$HOME` during RUN commands as a non-root user may not match the runtime `$HOME` if the user switching sequence is incorrect.
+
+  - The original passed CI used a nightly toolchain. The LLM correctly identified the nightly toolchain requirement and removed `rust-toolchain.toml`, but the environment setup failure prevents any tests from running.
+
+--- Test Statistics Comparison ---
+  [cargo]
+    Original: 157 run, 154 passed, 0 failed, 3 skipped
+    LLM:      0 run, 0 passed, 0 failed, 0 skipped

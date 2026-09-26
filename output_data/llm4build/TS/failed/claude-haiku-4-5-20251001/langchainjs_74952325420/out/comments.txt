@@ -1,0 +1,49 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          9
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT TESTS NOT REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      Unit Tests (ubuntu-latest, 20.x)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > @langchain/core:test: TypeCheckError: Cannot find name 'process'. Do you need to install type definitions for node?
+    >  ❯ src/utils/env.ts:35:10
+    > @langchain/core:test: TypeCheckError: Cannot find name 'nodefs/promises'. Do you need to install type definitions for node?
+    >  ❯ src/utils/tests/json.test.ts:2:21
+    > @langchain/core:test: TypeCheckError: Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'Uint8Array<ArrayBuffer>'.
+    >  ❯ src/utils/uuid/v35.ts:52:3
+    > @langchain/core:test: Test Files  1 failed | 92 passed (93)
+    > @langchain/core:test:       Tests  1395 passed | 1 skipped (1396)
+    > @langchain/core:test:      Errors  106 errors
+    > ELIFECYCLE  Test failed.
+
+  [Root cause classification]
+  - The LLM's vitest run actually executed all 1395 runtime tests successfully (1395 passed, 1 skipped), matching the original CI's vitest test counts exactly. However, vitest's TypeScript type-checking mode (`vitest --typecheck`) produced 106 `TypeCheckError` entries, causing vitest to exit with code 1 and the overall result to be classified as TR=False by the result parser.
+
+  - The 106 TypeCheckErrors fall into three categories: (1) `Cannot find name 'process'` — TypeScript cannot resolve the Node.js global `process` because `@types/node` is either not installed or not referenced in the tsconfig `types` field. In newer TypeScript versions (5.5+), global Node.js types are no longer automatically injected without an explicit `types: ["node"]` configuration. (2) `Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'Uint8Array<ArrayBuffer>'` — TypeScript 5.7+ tightened the generic constraint on `Uint8Array`, requiring `ArrayBuffer` instead of `ArrayBufferLike`, breaking existing code that passes a `Uint8Array` from a `crypto` or similar API. (3) `Parameter 'line' implicitly has an 'any' type` — strict mode or newer TypeScript defaults rejecting implicit `any` in a test file callback.
+
+  - The original CI passed (1395 passed, 0 failed, 1 skipped for vitest; 1 failed for GoDefault) without TypeCheckErrors because it used a pinned or older TypeScript version where these type-checking constraints were not enforced. The LLM installed the latest available TypeScript, which introduced the stricter type checks. The GoDefault test from the original is missing because the LLM did not run the corresponding Go component test.
+
+  - The result parser reports "no test results (empty llm_log_stats)" because the combined signal of "1 failed test file" and "106 errors" alongside "1395 passed tests" produces an ambiguous output that the parser cannot reconcile with the original's clean pass/fail counts.
+
+--- Test Reproducibility Gap ---
+  Original ran 1397 test(s) across [vitest, GoDefault].
+  LLM build produced no test results (empty llm_log_stats).
+
+--- Root Cause ---
+  Reason type: Compilation / linker failure during build
+
+--- Original Test Statistics (not reproduced) ---
+  [vitest] 1396 run, 1395 passed, 0 failed, 1 skipped
+  [GoDefault] 1 run, 0 passed, 1 failed, 0 skipped

@@ -1,0 +1,43 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          12
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      build
+  Test command(s) run in original CI:
+    $ actions/checkout@v4
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ make -C lib lib CC=gcc || { echo "lib build failed"; exit 1; }
+  $ make -C bin CC=gcc -i || true
+  $ make -C site source CC=gcc || { echo "site source build failed"; exit 1; }
+  $ make -C test CC=gcc || { echo "test build failed"; exit 1; }
+  $ make -C test test CC=gcc || { echo "test execution failed"; exit 1; }
+
+--- Reason(s) for Non-Reproducibility ---
+  - [ccv] Test run mismatch: original=553, LLM=326
+  - [ccv] Test passed mismatch: original=553, LLM=326
+  - [ccv] Test failed mismatch: original=0, LLM=0
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > (no errors — 326 tests passed; 227 fewer than original's 553)
+
+  [Root cause classification]
+  - The 227 missing tests are from ccv's Neural Network Component (NNC) module test suite at `test/unit/nnc/`. The LLM's run.sh runs `make -C test test` which builds and runs `unit/`, `regression/`, and `unit/nnc/` test directories. However, the `unit/nnc/` build depends on having BLAS (cblas) and CUDA support compiled into the ccv library — the configure output shows "checking for cblas_sgemm in -lopenblas... no", "checking for cblas_dgemm in -lgslcblas... no", and "checking cuda... no". Without OpenBLAS/BLAS and CUDA, the NNC test binary is built without the GPU and BLAS-accelerated test cases, producing 326 tests instead of 553.
+
+  - The original CI (`ubuntu:24.04`) likely had `libopenblas-dev` installed (either in the runner's base image or via a Dockerfile step not captured), enabling the NNC test cases that require matrix operations. The LLM's `ubuntu:24.04` base image has no BLAS library, so 227 NNC tests that verify BLAS-accelerated convolution, GEMM, and neural network layer computations are compiled out. All 326 tests that were compiled and run pass (0 failures), so the gap is purely a build-time dependency omission.
+
+--- Test Statistics Comparison ---
+  [ccv]
+    Original: 553 run, 553 passed, 0 failed, 0 skipped
+    LLM:      326 run, 326 passed, 0 failed, 0 skipped

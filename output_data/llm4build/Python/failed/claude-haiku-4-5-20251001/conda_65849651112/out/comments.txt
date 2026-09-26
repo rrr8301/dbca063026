@@ -1,0 +1,84 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      linux (ubuntu-latest, 3.11, defaults, integration, 1)
+  Test command(s) run in original CI:
+    $ conda install --yes \
+        --file tests/requirements.txt \
+        --file tests/requirements-Linux.txt \
+        --file tests/requirements-ci.txt \
+        --file tests/requirements-s3.txt \
+        python=3.11
+    $ python -m pytest --cov=conda --durations-path=durations/Linux.json --group=1 --splits=3 -m "integration"
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ source /opt/miniconda/etc/profile.d/conda.sh && conda activate base
+  $ python -m conda init --all
+  $ conda install --yes \
+      --file tests/requirements.txt --file tests/requirements-Linux.txt \
+      --file tests/requirements-ci.txt --file tests/requirements-s3.txt \
+      python=3.11
+  $ python -m pytest --cov=conda --durations-path=durations/Linux.json --group=1 --splits=3 -m "integration"
+
+--- Reason(s) for Non-Reproducibility ---
+  - [pytest] Test result mismatch (same count 97): original=(89p/1f/6s), LLM=(37p/53f/6s)
+  - [pytest] 52 tests failed in LLM but passed in original (most CLI, shell, and env integration tests)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > conda.exceptions.PluginError: Conflicting plugins found for `post_solves`:
+    >   - CondaPostSolve(name='signature-verification', action=<conda.trust.signature_verification._SignatureVerification object at 0x7f9dcd83a650>)
+    >   - CondaPostSolve(name='signature-verification', action=<conda.trust.signature_verification._SignatureVerification object at 0x7f9dcd83a650>)
+    > Multiple conda plugins are registered via the `conda_post_solves` hook.
+    > Please make sure that you don't have any incompatible plugins installed.
+    > (repeated for every conda solve operation in the tests)
+    >
+    > ERROR tests/shell/test_powershell.py::test_shell_available[powershell] -
+    >   FileNotFoundError: Shell(name=('powershell', 'pwsh', 'pwsh-preview'), path=None, exe=None) not found
+
+  [Root cause classification]
+  Two issues cause the 52 additional test failures:
+
+  (1) conda PluginError: `signature-verification` post_solve hook registered twice
+    The conda development build (installed from `/workspace/` via `python -m conda init --all`)
+    registers the `conda_post_solves` hook for signature verification from the dev codebase.
+    The Miniconda base environment (pre-installed in the Docker image at `/opt/miniconda/`) also
+    has conda's `signature-verification` post_solve plugin registered. When the test process
+    uses both the dev conda (from `/workspace/`) and the system conda from miniconda in the same
+    Python process, two identical `CondaPostSolve(name='signature-verification')` hooks appear
+    in the plugin manager simultaneously.
+
+    The plugin manager's `get_hook_results("post_solves")` detects duplicate names and raises:
+      `PluginError: Conflicting plugins found for 'post_solves':
+       CondaPostSolve(name='signature-verification', ...)
+       CondaPostSolve(name='signature-verification', ...)`
+    This error fires whenever any integration test triggers a `conda install`, `conda create`,
+    or `conda update` operation — which covers most of the 52 failing tests (cli, env, shell
+    integration tests all involve conda solve operations).
+
+    The original CI runs in a clean GitHub Actions runner where only the test-configured conda
+    is active, not a pre-existing miniconda installation. No duplicate plugins exist there.
+
+  (2) PowerShell not installed → test_shell_available[powershell] errors at collection
+    `tests/shell/test_powershell.py::test_shell_available[powershell]` raises a
+    `FileNotFoundError: Shell(name=('powershell', 'pwsh', 'pwsh-preview'), path=None, exe=None)
+    not found`. PowerShell (`pwsh`) is not installed in the ubuntu:24.04 Docker container,
+    but is pre-installed on the GitHub Actions ubuntu-latest runner.
+
+--- Test Statistics Comparison ---
+  [pytest]
+    Original: 97 run, 89 passed, 1 failed, 6 skipped
+    LLM:      97 run, 37 passed, 53 failed, 6 skipped
+    (52 new LLM failures: all triggered by duplicate signature-verification plugin registration;
+     1 additional error: PowerShell not installed in Docker)

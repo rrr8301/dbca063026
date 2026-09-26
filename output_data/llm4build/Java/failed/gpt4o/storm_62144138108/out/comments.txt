@@ -1,0 +1,35 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          N/A
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      build (ubuntu-latest, 17, Server, false)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ mvn test || true  # Ensure all tests run even if some fail
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Maven] Test run mismatch: original=402, LLM=349
+  - [Maven] Test passed mismatch: original=399, LLM=347
+  - [Maven] Test failed mismatch: original=2, LLM=1
+  - [Maven] 2 test(s) failed in original but passed in LLM: testFailedHttpGet(org.apache.storm.daemon.drpc.DRPCServerTest), testGoodHttpGet(org.apache.storm.daemon.drpc.DRPCServerTest)
+  - [Maven] 1 test(s) failed in LLM but not in original: testIsAnyPosixProcessPidDirAliveMockingFileOwnerUid(org.apache.storm.utils.ServerUtilsTest)
+
+--- Root Cause Analysis ---
+  - [Maven] LLM ran 53 fewer tests than original — LLM likely used a narrower test scope or missed some test suites.
+  - [Maven] 1 test(s) failed in LLM but not original: testIsAnyPosixProcessPidDirAliveMockingFileOwnerUid(org.apache.storm.utils.ServerUtilsTest)
+
+--- Test Statistics Comparison ---
+  [Maven]
+    Original: 402 run, 399 passed, 2 failed, 1 skipped
+    LLM:      349 run, 347 passed, 1 failed, 1 skipped

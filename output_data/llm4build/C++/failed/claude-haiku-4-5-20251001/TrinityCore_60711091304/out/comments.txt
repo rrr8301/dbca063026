@@ -1,0 +1,41 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          3
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      build (clang-17, clang++-17, 0, ccache)
+  Test command(s) run in original CI:
+    $ actions/checkout@v5
+    $ echo "build-start=$EPOCHSECONDS" >> "$GITHUB_OUTPUT"
+    $ cmake -GNinja -S /home/runner/work/TrinityCore/TrinityCore -B /home/runner/work/TrinityCore/TrinityCore/bin -DWITH_WARNINGS=1 -DWITH_WARNINGS_AS_ERRORS=1 -DWITH_COREDEBUG=0 -DUSE_COREPCH=0 -DUSE_SCRIPTPCH=0 -DTOOLS=1 -DSCRIPTS=dynamic -DSERVERS=1 -DNOJEM=0 -DCMAKE_C_FLAGS_DEBUG="-DNDEBUG -g0" -DCMAKE_CXX_FLAGS_DEBUG="-DNDEBUG -g0" -DCMAKE_INSTALL_PREFIX=check_install -DBUILD_TESTING=1
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ cmake -GNinja -S /workspace -B "$BUILD_OUTPUT_DIR" \
+  $ -DCMAKE_C_FLAGS_DEBUG="-DNDEBUG -g0" \
+  $ -DCMAKE_CXX_FLAGS_DEBUG="-DNDEBUG -g0" \
+  $ -DCMAKE_INSTALL_PREFIX=check_install \
+  $ -DBUILD_TESTING=1
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in LLM but not in original: CTest
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    (100% tests passed, 0 tests failed out of 35)
+
+  [Root cause classification]
+  - The original CI job is a pure build job — it runs cmake with BUILD_TESTING=1 but does not execute ctest. The CI YAML shows only cmake configure and build steps with no explicit `ctest` invocation, so the original log contains no CTest output. The LLM correctly added a ctest run step after the build, producing 35 passing tests. The non-reproducibility is a parser artifact: the LLM ran tests that the original CI never ran, not a regression.
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: (not present)
+    LLM:      35 run, 35 passed, 0 failed, 0 skipped

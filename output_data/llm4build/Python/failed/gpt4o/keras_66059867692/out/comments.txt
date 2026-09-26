@@ -1,0 +1,34 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          N/A
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      Run tests (3.11, jax, nnx_enabled = false)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    10
+
+--- LLM run.sh Test Command(s) ---
+  $ pytest keras --ignore keras/src/applications --cov=keras --cov-config=pyproject.toml
+
+--- Reason(s) for Non-Reproducibility ---
+  - [pytest] Test run mismatch: original=13457, LLM=13455
+  - [pytest] Test passed mismatch: original=12885, LLM=12867
+  - [pytest] Test failed mismatch: original=1, LLM=17
+  - [pytest] 4 test(s) failed in LLM but not in original: keras/src/backend/jax/distribution_lib_test.py, keras/src/callbacks/tensorboard_test.py, keras/src/layers/preprocessing/image_preprocessing/resizing_test.py, keras/src/layers/preprocessing/rescaling_test.py
+
+--- Root Cause Analysis ---
+  - [pytest] LLM ran 2 fewer tests than original — LLM likely used a narrower test scope or missed some test suites.
+  - [pytest] 4 test(s) failed in LLM but not original: keras/src/backend/jax/distribution_lib_test.py, keras/src/callbacks/tensorboard_test.py, keras/src/layers/preprocessing/image_preprocessing/resizing_test.py, keras/src/layers/preprocessing/rescaling_test.py
+
+--- Test Statistics Comparison ---
+  [pytest]
+    Original: 13457 run, 12885 passed, 1 failed, 561 skipped
+    LLM:      13455 run, 12867 passed, 17 failed, 561 skipped

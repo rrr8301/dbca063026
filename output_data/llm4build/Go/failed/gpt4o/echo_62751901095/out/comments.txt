@@ -1,0 +1,33 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     windows-2025
+  CI job name:      windows-latest @ Go 1.25
+  Test command(s) run in original CI:
+    $ go test -race --coverprofile=coverage.coverprofile --covermode=atomic ./...
+
+--- LLM-Generated Dockerfile ---
+  Base image:   golang:1.25
+  RUN steps:    2
+
+--- LLM run.sh Test Command(s) ---
+  $ go test -race --coverprofile=coverage.coverprofile --covermode=atomic ./...
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoDefault] 1 test(s) failed in original but passed in LLM: github.com/labstack/echo/v5/middleware
+  - [GoDefault] 1 test(s) failed in LLM but not in original: github.com/labstack/echo/v5
+
+--- Root Cause Analysis ---
+  - [GoDefault] 1 test(s) failed in LLM but not original: github.com/labstack/echo/v5
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 3 run, 2 passed, 1 failed, 0 skipped
+    LLM:      3 run, 2 passed, 1 failed, 0 skipped

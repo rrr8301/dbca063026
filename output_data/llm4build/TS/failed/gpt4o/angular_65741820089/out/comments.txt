@@ -1,0 +1,45 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      test
+  Test command(s) run in original CI:
+    $ pnpm test:ci
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ pnpm test:ci  # Ensure all tests run
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Bazel] Test run mismatch: original=792, LLM=795
+  - [Bazel] Test passed mismatch: original=792, LLM=682
+  - [Bazel] Test failed mismatch: original=0, LLM=113
+  - [Bazel] 113 test(s) failed in LLM but not in original: //modules/benchmarks/src/change_detection/transplanted_views:e2e, //modules/benchmarks/src/defer/baseline:e2e, //modules/benchmarks/src/defer/main:e2e, //modules/benchmarks/src/hydration/baseline:e2e, //modules/benchmarks/src/hydration/main:e2e ... (+108 more)
+  - [jasmine] Test passed mismatch: original=792, LLM=682
+  - [jasmine] Test failed mismatch: original=3, LLM=0
+  - [jasmine] Test skipped mismatch: original=600, LLM=113
+  - [jasmine] 69 test(s) failed in LLM but not in original: //modules/benchmarks/src/change_detection/transplanted_views, //modules/benchmarks/src/defer/baseline, //modules/benchmarks/src/defer/main, //modules/benchmarks/src/hydration/baseline, //modules/benchmarks/src/hydration/main ... (+64 more)
+
+--- Root Cause Analysis ---
+  - [Bazel] LLM ran 3 more tests than original — LLM likely used a broader test scope or included extra test suites.
+  - [Bazel] 113 test(s) failed in LLM but not original: //modules/benchmarks/src/change_detection/transplanted_views:e2e, //modules/benchmarks/src/defer/baseline:e2e, //modules/benchmarks/src/defer/main:e2e, //modules/benchmarks/src/hydration/baseline:e2e, //modules/benchmarks/src/hydration/main:e2e ... (+108 more)
+  - [jasmine] 69 test(s) failed in LLM but not original: //modules/benchmarks/src/change_detection/transplanted_views, //modules/benchmarks/src/defer/baseline, //modules/benchmarks/src/defer/main, //modules/benchmarks/src/hydration/baseline, //modules/benchmarks/src/hydration/main ... (+64 more)
+  - Test command differences detected — original CI vs LLM run.sh may use different flags or test selection.
+
+--- Test Statistics Comparison ---
+  [Bazel]
+    Original: 792 run, 792 passed, 0 failed, 0 skipped
+    LLM:      795 run, 682 passed, 113 failed, 0 skipped
+  [jasmine]
+    Original: 795 run, 792 passed, 3 failed, 600 skipped
+    LLM:      795 run, 682 passed, 0 failed, 113 skipped

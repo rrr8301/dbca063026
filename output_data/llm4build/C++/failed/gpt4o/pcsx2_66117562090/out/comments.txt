@@ -1,0 +1,31 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   False
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          20
+Original build category: failed
+
+STATUS: BUILD EXECUTION FAILED
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-22.04
+  CI job name:      AppImage / AppImage Build
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    3
+
+--- Failure Analysis ---
+  Failure type: Build error
+
+  Original build was already failing. LLM could not reproduce or fix it after 20 attempt(s).
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > COPY failed: file not found in build context or excluded by .dockerignore: stat scripts: file does not exist
+    > Step 5/9 : COPY scripts /app/scripts
+
+  [Root cause classification]
+  - Missing project-specific build scripts: The LLM-generated Dockerfile attempts to COPY a `scripts/` directory (containing `build-dependencies-qt.sh` and `appimage-qt.sh`) that is part of the pcsx2 source tree but is not present in the Docker build context. The original CI "AppImage / AppImage Build" job clones the full PCSX2 repository including these scripts before running, but the LLM never reproduced that checkout step. Additionally, pcsx2 is an x86-specific PlayStation 2 emulator requiring OpenGL/GPU drivers and low-level hardware interfaces that cannot be meaningfully built or tested in a generic Linux Docker container without those runtime dependencies.
+
+No test results could be produced due to build failure.

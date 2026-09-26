@@ -1,0 +1,35 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      tests (latest)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ go test -cpu 1,4 -timeout 7m ./...
+  $ go test -cpu 1,4 -timeout 2m ./...
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoDefault] Test run mismatch: original=140, LLM=145
+  - [GoDefault] Test passed mismatch: original=139, LLM=143
+  - [GoDefault] Test failed mismatch: original=1, LLM=2
+  - [GoDefault] 1 test(s) failed in LLM but not in original: google.golang.org/grpc/security/advancedtls
+
+--- Root Cause Analysis ---
+  - [GoDefault] LLM ran 5 more tests than original — LLM likely used a broader test scope or included extra test suites.
+  - [GoDefault] 1 test(s) failed in LLM but not original: google.golang.org/grpc/security/advancedtls
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 140 run, 139 passed, 1 failed, 0 skipped
+    LLM:      145 run, 143 passed, 2 failed, 0 skipped

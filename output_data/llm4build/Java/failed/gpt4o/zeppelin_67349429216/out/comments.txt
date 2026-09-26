@@ -1,0 +1,37 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          N/A
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      core-modules (11)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    4
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in LLM but not in original: GoDefault
+  - [Maven] Test run mismatch: original=665, LLM=409
+  - [Maven] Test passed mismatch: original=646, LLM=391
+  - [Maven] Test failed mismatch: original=1, LLM=5
+  - [Maven] Test skipped mismatch: original=18, LLM=13
+  - [Maven] 1 test(s) failed in original but passed in LLM: testCreatedInterpreterDependencies(org.apache.zeppelin.rest.InterpreterRestApiTest)
+  - [Maven] 5 test(s) failed in LLM but not in original: testCodeCompletion(org.apache.zeppelin.jupyter.IPythonKernelTest), testIRInterpreter(org.apache.zeppelin.jupyter.IRKernelTest), testInterpolate(org.apache.zeppelin.jupyter.IPythonKernelTest), testPythonBasics(org.apache.zeppelin.jupyter.IPythonKernelTest), testUpdateOutput(org.apache.zeppelin.jupyter.IPythonKernelTest)
+
+--- Root Cause Analysis ---
+  - [Maven] LLM ran 256 fewer tests than original — LLM likely used a narrower test scope or missed some test suites.
+  - [Maven] 5 test(s) failed in LLM but not original: testCodeCompletion(org.apache.zeppelin.jupyter.IPythonKernelTest), testIRInterpreter(org.apache.zeppelin.jupyter.IRKernelTest), testInterpolate(org.apache.zeppelin.jupyter.IPythonKernelTest), testPythonBasics(org.apache.zeppelin.jupyter.IPythonKernelTest), testUpdateOutput(org.apache.zeppelin.jupyter.IPythonKernelTest)
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: (not present)
+    LLM:      5 run, 0 passed, 5 failed, 0 skipped
+  [Maven]
+    Original: 665 run, 646 passed, 1 failed, 18 skipped
+    LLM:      409 run, 391 passed, 5 failed, 13 skipped

@@ -1,0 +1,46 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          6
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      HTTP/2 test suite
+  Test command(s) run in original CI:
+    $ sudo apt-get install ... libnghttp2-dev ... python3-pytest nghttp2-client
+    $ actions/checkout@v4
+    $ ./test/travis_before_linux.sh
+    $ ./test/travis_run_linux.sh
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ chmod +x ./test/travis_before_linux.sh
+  $ bash ./test/travis_before_linux.sh
+  $ chmod +x ./test/travis_run_linux.sh
+  $ ./test/travis_run_linux.sh
+
+--- Reason(s) for Non-Reproducibility ---
+  - [pytest] Test result mismatch (same count 326): original=(319p/0f/7s), LLM=(283p/1f/42s)
+  - [pytest] Tests failed in LLM but passed in original: test/modules/http2/test_600_h2proxy.py
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    FAILED test/modules/http2/test_600_h2proxy.py::TestH2Proxy::test_h2_600_32[0]
+    >   assert r.response['status'] in [502, 503]
+    E   assert 200 in [502, 503]
+    test/modules/http2/test_600_h2proxy.py:200: AssertionError
+
+  [Root cause classification]
+  - test_h2_600_32 failure — HTTP/2 proxy behavior difference: `TestH2Proxy.test_h2_600_32` tests what HTTP status code is returned when HTTP/2 proxy encounters a specific condition (expected 502/503 Bad Gateway). In the original CI, this returned 502 or 503. In the LLM Docker container, the test receives 200 OK instead — the proxy successfully forwarded the request. This is likely because the test sets up a connection that should fail at a proxy level (e.g., TLS backend handshake failure or connection timeout) but the Docker networking environment or nghttp2/mod_proxy_http2 version difference causes the proxy to succeed where it should fail. The test is checking an error-handling path in the HTTP/2 proxy module.
+  - 35 extra SKIPPED tests (42 vs 7): The LLM has 42 skips vs original's 7 skips. The additional 35 skipped tests are likely `mod_proxy_http2`, `mod_proxy_uwsgi`, or similar module tests that were auto-skipped because the relevant Apache modules were not enabled or nghttp2 was configured differently. The original CI explicitly installed `libnghttp2-dev` and configured Apache with these modules enabled; the LLM's installation may have missed some.
+
+--- Test Statistics Comparison ---
+  [pytest]
+    Original: 326 run, 319 passed, 0 failed, 7 skipped
+    LLM:      326 run, 283 passed, 1 failed, 42 skipped

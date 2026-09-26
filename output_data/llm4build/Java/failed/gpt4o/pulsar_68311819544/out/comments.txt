@@ -1,0 +1,36 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          N/A
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      CI - Integration - Messaging
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ mvn clean install -Drat.skip=true -Dlicense.skip=true
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Maven] Test run mismatch: original=58, LLM=2166
+  - [Maven] Test passed mismatch: original=56, LLM=715
+  - [Maven] Test failed mismatch: original=1, LLM=2
+  - [Maven] Test skipped mismatch: original=1, LLM=1449
+  - [Maven] 1 test(s) failed in original but passed in LLM: testTopicReplication[non-persistent](6)(org.apache.pulsar.tests.integration.messaging.GeoReplicationTest)
+  - [Maven] 2 test(s) failed in LLM but not in original: testEmptyMetadataMigration(org.apache.pulsar.metadata.MigrationCoordinatorTest), validateDeadLock[Etcd, etcd:...](10)(org.apache.pulsar.metadata.coordination.impl.LeaderElectionImplTest)
+
+--- Root Cause Analysis ---
+  - [Maven] LLM ran 2108 more tests than original — LLM likely used a broader test scope or included extra test suites.
+  - [Maven] 2 test(s) failed in LLM but not original: testEmptyMetadataMigration(org.apache.pulsar.metadata.MigrationCoordinatorTest), validateDeadLock[Etcd, etcd:...](10)(org.apache.pulsar.metadata.coordination.impl.LeaderElectionImplTest)
+
+--- Test Statistics Comparison ---
+  [Maven]
+    Original: 58 run, 56 passed, 1 failed, 1 skipped
+    LLM:      2166 run, 715 passed, 2 failed, 1449 skipped

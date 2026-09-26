@@ -1,0 +1,72 @@
+Error from docker build
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 1.03kB done
+#1 DONE 0.0s
+
+#2 [internal] load .dockerignore
+#2 transferring context: 105B done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/ubuntu:22.04
+#3 DONE 0.3s
+
+#4 [1/8] FROM docker.io/library/ubuntu:22.04@sha256:962f6cadeae0ea6284001009daa4cc9a8c37e75d1f5191cf0eb83fe565b63dd7
+#4 CACHED
+
+#5 [internal] load build context
+#5 transferring context: 113.79kB 0.1s done
+#5 DONE 0.1s
+
+#6 [ 2/12] RUN ln -snf /usr/share/zoneinfo/America/Los_Angeles /etc/localtime && echo America/Los_Angeles > /etc/timezone
+#6 CACHED
+
+#7 [ 3/12] RUN apt-get update && apt-get install -y     git     curl     wget     make     gcc     g++     nodejs     npm     && rm -rf /var/lib/apt/lists/*
+#7 CACHED
+
+#8 [ 4/12] RUN curl -sSL https://golang.org/dl/go1.20.linux-amd64.tar.gz | tar -C /usr/local -xz
+#8 CACHED
+
+#9 [ 5/12] WORKDIR /app
+#9 CACHED
+
+#10 [ 6/12] COPY . .
+#10 DONE 0.3s
+
+#11 [ 7/12] WORKDIR /app/ui/app
+#11 DONE 0.0s
+
+#12 [ 8/12] RUN if [ ! -f package-lock.json ]; then npm install; fi
+#12 0.805 npm ERR! code ENOENT
+#12 0.805 npm ERR! syscall open
+#12 0.805 npm ERR! path /app/ui/app/package.json
+#12 0.805 npm ERR! errno -2
+#12 0.807 npm ERR! enoent ENOENT: no such file or directory, open '/app/ui/app/package.json'
+#12 0.807 npm ERR! enoent This is related to npm not being able to find a file.
+#12 0.807 npm ERR! enoent 
+#12 0.808 
+#12 0.808 npm ERR! A complete log of this run can be found in:
+#12 0.808 npm ERR!     /root/.npm/_logs/2026-05-09T16_00_00_649Z-debug-0.log
+#12 ERROR: process "/bin/sh -c if [ ! -f package-lock.json ]; then npm install; fi" did not complete successfully: exit code: 254
+------
+ > [ 8/12] RUN if [ ! -f package-lock.json ]; then npm install; fi:
+ ERR! code ENOENT
+#12 0.805 npm ERR! syscall open
+#12 0.805 npm ERR! path /app/ui/app/package.json
+#12 0.805 npm ERR! errno -2
+#12 0.807 npm ERR! enoent ENOENT: no such file or directory, open '/app/ui/app/package.json'
+#12 0.807 npm ERR! enoent This is related to npm not being able to find a file.
+#12 0.807 npm ERR! enoent 
+#12 0.808 
+#12 0.808 npm ERR! A complete log of this run can be found in:
+#12 0.808 npm ERR!     /root/.npm/_logs/2026-05-09T16_00_00_649Z-debug-0.log
+------
+Dockerfile:31
+--------------------
+  29 |     # Ensure package-lock.json exists before running npm ci
+  30 |     WORKDIR /app/ui/app
+  31 | >>> RUN if [ ! -f package-lock.json ]; then npm install; fi
+  32 |     
+  33 |     # Install Node.js dependencies
+--------------------
+ERROR: failed to solve: process "/bin/sh -c if [ ! -f package-lock.json ]; then npm install; fi" did not complete successfully: exit code: 254

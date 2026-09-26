@@ -1,0 +1,66 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      CI - Integration - Messaging
+  Test command(s) run in original CI:
+    $ actions/checkout@v4
+    $ pulsar_ci_tool.sh docker_load_image_from_github_actions_artifacts pulsar-java-test-image
+    $ mvn -B -ntp verify -DintegrationTestSuiteFile=pulsar-messaging.xml -DintegrationTests \
+        -pl tests/integration -Dcheckstyle.skip=true ...
+    $ ./.github/actions/copy-test-reports
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ mvn clean install -DskipTests -Drat.skip=true -Dlicense.skip=true -q || true
+  $ ./build/run_integration_group.sh MESSAGING
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Maven] Test run mismatch: original=58, LLM=92
+  - [Maven] Test passed mismatch: original=56, LLM=0
+  - [Maven] Test failed mismatch: original=1, LLM=35
+  - [Maven] 35 tests fail in LLM: all fail with Testcontainers "Could not find a valid Docker environment"
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    ERROR PersistentTopicMessagingTest.setupBeforeClass
+      java.lang.IllegalStateException:
+        Could not find a valid Docker environment.
+        Please see logs and check configuration
+      at org.apache.pulsar.tests.integration.suites.PulsarTestSuite.setupBeforeClass
+        (PulsarTestSuite.java:30)
+
+    ERROR AdminTest > PulsarTestSuite.setupBeforeClass:30 ->
+      PulsarClusterTestBase.setupCluster:155
+        » IllegalState Previous attempts to find a Docker environment failed.
+          Will not retry. Please see logs and check configuration
+
+  [Root cause classification]
+  - Pulsar's integration tests use Testcontainers to spin up a full Pulsar cluster (broker,
+    bookie, ZooKeeper) as Docker containers inside the test environment. Testcontainers
+    requires `/var/run/docker.sock` to be available and accessible. The LLM's Docker
+    container does not mount the host's Docker socket (no `-v /var/run/docker.sock:/var/run/docker.sock`
+    in the docker run command), so Testcontainers throws `IllegalStateException: Could not
+    find a valid Docker environment` in every test class's `setupBeforeClass`. All 35 test
+    class-level setUp failures cascade to all their test methods being counted as failures.
+    The original CI's GitHub Actions runner has Docker available as a service and mounts
+    the Docker socket to the workflow environment, so Testcontainers can launch containers.
+    The original CI's 1 failure (`testTopicReplication[non-persistent]` in GeoReplicationTest)
+    is an unrelated flakiness issue in the geo-replication test logic, not a Docker access problem.
+    The test count difference (92 vs 58) occurs because `run_integration_group.sh MESSAGING`
+    runs a broader set of test classes than the original CI's `-DintegrationTestSuiteFile=pulsar-messaging.xml`
+    filter, so more test classes are attempted and all fail in setUp.
+
+--- Test Statistics Comparison ---
+  [Maven]
+    Original: 58 run, 56 passed, 1 failed, 1 skipped
+    LLM:      92 run, 0 passed, 35 failed, 57 skipped

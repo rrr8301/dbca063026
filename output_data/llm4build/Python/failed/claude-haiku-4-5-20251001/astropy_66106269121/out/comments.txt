@@ -1,0 +1,86 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          3
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      tests / Python 3.12 in Parallel with all optional dependencies
+  Test command(s) run in original CI:
+    $ python -m tox -e py312-test-alldeps-fitsio -v --develop -- -n=4 --run-slow
+
+--- LLM-Generated Dockerfile ---
+  Base image:   python:3.12-slim
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ python -m tox -e py312-test-alldeps-fitsio -v --develop -- -n=4 --run-slow
+
+--- Reason(s) for Non-Reproducibility ---
+  - [pytest] Test result mismatch (same count 34971): original=(33411p/11f/507s), LLM=(33405p/11f/513s)
+  - [pytest] 2 tests failed in LLM but passed in original:
+    ../../astropy/io/misc/tests/test_parquet.py::test_parquet_read_pandas
+    ../../astropy/modeling/tests/test_models_quantities.py::test_models_fitting[LevMarLSQFitter-model32]
+  - [pytest] 2 tests failed in original but passed in LLM:
+    ../../astropy/io/fits/tests/test_table.py::TestTableFunctions::test_new_fitsrec
+    ../../astropy/io/fits/tests/test_table.py::TestTableFunctions::test_appending_a_column
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > ___________________________ test_parquet_read_pandas ___________________________
+    >   def test_parquet_read_pandas(tmp_path):
+    >       """Test reading a pandas parquet file."""
+    >       for dtype in ALL_DTYPES:
+    >           values = _default_values(dtype)
+    >           t1.add_column(Column(name=str(dtype), data=np.array(values, dtype=dtype)))
+    >       df = t1.to_pandas()
+    >       df.to_parquet(filename, version="2.4")
+    >       t2 = Table.read(filename)
+    >       for dtype in ALL_DTYPES:
+    > >         assert t2[str(dtype)].dtype == dtype
+    > E         AssertionError: assert dtype('O') == 'U3'
+    > E          +  where dtype('O') = <Column name='U3' dtype='object' length=3>
+    >              abc\ndef\nghi.dtype
+    >
+    > ../../astropy/io/misc/tests/test_parquet.py:1002: AssertionError
+    >
+    > _ test_models_fitting[LevMarLSQFitter-model32] _
+    > E   pytest.PytestUnraisableExceptionWarning: Exception ignored in: <_io.FileIO
+    >     name='/tmp/fits-test-8nj6hbtc/data.txt' mode='rb' closefd=True>
+    > _pytest/unraisableexception.py:67: PytestUnraisableExceptionWarning
+
+  [Root cause classification]
+  - pyarrow 24.0.0 changed string dtype handling → test_parquet_read_pandas fails
+    The test creates an Astropy `Table` with columns of various dtypes including `'U3'`
+    (fixed-length NumPy unicode string, 3 chars). It converts the table to a pandas DataFrame,
+    writes it as a parquet file (`df.to_parquet(version="2.4")`), then reads it back via
+    `Table.read()`. The assertion `t2[str(dtype)].dtype == dtype` checks that the roundtrip
+    preserves the dtype.
+
+    In pyarrow 24.0.0 (installed in the Docker run), string columns from parquet files are
+    now read back as ArrowDtype (large_string/object) instead of converting to NumPy fixed-length
+    unicode strings. The dtype that was 'U3' (numpy.dtype('<U3')) is returned as 'object'
+    (numpy.dtype('O')). The test expects `dtype('O') == 'U3'` which fails. In the original CI,
+    an older pyarrow version (< 24.0.0) preserved the 'U3' dtype, so the test passed.
+
+  - pytest.PytestUnraisableExceptionWarning for unclosed FileIO → test_models_fitting fails
+    The `test_models_fitting[LevMarLSQFitter-model32]` failure is a teardown-phase unraisable
+    exception: `Exception ignored in: <_io.FileIO name='/tmp/fits-test-.../data.txt' closefd=True>`.
+    This means a FITS file handle opened during the test was not explicitly closed. Python's
+    garbage collector finalizes it after the test, raising an unclosed resource warning. pytest
+    9.x captures unraisable exceptions during teardown and converts them to test failures. The
+    original CI's pytest version (or Python version) may not capture this warning, or the
+    specific file handle lifecycle differs in that run.
+
+  - The tests that fail in original but pass in LLM (test_new_fitsrec, test_appending_a_column)
+    are FITS record manipulation tests that produce AstropyUserWarning about NULL values — these
+    are environment-dependent and may relate to numpy or FITS library version differences.
+
+--- Test Statistics Comparison ---
+  [pytest]
+    Original: 34971 run, 33411 passed, 11 failed, 507 skipped
+    LLM:      34971 run, 33405 passed, 11 failed, 513 skipped
+    (Both have 11 failures but different tests fail — pyarrow 24.0.0 is the key version difference)

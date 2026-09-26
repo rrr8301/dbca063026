@@ -1,0 +1,50 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          5
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      rust-tests (ubuntu-latest)
+  Test command(s) run in original CI:
+    $ : set $CARGO_HOME
+    $ : enable colors in Cargo output
+    $ : enable Cargo sparse registry
+    $ actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    6
+
+--- LLM run.sh Test Command(s) ---
+  $ cargo build --workspace --tests --locked
+  $ cargo nextest run --workspace --profile ci --locked
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in original but missing in LLM: nexttest
+  - Framework(s) in LLM but not in original: cargo
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    test universal_io::io_uring::tests::test_io_uring_read_batch ... FAILED
+    test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 96 filtered out; finished in 0.02s
+    Error: IoUringNotSupported(Custom { kind: OutOfMemory, error: IoErrorContext { context: "failed to initialize io_uring instance", error: Os { code: 12, kind: OutOfMemory, message: "Cannot allocate mem
+    test universal_io::io_uring::tests::test_io_uring_read_multi_iter_basic ... FAILED
+    test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 96 filtered out; finished in 0.02s
+    Error: IoUringNotSupported(Custom { kind: OutOfMemory, error: IoErrorContext { context: "failed to initialize io_uring instance", error: Os { code: 12, kind: OutOfMemory, message: "Cannot allocate mem
+    test universal_io::io_uring::tests::test_io_uring_concurrent_read_iter ... FAILED
+    test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 96 filtered out; finished in 0.03s
+
+  [Root cause classification]
+  - I/O error — test encountered a system-level I/O failure, possibly due to filesystem permissions or missing mount points.
+
+--- Test Statistics Comparison ---
+  [cargo]
+    Original: (not present)
+    LLM:      19 run, 0 passed, 19 failed, 0 skipped
+  [nexttest]
+    Original: 1608 run, 1601 passed, 0 failed, 7 skipped
+    LLM:      (not present)

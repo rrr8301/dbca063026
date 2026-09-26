@@ -1,0 +1,38 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      build (clang-17, clang++-17, 0, ccache)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    3
+
+Note: Original build was failing (no test output). LLM ran tests successfully
+      — failed build has passed in LLM reproduction.
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in LLM but not in original: CTest
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: (not present)
+    LLM:      1 run, 0 passed, 1 failed, 0 skipped
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > FAILED: src/server/scripts/CMakeFiles/scripts_pandaria.dir/Pandaria/zone_the_wandering_isle.cpp.o
+    > fatal error: 'UpdateAI' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+    > 1 error generated. — ninja: build stopped: subcommand failed
+    > 1/1 Test #1: tests_NOT_BUILT-b12d07c ...***Not Run   0.00 sec
+    > ./worldserver: No such file or directory (run.sh line 36)
+
+  [Root cause classification]
+  The original CI build failed because clang++-17 with -Werror caught a missing `override` specifier in scripts_pandaria/zone_the_wandering_isle.cpp, preventing the worldserver binary from being linked. The LLM's Dockerfile reproduced the same build environment (ubuntu:24.04, clang-17/clang++-17) and hit the same compile error. The CTest stub "tests_NOT_BUILT" was registered but could not run because the worldserver executable was never produced. The root cause is a real C++ code defect (missing override keyword treated as an error by -Winconsistent-missing-override -Werror), not an environment difference, explaining why the build failed identically to the original CI.

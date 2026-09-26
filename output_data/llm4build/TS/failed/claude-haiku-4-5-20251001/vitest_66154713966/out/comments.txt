@@ -1,0 +1,52 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Build&Test: node-24, ubuntu-latest
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ pnpm/action-setup@41ff72655975bd51cab0327fa583b6e92b6d3061
+    $ pnpm i
+    $ pnpm run build
+    $ pnpm run test:ci
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ TEST_FAILED=0
+  $ pnpm run build || { echo "Build failed"; TEST_FAILED=1; }
+  $ pnpm run test:ci || { echo "Tests failed"; TEST_FAILED=1; }
+  $ pnpm run test:examples || { echo "Example tests failed"; TEST_FAILED=1; }
+
+--- Reason(s) for Non-Reproducibility ---
+  - [vitest] Test run mismatch: original=1126, LLM=916
+  - [vitest] Test passed mismatch: original=1116, LLM=903
+  - [vitest] Test failed mismatch: original=1, LLM=4
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    +     "WebDriverError: session not created: Chrome instance exited. Examine ChromeDriver verbose log to determine the cause. when running "http://localhost:43059/session" with method "POST" and args "
+    [31m[1mAssertionError[22m: expected '⎯⎯⎯⎯⎯⎯ Unhandled Errors ⎯⎯⎯⎯⎯⎯\n\nVitest caught 1 unhandled error during the test run.\nThis might cause false positive tests. Resolve unhandled errors to make
+    + Error: WebDriverError: session not created: Chrome instance exited. Examine ChromeDriver verbose log to determine the cause. when running "http://localhost:36183/session" with method "POST" and args
+    +     "WebDriverError: session not created: Chrome instance exited. Examine ChromeDriver verbose log to determine the cause. when running "http://localhost:39019/session" with method "POST" and args "
+    +     "WebDriverError: session not created: Chrome instance exited. Examine ChromeDriver verbose log to determine the cause. when running "http://localhost:44733/session" with method "POST" and args "
+
+  [Root cause classification]
+  - Process aborted (SIGABRT) — likely a GLib g_assert() failure, AddressSanitizer/UBSan abort, or missing D-Bus/system service in Docker container.
+  - Network connectivity issue — test requires network access or a service (e.g., local server) that is unavailable in Docker.
+  - Database service unavailable or not properly configured — test requires an external database service.
+  - Test timed out — likely due to slower execution in Docker container or a blocking service call that never returns.
+  - Assertion failure: [31m[1mAssertionError[22m: expected '⎯⎯⎯⎯⎯⎯ Unhandled Errors ⎯⎯⎯⎯⎯⎯\n\nVitest caught 1 unhandled error during the test run.\nThis might cause false positive tests. Resolve unhandled errors to make
+
+--- Test Statistics Comparison ---
+  [vitest]
+    Original: 1126 run, 1116 passed, 1 failed, 9 skipped
+    LLM:      916 run, 903 passed, 4 failed, 9 skipped

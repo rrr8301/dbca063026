@@ -1,0 +1,76 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Build and test on ubuntu-latest
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ gradle/actions/setup-gradle@v5
+    $ ./gradlew build
+    $ ./gradlew shellcheck
+    $ ./gradlew codeCoverageReport
+    $ ./gradlew publishToMavenLocal
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ ./gradlew build                    (FAILED — Android SDK not found)
+  $ ./gradlew shellcheck               (FAILED — COVERAGE_SUCCESS flagged as unused)
+  $ ./gradlew codeCoverageReport       (FAILED — Android SDK not found)
+  $ ./gradlew publishToMavenLocal      (succeeded: 78 executed, 7 up-to-date)
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Gradle] Tasks executed mismatch: original=38, LLM=78
+  - [Gradle] Tasks up-to-date mismatch: original=41, LLM=7
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    Could not determine the dependencies of task ':sample-app:compileDebugJavaWithJavac'.
+    > SDK location not found. Define a valid SDK location with an ANDROID_HOME environment
+      variable or by setting the sdk.dir path in your project's local properties file
+      at '/workspace/local.properties'.
+    BUILD FAILED in 2m 9s
+    7 actionable tasks: 7 executed
+
+    > Task :shellcheck FAILED
+        COVERAGE_SUCCESS=false
+        ^--------------^ SC2034 (warning): COVERAGE_SUCCESS appears unused.
+    Shellcheck violations were found.
+
+  [Root cause classification]
+  - Two distinct Docker environment issues cause the task count mismatch:
+    (1) Android SDK not available in Docker. The NullAway project includes a `sample-app`
+    subproject that requires the Android SDK (`ANDROID_HOME` env var or `local.properties`
+    with `sdk.dir`). Docker has no Android SDK installed, so `./gradlew build` fails at
+    `:sample-app:compileDebugJavaWithJavac` after only 7 tasks. Similarly,
+    `./gradlew codeCoverageReport` fails for the same reason
+    (`:jar-infer:test-android-lib-jarinfer:extractReleaseAnnotations` cannot resolve
+    dependencies without the Android SDK). In the original CI (GitHub Actions with
+    `setup-gradle@v5` which configures the Android build environment), all tasks execute
+    and cache successfully.
+    (2) `./gradlew shellcheck` fails in Docker because the LLM-generated run.sh declares
+    `COVERAGE_SUCCESS=false` but never exports or uses it after the if-block, triggering
+    shellcheck SC2034 ("appears unused"). The original CI run.sh does not have this unused
+    variable.
+    The net effect: `./gradlew publishToMavenLocal` (the only step that succeeds fully)
+    runs without the pre-built artifact cache from `./gradlew build`, so it must compile
+    all modules from scratch — 78 tasks executed vs 38 in the original (where prior build
+    steps had already cached compiled artifacts via `gradle/actions/setup-gradle`), which
+    explains the task count mismatch that marks the run as non-fully-reproducible.
+
+--- Test Statistics Comparison ---
+  [Gradle]
+    Original: 0 run, 0 passed, 0 failed, 0 skipped
+    LLM:      0 run, 0 passed, 0 failed, 0 skipped
+    (No JUnit test counts captured by framework — NullAway tests run within Gradle tasks
+     but are not reported as standard surefire/test XML counts in the stats)
+    Tasks executed: original=38, LLM=78
+    Tasks up-to-date: original=41, LLM=7

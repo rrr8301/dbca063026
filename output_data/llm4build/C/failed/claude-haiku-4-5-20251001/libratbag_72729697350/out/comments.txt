@@ -1,0 +1,44 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      build-and-dist (default)
+  Test command(s) run in original CI:
+    $ actions/checkout@v4
+    $ sudo /home/runner/work/libratbag/libratbag/./.github/actions/pkginstall/install-apt.sh $UBUNTU_DEP_BUILD $UBUNTU_DEP_TEST
+    $ meson setup builddir . --prefix=$PWD/_instdir
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ meson test -C builddir --print-errorlogs
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Meson] Test result mismatch (same count 10): original=(6p/3f/1s), LLM=(6p/4f/0s)
+  - [Meson] Tests failed in LLM but passed in original: libratbag:ratbagctl-test
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    429: 3/10 libratbag:receiver-id-test   FAIL   0.06s   exit status 1
+    435: 4/10 libratbag:duplicate-test     FAIL   0.09s   exit status 1
+    444: 8/10 libratbag:ratbagctl-test     FAIL   0.20s   exit status 5
+    469:ratbagd.devel error: Unable to open system bus: No such file or directory
+    477:would reformat tools/ratbagctl.test.py.in
+    478:would reformat tools/ratbagctl.body.py.in
+
+  [Root cause classification]
+  - D-Bus system bus unavailable: `ratbagd.devel` requires a running D-Bus system bus daemon to operate. In Docker, `dbus-daemon --system` is not started, so any test that tries to connect to ratbagd over D-Bus fails with "Unable to open system bus: No such file or directory." This is why `receiver-id-test`, `duplicate-test`, and `ratbagctl-test` fail.
+  - python-black formatting check fails: The test `ratbagctl-test` (exit status 5) includes a `python-black` code style check on `tools/ratbagctl.test.py.in` and `tools/ratbagctl.body.py.in`. Black reports these would be reformatted (i.e., they are not properly formatted). In the original CI, these files passed the black check (or the check was skipped due to the 1 skipped test). The LLM installed a different version of python-black which has stricter or different formatting rules.
+
+--- Test Statistics Comparison ---
+  [Meson]
+    Original: 10 run, 6 passed, 3 failed, 1 skipped
+    LLM:      10 run, 6 passed, 4 failed, 0 skipped

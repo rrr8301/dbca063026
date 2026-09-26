@@ -1,0 +1,32 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          20
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT TESTS NOT REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      Ubuntu latest wxGTK 3
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    2
+
+--- Test Reproducibility Gap ---
+  Original ran 72 test(s) across [GTest].
+  LLM build produced no test results (empty llm_log_stats).
+
+--- Root Cause ---
+  Reason type: Compilation / linker failure during build
+  Key error(s) from build/test log:
+    Error: GITHUB_TOKEN is not set.
+
+  - The LLM's Dockerfile (only 2 RUN steps) attempted to clone or fetch OpenCPN dependencies that require authentication via GITHUB_TOKEN; without this token, the build script aborted immediately before any compilation began.
+  - OpenCPN requires wxWidgets 3, OpenGL, and several GUI libraries (libwxgtk3*-dev, libgl1-mesa-dev) that were likely not installed in the minimal ubuntu:latest base, and the build system relies on GitHub API access to resolve plugin dependencies.
+  - The original CI job "Ubuntu latest wxGTK 3" runs in a pre-configured GitHub Actions environment with GITHUB_TOKEN automatically set; reproducing this in a Docker container requires either providing a token or pre-installing all dependencies offline.
+
+--- Original Test Statistics (not reproduced) ---
+  [GTest] 72 run, 71 passed, 1 failed, 0 skipped

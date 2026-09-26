@@ -1,0 +1,33 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          N/A
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      build (ubuntu-latest, 17, false)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ mvn clean install -DskipTests=false -Dmaven.compiler.release=17 -Denforcer.skip=true -Dlicense.skip=true
+  $ mvn test || true  # Ensure all tests run even if some fail
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Maven] Test passed mismatch: original=912, LLM=910
+  - [Maven] Test failed mismatch: original=0, LLM=2
+  - [Maven] 2 test(s) failed in LLM but not in original: testParseFourBytes(org.apache.commons.csv.JiraCsv196Test), testParseThreeBytes(org.apache.commons.csv.JiraCsv196Test)
+
+--- Root Cause Analysis ---
+  - [Maven] 2 test(s) failed in LLM but not original: testParseFourBytes(org.apache.commons.csv.JiraCsv196Test), testParseThreeBytes(org.apache.commons.csv.JiraCsv196Test)
+
+--- Test Statistics Comparison ---
+  [Maven]
+    Original: 923 run, 912 passed, 0 failed, 11 skipped
+    LLM:      923 run, 910 passed, 2 failed, 11 skipped

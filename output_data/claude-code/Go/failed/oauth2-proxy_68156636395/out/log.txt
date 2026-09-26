@@ -1,0 +1,88 @@
+=== Verify Code Generation ===
+go generate ./pkg/...
+go: downloading github.com/oauth2-proxy/tools v0.0.0-20250404153144-32055bc45bc3
+go: downloading github.com/oauth2-proxy/tools/reference-gen v0.0.0-20250404153144-32055bc45bc3
+go: downloading k8s.io/klog/v2 v2.130.1
+go: downloading k8s.io/gengo v0.0.0-20201113003025-83324d819ded
+go: downloading github.com/spf13/pflag v1.0.5
+go: downloading github.com/go-logr/logr v1.4.2
+I0513 21:28:00.932909    1928 main.go:32] Running generator on package "github.com/oauth2-proxy/oauth2-proxy/v7/pkg/apis/options"
+W0513 21:28:06.348565    1928 parse.go:817] Making unsupported type entry "any" for: &types.Alias{obj:(*types.TypeName)(0xc0001d29b0), orig:(*types.Alias)(0xc000194100), tparams:(*types.TypeParamList)(nil), targs:(*types.TypeList)(nil), fromRHS:(*types.Interface)(0xc0001d2910), actual:(*types.Interface)(0xc0001d2910)}
+W0513 21:28:06.359760    1928 parse.go:817] Making unsupported type entry "os.FileMode" for: &types.Alias{obj:(*types.TypeName)(0xc00222f4a0), orig:(*types.Alias)(0xc002249580), tparams:(*types.TypeParamList)(nil), targs:(*types.TypeList)(nil), fromRHS:(*types.Named)(0xc00016a2a0), actual:(*types.Named)(0xc00016a2a0)}
+W0513 21:28:06.359937    1928 parse.go:817] Making unsupported type entry "os.FileInfo" for: &types.Alias{obj:(*types.TypeName)(0xc00222f450), orig:(*types.Alias)(0xc002249640), tparams:(*types.TypeParamList)(nil), targs:(*types.TypeList)(nil), fromRHS:(*types.Named)(0xc00016a230), actual:(*types.Named)(0xc00016a230)}
+I0513 21:28:06.363425    1928 generator.go:97] Rendering reference for type: AlphaOptions
+I0513 21:28:06.363441    1928 generator.go:97] Rendering reference for type: GitLabOptions
+I0513 21:28:06.363445    1928 generator.go:97] Rendering reference for type: ClaimSource
+I0513 21:28:06.363448    1928 generator.go:97] Rendering reference for type: AzureOptions
+I0513 21:28:06.363452    1928 generator.go:97] Rendering reference for type: GoogleOptions
+I0513 21:28:06.363455    1928 generator.go:97] Rendering reference for type: KeycloakOptions
+I0513 21:28:06.363458    1928 generator.go:97] Rendering reference for type: LoginURLParameter
+I0513 21:28:06.363461    1928 generator.go:97] Rendering reference for type: URLParameterRule
+I0513 21:28:06.363463    1928 generator.go:97] Rendering reference for type: BitbucketOptions
+I0513 21:28:06.363466    1928 generator.go:97] Rendering reference for type: UpstreamConfig
+I0513 21:28:06.363471    1928 generator.go:97] Rendering reference for type: Provider
+I0513 21:28:06.363475    1928 generator.go:97] Rendering reference for type: Upstream
+I0513 21:28:06.363480    1928 generator.go:97] Rendering reference for type: TLS
+I0513 21:28:06.363486    1928 generator.go:97] Rendering reference for type: SecretSource
+I0513 21:28:06.363491    1928 generator.go:97] Rendering reference for type: HeaderValue
+I0513 21:28:06.363494    1928 generator.go:97] Rendering reference for type: MicrosoftEntraIDOptions
+I0513 21:28:06.363497    1928 generator.go:97] Rendering reference for type: LoginGovOptions
+I0513 21:28:06.363500    1928 generator.go:97] Rendering reference for type: Providers
+I0513 21:28:06.363504    1928 generator.go:97] Rendering reference for type: Header
+I0513 21:28:06.363508    1928 generator.go:97] Rendering reference for type: ProviderType
+I0513 21:28:06.363511    1928 generator.go:97] Rendering reference for type: Server
+I0513 21:28:06.363521    1928 generator.go:97] Rendering reference for type: OIDCOptions
+I0513 21:28:06.363528    1928 generator.go:97] Rendering reference for type: ADFSOptions
+I0513 21:28:06.363532    1928 generator.go:97] Rendering reference for type: GitHubOptions
+I0513 21:28:06.366303    1928 generator.go:189] Rendered output written to "../../../docs/docs/configuration/alpha_config.md"
+git diff --exit-code
+diff --git a/pkg/apis/sessions/session_state_test.go b/pkg/apis/sessions/session_state_test.go
+index 24b6d670..ec131393 100644
+--- a/pkg/apis/sessions/session_state_test.go
++++ b/pkg/apis/sessions/session_state_test.go
+@@ -58,7 +58,7 @@ func TestString(t *testing.T) {
+ 				User:              "some.user",
+ 				PreferredUsername: "preferred.user",
+ 			},
+-			expected: "Session{email:email@email.email user:some.user PreferredUsername:preferred.user}",
++			expected: "Session{email:email@email.email user:some.user PreferredUsername:preferred.user refresh_token:false}",
+ 		},
+ 		{
+ 			name: "Full Session",
+@@ -82,7 +82,7 @@ func TestString(t *testing.T) {
+ 				PreferredUsername: "preferred.user",
+ 				CreatedAt:         &created,
+ 			},
+-			expected: "Session{email:email@email.email user:some.user PreferredUsername:preferred.user created:2000-01-01 00:00:00 +0000 UTC}",
++			expected: "Session{email:email@email.email user:some.user PreferredUsername:preferred.user created:2000-01-01 00:00:00 +0000 UTC refresh_token:false}",
+ 		},
+ 		{
+ 			name: "With an ExpiresOn",
+@@ -92,7 +92,7 @@ func TestString(t *testing.T) {
+ 				PreferredUsername: "preferred.user",
+ 				ExpiresOn:         &expires,
+ 			},
+-			expected: "Session{email:email@email.email user:some.user PreferredUsername:preferred.user expires:2000-01-01 01:00:00 +0000 UTC}",
++			expected: "Session{email:email@email.email user:some.user PreferredUsername:preferred.user expires:2000-01-01 01:00:00 +0000 UTC refresh_token:false}",
+ 		},
+ 		{
+ 			name: "With an AccessToken",
+@@ -102,7 +102,7 @@ func TestString(t *testing.T) {
+ 				PreferredUsername: "preferred.user",
+ 				AccessToken:       "access.token",
+ 			},
+-			expected: "Session{email:email@email.email user:some.user PreferredUsername:preferred.user token:true}",
++			expected: "Session{email:email@email.email user:some.user PreferredUsername:preferred.user token:true refresh_token:false}",
+ 		},
+ 		{
+ 			name: "With an IDToken",
+@@ -112,7 +112,7 @@ func TestString(t *testing.T) {
+ 				PreferredUsername: "preferred.user",
+ 				IDToken:           "id.token",
+ 			},
+-			expected: "Session{email:email@email.email user:some.user PreferredUsername:preferred.user id_token:true}",
++			expected: "Session{email:email@email.email user:some.user PreferredUsername:preferred.user id_token:true refresh_token:false}",
+ 		},
+ 		{
+ 			name: "With a RefreshToken",
+make: *** [Makefile:141: verify-generate] Error 1

@@ -1,0 +1,85 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      ubuntu-latest / 3.11
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ pytest dask/tests/test_imports.py
+    $ source continuous_integration/scripts/run_tests.sh
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ mamba env create -f continuous_integration/environment-3.11.yaml -n test-environment --yes
+  $ conda activate test-environment
+  $ pytest dask/tests/test_imports.py || IMPORT_TEST_FAILED=1
+  $ source continuous_integration/scripts/run_tests.sh || TESTS_FAILED=1
+
+--- Reason(s) for Non-Reproducibility ---
+  - [pytest] Test result mismatch (same count 18115): original=(16481p/0f/1013s), LLM=(16476p/5f/1013s)
+  - [pytest] 5 tests failed in LLM but passed in original:
+    test_collect_yaml_permission_errors[directory] (dask/tests/test_config.py)
+    test_collect_yaml_permission_errors[file] (dask/tests/test_config.py)
+    test_cpu_count_cgroups_v2[2005-/] (dask/tests/test_system.py)
+    test_cpu_count_cgroups_v2[2005-/user.slice] (dask/tests/test_system.py)
+    test_cpu_count_cgroups_v2[2005-/user.slice/more.slice] (dask/tests/test_system.py)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > FAILED dask/tests/test_config.py::test_collect_yaml_permission_errors[directory]
+    >   AssertionError: assert {'x': 1, 'y': 3, 'z': 4} == {}
+    > FAILED dask/tests/test_config.py::test_collect_yaml_permission_errors[file]
+    >   AssertionError: assert {'x': 1, 'y': 3, 'z': 4} == {'y': 3, 'z': 4}
+    > FAILED dask/tests/test_system.py::test_cpu_count_cgroups_v2[2005-/]
+    >   assert 250 == 201
+    > FAILED dask/tests/test_system.py::test_cpu_count_cgroups_v2[2005-/user.slice]
+    >   assert 250 == 201
+
+  [Root cause classification]
+  Two distinct failure modes:
+
+  (1) Docker root user bypasses filesystem permission checks -- test_collect_yaml_permission_errors
+    (2 tests: test_collect_yaml_permission_errors[directory], test_collect_yaml_permission_errors[file])
+    These tests verify that `dask.config.collect_yaml()` gracefully handles unreadable directories
+    and files. Each test creates two YAML config files (a.yaml: {x:1,y:2}, b.yaml: {y:3,z:4}),
+    then uses a `no_read_permissions(cant_read)` context manager to apply `chmod 000` to either
+    the whole directory or just a.yaml. It then calls `collect_yaml(paths=[tmp_path])` and expects
+    the config to omit the content from the unreadable path:
+    - `[directory]` test: expects `collect_yaml()` to return `{}` (empty -- can't read the dir)
+    - `[file]` test: expects `collect_yaml()` to return `{y:3, z:4}` (only b.yaml readable)
+    When running as root in Docker, `chmod 000` has no effect -- root always has read access.
+    Both YAML files are read successfully, so `collect_yaml()` returns `{x:1, y:3, z:4}` (the
+    merged content of both files), causing both assertions to fail.
+    On the GitHub Actions runner (non-root user), `chmod 000` actually restricts read access.
+    The test path also confirms it: `/tmp/pytest-of-root/pytest-0/popen-gw2/...` shows user=root.
+
+  (2) Different cgroup v2 CPU quota configuration -- test_cpu_count_cgroups_v2 fails
+    (3 tests: quota=2005, group_name in [/, /user.slice, /user.slice/more.slice])
+    These tests verify `dask.system.cpu_count()` correctly interprets cgroup v2 CPU quota limits.
+    They monkeypatch `builtins.open` to inject fake cgroup files:
+      /proc/self/cgroup → "0::{group_name}"
+      /sys/fs/cgroup/{group_name}/cpu.max → "2005 10"
+    With quota=2005 and period=10, expected: ceil(2005/10) = 201 CPUs.
+    But the tests get `assert 250 == 201` -- `cpu_count()` returns 250 (the actual number of
+    logical CPU cores on the Docker host machine). This happens because the Docker container
+    runs on a host with 250 CPUs. The `monkeypatch_cpu_count=None` parameter means the
+    `multiprocessing.cpu_count()` fallback is NOT mocked. When the cgroup quota parsing code
+    fails to intercept the patched open() calls (e.g., in a subprocess spawned by the pytest
+    worker or when cgroup detection takes a different code path), it falls back to the real
+    `multiprocessing.cpu_count()` which returns 250. On the GitHub Actions runner with fewer
+    physical CPUs (where cpu_count() returns a smaller number), the cgroup quota of 201 is
+    binding and the test passes.
+
+--- Test Statistics Comparison ---
+  [pytest]
+    Original: 18115 run, 16481 passed, 0 failed, 1013 skipped
+    LLM:      18115 run, 16476 passed, 5 failed, 1013 skipped

@@ -1,0 +1,40 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          4
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Reason(s) for Non-Reproducibility ---
+  - [cargo] Test run mismatch: original=69, LLM=0
+  - [cargo] Test failed mismatch: original=1, LLM=0
+  - [cargo] Test skipped mismatch: original=68, LLM=0
+  - [nexttest] Test run mismatch: original=728, LLM=783
+  - [nexttest] Test passed mismatch: original=727, LLM=783
+  - [nexttest] Test failed mismatch: original=1, LLM=0
+
+--- Test Statistics Comparison ---
+  [cargo] 69 run, 0 passed, 1 failed, 68 skipped
+    Failed: test_spfa_undir
+  [nexttest] 728 run, 727 passed, 1 failed, 0 skipped
+    Failed: petgraph::quickcheck test_spfa_undir, petgraph::quickcheck test_spfa_undir
+LLM:
+  [nexttest] 783 run, 783 passed, 0 failed, 0 skipped
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > PASS [1.172s] (423/433) petgraph::quickcheck test_spfa_undir   (LLM — test passed)
+    > (Original CI) thread 'test_spfa_undir' (6166) panicked at quickcheck-0.8.5/src/tester.rs:176:28
+    > [quickcheck] TEST FAILED. Arguments: (Graph { Ty: "Undirected", node_count: 88, edge_count: 1672, ... })
+    > test result: FAILED. 0 passed; 1 failed; 0 ignored; 68 filtered out
+
+  [Root cause classification]
+  - The test_spfa_undir failure is a quickcheck property-based test that generates random
+    graphs; the CI run (using quickcheck 0.8.5) hit a specific graph instance (88 nodes,
+    1672 edges) that exposed a bug in the SPFA undirected implementation, but this particular
+    counterexample was not re-generated in the LLM container due to different random seeds.
+  - The LLM container also ran 783 tests vs 728 in CI (55 additional tests from a newer test
+    suite), indicating a version difference in the test binary that may have fixed the SPFA
+    logic, so both seed variation and a possible algorithm fix contribute to the discrepancy.

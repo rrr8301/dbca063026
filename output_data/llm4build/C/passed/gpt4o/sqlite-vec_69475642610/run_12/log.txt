@@ -1,0 +1,229 @@
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100 2669k  100 2669k    0     0  3298k      0 --:--:-- --:--:-- --:--:-- 3300k
+Archive:  sqlite-amalgamation.zip
+   creating: sqlite-amalgamation-3450300/
+  inflating: sqlite-amalgamation-3450300/sqlite3.c
+  inflating: sqlite-amalgamation-3450300/shell.c
+  inflating: sqlite-amalgamation-3450300/sqlite3.h
+  inflating: sqlite-amalgamation-3450300/sqlite3ext.h
+VERSION=0.1.10-alpha.2 \
+DATE=2026-05-08T04:43:10Z+0000 \
+SOURCE=89f620353616194e20cae6feafbe2b14d6db27a1 \
+VERSION_MAJOR=$(echo $VERSION | cut -d. -f1) \
+VERSION_MINOR=$(echo $VERSION | cut -d. -f2) \
+VERSION_PATCH=$(echo $VERSION | cut -d. -f3 | cut -d- -f1) \
+envsubst < sqlite-vec.h.tmpl > sqlite-vec.h
+mkdir -p dist
+cc \
+	-fPIC -shared \
+	-Wall -Wextra \
+	-Ivendor/ \
+	-O3 \
+	-lm -mavx -mavx2 -DSQLITE_VEC_ENABLE_AVX \
+	sqlite-vec.c -o dist/vec0.so
+sqlite-vec.c:1349: warning: ignoring '#pragma region scalar' [-Wunknown-pragmas]
+ 1349 | #pragma region scalar functions
+      |
+sqlite-vec.c:2071: warning: ignoring '#pragma endregion ' [-Wunknown-pragmas]
+ 2071 | #pragma endregion
+      |
+sqlite-vec.c:3203: warning: ignoring '#pragma region vec_each' [-Wunknown-pragmas]
+ 3203 | #pragma region vec_each table function
+      |
+sqlite-vec.c:3395: warning: ignoring '#pragma endregion ' [-Wunknown-pragmas]
+ 3395 | #pragma endregion
+      |
+sqlite-vec.c:3399: warning: ignoring '#pragma region vec0' [-Wunknown-pragmas]
+ 3399 | #pragma region vec0 virtual table
+      |
+In file included from sqlite-vec.c:3770:
+sqlite-vec-diskann.c: In function 'diskann_robust_prune':
+sqlite-vec-diskann.c:917:30: warning: unused parameter 'p_vector' [-Wunused-parameter]
+  917 |     i64 p_rowid, const void *p_vector,
+      |                  ~~~~~~~~~~~~^~~~~~~~
+In file included from sqlite-vec.c:3:
+sqlite-vec.c: In function 'vec0_metadata_filter_text':
+sqlite-vec.c:6768:57: warning: comparison of integer expressions of different signedness: 'long unsigned int' and 'int' [-Wsign-compare]
+ 6768 |   assert((sqlite3_blob_bytes(rowidsBlob) / sizeof(i64)) == size);
+      |                                                         ^~
+sqlite-vec.c:6996:24: warning: comparison of unsigned expression in '< 0' is always false [-Wtype-limits]
+ 6996 |       if(metadataInIdx < 0) {
+      |                        ^
+sqlite-vec.c: In function 'vec0_set_metadata_filter_bitmap':
+sqlite-vec.c:7097:26: warning: comparison of integer expressions of different signedness: 'int' and 'long unsigned int' [-Wsign-compare]
+ 7097 |       szMatch = blobSize == size * sizeof(i64);
+      |                          ^~
+sqlite-vec.c:7101:26: warning: comparison of integer expressions of different signedness: 'int' and 'long unsigned int' [-Wsign-compare]
+ 7101 |       szMatch = blobSize == size * sizeof(double);
+      |                          ^~
+sqlite-vec.c: In function 'vec0Filter_knn_chunks_iter':
+sqlite-vec.c:7390:20: warning: comparison of integer expressions of different signedness: 'i64' {aka 'long long int'} and 'long unsigned int' [-Wsign-compare]
+ 7390 |     if (rowidsSize != p->chunk_size * sizeof(i64)) {
+      |                    ^~
+In file included from sqlite-vec.c:3:
+sqlite-vec.c: In function 'vec0Filter_knn':
+sqlite-vec.c:7812:15: warning: comparison of integer expressions of different signedness: 'int' and 'size_t' {aka 'long unsigned int'} [-Wsign-compare]
+ 7812 |   assert(argc == (strlen(idxStr)-1) / 4);
+      |               ^~
+sqlite-vec.c: At top level:
+sqlite-vec.c:10551: warning: ignoring '#pragma endregion ' [-Wunknown-pragmas]
+10551 | #pragma endregion
+      |
+In file included from sqlite-vec.h:5,
+                 from sqlite-vec.c:1:
+sqlite-vec.c: In function 'vec0_init.constprop':
+vendor/sqlite3ext.h:645:40: warning: 'pkColumnNameLength' may be used uninitialized in this function [-Wmaybe-uninitialized]
+  645 | #define sqlite3_str_appendf            sqlite3_api->str_appendf
+      |                                        ^~~~~~~~~~~
+sqlite-vec.c:4920:7: note: 'pkColumnNameLength' was declared here
+ 4920 |   int pkColumnNameLength;
+      |       ^~~~~~~~~~~~~~~~~~
+sqlite-vec.c: In function 'vec0Filter_knn_chunks_iter':
+sqlite-vec.c:7540:26: warning: 'result' may be used uninitialized in this function [-Wmaybe-uninitialized]
+ 7540 |       chunk_distances[i] = result;
+      |       ~~~~~~~~~~~~~~~~~~~^~~~~~~~
+In file included from sqlite-vec.h:5,
+                 from sqlite-vec.c:1:
+sqlite-vec.c: In function 'vec0Update_InsertWriteFinalStep':
+vendor/sqlite3ext.h:529:40: warning: 'offset' may be used uninitialized in this function [-Wmaybe-uninitialized]
+  529 | #define sqlite3_blob_write             sqlite3_api->blob_write
+      |                                        ^~~~~~~~~~~
+sqlite-vec.c:8848:7: note: 'offset' was declared here
+ 8848 |   int offset;
+      |       ^~~~~~
+In file included from sqlite-vec.h:5,
+                 from sqlite-vec.c:1:
+vendor/sqlite3ext.h:529:40: warning: 'n' may be used uninitialized in this function [-Wmaybe-uninitialized]
+  529 | #define sqlite3_blob_write             sqlite3_api->blob_write
+      |                                        ^~~~~~~~~~~
+sqlite-vec.c:8847:7: note: 'n' was declared here
+ 8847 |   int n;
+      |       ^
+In file included from sqlite-vec.h:5,
+                 from sqlite-vec.c:1:
+sqlite-vec.c: In function 'vec0Update_UpdateVectorColumn':
+vendor/sqlite3ext.h:529:40: warning: 'offset' may be used uninitialized in this function [-Wmaybe-uninitialized]
+  529 | #define sqlite3_blob_write             sqlite3_api->blob_write
+      |                                        ^~~~~~~~~~~
+sqlite-vec.c:8848:7: note: 'offset' was declared here
+ 8848 |   int offset;
+      |       ^~~~~~
+In file included from sqlite-vec.h:5,
+                 from sqlite-vec.c:1:
+vendor/sqlite3ext.h:529:40: warning: 'n' may be used uninitialized in this function [-Wmaybe-uninitialized]
+  529 | #define sqlite3_blob_write             sqlite3_api->blob_write
+      |                                        ^~~~~~~~~~~
+sqlite-vec.c:8847:7: note: 'n' was declared here
+ 8847 |   int n;
+      |       ^
+mkdir -p dist/.objs
+cc -Ivendor/ -lm -mavx -mavx2 -DSQLITE_VEC_ENABLE_AVX -DSQLITE_CORE -DSQLITE_VEC_STATIC \
+-O3 -c  sqlite-vec.c -o dist/.objs/vec.o
+ar rcs dist/libsqlite_vec0.a dist/.objs/vec.o
+/app/run.sh: line 10: uv: command not found
+cc \
+	-fPIC -shared \
+	-Wall -Wextra \
+	-Ivendor/ \
+	-O3 \
+	-lm -mavx -mavx2 -DSQLITE_VEC_ENABLE_AVX \
+	sqlite-vec.c -o dist/vec0.so
+sqlite-vec.c:1349: warning: ignoring '#pragma region scalar' [-Wunknown-pragmas]
+ 1349 | #pragma region scalar functions
+      |
+sqlite-vec.c:2071: warning: ignoring '#pragma endregion ' [-Wunknown-pragmas]
+ 2071 | #pragma endregion
+      |
+sqlite-vec.c:3203: warning: ignoring '#pragma region vec_each' [-Wunknown-pragmas]
+ 3203 | #pragma region vec_each table function
+      |
+sqlite-vec.c:3395: warning: ignoring '#pragma endregion ' [-Wunknown-pragmas]
+ 3395 | #pragma endregion
+      |
+sqlite-vec.c:3399: warning: ignoring '#pragma region vec0' [-Wunknown-pragmas]
+ 3399 | #pragma region vec0 virtual table
+      |
+In file included from sqlite-vec.c:3770:
+sqlite-vec-diskann.c: In function 'diskann_robust_prune':
+sqlite-vec-diskann.c:917:30: warning: unused parameter 'p_vector' [-Wunused-parameter]
+  917 |     i64 p_rowid, const void *p_vector,
+      |                  ~~~~~~~~~~~~^~~~~~~~
+In file included from sqlite-vec.c:3:
+sqlite-vec.c: In function 'vec0_metadata_filter_text':
+sqlite-vec.c:6768:57: warning: comparison of integer expressions of different signedness: 'long unsigned int' and 'int' [-Wsign-compare]
+ 6768 |   assert((sqlite3_blob_bytes(rowidsBlob) / sizeof(i64)) == size);
+      |                                                         ^~
+sqlite-vec.c:6996:24: warning: comparison of unsigned expression in '< 0' is always false [-Wtype-limits]
+ 6996 |       if(metadataInIdx < 0) {
+      |                        ^
+sqlite-vec.c: In function 'vec0_set_metadata_filter_bitmap':
+sqlite-vec.c:7097:26: warning: comparison of integer expressions of different signedness: 'int' and 'long unsigned int' [-Wsign-compare]
+ 7097 |       szMatch = blobSize == size * sizeof(i64);
+      |                          ^~
+sqlite-vec.c:7101:26: warning: comparison of integer expressions of different signedness: 'int' and 'long unsigned int' [-Wsign-compare]
+ 7101 |       szMatch = blobSize == size * sizeof(double);
+      |                          ^~
+sqlite-vec.c: In function 'vec0Filter_knn_chunks_iter':
+sqlite-vec.c:7390:20: warning: comparison of integer expressions of different signedness: 'i64' {aka 'long long int'} and 'long unsigned int' [-Wsign-compare]
+ 7390 |     if (rowidsSize != p->chunk_size * sizeof(i64)) {
+      |                    ^~
+In file included from sqlite-vec.c:3:
+sqlite-vec.c: In function 'vec0Filter_knn':
+sqlite-vec.c:7812:15: warning: comparison of integer expressions of different signedness: 'int' and 'size_t' {aka 'long unsigned int'} [-Wsign-compare]
+ 7812 |   assert(argc == (strlen(idxStr)-1) / 4);
+      |               ^~
+sqlite-vec.c: At top level:
+sqlite-vec.c:10551: warning: ignoring '#pragma endregion ' [-Wunknown-pragmas]
+10551 | #pragma endregion
+      |
+In file included from sqlite-vec.h:5,
+                 from sqlite-vec.c:1:
+sqlite-vec.c: In function 'vec0_init.constprop':
+vendor/sqlite3ext.h:645:40: warning: 'pkColumnNameLength' may be used uninitialized in this function [-Wmaybe-uninitialized]
+  645 | #define sqlite3_str_appendf            sqlite3_api->str_appendf
+      |                                        ^~~~~~~~~~~
+sqlite-vec.c:4920:7: note: 'pkColumnNameLength' was declared here
+ 4920 |   int pkColumnNameLength;
+      |       ^~~~~~~~~~~~~~~~~~
+sqlite-vec.c: In function 'vec0Filter_knn_chunks_iter':
+sqlite-vec.c:7540:26: warning: 'result' may be used uninitialized in this function [-Wmaybe-uninitialized]
+ 7540 |       chunk_distances[i] = result;
+      |       ~~~~~~~~~~~~~~~~~~~^~~~~~~~
+In file included from sqlite-vec.h:5,
+                 from sqlite-vec.c:1:
+sqlite-vec.c: In function 'vec0Update_InsertWriteFinalStep':
+vendor/sqlite3ext.h:529:40: warning: 'offset' may be used uninitialized in this function [-Wmaybe-uninitialized]
+  529 | #define sqlite3_blob_write             sqlite3_api->blob_write
+      |                                        ^~~~~~~~~~~
+sqlite-vec.c:8848:7: note: 'offset' was declared here
+ 8848 |   int offset;
+      |       ^~~~~~
+In file included from sqlite-vec.h:5,
+                 from sqlite-vec.c:1:
+vendor/sqlite3ext.h:529:40: warning: 'n' may be used uninitialized in this function [-Wmaybe-uninitialized]
+  529 | #define sqlite3_blob_write             sqlite3_api->blob_write
+      |                                        ^~~~~~~~~~~
+sqlite-vec.c:8847:7: note: 'n' was declared here
+ 8847 |   int n;
+      |       ^
+In file included from sqlite-vec.h:5,
+                 from sqlite-vec.c:1:
+sqlite-vec.c: In function 'vec0Update_UpdateVectorColumn':
+vendor/sqlite3ext.h:529:40: warning: 'offset' may be used uninitialized in this function [-Wmaybe-uninitialized]
+  529 | #define sqlite3_blob_write             sqlite3_api->blob_write
+      |                                        ^~~~~~~~~~~
+sqlite-vec.c:8848:7: note: 'offset' was declared here
+ 8848 |   int offset;
+      |       ^~~~~~
+In file included from sqlite-vec.h:5,
+                 from sqlite-vec.c:1:
+vendor/sqlite3ext.h:529:40: warning: 'n' may be used uninitialized in this function [-Wmaybe-uninitialized]
+  529 | #define sqlite3_blob_write             sqlite3_api->blob_write
+      |                                        ^~~~~~~~~~~
+sqlite-vec.c:8847:7: note: 'n' was declared here
+ 8847 |   int n;
+      |       ^
+uv run --managed-python --project tests pytest -vv -s -x . tests/test-*.py
+/bin/sh: 1: uv: not found
+make: *** [Makefile:198: test-loadable] Error 127

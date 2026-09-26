@@ -1,0 +1,41 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          3
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      test (linux-x86_64-gnu)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    6
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in original but missing in LLM: nexttest
+  - [GoDefault] Test run mismatch: original=6, LLM=8
+  - [GoDefault] Test failed mismatch: original=6, LLM=8
+  - [cargo] Test run mismatch: original=2952, LLM=3580
+  - [cargo] Test failed mismatch: original=3, LLM=4
+  - [cargo] Test skipped mismatch: original=2949, LLM=3576
+  - [cargo] 1 test(s) failed in LLM but not in original: test_local_working_copy::test_check_out_existing_file_cannot_be_removed
+
+--- Root Cause Analysis ---
+  - [GoDefault] LLM ran 2 more tests than original — LLM likely used a broader test scope or included extra test suites.
+  - [cargo] LLM ran 628 more tests than original — LLM likely used a broader test scope or included extra test suites.
+  - [cargo] 1 test(s) failed in LLM but not original: test_local_working_copy::test_check_out_existing_file_cannot_be_removed
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 6 run, 0 passed, 6 failed, 0 skipped
+    LLM:      8 run, 0 passed, 8 failed, 0 skipped
+  [cargo]
+    Original: 2952 run, 0 passed, 3 failed, 2949 skipped
+    LLM:      3580 run, 0 passed, 4 failed, 3576 skipped
+  [nexttest]
+    Original: 3069 run, 3066 passed, 3 failed, 0 skipped
+    LLM:      (not present)

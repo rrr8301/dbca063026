@@ -1,0 +1,51 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          3
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      build_test
+  Test command(s) run in original CI:
+    $ actions/checkout@v4
+    $ pnpm/action-setup@v4.0.0
+    $ echo "pnpm_cache_dir=$(pnpm store path)" >> $GITHUB_OUTPUT
+    $ pnpm config set registry https://registry.npmjs.org
+    $ pnpm install --frozen-lockfile
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    6
+
+--- LLM run.sh Test Command(s) ---
+  $ pnpm run --filter ./controlplane/emails build
+  $ pnpm run --filter ./controlplane/ lint:fix
+  $ pnpm run --filter ./controlplane --filter ./connect --filter ./shared --filter ./composition --filter ./protographic build
+  $ pnpm run --filter controlplane test:coverage
+
+--- Reason(s) for Non-Reproducibility ---
+  - [vitest] Test result mismatch (same count 1222): original=(170p/1036f/16s), LLM=(132p/29f/1061s)
+  - [vitest] Tests failed in LLM but passed in original: test/authentication.test.ts, test/rbac-evaluator.test.ts
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    631: ❯ test/rbac-evaluator.test.ts (30 tests | 29 failed) 39ms
+    2062: FAIL  test/rbac-evaluator.test.ts > RBAC Evaluator > Should not have access to anything when no groups are provided
+    2063-TypeError: Object.groupBy is not a function
+    2076: FAIL  test/rbac-evaluator.test.ts > RBAC Evaluator > Should merge multiple groups
+    1848: FAIL  test/authentication.test.ts > Authentication
+    1849- FAIL  test/check-federated-graph.test.ts > CheckFederatedGraph
+    1850- FAIL  test/check-subgraph-schema.test.ts > CheckSubgraphSchema
+    1851- FAIL  test/compose-federationv1-graphs.test.ts > ComposeFederationV1Graphs
+
+  [Root cause classification]
+  - Database service unavailable or not properly configured — test requires an external database service.
+  - Test timed out — likely due to slower execution in Docker container or a blocking service call that never returns.
+
+--- Test Statistics Comparison ---
+  [vitest]
+    Original: 1222 run, 170 passed, 1036 failed, 16 skipped
+    LLM:      1222 run, 132 passed, 29 failed, 1061 skipped

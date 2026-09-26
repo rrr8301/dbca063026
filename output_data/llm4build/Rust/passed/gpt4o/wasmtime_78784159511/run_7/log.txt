@@ -1,0 +1,77 @@
+Error from docker build
+
+#1 [ 1/10] FROM docker.io/library/ubuntu:22.04
+#1 CACHED
+
+#2 [2/9] RUN ln -snf /usr/share/zoneinfo/America/Los_Angeles /etc/localtime && echo America/Los_Angeles > /etc/timezone
+#2 CACHED
+
+#3 [internal] load build definition from Dockerfile
+#3 transferring dockerfile: 1.35kB done
+#3 DONE 0.0s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 2B done
+#4 DONE 0.0s
+
+#5 [internal] load metadata for docker.io/library/ubuntu:22.04
+#5 DONE 0.0s
+
+#6 [internal] load build context
+#6 transferring context: 1.71MB 0.7s done
+#6 DONE 0.8s
+
+#7 [ 6/14] RUN rustup target add wasm32-wasip1 wasm32-unknown-unknown wasm32-wasip2
+#7 CACHED
+
+#8 [ 7/14] RUN useradd -m testuser
+#8 CACHED
+
+#9 [ 3/14] RUN apt-get update && apt-get install -y --no-install-recommends     git     curl     python3     python3-pip     util-linux     build-essential     && rm -rf /var/lib/apt/lists/*
+#9 CACHED
+
+#10 [ 4/14] RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+#10 CACHED
+
+#11 [ 5/14] RUN rustup set profile minimal
+#11 CACHED
+
+#12 [ 8/14] WORKDIR /workspace
+#12 CACHED
+
+#13 [ 9/14] COPY . /workspace
+#13 DONE 2.4s
+
+#14 [10/14] RUN chown -R testuser:testuser /workspace
+#14 DONE 6.3s
+
+#15 [11/14] RUN git config --global --add safe.directory '*'
+#15 DONE 0.4s
+
+#16 [12/14] RUN pip3 install --no-cache-dir -r tests/wasi_testsuite/wasi-common/test-runner/requirements.txt
+#16 0.957 Collecting colorama>=0.4.3
+#16 1.052   Downloading colorama-0.4.6-py2.py3-none-any.whl (25 kB)
+#16 1.072 Installing collected packages: colorama
+#16 1.103 Successfully installed colorama-0.4.6
+#16 1.104 WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+#16 DONE 1.2s
+
+#17 [13/14] RUN echo 'source $HOME/.cargo/env' >> /home/testuser/.bashrc
+#17 DONE 0.6s
+
+#18 [14/14] RUN /bin/bash -c "source /root/.cargo/env && rustup show"
+#18 0.518 /bin/bash: line 1: /root/.cargo/env: Permission denied
+#18 ERROR: process "/bin/sh -c /bin/bash -c \"source /root/.cargo/env && rustup show\"" did not complete successfully: exit code: 1
+------
+ > [14/14] RUN /bin/bash -c "source /root/.cargo/env && rustup show":
+#18 0.518 /bin/bash: line 1: /root/.cargo/env: Permission denied
+------
+Dockerfile:44
+--------------------
+  42 |     
+  43 |     # Ensure Rust environment is activated
+  44 | >>> RUN /bin/bash -c "source /root/.cargo/env && rustup show"
+  45 |     
+  46 |     # Switch back to root to ensure permissions for running scripts
+--------------------
+ERROR: failed to solve: process "/bin/sh -c /bin/bash -c \"source /root/.cargo/env && rustup show\"" did not complete successfully: exit code: 1

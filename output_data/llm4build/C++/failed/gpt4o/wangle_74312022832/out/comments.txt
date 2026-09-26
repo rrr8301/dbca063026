@@ -1,0 +1,68 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          5
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      build
+  Test command(s) run in original CI:
+    $ sudo --preserve-env=http_proxy python3 build/fbcode_builder/getdeps.py --allow-system-packages install-system-deps --recursive wangle
+    $ python3 build/fbcode_builder/getdeps.py --allow-system-packages fetch --no-tests fast_float
+    $ python3 build/fbcode_builder/getdeps.py --allow-system-packages fetch --no-tests fmt
+    $ python3 build/fbcode_builder/getdeps.py --allow-system-packages fetch --no-tests glog
+    $ python3 build/fbcode_builder/getdeps.py --allow-system-packages fetch --no-tests googletest
+    $ python3 build/fbcode_builder/getdeps.py --allow-system-packages fetch --no-tests liboqs
+    $ python3 build/fbcode_builder/getdeps.py --allow-system-packages fetch --no-tests libunwind
+    $ python3 build/fbcode_builder/getdeps.py --allow-system-packages fetch --no-tests xz
+    $ python3 build/fbcode_builder/getdeps.py --allow-system-packages fetch --no-tests folly
+    $ python3 build/fbcode_builder/getdeps.py --allow-system-packages fetch --no-tests fizz
+    $ python3 build/fbcode_builder/getdeps.py --allow-system-packages build --src-dir=. wangle --project-install-prefix wangle:/usr/local
+    $ python3 build/fbcode_builder/getdeps.py --allow-system-packages fixup-dyn-deps --strip --src-dir=. wangle _artifacts/linux --project-install-prefix wangle:/usr/local --final-install-prefix /usr/local
+    $ python3 build/fbcode_builder/getdeps.py --allow-system-packages test --src-dir=. wangle --project-install-prefix wangle:/usr/local
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ sudo python3 build/fbcode_builder/getdeps.py --allow-system-packages install-system-deps --recursive wangle
+  $ sudo python3 build/fbcode_builder/getdeps.py --allow-system-packages install-system-deps --recursive patchelf
+  $ python3 build/fbcode_builder/getdeps.py --allow-system-packages query-paths --recursive --src-dir=. wangle
+  $ python3 build/fbcode_builder/getdeps.py --allow-system-packages fetch --no-tests fast_float
+  $ python3 build/fbcode_builder/getdeps.py --allow-system-packages fetch --no-tests fmt
+  $ python3 build/fbcode_builder/getdeps.py --allow-system-packages fetch --no-tests glog
+  $ python3 build/fbcode_builder/getdeps.py --allow-system-packages fetch --no-tests googletest
+  $ python3 build/fbcode_builder/getdeps.py --allow-system-packages fetch --no-tests liboqs
+  $ python3 build/fbcode_builder/getdeps.py --allow-system-packages fetch --no-tests libunwind
+  $ python3 build/fbcode_builder/getdeps.py --allow-system-packages fetch --no-tests xz
+  $ python3 build/fbcode_builder/getdeps.py --allow-system-packages fetch --no-tests folly
+  $ python3 build/fbcode_builder/getdeps.py --allow-system-packages fetch --no-tests fizz
+  $ python3 build/fbcode_builder/getdeps.py --allow-system-packages build --src-dir=. wangle --project-install-prefix wangle:/usr/local
+  $ python3 build/fbcode_builder/getdeps.py --allow-system-packages fixup-dyn-deps --strip --src-dir=. wangle _artifacts/linux --project-install-prefix wangle:/usr/local --final-install-prefix /usr/local
+  $ python3 build/fbcode_builder/getdeps.py --allow-system-packages test --src-dir=. wangle --project-install-prefix wangle:/usr/local
+
+--- Reason(s) for Non-Reproducibility ---
+  - [CTest] Test count mismatch: original=15 run, LLM=60 run (getdeps ran tests 4 times)
+  - [CTest] Test failed mismatch: original=1 failed (BootstrapTest / Bootstrap.UDPClientServerTest), LLM=0 failed
+  - [CTest] BootstrapTest passed in LLM but failed in original CI (status mismatch)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    94338: 100% tests passed, 0 tests failed out of 15
+    94463: 100% tests passed, 0 tests failed out of 15
+    94588: 100% tests passed, 0 tests failed out of 15
+    94713: 100% tests passed, 0 tests failed out of 15
+
+  [Root cause classification]
+  - The LLM's getdeps invocation ran the full CTest suite 4 times (likely due to the --rerun-failed logic in getdeps), producing 60 total test counts (4 × 15) instead of the original 15. This inflates the LLM test count to 60 vs 15 in the original.
+  - More importantly, BootstrapTest (which exercises UDP client/server bootstrap) failed in the original CI due to `Bootstrap.UDPClientServerTest` failing with a network assertion error. In the LLM Docker container, the test passed, indicating the network configuration inside the container satisfied the UDP binding requirement that was not available in the original CI runner environment (possibly IPv6/loopback configuration differences).
+  - The original CI failure was a genuine environment-specific test flake (UDP socket availability), while the LLM container happened to provide the necessary network conditions.
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 15 run, 14 passed, 1 failed, 0 skipped
+    LLM:      60 run, 60 passed, 0 failed, 0 skipped

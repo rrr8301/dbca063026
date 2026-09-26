@@ -1,0 +1,55 @@
+FROM ubuntu:22.04
+
+# Set timezone and locale
+ENV TZ=America/Los_Angeles
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+ENV LANG=C.UTF-8
+ENV LC_ALL=C.UTF-8
+
+# Set environment variables
+ENV CI=true
+ENV GITHUB_ACTIONS=true
+
+# Install dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    curl \
+    wget \
+    ca-certificates \
+    build-essential \
+    gcc \
+    libc6-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Go
+ENV GO_VERSION=1.26.2
+RUN wget https://golang.org/dl/go${GO_VERSION}.linux-amd64.tar.gz && \
+    tar -C /usr/local -xzf go${GO_VERSION}.linux-amd64.tar.gz && \
+    rm go${GO_VERSION}.linux-amd64.tar.gz
+ENV PATH="/usr/local/go/bin:${PATH}"
+
+# Enable CGO
+ENV CGO_ENABLED=1
+
+# Create work directory
+WORKDIR /workspace
+
+# Copy repository
+COPY . /workspace
+
+# Configure git
+RUN git config --global --add safe.directory '*'
+
+# Create non-root user
+RUN useradd -m testuser && chown -R testuser /workspace
+USER testuser
+
+# Ensure go.mod and go.sum are present
+RUN if [ ! -f go.mod ]; then echo "go.mod not found"; exit 1; fi
+RUN if [ ! -f go.sum ]; then echo "go.sum not found"; exit 1; fi
+
+# Make run.sh executable
+RUN chmod +x /workspace/run.sh
+
+# Set entrypoint
+ENTRYPOINT ["/workspace/run.sh"]

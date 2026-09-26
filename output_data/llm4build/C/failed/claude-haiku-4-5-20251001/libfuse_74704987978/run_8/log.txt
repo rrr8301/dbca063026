@@ -1,0 +1,323 @@
++ set -e
++ TEST_CMD='pytest -vv --tb=short --maxfail=1 --log-level=INFO --log-cli-level=INFO test/'
++ SAN=-Db_sanitize=address,undefined
++ export UBSAN_OPTIONS=halt_on_error=1
++ UBSAN_OPTIONS=halt_on_error=1
++ umask 0022
+++ readlink -f .
++ SOURCE_DIR=/workspace
+++ mktemp -dt libfuse-build-XXXXXX
++ TEST_DIR=/tmp/libfuse-build-aDNmaA
+++ mktemp -dt libfuse-install-XXXXXXX
++ PREFIX_DIR=/tmp/libfuse-install-JuN9MRY
++ chmod 0755 /tmp/libfuse-build-aDNmaA
+Running in /tmp/libfuse-build-aDNmaA
++ cd /tmp/libfuse-build-aDNmaA
++ echo 'Running in /tmp/libfuse-build-aDNmaA'
++ cp -v /workspace/test/lsan_suppress.txt .
+'/workspace/test/lsan_suppress.txt' -> './lsan_suppress.txt'
+++ pwd
++ export LSAN_OPTIONS=suppressions=/tmp/libfuse-build-aDNmaA/lsan_suppress.txt
++ LSAN_OPTIONS=suppressions=/tmp/libfuse-build-aDNmaA/lsan_suppress.txt
++ export ASAN_OPTIONS=detect_leaks=1
++ ASAN_OPTIONS=detect_leaks=1
++ export CC
++ export CC=clang
++ CC=clang
++ export CXX=clang++
++ CXX=clang++
++ export FUSE_URING_ENABLE=1
++ FUSE_URING_ENABLE=1
++ sanitized_build
+=== Building with clang and sanitizers
++ echo '=== Building with clang and sanitizers'
++ mkdir build-san
++ pushd build-san
+/tmp/libfuse-build-aDNmaA/build-san /tmp/libfuse-build-aDNmaA
++ log_env
+=== Environment ===
+CC: clang
+CXX: clang++
++ echo '=== Environment ==='
++ echo 'CC: clang'
+LSAN_OPTIONS: suppressions=/tmp/libfuse-build-aDNmaA/lsan_suppress.txt
+ASAN_OPTIONS: detect_leaks=1
+UBSAN_OPTIONS: halt_on_error=1
++ echo 'CXX: clang++'
++ echo 'LSAN_OPTIONS: suppressions=/tmp/libfuse-build-aDNmaA/lsan_suppress.txt'
++ echo 'ASAN_OPTIONS: detect_leaks=1'
++ echo 'UBSAN_OPTIONS: halt_on_error=1'
++ echo 'FUSE_URING_ENABLE: 1'
++ echo 'FUSE_URING_QUEUE_DEPTH: '
++ echo 'Valgrind: '
+FUSE_URING_ENABLE: 1
++ echo ===================
+FUSE_URING_QUEUE_DEPTH:
+Valgrind:
+===================
++ meson setup -Dprefix=/tmp/libfuse-install-JuN9MRY -D werror=true /workspace
+The Meson build system
+Version: 1.11.1
+Source dir: /workspace
+Build dir: /tmp/libfuse-build-aDNmaA/build-san
+Build type: native build
+Project name: libfuse3
+Project version: 3.19.0-rc0
+C compiler for the host machine: clang (clang 18.1.3 "Ubuntu clang version 18.1.3 (1ubuntu1)")
+C linker for the host machine: clang ld.bfd 2.42
+Host machine cpu family: x86_64
+Host machine cpu: x86_64
+Checking for function "fork" : YES
+Checking for function "fstatat" : YES
+Checking for function "openat" : YES
+Checking for function "readlinkat" : YES
+Checking for function "pipe2" : YES
+Checking for function "splice" : YES
+Checking for function "vmsplice" : YES
+Checking for function "posix_fallocate" : YES
+Checking for function "fdatasync" : YES
+Checking for function "utimensat" : YES
+Checking for function "copy_file_range" : YES
+Checking for function "fallocate" : YES
+Checking for function "fspacectl" : NO
+Checking if "pthread_setname_np check" links: YES
+Checking if "close_range check" links: YES
+Checking if "listmount check" links: NO
+Checking if "new_mount_api check" links: YES
+Has header "sys/xattr.h" : YES
+Has header "linux/limits.h" : YES
+Checking for function "setxattr" : YES
+Checking for function "iconv" : YES
+Checking for function "backtrace" : YES
+Checking for function "statx" : YES
+Checking whether type "struct stat" has member "st_atim" : YES
+Checking whether type "struct stat" has member "st_atimespec" : NO
+Found pkg-config: YES (/usr/bin/pkg-config) 1.8.1
+Run-time dependency liburing found: YES 2.5
+Run-time dependency numa found: YES 2.0.18
+Checking if "liburing linking and SQE128 support" with dependency liburing links: YES
+Message: Enabling versioned libc symbols
+Message: Compiler does not support symver attribute
+Configuring fuse_config.h using configuration
+Configuring libfuse_config.h using configuration
+Run-time dependency threads found: YES
+Library iconv found: NO
+Dependency liburing for host machine found: YES 2.5 (cached)
+Dependency numa for host machine found: YES 2.0.18 (cached)
+Library dl found: YES
+Library rt found: YES
+Found pkg-config: YES (/usr/bin/pkg-config) 1.8.1
+Found CMake: /usr/bin/cmake (3.28.3)
+Run-time dependency udev found: NO  (tried pkg-config and cmake)
+../../../workspace/util/meson.build:26: WARNING: could not determine udevdir, udev.rules will not be installed
+../../../workspace/example/meson.build:35: WARNING: add_languages is missing native:, assuming languages are wanted for both host and build.
+C++ compiler for the host machine: clang++ (clang 18.1.3 "Ubuntu clang version 18.1.3 (1ubuntu1)")
+C++ linker for the host machine: clang++ ld.bfd 2.42
+Build targets in project: 39
+
+libfuse3 3.19.0-rc0
+
+  User defined options
+    prefix: /tmp/libfuse-install-JuN9MRY
+    werror: true
+
+Found ninja-1.13.0.git.kitware.jobserver-pipe-1 at /opt/venv/bin/ninja
++ meson configure -Db_sanitize=address,undefined
++ meson configure -D b_lundef=false
++ [[ 0 -gt 0 ]]
++ meson configure --no-pager
+Core properties:
+  Source dir /workspace
+  Build dir  /tmp/libfuse-build-aDNmaA/build-san
+
+Global build options:
+
+  Core options                   Current Value                    Possible Values                  Description
+  --------------                 -------------                    ---------------                  -----------
+  auto_features                  auto                             [enabled, disabled, auto]        Override value of all 'auto' features
+  backend                        ninja                            [ninja, vs, vs2010, vs2012,      Backend to use
+                                                                   vs2013, vs2015, vs2017, vs2019,
+                                                                   vs2022, vs2026, xcode, none]
+  genvslite                      vs2022                           [vs2022, vs2026]                 Setup multiple buildtype-suffixed ninja-backend build
+                                                                                                   directories, and a [builddir]_vs containing a Visual Studio
+                                                                                                   meta-backend with multiple configurations that calls into
+                                                                                                   them
+  buildtype                      debugoptimized                   [plain, debug, debugoptimized,   Build type to use
+                                                                   release, minsize, custom]
+  debug                          true                             [True, False]                    Enable debug symbols and other information
+  default_library                shared                           [shared, static, both]           Default library type
+  default_both_libraries         shared                           [shared, static, auto]           Default library type for both_libraries
+  install_umask                  0022                             [>= 0, <= 511]                   Default umask to apply on permissions of installed files
+  layout                         mirror                           [mirror, flat]                   Build directory layout
+  optimization                   2                                [plain, 0, g, 1, 2, 3, s]        Optimization level
+  prefer_static                  false                            [True, False]                    Whether to try static linking before shared linking
+  strip                          false                            [True, False]                    Strip targets on install
+  unity                          off                              [on, off, subprojects]           Unity build
+  unity_size                     4                                [>= 2]                           Unity block size
+  warning_level                  2                                [0, 1, 2, 3, everything]         Compiler warning level to use
+  werror                         true                             [True, False]                    Treat warnings as errors
+  wrap_mode                      default                          [default, nofallback,            Wrap mode
+                                                                   nodownload, forcefallback,
+                                                                   nopromote]
+  force_fallback_for             []                                                                Force fallback for those subprojects
+  vsenv                          false                            [True, False]                    Activate Visual Studio environment
+  os2_emxomf                     false                            [True, False]                    Use OMF format on OS/2
+  pkg_config_path                []                                                                List of additional paths for pkg-config to search
+  cmake_prefix_path              []                                                                List of additional prefixes for cmake to search
+
+  Backend options                Current Value                    Possible Values                  Description
+  -----------------              -------------                    ---------------                  -----------
+  backend_max_links              0                                [>= 0]                           Maximum number of linker processes to run or 0 for no limit
+
+  Base options                   Current Value                    Possible Values                  Description
+  --------------                 -------------                    ---------------                  -----------
+  b_pch                          true                             [True, False]                    Use precompiled headers
+  b_lto                          false                            [True, False]                    Use link time optimization
+  b_pie                          false                            [True, False]                    Build executables as position independent
+  b_coverage                     false                            [True, False]                    Enable coverage tracking.
+  b_asneeded                     true                             [True, False]                    Use -Wl,--as-needed when linking
+  b_thinlto_cache_dir                                                                              Directory to store ThinLTO cache objects
+  b_lundef                       false                            [True, False]                    Use -Wl,--no-undefined when linking
+  b_pgo                          off                              [off, generate, use]             Use profile guided optimization
+  b_thinlto_cache                false                            [True, False]                    Use LLVM ThinLTO caching for faster incremental builds
+  b_colorout                     always                           [auto, always, never]            Use colored output
+  b_lto_mode                     default                          [default, thin]                  Select between different LTO modes.
+  b_lto_threads                  0                                []                               Use multiple threads for Link Time Optimization
+  b_staticpic                    true                             [True, False]                    Build static libraries as position independent
+  b_sanitize                     [address, undefined]                                              Code sanitizer to use
+  b_ndebug                       false                            [true, false, if-release]        Disable asserts
+
+  Compiler options               Current Value                    Possible Values                  Description
+  ------------------             -------------                    ---------------                  -----------
+  c_args                         []                                                                Extra arguments passed to the c compiler
+  c_link_args                    []                                                                Extra arguments passed to the c linker
+  c_std                          gnu11                            [none, c89, c99, c11, c17, c18,  c language standard to use
+                                                                   c2x, c23, gnu89, gnu99, gnu11,
+                                                                   gnu17, gnu18, gnu2x, gnu23]
+  cpp_args                       []                                                                Extra arguments passed to the cpp compiler
+  cpp_link_args                  []                                                                Extra arguments passed to the cpp linker
+  cpp_std                        c++20                            [none, c++98, c++03, c++11,      cpp language standard to use
+                                                                   c++14, c++17, c++1z, c++2a,
+                                                                   c++20, c++23, c++26, gnu++98,
+                                                                   gnu++03, gnu++11, gnu++14,
+                                                                   gnu++17, gnu++1z, gnu++2a,
+                                                                   gnu++20, gnu++23, gnu++26]
+  cpp_eh                         default                          [none, default, a, s, sc]        C++ exception handling type.
+  cpp_rtti                       true                             [True, False]                    Enable RTTI
+  cpp_debugstl                   false                            [True, False]                    STL debug mode
+
+  pkgconfig module options       Current Value                    Possible Values                  Description
+  --------------------------     -------------                    ---------------                  -----------
+  pkgconfig.relocatable          false                            [True, False]                    Generate pkgconfig files as relocatable
+
+  Directories                    Current Value                    Possible Values                  Description
+  -------------                  -------------                    ---------------                  -----------
+  prefix                         /tmp/libfuse-install-JuN9MRY                                      Installation prefix
+  bindir                         bin                                                               Executable directory
+  datadir                        share                                                             Data file directory
+  includedir                     include                                                           Header file directory
+  infodir                        share/info                                                        Info page directory
+  libdir                         lib/x86_64-linux-gnu                                              Library directory
+  licensedir                                                                                       Licenses directory
+  libexecdir                     libexec                                                           Library executable directory
+  localedir                      share/locale                                                      Locale data directory
+  localstatedir                  var                                                               Localstate data directory
+  mandir                         share/man                                                         Manual page directory
+  sbindir                        sbin                                                              System executable directory
+  sharedstatedir                 com                                                               Architecture-independent data directory
+  sysconfdir                     etc                                                               Sysconf data directory
+
+  Testing options                Current Value                    Possible Values                  Description
+  -----------------              -------------                    ---------------                  -----------
+  errorlogs                      true                             [True, False]                    Whether to print the logs from failing tests
+  stdsplit                       true                             [True, False]                    Split stdout and stderr in test logs
+
+  Project options                Current Value                    Possible Values                  Description
+  -----------------              -------------                    ---------------                  -----------
+  disable-libc-symbol-version    false                            [True, False]                    Disable versioned symbols through libc
+  disable-mtab                   false                            [True, False]                    Disable and ignore usage of /etc/mtab
+  enable-io-uring                true                             [True, False]                    Enable fuse-over-io-uring support
+  enable-usdt                    false                            [True, False]                    Enable user statically defined tracepoints for extra
+                                                                                                   observability
+  examples                       true                             [True, False]                    Whether or not to build example programs
+  initscriptdir                  /etc/init.d/                                                      Init script installation location (if empty, disable init
+                                                                                                   script installation)
+  tests                          true                             [True, False]                    Compile the test files
+  udevrulesdir                                                                                     Where to install udev rules (if empty, query pkg-config(1))
+  useroot                        true                             [True, False]                    Set owner and setuid bits on installed files
+  utils                          true                             [True, False]                    Whether or not to build and install helper programs
+
+There are no option augments.
++ meson setup --reconfigure /workspace
+The Meson build system
+Version: 1.11.1
+Source dir: /workspace
+Build dir: /tmp/libfuse-build-aDNmaA/build-san
+Build type: native build
+Project name: libfuse3
+Project version: 3.19.0-rc0
+C compiler for the host machine: clang (clang 18.1.3 "Ubuntu clang version 18.1.3 (1ubuntu1)")
+C linker for the host machine: clang ld.bfd 2.42
+Host machine cpu family: x86_64
+Host machine cpu: x86_64
+Checking for function "fork" : YES (cached)
+Checking for function "fstatat" : YES (cached)
+Checking for function "openat" : YES (cached)
+Checking for function "readlinkat" : YES (cached)
+Checking for function "pipe2" : YES (cached)
+Checking for function "splice" : YES (cached)
+Checking for function "vmsplice" : YES (cached)
+Checking for function "posix_fallocate" : YES (cached)
+Checking for function "fdatasync" : YES (cached)
+Checking for function "utimensat" : YES (cached)
+Checking for function "copy_file_range" : YES (cached)
+Checking for function "fallocate" : YES (cached)
+Checking for function "fspacectl" : NO (cached)
+Checking if "pthread_setname_np check" links: YES (cached)
+Checking if "close_range check" links: YES (cached)
+Checking if "listmount check" links: NO (cached)
+Checking if "new_mount_api check" links: YES (cached)
+Has header "sys/xattr.h" : YES (cached)
+Has header "linux/limits.h" : YES (cached)
+Checking for function "setxattr" : YES (cached)
+Checking for function "iconv" : YES (cached)
+Checking for function "backtrace" : YES (cached)
+Checking for function "statx" : YES (cached)
+Checking whether type "struct stat" has member "st_atim" : YES (cached)
+Checking whether type "struct stat" has member "st_atimespec" : NO (cached)
+Dependency liburing for host machine found: YES 2.5 (cached)
+Dependency numa for host machine found: YES 2.0.18 (cached)
+Checking if "liburing linking and SQE128 support" with dependency liburing links: YES (cached)
+Message: Enabling versioned libc symbols
+Message: Compiler does not support symver attribute
+Configuring fuse_config.h using configuration
+Configuring libfuse_config.h using configuration
+Dependency threads for host machine found: YES unknown (cached)
+Library iconv found: NO
+Dependency liburing for host machine found: YES 2.5 (cached)
+Dependency numa for host machine found: YES 2.0.18 (cached)
+Library dl found: YES
+Library rt found: YES
+Found pkg-config: YES (/usr/bin/pkg-config) 1.8.1
+Found pkg-config: YES (/usr/bin/pkg-config) 1.8.1
+Found CMake: /usr/bin/cmake (3.28.3)
+Run-time dependency udev found: NO  (tried pkg-config and cmake)
+../../../workspace/util/meson.build:26: WARNING: could not determine udevdir, udev.rules will not be installed
+../../../workspace/example/meson.build:35: WARNING: add_languages is missing native:, assuming languages are wanted for both host and build.
+C++ compiler for the host machine: clang++ (clang 18.1.3 "Ubuntu clang version 18.1.3 (1ubuntu1)")
+C++ linker for the host machine: clang++ ld.bfd 2.42
+Build targets in project: 39
+
+libfuse3 3.19.0-rc0
+
+  User defined options
+    b_lundef  : false
+    b_sanitize: address,undefined
+    prefix    : /tmp/libfuse-install-JuN9MRY
+    werror    : true
+
+Found ninja-1.13.0.git.kitware.jobserver-pipe-1 at /opt/venv/bin/ninja
+
+ERROR: Linker clang does not support sanitizer arguments ['-fsanitize=address,undefined']
+
+A full log can be found at /tmp/libfuse-build-aDNmaA/build-san/meson-logs/meson-log.txt

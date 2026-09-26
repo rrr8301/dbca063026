@@ -1,0 +1,39 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          5
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    8
+
+--- LLM run.sh Test Command(s) ---
+  $ test \
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Bazel] Test result mismatch (same count 80): original=(80p/0f/0s), LLM=(77p/3f/0s)
+  - [Bazel] Tests failed in LLM but passed in original: //common:filesystem_test, //toolchain/driver:driver_test, //toolchain/driver:runtimes_cache_test
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    1117:FAIL: //toolchain/driver:driver_test (Exit 1) (see /root/.cache/bazel/_bazel_root/eab0d61a99b6696edb3d2aff87b585e8/execroot/_main/bazel-out/k8-fastbuild/testlogs/toolchain/driver/driver_test/test
+    1118-[10,575 / 11,270] 72 / 80 tests, 2 failed; Testing //toolchain/install:install_test; 16s disk-cache, processwrapper-sandbox ... (40 actions running)
+    1119-[10,596 / 11,270] 72 / 80 tests, 2 failed; Testing //toolchain/install:install_test; 18s disk-cache, processwrapper-sandbox ... (40 actions running)
+    1120-FAIL: //toolchain/driver:runtimes_cache_test (Exit 1) (see /root/.cache/bazel/_bazel_root/eab0d61a99b6696edb3d2aff87b585e8/execroot/_main/bazel-out/k8-fastbuild/testlogs/toolchain/driver/runtimes
+    224:FAIL: //common:filesystem_test (Aborted) (see /root/.cache/bazel/_bazel_root/eab0d61a99b6696edb3d2aff87b585e8/execroot/_main/bazel-out/k8-fastbuild/testlogs/common/filesystem_test/test.log)
+    225-[6,932 / 11,248] 58 / 80 tests, 1 failed; Compiling common/map_test.cpp; 52s disk-cache, processwrapper-sandbox ... (40 actions, 39 running)
+    226-[6,935 / 11,248] 58 / 80 tests, 1 failed; Compiling common/map_test.cpp; 53s disk-cache, processwrapper-sandbox ... (40 actions, 39 running)
+    227-[6,942 / 11,248] 58 / 80 tests, 1 failed; Compiling common/map_test.cpp; 54s disk-cache, processwrapper-sandbox ... (40 actions, 39 running)
+
+  [Root cause classification]
+  - Process aborted (SIGABRT) — likely a GLib g_assert() failure, AddressSanitizer/UBSan abort, or missing D-Bus/system service in Docker container.
+  - Test timed out — likely due to slower execution in Docker container or a blocking service call that never returns.
+
+--- Test Statistics Comparison ---
+  [Bazel]
+    Original: 80 run, 80 passed, 0 failed, 0 skipped
+    LLM:      80 run, 77 passed, 3 failed, 0 skipped

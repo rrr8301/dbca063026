@@ -1,0 +1,35 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          20
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT TESTS NOT REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      ubuntu-latest
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    7
+
+--- Test Reproducibility Gap ---
+  Original ran 502 test(s) across [nexttest].
+  LLM build produced no test results (empty llm_log_stats).
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > error: Recipe `lint` failed on line 25 with exit code 1
+
+  [Root cause classification]
+  - The LLM's run.sh starts a `nix-daemon` in the background and then runs `just lint test` — zoxide's `justfile` wraps all build and test steps inside `nix-shell --pure` environments pulled from a pinned `nixpkgs` commit. The `lint` recipe (line 25 of the justfile) runs a sequence of linting tools (`mandoc`, `markdownlint`, `shellcheck`, `nixfmt`, `shfmt`) each through their own `nix-shell --pure --run` invocation. One of these lint steps — likely `shfmt --diff` comparing `run.sh.orig` against the LLM-modified `run.sh` (which differs by a trailing newline) — exits with a non-zero code, causing the entire `just lint` recipe to fail before `just test` (the cargo nextest step) is ever reached.
+
+  - Because `just lint` fails first, no Rust tests are executed and the nexttest parser produces no output. The "Compilation / linker failure" classification is a mis-categorization: the Rust code compiles fine (the Nix build downloads and builds rustc nightly plus all Rust toolchain components successfully), but the test harness never reaches `cargo nextest run` because the lint gate blocks it. After 20 attempts, the LLM could not pass the `shfmt --diff` check because the LLM's edits to `run.sh` always introduced whitespace differences detected by the strict diff comparison.
+
+--- Root Cause ---
+  Reason type: Compilation / linker failure during build
+
+--- Original Test Statistics (not reproduced) ---
+  [nexttest] 502 run, 502 passed, 0 failed, 0 skipped

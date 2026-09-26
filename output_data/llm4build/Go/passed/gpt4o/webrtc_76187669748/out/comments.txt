@@ -1,0 +1,41 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          6
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      test (1.24) / Go 1.24
+  Test command(s) run in original CI:
+    $ go test ./...
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    7
+
+--- LLM run.sh Test Command(s) ---
+  $ cd /workspace/webrtc && go mod tidy && go test ./...
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoDefault] Test run mismatch: original=875, LLM=16
+  - [GoDefault] Test passed mismatch: original=873, LLM=16
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    /workspace/run.sh: line 7: cd: /workspace/webrtc: No such file or directory
+    (tests then ran from /workspace instead)
+
+  [Root cause classification]
+  - The run.sh attempted `cd /workspace/webrtc`, but the pion/webrtc repository was cloned directly into /workspace (not into a /workspace/webrtc subdirectory). The `cd` command failed with "No such file or directory", but the script continued running `go mod tidy && go test ./...` from the /workspace directory.
+
+  - Because tests ran from /workspace root (where the repository was checked out directly), only the top-level package's 16 tests were discovered rather than the full 875 tests across all subdirectories. The original CI ran from the proper working directory and discovered all 875 tests.
+
+  - The LLM needed to either clone the repository into a subdirectory named `webrtc` or use `cd /workspace` in run.sh. This path mismatch caused a significant reduction in test coverage (16 vs 875 tests).
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 875 run, 873 passed, 0 failed, 2 skipped
+    LLM:      16 run, 16 passed, 0 failed, 0 skipped

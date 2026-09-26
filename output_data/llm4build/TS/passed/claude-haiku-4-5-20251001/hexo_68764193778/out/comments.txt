@@ -1,0 +1,41 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      tester (ubuntu-latest, 24)
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ npm install
+    $ npm test -- --no-parallel
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ TEST_FAILED=0
+  $ TEST_FAILED=1
+  $ exit $TEST_FAILED
+
+--- Reason(s) for Non-Reproducibility ---
+  - [mocha] Test result mismatch (same count 1283): original=(1278p/0f/5s), LLM=(1274p/4f/5s)
+  - [mocha] Tests failed in LLM but passed in original: asset, asset > page - type: create - exist:} to not exist > page - type: delete:, asset > page - type: update: > page - type: create - exist:, asset} to not exist > page - type: create - exist:
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    452-  [32m  ✔[0m[90m renderable - error[0m
+
+  [Root cause classification]
+  - Missing file or path not found — test data, certificate, or resource file absent in the Docker environment.
+  - Required environment variable not set — test reads a specific env var that was present in original CI but not in Docker container.
+
+--- Test Statistics Comparison ---
+  [mocha]
+    Original: 1283 run, 1278 passed, 0 failed, 5 skipped
+    LLM:      1283 run, 1274 passed, 4 failed, 5 skipped

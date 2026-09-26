@@ -1,0 +1,70 @@
+Error from docker build
+
+#1 [internal] load .dockerignore
+#1 transferring context: 2B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 1.50kB done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/ubuntu:24.04
+#3 DONE 0.2s
+
+#4 [1/8] FROM docker.io/library/ubuntu:24.04@sha256:c4a8d5503dfb2a3eb8ab5f807da5bc69a85730fb49b5cfca2330194ebcc41c7b
+#4 DONE 0.0s
+
+#5 [2/8] RUN ln -snf /usr/share/zoneinfo/America/Los_Angeles /etc/localtime && echo America/Los_Angeles > /etc/timezone
+#5 CACHED
+
+#6 [3/8] RUN apt-get update && apt-get install -y     git     build-essential     make     curl     wget     ca-certificates     jq     && rm -rf /var/lib/apt/lists/*
+#6 CACHED
+
+#7 [internal] load build context
+#7 transferring context: 503.79kB 0.2s done
+#7 DONE 0.3s
+
+#8 [4/8] RUN set -e;     GO_FOUND=0;     for VERSION in "1.23" "1.22" "1.21"; do         GO_URL="https://go.dev/dl/go${VERSION}.linux-amd64.tar.gz";         echo "Attempting to download Go ${VERSION}...";         if curl -fsSL "$GO_URL" -o /tmp/go.tar.gz 2>/dev/null; then             echo "Successfully downloaded Go ${VERSION}";             tar -C /usr/local -xzf /tmp/go.tar.gz &&             rm /tmp/go.tar.gz &&             GO_FOUND=1;             break;         else             echo "Go ${VERSION} download failed, trying next version...";         fi;     done;     if [ $GO_FOUND -eq 0 ]; then         echo "Failed to download any supported Go version";         exit 1;     fi
+#0 0.295 Attempting to download Go 1.23...
+#8 1.657 Go 1.23 download failed, trying next version...
+#8 1.657 Attempting to download Go 1.22...
+#8 2.027 Go 1.22 download failed, trying next version...
+#8 2.027 Attempting to download Go 1.21...
+#8 2.407 Go 1.21 download failed, trying next version...
+#8 2.407 Failed to download any supported Go version
+#8 ERROR: process "/bin/sh -c set -e;     GO_FOUND=0;     for VERSION in \"1.23\" \"1.22\" \"1.21\"; do         GO_URL=\"https://go.dev/dl/go${VERSION}.linux-amd64.tar.gz\";         echo \"Attempting to download Go ${VERSION}...\";         if curl -fsSL \"$GO_URL\" -o /tmp/go.tar.gz 2>/dev/null; then             echo \"Successfully downloaded Go ${VERSION}\";             tar -C /usr/local -xzf /tmp/go.tar.gz &&             rm /tmp/go.tar.gz &&             GO_FOUND=1;             break;         else             echo \"Go ${VERSION} download failed, trying next version...\";         fi;     done;     if [ $GO_FOUND -eq 0 ]; then         echo \"Failed to download any supported Go version\";         exit 1;     fi" did not complete successfully: exit code: 1
+------
+ > [4/8] RUN set -e;     GO_FOUND=0;     for VERSION in "1.23" "1.22" "1.21"; do         GO_URL="https://go.dev/dl/go${VERSION}.linux-amd64.tar.gz";         echo "Attempting to download Go ${VERSION}...";         if curl -fsSL "$GO_URL" -o /tmp/go.tar.gz 2>/dev/null; then             echo "Successfully downloaded Go ${VERSION}";             tar -C /usr/local -xzf /tmp/go.tar.gz &&             rm /tmp/go.tar.gz &&             GO_FOUND=1;             break;         else             echo "Go ${VERSION} download failed, trying next version...";         fi;     done;     if [ $GO_FOUND -eq 0 ]; then         echo "Failed to download any supported Go version";         exit 1;     fi:
+#0 0.295 Attempting to download Go 1.23...
+#8 1.657 Go 1.23 download failed, trying next version...
+#8 1.657 Attempting to download Go 1.22...
+#8 2.027 Go 1.22 download failed, trying next version...
+#8 2.027 Attempting to download Go 1.21...
+#8 2.407 Go 1.21 download failed, trying next version...
+#8 2.407 Failed to download any supported Go version
+------
+Dockerfile:19
+--------------------
+  18 |     # Install Go with improved fallback logic
+  19 | >>> RUN set -e; \
+  20 | >>>     GO_FOUND=0; \
+  21 | >>>     for VERSION in "1.23" "1.22" "1.21"; do \
+  22 | >>>         GO_URL="https://go.dev/dl/go${VERSION}.linux-amd64.tar.gz"; \
+  23 | >>>         echo "Attempting to download Go ${VERSION}..."; \
+  24 | >>>         if curl -fsSL "$GO_URL" -o /tmp/go.tar.gz 2>/dev/null; then \
+  25 | >>>             echo "Successfully downloaded Go ${VERSION}"; \
+  26 | >>>             tar -C /usr/local -xzf /tmp/go.tar.gz && \
+  27 | >>>             rm /tmp/go.tar.gz && \
+  28 | >>>             GO_FOUND=1; \
+  29 | >>>             break; \
+  30 | >>>         else \
+  31 | >>>             echo "Go ${VERSION} download failed, trying next version..."; \
+  32 | >>>         fi; \
+  33 | >>>     done; \
+  34 | >>>     if [ $GO_FOUND -eq 0 ]; then \
+  35 | >>>         echo "Failed to download any supported Go version"; \
+  36 | >>>         exit 1; \
+  37 | >>>     fi
+  38 |     
+--------------------
+ERROR: failed to solve: process "/bin/sh -c set -e;     GO_FOUND=0;     for VERSION in \"1.23\" \"1.22\" \"1.21\"; do         GO_URL=\"https://go.dev/dl/go${VERSION}.linux-amd64.tar.gz\";         echo \"Attempting to download Go ${VERSION}...\";         if curl -fsSL \"$GO_URL\" -o /tmp/go.tar.gz 2>/dev/null; then             echo \"Successfully downloaded Go ${VERSION}\";             tar -C /usr/local -xzf /tmp/go.tar.gz &&             rm /tmp/go.tar.gz &&             GO_FOUND=1;             break;         else             echo \"Go ${VERSION} download failed, trying next version...\";         fi;     done;     if [ $GO_FOUND -eq 0 ]; then         echo \"Failed to download any supported Go version\";         exit 1;     fi" did not complete successfully: exit code: 1

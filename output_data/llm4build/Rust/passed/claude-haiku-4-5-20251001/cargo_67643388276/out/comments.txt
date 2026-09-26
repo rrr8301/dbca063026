@@ -1,0 +1,59 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Tests Linux x86_64 stable
+  Test command(s) run in original CI:
+    $ actions/checkout@v5
+    $ echo CARGO_CONTAINER_TESTS=1 >> $GITHUB_ENV
+    $ cargo test -p cargo
+    $ ci/clean-test-output.sh
+    $ cargo test -p cargo git
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ cargo test -p cargo
+  $ bash ci/clean-test-output.sh || echo "Warning: clean-test-output.sh not found"
+  $ cargo test -p cargo git
+  $ bash ci/clean-test-output.sh || echo "Warning: clean-test-output.sh not found"
+  $ cargo test -p cargo --test testsuite -- fix::
+
+--- Reason(s) for Non-Reproducibility ---
+  - [cargo] Test run mismatch: original=4807, LLM=4331
+  - [cargo] Test passed mismatch: original=4410, LLM=3936
+  - [cargo] Test failed mismatch: original=0, LLM=10
+  - [cargo] 10 test(s) failed in LLM but not in original: https::self_signed_should_fail, https::self_signed_with_cacert, registry::inaccessible_registry_cache_still_works, ssh::hostname_case_insensitive, ssh::invalid_key_error, ssh::known_host_without_port, ssh::known_host_works, ssh::no_known_host (+2 more)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    7523:thread 'ssh::invalid_key_error' (136079) panicked at crates/cargo-test-support/src/containers.rs:226:9:
+    7476:thread 'https::self_signed_should_fail' (89121) panicked at crates/cargo-test-support/src/containers.rs:226:9:
+    7481:thread 'https::self_signed_with_cacert' (89130) panicked at crates/cargo-test-support/src/containers.rs:226:9:
+    7489:thread 'registry::inaccessible_registry_cache_still_works' (123457) panicked at tests/testsuite/registry.rs:3130:10:
+    7481:thread 'https::self_signed_with_cacert' (89130) panicked at crates/cargo-test-support/src/containers.rs:226:9:
+    7476:thread 'https::self_signed_should_fail' (89121) panicked at crates/cargo-test-support/src/containers.rs:226:9:
+    7489:thread 'registry::inaccessible_registry_cache_still_works' (123457) panicked at tests/testsuite/registry.rs:3130:10:
+    7505:thread 'ssh::no_known_host' (136305) panicked at crates/cargo-test-support/src/containers.rs:226:9:
+
+  [Root cause classification]
+  - Permission denied on executable/script — fake compiler or test helper script lacks execute permission in Docker container.
+  - Missing file or path not found — test data, certificate, or resource file absent in the Docker environment.
+  - TLS/SSL certificate path not found — test expects certificate files (e.g., tests/certs/) that are absent or not properly initialized.
+  - Process aborted (SIGABRT) — likely a GLib g_assert() failure, AddressSanitizer/UBSan abort, or missing D-Bus/system service in Docker container.
+  - Required environment variable not set — test reads a specific env var that was present in original CI but not in Docker container.
+  - I/O error — test encountered a system-level I/O failure, possibly due to filesystem permissions or missing mount points.
+  - Rust panic: 7523:thread 'ssh::invalid_key_error' (136079) panicked at crates/cargo-test-support/src/containers.rs:226:9:
+
+--- Test Statistics Comparison ---
+  [cargo]
+    Original: 4807 run, 4410 passed, 0 failed, 397 skipped
+    LLM:      4331 run, 3936 passed, 10 failed, 385 skipped

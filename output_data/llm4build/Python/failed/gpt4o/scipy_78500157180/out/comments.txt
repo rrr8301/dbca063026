@@ -1,0 +1,53 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          6
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      mypy (py3.12) & dev deps (py3.14), fast, spin (3.14-dev, false)
+  Test command(s) run in original CI:
+    $ python -m pip install git+https://github.com/numpy/numpy.git
+    $ python -m pip install ninja cython pytest pybind11 pytest-xdist pytest-timeout spin pooch hypothesis "setuptools<67.3" meson "click<8.3.0"
+    $ python -m pip install git+https://github.com/serge-sans-paille/pythran.git
+    $ spin build --release
+    $ spin test -j3 -- --durations 10 --timeout=60
+
+--- LLM-Generated Dockerfile ---
+  Base image:   python:3.12-slim
+  RUN steps:    8
+
+--- LLM run.sh Test Command(s) ---
+  $ spin build --release
+  $ spin check --installed-files --no-build
+  $ spin check --symbol-hiding --no-build
+  $ spin test -j3 -- --durations 10 --timeout=60
+
+--- Reason(s) for Non-Reproducibility ---
+  - [pytest] Test run mismatch: original=84710, LLM=84685
+  - [pytest] Test passed mismatch: original=76362, LLM=76319
+  - [pytest] Test skipped mismatch: original=8124, LLM=8142
+  - [pytest] Test failed mismatch: original=0, LLM=1
+  - 1 test failed in LLM but not in original: TestDistributions::test_funcs[mode-methods3-None-_LogUniform] in scipy/stats/tests/test_continuous.py
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    Warning: Requirements file not found at scipy/subprojects/pyprima/pyprima/pyprima/tests/requirements.txt. Skipping dependency installation.
+    (meson build proceeds with Python 3.12, GCC 14.2.0, Cython 3.2.5, pythran 0.18.1)
+
+  [Root cause classification]
+  - The original CI ran with Python 3.14.5 (3.14-dev) and used numpy/pythran installed from git sources. The LLM used `python:3.12-slim` with Python 3.12 and released package versions, introducing numerical differences in floating-point behavior and distribution mode calculations.
+
+  - The `test_funcs[mode-methods3-None-_LogUniform]` test failure is likely a floating-point precision issue sensitive to the Python/NumPy version. Python 3.12 with the released numpy version produced a slightly different result compared to Python 3.14.5 with the development numpy from git.
+
+  - The test count difference (84710 original vs 84685 LLM, a difference of 25 tests) suggests some tests were added or conditional tests were activated by the Python 3.14-dev environment. The skipped count difference (8124 original vs 8142 LLM, 18 more skips in LLM) is consistent with Python version-conditional skips.
+
+  - The LLM did not include mypy or pyrefly checks (those are non-test steps) and used a simpler build pipeline, but the core `spin build + spin test` approach correctly matched the original CI's test execution pattern.
+
+--- Test Statistics Comparison ---
+  [pytest]
+    Original: 84710 run, 76362 passed, 0 failed, 8124 skipped (204 xfailed, 20 xpassed)
+    LLM:      84685 run, 76319 passed, 1 failed, 8142 skipped (204 xfailed, 20 xpassed)

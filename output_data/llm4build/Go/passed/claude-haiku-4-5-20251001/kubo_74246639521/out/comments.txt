@@ -1,0 +1,41 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      unit-tests
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ make test_unit &&
+    $ ipdxco/gotest-json-to-junit-xml@v1
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ make test_unit && [[ ! $(jq -s -c 'map(select(.Action == "fail")) | .[]' test/unit/gotest.json) ]]
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoRace] Test run mismatch: original=1781, LLM=7
+  - [GoRace] Test passed mismatch: original=1157, LLM=7
+  - [GoRace] Test failed mismatch: original=0, LLM=0
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > (no errors — 7 tests passed, but 1774 fewer tests ran than in original CI)
+
+  [Root cause classification]
+  - `make test_unit` in the Kubo (go-ipfs) repository invokes the IPFS test harness via `go test -race ./...` across all packages, but the test harness for most packages uses `TestMain` to check for a prebuilt `ipfs` binary in the PATH. When the binary is absent, packages skip all their tests. In the original CI, a `make build` step produces the `ipfs` binary before `make test_unit` runs, so 1157 of 1781 tests pass and 624 are skipped (packages that need network or daemon access). The LLM ran `make test_unit` directly without first running `make build`, so only 7 tests (in packages that do not require the `ipfs` binary) executed.
+
+  - The 624 skipped tests in the original are integration tests (labeled with `t.Skip("requires running daemon")`) that need a live IPFS daemon. The LLM's 7 tests represent the tiny subset of unit-testable packages that have no binary dependency. This is the same root cause as the failed-category counterpart `kubo_73675942851`, where 7 of 1767 tests ran for the same reason.
+
+--- Test Statistics Comparison ---
+  [GoRace]
+    Original: 1781 run, 1157 passed, 0 failed, 624 skipped
+    LLM:      7 run, 7 passed, 0 failed, 0 skipped

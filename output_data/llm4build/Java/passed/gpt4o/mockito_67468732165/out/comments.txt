@@ -1,0 +1,33 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          N/A
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      java (11, mock-maker-inline, member-accessor-module)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    4
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in original but missing in LLM: mocha
+  - [Gradle] Test run mismatch: original=2598, LLM=2589
+  - [Gradle] Test passed mismatch: original=2503, LLM=2492
+  - [Gradle] Test skipped mismatch: original=95, LLM=97
+
+--- Root Cause Analysis ---
+  - [Gradle] LLM ran 9 fewer tests than original — LLM likely used a narrower test scope or missed some test suites.
+
+--- Test Statistics Comparison ---
+  [Gradle]
+    Original: 2598 run, 2503 passed, 0 failed, 95 skipped
+    LLM:      2589 run, 2492 passed, 0 failed, 97 skipped
+  [mocha]
+    Original: 210 run, 115 passed, 0 failed, 95 skipped
+    LLM:      (not present)

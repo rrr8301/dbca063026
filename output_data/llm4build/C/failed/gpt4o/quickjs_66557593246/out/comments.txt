@@ -1,0 +1,39 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          4
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      meson on ubuntu-latest (clang debug, default)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    4
+
+Note: Original had test failures; LLM build passed all — failed build has passed.
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Meson] Test run mismatch: original=4, LLM=53
+  - [Meson] Test passed mismatch: original=3, LLM=53
+  - [Meson] Test failed mismatch: original=1, LLM=0
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > 53/53 quickjs-ng:bigint256_arith  OK  0.61s
+    > Ok: 53 / Fail: 0
+    > (Original: quickjs-ng:test failed — 1 failure out of 4 tests run)
+
+  [Root cause classification]
+  - The original CI ran only 4 tests (the quickjs-ng:test suite was the single entry that failed), while the LLM ran all 53 individual benchmark/test targets; the discrepancy is because the original CI uses a flat `meson test` invocation that runs only the default test suite with 4 entries, whereas the LLM's run.sh invoked `meson test` in a build that compiled all 53 quickjs benchmark tests as individual Meson test entries.
+  - The quickjs-ng:test failure in the original is a clang debug build regression on ubuntu-24.04 where a specific JavaScript edge case (likely floating-point or BigInt behavior) differs from the expected output; the LLM used ubuntu:22.04 with a different clang version that does not exhibit this regression.
+  - The test count explosion from 4 to 53 in the LLM output indicates the LLM's Meson configuration also registered all benchmark programs as runnable tests, which the original CI meson.build configuration did not do — this is a configuration difference, not a broader test coverage.
+
+--- Test Statistics Comparison ---
+  [Meson]
+    Original: 4 run, 3 passed, 1 failed, 0 skipped
+    LLM:      53 run, 53 passed, 0 failed, 0 skipped

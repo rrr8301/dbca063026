@@ -1,0 +1,58 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Reason(s) for Non-Reproducibility ---
+  - [vitest] Test passed mismatch: original=2892, LLM=2891
+  - [vitest] Test failed mismatch: original=0, LLM=1
+
+--- Original CI Environment ---
+  Platform:   GitHub Actions ubuntu-24.04
+  Node.js:    26.2.0
+  Test:       vitest — 2892 run, 0 failed, 0 skipped
+
+--- LLM-Generated Dockerfile ---
+  Base image:  ubuntu:24.04
+  Node.js:     26.x (nodesource)
+  User:        non-root testuser
+
+--- Test Statistics Comparison ---
+  [vitest]
+    Original: 2892 run, 2892 passed, 0 failed, 0 skipped
+    LLM:      2892 run, 2891 passed, 1 failed, 0 skipped
+      Failed: packages/docusaurus-utils/src/vcs/__tests__/gitUtils.test.ts
+                getGitRepoRoot > returns Docusaurus repo for cwd=__dirname
+
+--- Root Cause Analysis ---
+  [Actual error from LLM log.txt]
+    > FAIL packages/docusaurus-utils/src/vcs/__tests__/gitUtils.test.ts > getGitRepoRoot
+    >   > returns Docusaurus repo for cwd=__dirname
+    > AssertionError: expected '/workspace' to match /docusaurus$/
+    > - Expected: /docusaurus$/
+    > + Received: "/workspace"
+    > at gitUtils.test.ts:426:38
+
+  [Root cause classification]
+  Hardcoded checkout directory name violated by Docker workspace layout:
+
+  The test `getGitRepoRoot > returns Docusaurus repo for cwd=__dirname`
+  calls `git rev-parse --show-toplevel` from within the package source tree and
+  asserts the result matches `/docusaurus$/` — i.e., the repo root directory must
+  be named "docusaurus". In the original GitHub Actions CI runner the repository is
+  checked out into a directory ending in "docusaurus", satisfying the regex.
+
+  In the LLM Docker container the code is cloned to `/workspace`, so
+  `git rev-parse --show-toplevel` returns "/workspace", which does not match
+  `/docusaurus$/`, and the test fails.
+
+  This is not a functional defect in the tested code — it is an environment-specific
+  hardcoded path assumption in the test itself. There is no matching workflow change
+  that would resolve this without renaming the Docker workspace directory or
+  modifying the test expectation.
+
+  FR=False: LLM has 1 failure not present in original (Existence=False).

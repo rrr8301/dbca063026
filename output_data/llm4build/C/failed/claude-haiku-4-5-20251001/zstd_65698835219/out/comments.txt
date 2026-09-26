@@ -1,0 +1,52 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          3
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      check-32bit
+  Test command(s) run in original CI:
+    $ actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+    $ CFLAGS="-m32 -O1 -fstack-protector" make check V=1
+    $ CFLAGS="-m32 -O1 -fstack-protector" make V=1 -C tests test-cli-tests
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ CFLAGS="-m32 -O1 -fstack-protector" make check V=1
+  $ CFLAGS="-m32 -O1 -fstack-protector" make V=1 -C tests test-cli-tests
+
+--- Reason(s) for Non-Reproducibility ---
+  - [shell-tests] Test result mismatch (same count 44): original=(42p/2f/0s), LLM=(43p/1f/0s)
+  - [shell-tests] Tests failed in LLM but passed in original: file-stat/compress-file-to-dir-without-write-perm.sh, file-stat/compress-file-to-dir-without-write-perm.sh.check_stderr
+  - [shell-tests] Tests failed in original but passed in LLM: determinism/basic.sh, determinism/basic.sh.check_stdout, determinism/multithread.sh, determinism/multithread.sh.check_stdout
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    FAIL: file-stat/compress-file-to-dir-without-write-perm.sh
+    FAIL: file-stat/compress-file-to-dir-without-write-perm.sh.check_stderr
+    stderr does not match!
+    > diff expected actual
+    25c25,43
+    < Trace:FileStat: > UTIL_isFdRegularFile(-1)
+    ---
+    > Trace:FileStat: > UTIL_isFdRegularFile(4)
+    ... (18 extra trace lines)
+    29,30d46
+    < zstd: out/file.zst: Permission denied
+    < zstd: can't stat out/file.zst : Permission denied -- ignored
+
+  [Root cause classification]
+  - Root user bypasses directory write permission check: `compress-file-to-dir-without-write-perm.sh` creates a read-only output directory (`chmod 000 out/`) and expects zstd to fail with `Permission denied`. The test expected stderr contains `zstd: out/file.zst: Permission denied` and `zstd: can't stat out/file.zst : Permission denied -- ignored`. However, Docker runs as root, and root can write to any directory regardless of its permissions. So zstd successfully opens and writes `out/file.zst`, continues executing, and produces 18 extra FileStat trace lines that the test does not expect. The actual stderr trace diverges at line 25 — the expected trace terminates at `UTIL_isFdRegularFile(-1)` (fd=-1 indicates open failed due to permission denied), but the LLM's trace shows fd=4 (file opened successfully), followed by stat, chmod, and utime calls that only happen when the write succeeds.
+  - Determinism failures resolved: The original CI's 2 failures (`determinism/basic.sh` and `determinism/multithread.sh`) passed in LLM. These determinism tests verify that zstd produces bit-identical output across multiple runs. The failures in original CI were likely transient non-determinism in the GitHub Actions runner (timing or memory layout effects in 32-bit mode) that did not manifest in the Docker environment.
+
+--- Test Statistics Comparison ---
+  [shell-tests]
+    Original: 44 run, 42 passed, 2 failed, 0 skipped
+    LLM:      44 run, 43 passed, 1 failed, 0 skipped

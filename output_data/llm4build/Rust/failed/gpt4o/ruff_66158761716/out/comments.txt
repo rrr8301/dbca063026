@@ -1,0 +1,36 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      cargo test (linux)
+  Test command(s) run in original CI:
+    $ cargo test -p ty_python_semantic --test mdtest || true
+
+--- LLM-Generated Dockerfile ---
+  Base image:   rust:latest
+  RUN steps:    6
+
+--- LLM run.sh Test Command(s) ---
+  $ cargo test -p ty_python_semantic --test mdtest || true
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in original but missing in LLM: GoDefault
+  - [cargo] Test run mismatch: original=329, LLM=327
+  - [cargo] Test failed mismatch: original=3, LLM=1
+
+--- Root Cause Analysis ---
+  - [cargo] LLM ran 2 fewer tests than original — LLM likely used a narrower test scope or missed some test suites.
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 2 run, 0 passed, 2 failed, 0 skipped
+    LLM:      (not present)
+  [cargo]
+    Original: 329 run, 326 passed, 3 failed, 0 skipped
+    LLM:      327 run, 326 passed, 1 failed, 0 skipped

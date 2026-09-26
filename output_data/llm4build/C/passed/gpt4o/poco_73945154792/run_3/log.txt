@@ -1,0 +1,73 @@
+Error from docker build
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 1.24kB done
+#1 DONE 0.0s
+
+#2 [internal] load .dockerignore
+#2 transferring context: 2B done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/ubuntu:24.04
+#3 DONE 0.0s
+
+#4 [1/8] FROM docker.io/library/ubuntu:24.04
+#4 DONE 0.0s
+
+#5 [2/8] RUN ln -snf /usr/share/zoneinfo/America/Los_Angeles /etc/localtime && echo America/Los_Angeles > /etc/timezone
+#5 CACHED
+
+#6 [3/8] RUN apt-get update && apt-get install -y     wget     gnupg     libssl-dev     libssh-dev     libltdl-dev     apache2-dev     libapr1-dev     libaprutil1-dev     libavahi-client-dev     libsqlite3-dev     redis-server     git     cmake     ninja-build     lsb-release     && apt-get clean
+#6 CACHED
+
+#7 [internal] load build context
+#7 transferring context: 482.31kB 0.3s done
+#7 DONE 0.3s
+
+#8 [4/8] RUN wget -qO - https://www.mongodb.org/static/pgp/server-6.0.asc | gpg --dearmor -o /usr/share/keyrings/mongodb-archive-keyring.gpg &&     echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-archive-keyring.gpg ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/6.0 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-6.0.list &&     apt-get update && apt-get install -y mongodb-org && apt-get clean
+#8 0.881 deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-archive-keyring.gpg ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/6.0 multiverse
+#8 1.109 Hit:1 http://security.ubuntu.com/ubuntu noble-security InRelease
+#8 1.109 Hit:2 http://archive.ubuntu.com/ubuntu noble InRelease
+#8 1.236 Get:3 https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/6.0 InRelease [4009 B]
+#8 1.246 Hit:4 http://archive.ubuntu.com/ubuntu noble-updates InRelease
+#8 1.396 Hit:5 http://archive.ubuntu.com/ubuntu noble-backports InRelease
+#8 1.613 Get:6 https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/6.0/multiverse amd64 Packages [127 kB]
+#8 1.741 Get:7 https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/6.0/multiverse arm64 Packages [123 kB]
+#8 1.783 Fetched 254 kB in 1s (296 kB/s)
+#8 1.783 Reading package lists...
+#8 2.864 Reading package lists...
+#8 3.963 Building dependency tree...
+#8 4.154 Reading state information...
+#8 4.229 Some packages could not be installed. This may mean that you have
+#8 4.229 requested an impossible situation or if you are using the unstable
+#8 4.229 distribution that some required packages have not yet been created
+#8 4.229 or been moved out of Incoming.
+#8 4.229 The following information may help to resolve the situation:
+#8 4.229 
+#8 4.229 The following packages have unmet dependencies:
+#8 4.330  mongodb-org-mongos : Depends: libssl1.1 (>= 1.1.1) but it is not installable
+#8 4.330  mongodb-org-server : Depends: libssl1.1 (>= 1.1.1) but it is not installable
+#8 4.338 E: Unable to correct problems, you have held broken packages.
+#8 ERROR: process "/bin/sh -c wget -qO - https://www.mongodb.org/static/pgp/server-6.0.asc | gpg --dearmor -o /usr/share/keyrings/mongodb-archive-keyring.gpg &&     echo \"deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-archive-keyring.gpg ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/6.0 multiverse\" | tee /etc/apt/sources.list.d/mongodb-org-6.0.list &&     apt-get update && apt-get install -y mongodb-org && apt-get clean" did not complete successfully: exit code: 100
+------
+ > [4/8] RUN wget -qO - https://www.mongodb.org/static/pgp/server-6.0.asc | gpg --dearmor -o /usr/share/keyrings/mongodb-archive-keyring.gpg &&     echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-archive-keyring.gpg ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/6.0 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-6.0.list &&     apt-get update && apt-get install -y mongodb-org && apt-get clean:
+#8 4.229 Some packages could not be installed. This may mean that you have
+#8 4.229 requested an impossible situation or if you are using the unstable
+#8 4.229 distribution that some required packages have not yet been created
+#8 4.229 or been moved out of Incoming.
+#8 4.229 The following information may help to resolve the situation:
+#8 4.229 
+#8 4.229 The following packages have unmet dependencies:
+#8 4.330  mongodb-org-mongos : Depends: libssl1.1 (>= 1.1.1) but it is not installable
+#8 4.330  mongodb-org-server : Depends: libssl1.1 (>= 1.1.1) but it is not installable
+#8 4.338 E: Unable to correct problems, you have held broken packages.
+------
+Dockerfile:27
+--------------------
+  26 |     # Add MongoDB repository and install MongoDB
+  27 | >>> RUN wget -qO - https://www.mongodb.org/static/pgp/server-6.0.asc | gpg --dearmor -o /usr/share/keyrings/mongodb-archive-keyring.gpg && \
+  28 | >>>     echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-archive-keyring.gpg ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/6.0 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-6.0.list && \
+  29 | >>>     apt-get update && apt-get install -y mongodb-org && apt-get clean
+  30 |     
+--------------------
+ERROR: failed to solve: process "/bin/sh -c wget -qO - https://www.mongodb.org/static/pgp/server-6.0.asc | gpg --dearmor -o /usr/share/keyrings/mongodb-archive-keyring.gpg &&     echo \"deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-archive-keyring.gpg ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/6.0 multiverse\" | tee /etc/apt/sources.list.d/mongodb-org-6.0.list &&     apt-get update && apt-get install -y mongodb-org && apt-get clean" did not complete successfully: exit code: 100

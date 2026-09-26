@@ -1,0 +1,82 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          6
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      test 3.10 - ubuntu-24.04
+  Platform:         ubuntu-24.04 with Python 3.10; pwsh (PowerShell Core) pre-installed
+  Test command(s) run in original CI:
+    $ tox run -vvvv --notest --skip-missing-interpreters false
+      (runs pytest with --numprocesses auto via pytest-xdist)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    6
+
+--- LLM run.sh Test Command(s) ---
+  $ tox run -vvvv --notest --skip-missing-interpreters false
+
+--- Reason(s) for Non-Reproducibility ---
+  - [pytest] Test result mismatch (same count 445): original=(415p/1f/27s/2xp), LLM=(411p/3f/29s/2xp)
+  - [pytest] 2 new failures in LLM: tests/unit/activation/test_powershell.py (no_prompt, with_prompt)
+  - [pytest] 2 more skips in LLM (29 vs 27): likely PowerShell-conditional tests
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > tests/unit/activation/test_powershell.py::test_powershell[no_prompt]
+    > tests/unit/activation/test_powershell.py::test_powershell[with_prompt]
+    >
+    > tester = PowerShell(version=FileNotFoundError(2, 'No such file or directory'), ...)
+    > args = ['pwsh', '-c', '$PSVersionTable'], executable = b'pwsh'
+    >
+    > E  FileNotFoundError: [Errno 2] No such file or directory: 'pwsh'
+
+  [Root cause classification]
+  `pwsh` (PowerShell Core) not installed in Docker container → 2 new test failures
+
+  virtualenv's PowerShell activation test (`test_powershell`) activates a virtual environment
+  using PowerShell and runs commands in it. On Linux, the test uses `pwsh` (PowerShell Core)
+  as the shell executable. The test defines:
+    `cmd = "powershell.exe" if sys.platform == "win32" else "pwsh"`
+
+  On GitHub Actions ubuntu-24.04 runners, PowerShell Core (`pwsh`) is pre-installed as part
+  of the default tool suite. The test can discover the `pwsh` binary, create a PowerShell-
+  activated virtualenv, and verify that activation works correctly.
+
+  In the `ubuntu:24.04` Docker image, only the base system packages are present. PowerShell
+  Core is not installed. When the test tries to execute `['pwsh', '-c', '$PSVersionTable']`
+  to detect the PowerShell version, the subprocess raises:
+    `FileNotFoundError: [Errno 2] No such file or directory: 'pwsh'`
+
+  This propagates as a test failure rather than a skip — the test does not have a
+  `@pytest.mark.skipif` conditional for missing `pwsh`, so the version detection failure
+  causes the entire `activation_tester` to fail.
+
+  The 2 additional skips in LLM (29 vs 27) are likely from other PowerShell-related tests
+  that DO check for `pwsh` availability before running and skip gracefully when it's absent,
+  where the original CI ran them (because `pwsh` was present).
+
+  (2) Pre-existing failure (same in both): test_shim_uses_global_version_file
+    This test patches `virtualenv.discovery.builtin.PathPythonInfo.from_exe` with a MagicMock
+    and then calls virtualenv's Python discovery with a `.python-version` file pointing to
+    `3.10.1`. The test expects `from_exe` to be called once. In the current version of
+    virtualenv being tested, the shim resolution code path does not call `from_exe` when
+    processing the global version file — possibly because the logic has been refactored to
+    use a different internal path:
+      `AssertionError: Expected 'from_exe' to have been called once. Called 0 times.`
+    This test fails identically in both the original CI and LLM Docker, confirming it is
+    a pre-existing issue with the code under test, not an environment difference.
+
+--- Test Statistics Comparison ---
+  [pytest]
+    Original: 445 run, 415 passed, 1 failed, 27 skipped, 2 xpassed
+      (1 failure: test_shim_uses_global_version_file; pwsh pre-installed → powershell tests pass)
+    LLM:      445 run, 411 passed, 3 failed, 29 skipped, 2 xpassed
+      (3 failures: +2 test_powershell[no_prompt/with_prompt] due to missing pwsh;
+       same pre-existing failure: test_shim_uses_global_version_file;
+       2 more skips: PowerShell tests that check for pwsh availability and skip gracefully)

@@ -1,0 +1,34 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          4
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      test go-1.26
+  Test command(s) run in original CI:
+    $ go test -v -race ./...
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ go test -v -race ./...
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoDefault] Test passed mismatch: original=666, LLM=665
+  - [GoDefault] Test failed mismatch: original=1, LLM=2
+  - [GoDefault] 1 test(s) failed in LLM but not in original: github.com/slack-go/slack/slacktest
+
+--- Root Cause Analysis ---
+  - [GoDefault] 1 test(s) failed in LLM but not original: github.com/slack-go/slack/slacktest
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 668 run, 666 passed, 1 failed, 0 skipped
+    LLM:      668 run, 665 passed, 2 failed, 0 skipped

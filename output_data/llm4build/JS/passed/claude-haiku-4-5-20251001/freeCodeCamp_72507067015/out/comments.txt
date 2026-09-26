@@ -1,0 +1,48 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          4
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Test (24)
+  Test command(s) run in original CI:
+    $ actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+    $ pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1
+    $ echo pnpm version $(pnpm -v)
+    $ pnpm -F=curriculum install-puppeteer
+    $ pnpm test
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ TEST_EXIT_CODE=0
+  $ pnpm install || { echo "pnpm install failed"; TEST_EXIT_CODE=1; }
+  $ pnpm -F=curriculum install-puppeteer || { echo "Puppeteer installation failed"; TEST_EXIT_CODE=1; }
+  $ pnpm test || { echo "Tests failed with exit code $?"; TEST_EXIT_CODE=1; }
+  $ exit $TEST_EXIT_CODE
+
+--- Reason(s) for Non-Reproducibility ---
+  - [vitest] Test run mismatch: original=55908, LLM=307
+  - [vitest] Test passed mismatch: original=55902, LLM=307
+  - [vitest] Test failed mismatch: original=0, LLM=0
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    @freecodecamp/curriculum:test: error during close TypeError: Cannot read properties of undefined (reading 'close')
+
+  [Root cause classification]
+  - Missing file or path not found — test data, certificate, or resource file absent in the Docker environment.
+  - Required environment variable not set — test reads a specific env var that was present in original CI but not in Docker container.
+  - Database service unavailable or not properly configured — test requires an external database service.
+  - Test timed out — likely due to slower execution in Docker container or a blocking service call that never returns.
+
+--- Test Statistics Comparison ---
+  [vitest]
+    Original: 55908 run, 55902 passed, 0 failed, 6 skipped
+    LLM:      307 run, 307 passed, 0 failed, 0 skipped

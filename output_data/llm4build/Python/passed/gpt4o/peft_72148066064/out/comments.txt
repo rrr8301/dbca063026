@@ -1,0 +1,36 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          N/A
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      tests (3.11, ubuntu-latest)
+  Test command(s) run in original CI:
+    $ make test
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ $PYTHON_BIN -m pytest -n 3 tests/ || true
+  $ rm -r "/tmp/pytest-of-$(id -u -n)" || true
+
+--- Reason(s) for Non-Reproducibility ---
+  - [pytest] Test passed mismatch: original=21312, LLM=21299
+  - [pytest] Test failed mismatch: original=0, LLM=13
+  - [pytest] 3 test(s) failed in LLM but not in original: tests/test_initialization.py, tests/test_integrations.py, tests/test_lora_conversion.py
+
+--- Root Cause Analysis ---
+  - [pytest] 3 test(s) failed in LLM but not original: tests/test_initialization.py, tests/test_integrations.py, tests/test_lora_conversion.py
+  - Test command differences detected — original CI vs LLM run.sh may use different flags or test selection.
+
+--- Test Statistics Comparison ---
+  [pytest]
+    Original: 24671 run, 21312 passed, 0 failed, 3349 skipped
+    LLM:      24671 run, 21299 passed, 13 failed, 3349 skipped

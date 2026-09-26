@@ -1,0 +1,43 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      build (g++-9, Debug, address,undefined)
+  Test command(s) run in original CI:
+    $ actions/checkout@v4
+    $ cmake -S cpp-sort -B build \
+    $ cmake --build . --config Debug -j 2
+    $ ctest -C Debug --no-tests=error
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ cmake -S cpp-sort -B build \
+  $ -DCMAKE_BUILD_TYPE=Debug \
+  $ -DCPPSORT_BUILD_TESTING=ON \
+  $ -G"Unix Makefiles"
+  $ cmake --build . --config Debug -j 2
+
+--- Reason(s) for Non-Reproducibility ---
+  - [CTest] Test result mismatch (same count 1388): original=(1387p/1f/0s), LLM=(1388p/0f/0s)
+  - [CTest] Tests failed in original but passed in LLM: measure of disorder: block
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    (1388/1388 tests passed in LLM run — no failure output for "measure of disorder: block")
+
+  [Root cause classification]
+  - The "measure of disorder: block" test is a statistical/stochastic test that generates random sequences and measures the `block` disorder probe. The test checks an upper bound property on a randomly shuffled array, so its outcome can vary with RNG seed or floating-point rounding differences between compiler versions. The original CI used g++-9 with ASan+UBSan; the LLM uses a later GCC available in Ubuntu 22.04. The test passed in the LLM environment, indicating the failure in the original is non-deterministic (flaky) or compiler-version-specific behavior in the probe's numerical calculation, not a logic regression.
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 1388 run, 1387 passed, 1 failed, 0 skipped
+    LLM:      1388 run, 1388 passed, 0 failed, 0 skipped

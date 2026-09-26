@@ -1,0 +1,35 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          N/A
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      build (ubuntu-latest, 3.12)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    5
+
+--- Reason(s) for Non-Reproducibility ---
+  - [pytest] Test passed mismatch: original=1369, LLM=1331
+  - [pytest] Test skipped mismatch: original=14, LLM=52
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > SKIPPED [1] tests/test_tox_to_nox.py:27: could not import 'nox.tox_to_nox': No module named 'jinja2'
+    > SKIPPED [1] tests/test_virtualenv.py:1640: could not import 'pbs_installer': No module named 'pbs_installer'
+    > SKIPPED [1] tests/test_virtualenv.py:1081: Requires Python 2.7 installation.
+    > 1 failed, 660 passed, 27 skipped, 1 xfailed in 36.77s  (minimums-3.12 session)
+
+  [Root cause classification]
+  - The LLM runs two nox sessions (tests-3.12 and minimums-3.12) as in CI, but the minimums session installs a pinned older dependency set that omits optional extras `jinja2` (needed for tox-to-nox) and `pbs_installer` (needed for PBS-based virtualenv tests). The original tests-3.12 session includes these extras and treats the Python 2.7 skip differently ("Python 2.7 unsupported for virtualenv>=20.22.0" vs "Requires Python 2.7 installation"), causing the skip count to jump from 14 to 52 (38 additional skips). Both sessions share the same FAILED test (test_symlink_sym) because a symlinked noxfile contains a literal path string (`../orig_dir/noxfile.py`) that is invalid Python syntax, which is a pre-existing CI failure reproduced correctly.
+
+--- Test Statistics Comparison ---
+  [pytest]
+    Original: 1387 run, 1369 passed, 2 failed, 14 skipped
+    LLM:      1387 run, 1331 passed, 2 failed, 52 skipped

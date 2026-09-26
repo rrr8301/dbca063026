@@ -1,0 +1,39 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      test (ubuntu-latest)
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ cargo test --all
+
+--- LLM-Generated Dockerfile ---
+  Base image:   rust:latest
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ cargo test --all
+
+--- Reason(s) for Non-Reproducibility ---
+  - [cargo] Test result mismatch (same count 1644): original=(1636p/0f/8s), LLM=(1635p/1f/8s)
+  - [cargo] Tests failed in LLM but passed in original: functions::env_var_functions_unix
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    1896:thread 'functions::env_var_functions_unix' (5557) panicked at tests/functions.rs:88:55:
+    1897-called `Result::unwrap()` on an `Err` value: NotPresent
+
+  [Root cause classification]
+  - Required environment variable not set — test reads a specific env var that was present in original CI but not in Docker container.
+  - Rust panic: 1896:thread 'functions::env_var_functions_unix' (5557) panicked at tests/functions.rs:88:55:
+
+--- Test Statistics Comparison ---
+  [cargo]
+    Original: 1644 run, 1636 passed, 0 failed, 8 skipped
+    LLM:      1644 run, 1635 passed, 1 failed, 8 skipped

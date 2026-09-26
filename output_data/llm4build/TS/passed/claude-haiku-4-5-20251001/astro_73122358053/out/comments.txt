@@ -1,0 +1,28 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Original build category: passed
+
+STATUS: SAME SUITE RAN, BUT 2/1470 TESTS FAILED THAT PASSED IN THE ORIGINAL (Number=False)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+--- Root Cause Analysis ---
+  [Observation]
+    node:test suite ran the identical 1470 tests in both environments; vitest 1/0 matched.
+    Original CI: 1470 run, 0 failed.   LLM: 1470 run, 2 failed.
+    Two tests out of 1470 failed in the container that passed on the original runner.
+
+  [Root cause classification]
+  - Flaky and Non-deterministic Tests.
+    The test selection and counts match exactly (1470 vs 1470) and only 2 marginal tests
+    flip from pass to fail. A 2/1470 divergence on an otherwise-passing suite, with no build
+    or dependency difference, is characteristic of timing/ordering-sensitive (flaky) tests
+    rather than a systematic environment or version problem.
+
+--- Test Statistics Comparison ---
+  [node:test]  Original: 1470 run, 0 failed   LLM: 1470 run, 2 failed
+  [vitest]     Original: 1 run, 0 failed      LLM: 1 run, 0 failed

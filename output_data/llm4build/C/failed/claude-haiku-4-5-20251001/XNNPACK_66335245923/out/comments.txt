@@ -1,0 +1,43 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          4
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      build-and-test / bazel-linux-x86_64-gcc-9
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ bazel test \
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ bazel test \
+  $ --test_output=errors \
+  $ --local_test_jobs=HOST_CPUS \
+  $ //test/... \
+  $ -//ynnpack/kernels/dot:get_dot_kernel_test \
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Bazel] Test run mismatch: original=189, LLM=61
+  - [Bazel] Test passed mismatch: original=189, LLM=61
+  - [Bazel] Test failed mismatch: original=0, LLM=0
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    551:Executed 61 out of 436 tests: 61 tests pass and 375 were skipped.
+    (WARNING: select() on cpu is deprecated — many ARM/HVX/NEON/WASM targets excluded at configure time)
+
+  [Root cause classification]
+  - Architecture-specific test targets skipped: Bazel ran 436 tests total but skipped 375 because most XNNPACK tests are tagged with CPU-architecture constraints (ARM NEON, SVE, HVX, WASM SIMD, etc.) that do not apply to the x86_64 Docker host. Only the 61 platform-neutral and x86/SSE tests actually ran. The original CI (linux-x86_64-gcc-9) ran 189 tests — more than LLM's 61 — because the original CI likely used a specific Bazel build config (`--config=linux_x86_64` or similar) that explicitly enables x86 AVX/SSE optimized kernels and includes additional x86-specific test targets that the LLM's `//test/...` wildcard with default CPU detection did not activate.
+
+--- Test Statistics Comparison ---
+  [Bazel]
+    Original: 189 run, 189 passed, 0 failed, 0 skipped
+    LLM:      61 run, 61 passed, 0 failed, 0 skipped

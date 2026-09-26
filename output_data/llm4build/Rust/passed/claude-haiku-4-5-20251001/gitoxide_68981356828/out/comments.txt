@@ -1,0 +1,54 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          4
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      test
+  Test command(s) run in original CI:
+    $ actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+    $ just ci-test
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    6
+
+--- LLM run.sh Test Command(s) ---
+  $ just ci-test
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in LLM but not in original: GoDefault, cargo
+  - [nexttest] Test run mismatch: original=2884, LLM=1907
+  - [nexttest] Test passed mismatch: original=2884, LLM=1875
+  - [nexttest] Test failed mismatch: original=0, LLM=32
+  - [nexttest] 32 test(s) failed in LLM but not in original: gix::gix revision::spec::from_bytes::access_blob_through_tree, gix::gix revision::spec::from_bytes::ambiguous::ambiguous_40hex_refs_are_ignored_and_we_prefer_the_object_of_the_same_name, gix::gix revision::spec::from_bytes::ambiguous::ambiguous_short_refs_are_dereferenced, gix::gix revision::spec::from_bytes::ambiguous::blob_and_tree_can_be_disambiguated_by_type, gix::gix revision::spec::from_bytes::ambiguous::commits_can_be_disambiguated_with_commit_specific_transformations, gix::gix revision::spec::from_bytes::ambiguous::duplicates_are_deduplicated_across_all_odb_types, gix::gix revision::spec::from_bytes::ambiguous::fully_failed_disambiguation_still_yields_an_ambiguity_error, gix::gix revision::spec::from_bytes::ambiguous::prefix (+24 more)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    5487:        FAIL [   0.798s] (239/257) gix::gix revision::spec::from_bytes::ambiguous::ambiguous_40hex_refs_are_ignored_and_we_prefer_the_object_of_the_same_name
+    5491:    test revision::spec::from_bytes::ambiguous::ambiguous_40hex_refs_are_ignored_and_we_prefer_the_object_of_the_same_name ... FAILED
+    5493-    failures:
+    5498-    test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 252 filtered out; finished in 0.79s
+    5088:        FAIL [   0.063s] (217/257) gix::gix revision::spec::from_bytes::access_blob_through_tree
+    5092:    test revision::spec::from_bytes::access_blob_through_tree ... FAILED
+    5094-    failures:
+    5099-    test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 252 filtered out; finished in 0.05s
+
+  [Root cause classification]
+  - Missing file or path not found — test data, certificate, or resource file absent in the Docker environment.
+  - Required environment variable not set — test reads a specific env var that was present in original CI but not in Docker container.
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: (not present)
+    LLM:      64 run, 0 passed, 64 failed, 0 skipped
+  [cargo]
+    Original: (not present)
+    LLM:      32 run, 0 passed, 32 failed, 0 skipped
+  [nexttest]
+    Original: 2884 run, 2884 passed, 0 failed, 0 skipped
+    LLM:      1907 run, 1875 passed, 32 failed, 0 skipped

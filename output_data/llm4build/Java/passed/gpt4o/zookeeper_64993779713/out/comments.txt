@@ -1,0 +1,35 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          N/A
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      mvn (full-build-java-tests, 11, -Pfull-build verify -Dsurefire-forkcount=1 -DskipCppUnit -Dsurefi...
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ mvn -B -V -e -ntp "-Dstyle.color=always" -Pfull-build verify -Dsurefire-forkcount=1 -DskipCppUnit -Dsurefire.rerunFailingTestsCount=5
+  $ mvn test || EXIT_CODE=$?
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Maven] Test run mismatch: original=3275, LLM=3219
+  - [Maven] Test passed mismatch: original=3271, LLM=3208
+  - [Maven] Test failed mismatch: original=0, LLM=7
+  - [Maven] 7 test(s) failed in LLM but not in original: shouldReconfigIncrementally_IPv6(org.apache.zookeeper.server.quorum.QuorumPeerMainMultiAddressTest), shouldStartClusterWhenSomeAddressesAreUnreachable_IPv6(org.apache.zookeeper.server.quorum.QuorumPeerMainMultiAddressTest), shouldStartClusterWithMultipleAddresses_IPv6(org.apache.zookeeper.server.quorum.QuorumPeerMainMultiAddressTest), testQuorumV6(org.apache.zookeeper.server.quorum.QuorumPeerMainTest), testReadOnlySnapshotDir(org.apache.zookeeper.server.ZooKeeperServerMainTest) ... (+2 more)
+
+--- Root Cause Analysis ---
+  - [Maven] LLM ran 56 fewer tests than original — LLM likely used a narrower test scope or missed some test suites.
+  - [Maven] 7 test(s) failed in LLM but not original: shouldReconfigIncrementally_IPv6(org.apache.zookeeper.server.quorum.QuorumPeerMainMultiAddressTest), shouldStartClusterWhenSomeAddressesAreUnreachable_IPv6(org.apache.zookeeper.server.quorum.QuorumPeerMainMultiAddressTest), shouldStartClusterWithMultipleAddresses_IPv6(org.apache.zookeeper.server.quorum.QuorumPeerMainMultiAddressTest), testQuorumV6(org.apache.zookeeper.server.quorum.QuorumPeerMainTest), testReadOnlySnapshotDir(org.apache.zookeeper.server.ZooKeeperServerMainTest) ... (+2 more)
+
+--- Test Statistics Comparison ---
+  [Maven]
+    Original: 3275 run, 3271 passed, 0 failed, 4 skipped
+    LLM:      3219 run, 3208 passed, 7 failed, 4 skipped

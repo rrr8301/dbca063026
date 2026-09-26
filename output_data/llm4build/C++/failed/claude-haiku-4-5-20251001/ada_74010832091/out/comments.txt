@@ -1,0 +1,49 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          5
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      build (ubuntu-22.04, g++-12, shared=ON, simdutf=ON) / build
+  Test command(s) run in original CI:
+    $ actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+    $ CMAKE_ARGS="-G \"Ninja\" -B build"
+    $ BUILD_ARGS="--build build -j=4"
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ CMAKE_ARGS="-G Ninja -B build"
+  $ CMAKE_ARGS="$CMAKE_ARGS -DADA_TESTING=ON"
+  $ CMAKE_ARGS="$CMAKE_ARGS -DADA_BENCHMARKS=ON"
+  $ CMAKE_ARGS="$CMAKE_ARGS -DBUILD_SHARED_LIBS=ON"
+  $ CMAKE_ARGS="$CMAKE_ARGS -DADA_USE_SIMDUTF=ON"
+
+--- Reason(s) for Non-Reproducibility ---
+  - [CTest] Test run mismatch: original=277, LLM=275
+  - [CTest] Test passed mismatch: original=276, LLM=274
+  - [CTest] Test failed mismatch: original=1, LLM=1
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > [  FAILED  ] wpt_urlpattern_tests.urlpattern_test_data (15 ms)
+    > The following tests FAILED: (2 fewer tests in LLM than original)
+
+  [Root cause classification]
+  - Both original and LLM share the same 1 failing test (`wpt_urlpattern_tests.urlpattern_test_data`) from the simdutf URL pattern test suite, so the failure mode is correctly reproduced. The 2 missing CTest entries (277→275) are benchmark-derived tests registered in CMake by the `benchmarks/` subdirectory when `ADA_BENCHMARKS=ON` is enabled. On the original GitHub Actions runner, CMake detected additional CPU SIMD capabilities (e.g., AVX-512 or specific benchmark variants) and registered 2 extra CTest targets for benchmark correctness checks. In the Docker environment, the CPU reported to CMake has different feature flags, so CMake omitted the 2 SIMD-specific benchmark test registrations at configure time.
+
+  - This is the same 2-test gap seen in the passed-category counterpart `ada_74524802187`, which ran the identical CI job (`build (ubuntu-22.04, g++-12, shared=ON, simdutf=ON) / build`) and also produced 275 CTest results vs. the original's 277. The 2 missing tests are consistently tied to the Docker CPU environment, not to the LLM's test command — both runs correctly pass or fail all tests that were registered in their respective environments.
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 277 run, 276 passed, 1 failed, 0 skipped
+    LLM:      275 run, 274 passed, 1 failed, 0 skipped
+  [GTest]
+    Original: 1 run, 0 passed, 1 failed, 0 skipped
+    LLM:      1 run, 0 passed, 1 failed, 0 skipped

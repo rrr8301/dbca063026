@@ -1,0 +1,47 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          8
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      test
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ go install github.com/gotesttools/gotestfmt/v2/cmd/gotestfmt@v2.4.1
+    $ dominikh/staticcheck-action@v1
+    $ export STATICCHECK_CACHE="/home/runner/work/_temp/staticcheck"
+
+--- LLM-Generated Dockerfile ---
+  Base image:   golang:1.25-alpine
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ MallocNanoZone=0 go test -race -json -v ./... 2>&1 | tee /tmp/gotest.log | gotestfmt
+  $ TEST_EXIT_CODE=$?
+  $ exit $TEST_EXIT_CODE
+
+--- Reason(s) for Non-Reproducibility ---
+  - [gotestfmt] Test run mismatch: original=510, LLM=478
+  - [gotestfmt] Test passed mismatch: original=507, LLM=473
+  - [gotestfmt] Test failed mismatch: original=3, LLM=5
+  - [gotestfmt] 3 test(s) failed in LLM but not in original: TestDataPublishSlowSubscriber, TestDataPublishSlowSubscriber/testRTCServicePath=v1, TestNegotiationTiming
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    1495-2026-05-04T05:45:03.198-0700	WARN	livekit.pion.sctp	sctp@v1.9.4/association.go:1041	[0xc002c4e008] failed to write packets on netConn: dtls fatal: conn is closed
+    1497-2026-05-04T05:45:03.198-0700	WARN	livekit.pion.ice	v4@v4.2.2/candidate_base.go:277	Failed to read from candidate udp4 srflx 169.237.118.148:54243 related 0.0.0.0:54243 (resolved: 169.237.118.148:
+    1813-2026-05-04T05:45:01.074-0700	WARN	livekit.pion.ice	v4@v4.2.2/candidate_base.go:277	Failed to read from candidate udp4 srflx 169.237.118.148:58878 related 0.0.0.0:58878 (resolved: 169.237.118.148:
+
+  [Root cause classification]
+  - The failing tests are WebRTC/RTC protocol tests. `TestDataPublishSlowSubscriber` tests that a slow subscriber receiving data channels doesn't cause the SCTP association to crash — the `dtls fatal: conn is closed` WARN from `sctp@v1.9.4/association.go:1041` shows the DTLS connection closed prematurely. `TestNegotiationTiming` tests ICE negotiation timing. Both failures stem from Docker's network stack restrictions: UDP socket buffer sizes are capped (`operation not permitted` when setting `SO_SNDBUF`/`SO_RCVBUF` beyond kernel defaults), and `srflx` ICE candidates (server-reflexive, requiring STUN) can't be gathered inside Docker's NAT without a STUN server reachable from the container's private IP.
+
+  - The 32 fewer tests (478 vs 510) are tests where the ICE connection establishment phase times out waiting for candidate gathering — these tests never finish initialising so they drop out of the count entirely. The LLM correctly used `MallocNanoZone=0` (a macOS env var to avoid false positives — harmless on Linux) and `gotestfmt`, matching the original CI pipeline step, but the WebRTC stack's dependence on unrestricted UDP socket operations is the blocking issue in Docker.
+
+--- Test Statistics Comparison ---
+  [gotestfmt]
+    Original: 510 run, 507 passed, 3 failed, 0 skipped
+    LLM:      478 run, 473 passed, 5 failed, 0 skipped

@@ -1,0 +1,37 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          6
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      build (ubuntu-latest, clang-21, gfortran, cmake)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    4
+
+--- Reason(s) for Non-Reproducibility ---
+  - [CTest] Test run mismatch: original=120, LLM=14
+  - [CTest] Test passed mismatch: original=120, LLM=14
+
+--- Root Cause Analysis ---
+  [Key facts from LLM log.txt]
+    > cmake -DDYNAMIC_ARCH=1 ... (no LAPACK/LAPACKE test targets enabled)
+    > cd ctest && ctest --output-on-failure
+    > 14/14 tests passed (CBLAS level 1/2/3 only: xscblat1..xzcblat3_3m)
+    > (LLM ran 14 CBLAS tests; original ran 120 including full LAPACK validation)
+
+  [Root cause classification: LLM's CMake invocation omits LAPACK test targets, running only CBLAS tester]
+  - The original CI job (ubuntu-latest, clang-21, gfortran, cmake) enables and builds the full LAPACK reference test suite in addition to CBLAS; the LLM's run.sh uses `cd ctest && ctest` which only finds the 14 CBLAS-level test executables (xscblat*, xdcblat*, xccblat*, xzcblat*) built under the ctest subdirectory.
+  - The remaining 106 tests are LAPACK correctness testers (xeigtstc, xeigtstd, xlintstc, xlintstd, etc.) which require additional CMake flags (e.g., BUILD_TESTING=ON with LAPACK test generators) and a separate test directory that the LLM did not configure.
+  - All 14 executed tests pass, confirming the BLAS core is correct; the gap is purely one of test scope — the LLM built OpenBLAS but not the supplementary LAPACK validation test suite.
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 120 run, 120 passed, 0 failed, 0 skipped
+    LLM:      14 run, 14 passed, 0 failed, 0 skipped

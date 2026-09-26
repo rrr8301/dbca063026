@@ -1,0 +1,104 @@
+Error from docker build
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 1.26kB done
+#1 DONE 0.0s
+
+#2 [internal] load .dockerignore
+#2 transferring context: 2B done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/ubuntu:24.04
+#3 DONE 0.3s
+
+#4 [ 1/11] FROM docker.io/library/ubuntu:24.04@sha256:786a8b558f7be160c6c8c4a54f9a57274f3b4fb1491cf65146521ae77ff1dc54
+#4 DONE 0.0s
+
+#5 [ 2/11] RUN echo "UTC" > /etc/timezone &&     ln -sf /usr/share/zoneinfo/UTC /etc/localtime &&     apt-get update &&     apt-get install -y --no-install-recommends tzdata &&     rm -rf /var/lib/apt/lists/*
+#5 CACHED
+
+#6 [ 3/11] RUN apt-get update &&     apt-get install -y --no-install-recommends     git     curl     build-essential     pkg-config     ca-certificates &&     rm -rf /var/lib/apt/lists/*
+#6 CACHED
+
+#7 [internal] load build context
+#7 ...
+
+#8 [ 4/11] RUN useradd -m testuser
+#8 DONE 0.4s
+
+#7 [internal] load build context
+#7 ...
+
+#9 [ 5/11] WORKDIR /workspace
+#9 DONE 0.0s
+
+#7 [internal] load build context
+#7 transferring context: 1.24MB 0.7s done
+#7 DONE 0.7s
+
+#10 [ 6/11] COPY . /workspace/
+#10 DONE 1.9s
+
+#11 [ 7/11] RUN chown -R testuser:testuser /workspace
+#11 DONE 4.3s
+
+#12 [ 8/11] RUN git config --global --add safe.directory '*'
+#12 DONE 0.5s
+
+#13 [ 9/11] RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y &&     . $HOME/.cargo/env &&     rustup show active-toolchain
+#13 0.494 info: downloading installer
+#13 1.162 warn: It looks like you have an existing rustup settings file at:
+#13 1.162 warn: /home/testuser/.rustup/settings.toml
+#13 1.162 warn: Rustup will install the default toolchain as specified in the settings file,
+#13 1.162 warn: instead of the one inferred from the default host triple.
+#13 1.185 info: profile set to default
+#13 1.185 info: default host triple is x86_64-unknown-linux-gnu
+#13 1.187 info: syncing channel updates for stable-x86_64-unknown-linux-gnu
+#13 1.397 info: latest update on 2026-05-28 for version 1.96.0 (ac68faa20 2026-05-25)
+#13 1.397 info: downloading 6 components
+#13 14.27 
+#13 14.27 info: default toolchain set to stable-x86_64-unknown-linux-gnu
+#13 14.29   stable-x86_64-unknown-linux-gnu installed - rustc 1.96.0 (ac68faa20 2026-05-25)
+#13 14.29 
+#13 14.29 
+#13 14.29 Rust is installed now. Great!
+#13 14.29 
+#13 14.29 To get started you may need to restart your current shell.
+#13 14.29 This would reload your PATH environment variable to include
+#13 14.29 Cargo's bin directory ($HOME/.cargo/bin).
+#13 14.29 
+#13 14.29 To configure your current shell, you need to source
+#13 14.29 the corresponding env file under $HOME/.cargo.
+#13 14.29 
+#13 14.29 This is usually done by running one of the following (note the leading DOT):
+#13 14.29 . "$HOME/.cargo/env"            # For sh/bash/zsh/ash/dash/pdksh
+#13 14.29 source "$HOME/.cargo/env.fish"  # For fish
+#13 14.29 source "~/.cargo/env.nu"  # For nushell
+#13 14.29 source "$HOME/.cargo/env.tcsh"  # For tcsh
+#13 14.29 . "$HOME/.cargo/env.ps1"        # For pwsh
+#13 14.29 source "$HOME/.cargo/env.xsh"   # For xonsh
+#13 14.35 info: syncing channel updates for nightly-2026-06-11-x86_64-unknown-linux-gnu
+#13 14.57 info: latest update on 2026-06-11 for version 1.98.0-nightly (485ec3fbc 2026-06-10)
+#13 14.57 info: downloading 7 components
+#13 37.65 nightly-2026-06-11-x86_64-unknown-linux-gnu (overridden by '/workspace/rust-toolchain.toml')
+#13 DONE 38.9s
+
+#14 [10/11] COPY run.sh /workspace/run.sh
+#14 DONE 0.0s
+
+#15 [11/11] RUN chmod +x /workspace/run.sh
+#15 0.495 chmod: changing permissions of '/workspace/run.sh': Operation not permitted
+#15 ERROR: process "/bin/sh -c chmod +x /workspace/run.sh" did not complete successfully: exit code: 1
+------
+ > [11/11] RUN chmod +x /workspace/run.sh:
+#15 0.495 chmod: changing permissions of '/workspace/run.sh': Operation not permitted
+------
+Dockerfile:52
+--------------------
+  50 |     # Copy run script
+  51 |     COPY run.sh /workspace/run.sh
+  52 | >>> RUN chmod +x /workspace/run.sh
+  53 |     
+  54 |     # Set entrypoint
+--------------------
+ERROR: failed to solve: process "/bin/sh -c chmod +x /workspace/run.sh" did not complete successfully: exit code: 1

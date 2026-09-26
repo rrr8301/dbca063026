@@ -1,0 +1,75 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          4
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Lint & Unit Tests (Python 3.12)
+  Test command(s) run in original CI:
+    $ npm ci
+    $ npm ci  (second time in a sub-package)
+    $ npm run lint
+    $ npm run citest.unit
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    7
+
+--- LLM run.sh Test Command(s) ---
+  $ npm run build
+  $ find packages -name "dash-*.whl" -exec pip install "{}[dev,ci,testing]" \;
+  $ npm run lint
+  $ npm run citest.unit
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in original but missing in LLM: jest (79 tests in original, 0 in LLM)
+  - [pytest] Test result mismatch (same count 557): original=(553p/0f/4s), LLM=(551p/2f/4s)
+  - [pytest] 2 tests failed in LLM but not in original:
+    tests/unit/test_browser.py::test_browser_smoke[Chrome]
+    tests/unit/test_browser.py::test_browser_smoke[Firefox]
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > 18:20:33 | ERROR | dash.testing.browser:488 | webdriver initialization failed, will retry
+    >   File "selenium/webdriver/common/service.py":
+    >     FileNotFoundError: [Errno 2] No such file or directory: 'chromedriver'
+    >   selenium.common.exceptions.WebDriverException:
+    >     Message: 'chromedriver' executable needs to be in PATH.
+    >     Please see https://chromedriver.chromium.org/home
+    > FAILED tests/unit/test_browser.py::test_browser_smoke[Chrome]
+    > FAILED tests/unit/test_browser.py::test_browser_smoke[Firefox]
+
+  [Root cause classification]
+  Two combined issues:
+
+  (1) Missing WebDriver binaries: chromedriver and geckodriver not installed
+    `test_browser_smoke[Chrome]` and `test_browser_smoke[Firefox]` use Selenium to launch
+    real browser instances (Chrome and Firefox respectively) to smoke-test the Dash testing
+    browser utilities. The tests require `chromedriver` (for Chrome) and `geckodriver`
+    (for Firefox) executables in PATH. The LLM Dockerfile (ubuntu:24.04) installs nodejs,
+    npm, and Python build tools but not Chromium/Chrome or Firefox with their WebDriver
+    binaries. All 20 webdriver initialization retries fail with:
+      `FileNotFoundError: [Errno 2] No such file or directory: 'chromedriver'`
+    and `WebDriverException: 'chromedriver' executable needs to be in PATH`.
+    The GitHub Actions ubuntu-latest runner has Chromium/Chrome pre-installed with chromedriver.
+
+  (2) jest tests absent from LLM run (79 tests missing entirely)
+    The original CI runs `npm ci` (clean install from `package-lock.json`) before `npm run
+    citest.unit`. The `npm run citest.unit` script runs both jest (for JavaScript components)
+    and pytest (for Python). The LLM run.sh uses `npm run build` instead of `npm ci`. Without
+    a proper `npm ci` step, the jest test runner and its dependencies (configured via
+    `package-lock.json`) are not installed. When `npm run citest.unit` executes, the jest
+    portion silently skips or fails to collect, resulting in 0 jest tests run vs 79 in
+    the original CI.
+
+--- Test Statistics Comparison ---
+  [jest]
+    Original: 79 run, 79 passed, 0 failed, 0 skipped
+    LLM:      (not present)
+  [pytest]
+    Original: 557 run, 553 passed, 0 failed, 4 skipped
+    LLM:      557 run, 551 passed, 2 failed, 4 skipped

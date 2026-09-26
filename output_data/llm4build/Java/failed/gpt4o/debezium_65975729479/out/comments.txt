@@ -1,0 +1,34 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          N/A
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      MySQL / MySQL 8.0 - mysql-ci
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ mvn clean install -Drat.skip=true -Dlicense.skip=true
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Maven] Test run mismatch: original=867, LLM=860
+  - [Maven] Test passed mismatch: original=862, LLM=852
+  - [Maven] Test failed mismatch: original=1, LLM=4
+  - [Maven] 3 test(s) failed in LLM but not in original: (io.debezium.testing.testcontainers.ApicurioRegistryTestIT), (io.debezium.testing.testcontainers.DebeziumContainerIT), testCluster(io.debezium.testing.testcontainers.MongoDbReplicaSetContainerIT)
+
+--- Root Cause Analysis ---
+  - [Maven] LLM ran 7 fewer tests than original — LLM likely used a narrower test scope or missed some test suites.
+  - [Maven] 3 test(s) failed in LLM but not original: (io.debezium.testing.testcontainers.ApicurioRegistryTestIT), (io.debezium.testing.testcontainers.DebeziumContainerIT), testCluster(io.debezium.testing.testcontainers.MongoDbReplicaSetContainerIT)
+
+--- Test Statistics Comparison ---
+  [Maven]
+    Original: 867 run, 862 passed, 1 failed, 4 skipped
+    LLM:      860 run, 852 passed, 4 failed, 4 skipped

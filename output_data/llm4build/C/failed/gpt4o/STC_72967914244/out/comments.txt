@@ -1,0 +1,39 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-22.04
+  CI job name:      ubuntu-22.04, clang debug
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    4
+
+Note: Original had test failures; LLM build passed all — failed build has passed.
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Meson] Test passed mismatch: original=120, LLM=122
+  - [Meson] Test failed mismatch: original=2, LLM=0
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > 103/122 cstr - stc:cstr_match    OK  0.08s
+    > 109/122 cstr - stc:utf8replace_c OK  0.05s
+    > Ok: 122 / Fail: 0
+    > (Original: cstr - stc:cstr_match FAILED, cstr - stc:utf8replace_c FAILED)
+
+  [Root cause classification]
+  - The two failing tests in the original CI (stc:cstr_match and stc:utf8replace_c) are C string regex and UTF-8 replacement tests that are sensitive to the exact version of the clang compiler's regex/locale behavior; the original ran on ubuntu-22.04 with the system clang 14 from ubuntu repos, while the LLM also used ubuntu:22.04 but may have installed a different clang minor version.
+  - The cstr_match test uses STC's built-in cregex engine which has known platform-specific behavior around character class matching and locale-sensitive patterns; the utf8replace_c test exercises UTF-8 multi-byte string replacement that can differ based on the libc version's iconv or wchar implementation.
+  - Both failures are likely flaky or version-sensitive tests where minor differences in clang optimization passes or glibc locale data between the exact ubuntu-22.04 snapshot used by GitHub Actions and the Docker ubuntu:22.04 image cause different code generation, making the tests pass in one environment and fail in the other.
+
+--- Test Statistics Comparison ---
+  [Meson]
+    Original: 122 run, 120 passed, 2 failed, 0 skipped
+    LLM:      122 run, 122 passed, 0 failed, 0 skipped

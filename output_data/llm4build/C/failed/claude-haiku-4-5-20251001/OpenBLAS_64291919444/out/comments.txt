@@ -1,0 +1,46 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      msys2 (CLANG64, int32, Release)
+  Test command(s) run in original CI:
+    $ actions/checkout@v3
+    $ mkdir build && cd build
+    $ cd build && cmake --build .
+    $ cd build && ctest
+    $ cd build
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ cmake -DCMAKE_BUILD_TYPE=Release \
+  $ -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+  $ -DCMAKE_Fortran_COMPILER_LAUNCHER=ccache \
+  $ cmake --build .
+  $ ctest || TEST_FAILED=1
+
+--- Reason(s) for Non-Reproducibility ---
+  - [CTest] Test run mismatch: original=124, LLM=120
+  - [CTest] Test passed mismatch: original=116, LLM=120
+  - [CTest] Test failed mismatch: original=8, LLM=0
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    43371:100% tests passed, 0 tests failed out of 120
+    (120 tests ran, all passed — 4 tests missing vs original)
+
+  [Root cause classification]
+  - Platform mismatch — original CI ran on MSYS2 CLANG64 (Windows-like MinGW environment with 32-bit integers enabled via `int32` variant). The LLM ran on Ubuntu 24.04 Linux with GCC. The 8 original failures are likely Windows/MSYS2-specific numerical precision or BLAS/LAPACK interface issues that do not manifest on Linux. The 4 missing tests (124 vs 120) are likely Windows-only test cases (e.g., MinGW-specific BLAS wrappers or int32-specific LAPACK tests) that don't exist in the Linux cmake configuration. All 120 Linux tests pass because the failures are specific to the MSYS2/int32 target environment.
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 124 run, 116 passed, 8 failed, 0 skipped
+    LLM:      120 run, 120 passed, 0 failed, 0 skipped

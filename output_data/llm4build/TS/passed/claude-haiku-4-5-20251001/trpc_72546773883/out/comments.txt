@@ -1,0 +1,50 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      unit and integration tests
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ pnpm/action-setup@v5
+    $ echo "pnpm_cache_dir=$(pnpm store path)" >> $GITHUB_OUTPUT
+    $ pnpm install
+    $ MUTE_REACT_ACT_WARNINGS=1 pnpm test --coverage
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ TEST_EXIT_CODE=0
+  $ pnpm test --coverage || TEST_EXIT_CODE=$?
+  $ git status --short -- packages/openapi/test/routers/
+  $ git --no-pager diff -- packages/openapi/test/routers/
+  $ TEST_EXIT_CODE=1
+
+--- Reason(s) for Non-Reproducibility ---
+  - [vitest] Test result mismatch (same count 1120): original=(1120p/0f/0s), LLM=(1108p/12f/0s)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    [31m[1mSerialized Error:[22m[39m [90m{ errno: -99, code: 'EADDRNOTAVAIL', syscall: 'connect', address: '::', port: 41647 }[39m
+    [31m[1mSerialized Error:[22m[39m [90m{ errno: -99, code: 'EADDRNOTAVAIL', syscall: 'connect', address: '::', port: 41647 }[39m
+    [31m[1mSerialized Error:[22m[39m [90m{ errno: -99, code: 'EADDRNOTAVAIL', syscall: 'connect', address: '::', port: 33383 }[39m
+
+  [Root cause classification]
+  - Missing file or path not found — test data, certificate, or resource file absent in the Docker environment.
+  - TLS/SSL certificate path not found — test expects certificate files (e.g., tests/certs/) that are absent or not properly initialized.
+  - Process aborted (SIGABRT) — likely a GLib g_assert() failure, AddressSanitizer/UBSan abort, or missing D-Bus/system service in Docker container.
+  - Network connectivity issue — test requires network access or a service (e.g., local server) that is unavailable in Docker.
+  - Test timed out — likely due to slower execution in Docker container or a blocking service call that never returns.
+  - I/O error — test encountered a system-level I/O failure, possibly due to filesystem permissions or missing mount points.
+
+--- Test Statistics Comparison ---
+  [vitest]
+    Original: 1120 run, 1120 passed, 0 failed, 0 skipped
+    LLM:      1120 run, 1108 passed, 12 failed, 0 skipped

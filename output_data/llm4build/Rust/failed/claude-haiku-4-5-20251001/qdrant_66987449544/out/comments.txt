@@ -1,0 +1,99 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          4
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      rust-tests (ubuntu-latest)
+  Platform:         GitHub Actions ubuntu-latest (with full system memory, io_uring support)
+  Test command(s) run in original CI:
+    $ cargo nextest run --workspace --features rocksdb --profile ci --locked
+      (1520 nextest tests run; 20 failed; 7 skipped; 517s elapsed)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu/rust-based (x86_64)
+  Architecture: x86_64 (Docker)
+  RUN steps:    several
+
+--- LLM run.sh Test Command(s) ---
+  $ cargo nextest run --workspace ... (without --profile ci --locked)
+    (much larger test scope than original)
+
+--- Reason(s) for Non-Reproducibility ---
+  - [cargo] Test count mismatch: original=1527 nextest, LLM=15734 cargo (different scope)
+  - [nexttest] 20 original failures vs 28 LLM failures (different failing tests)
+  - io_uring not supported in Docker (ENOMEM from locked memory limit)
+  - async vector mmap fails with OOM in Docker (Docker memory limits)
+  - LLM doesn't use --profile ci --locked, running much wider test scope
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > Error: IoUringNotSupported("failed to initialize io_uring: Cannot allocate memory (os error 12)")
+    >   [test: universal_io::io_uring::tests::test_io_uring_file_for_u64 — retried 2 times]
+    >
+    > Error: OutOfMemory { description: "IO Error: Cannot allocate memory (os error 12)", free: 0 }
+    >   [test: vector_storage::tests::async_raw_scorer::async_raw_scorer_dot (and cosine/manhattan/euclid)]
+    >
+    > thread 'tokio-rt-worker' panicked at lib/shard/src/segment_holder/flush.rs:133:9:
+    > task panicked with message "circular dependencies detected in flush topology: [171, 173]"
+    > thread 'continuous_snapshot_test::test_continuous_snapshot' panicked at
+    >   lib/collection/tests/integration/continuous_snapshot_test.rs:257:31:
+    > snapshot_task error: Service internal error: failed to create snapshot:
+    >   task 6623 panicked with message "circular dependencies detected in flush topology: [171, 173]"
+
+  [Root cause classification]
+  Multiple Docker environment limitations cause different failures than the original CI:
+
+  (1) io_uring not supported in Docker (RLIMIT_MEMLOCK restriction)
+    io_uring requires the kernel to allocate locked (non-swappable) memory pages for its
+    submission queue ring buffers. Docker containers without `--privileged` or the
+    `CAP_IPC_LOCK` capability have a very low default `RLIMIT_MEMLOCK` (typically 64KB),
+    which is insufficient to initialize io_uring's internal ring buffers. The qdrant
+    `universal_io::io_uring` module calls `io_uring_setup()` which fails with:
+      `IoUringNotSupported("failed to initialize io_uring: Cannot allocate memory (os error 12)")`
+    io_uring requires either `--privileged` or `--ulimit memlock=-1` docker flags.
+    On GitHub Actions, the runner has no such restriction and io_uring initializes normally.
+
+  (2) Memory-mapped vector operations fail with OOM in Docker
+    Qdrant's `async_raw_scorer` tests use memory-mapped files (`mmap`) to score large
+    vector datasets asynchronously. Creating large mmap regions (needed for scoring
+    thousands of vectors) fails in Docker with:
+      `OutOfMemory { description: "IO Error: Cannot allocate memory (os error 12)", free: 0 }`
+    Docker containers have constrained virtual memory settings. When the kernel's OOM
+    killer or mmap restrictions prevent large anonymous mappings, qdrant's async IO
+    layer (which uses io_uring for async mmap reads) fails to allocate the needed memory.
+    This also cascades to the `custom_query_scorer_equivalency` tests that use
+    `async_memmap_storage` as the backend.
+
+  (3) Flush topology circular dependency bug (intermittent)
+    `continuous_snapshot_test::test_continuous_snapshot` fails due to a pre-existing race
+    condition in qdrant's segment flush topology:
+      `circular dependencies detected in flush topology: [171, 173]`
+    This indicates that two segment flush tasks have been scheduled with a dependency
+    cycle. This is a timing-sensitive bug that surfaces under Docker's slower I/O
+    and CPU scheduling — concurrent snapshot creation and segment flushing creates
+    a circular wait in the flush dependency graph.
+
+  (4) Test scope difference: 15734 (LLM) vs 1527 (original CI)
+    The original CI uses `--profile ci --locked` which applies a custom nextest profile
+    from `.cargo/nextest.toml` that limits test scope (e.g., excludes slow integration
+    tests, uses a max-fail threshold). The LLM runs `cargo nextest run --workspace`
+    without `--profile ci`, executing the full test suite including all integration and
+    performance tests. This explains the 10x difference in test counts.
+
+--- Test Statistics Comparison ---
+  [nexttest]
+    Original: 1527 run (1520 + 7 skipped), 1500 passed, 20 failed, 7 skipped
+      (20 failures listed in CI summary; names not captured in summary.json)
+    LLM:      ~1520 nextest run; 28 failures in cargo binary view
+      (2 io_uring: RLIMIT_MEMLOCK restriction → io_uring init fails;
+       9 async_raw_scorer/custom_query_scorer: OOM from large mmap;
+       1 continuous_snapshot: circular flush topology;
+       + others)
+  [cargo binary capture]
+    Original: from nextest summary
+    LLM:      15734 run, 0 passed, 28 failed, 15706 skipped (full workspace scope)

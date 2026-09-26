@@ -1,0 +1,40 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      unit and integration tests
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    5
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in LLM but not in original: GoDefault
+  - [vitest] Test passed mismatch: original=1120, LLM=1106
+  - [vitest] Test failed mismatch: original=0, LLM=14
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt (14 failing tests)]
+    > FAIL @trpc/tests server/adapters/fetch.test.ts — TRPCClientError: fetch failed
+    > Caused by: Error: connect EADDRNOTAVAIL :::45787 - Local (:::0)
+    > FAIL @trpc/tests server/websockets.test.ts — Error: Test timed out in 5000ms.
+    > FAIL @trpc/upgrade test/transforms.test.ts — Error: Test timed out in 5000ms.
+
+  [Root cause classification: IPv6 unavailable in Docker container — adapter/websocket tests fail]
+  - The fetch adapter tests bind to an IPv6 loopback address (:::port) which is not available in the Docker container, causing EADDRNOTAVAIL (errno -99); the original CI ran on ubuntu-24.04 where IPv6 is enabled by default.
+  - The WebSocket and upgrade transformer tests hit a 5 s timeout because the underlying test server also depends on dual-stack networking that is absent in the container, and the GoDefault category entries represent these adapter/websocket test suites being detected by the parser under a different framework label.
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: (not present)
+    LLM:      14 run, 0 passed, 14 failed, 0 skipped
+  [vitest]
+    Original: 1120 run, 1120 passed, 0 failed, 0 skipped
+    LLM:      1120 run, 1106 passed, 14 failed, 0 skipped

@@ -1,0 +1,53 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      gcc - ubuntu-22.04 - OpenSSL 3.0.2 --enable-pkcs11
+  Test command(s) run in original CI:
+    $ sudo apt install ... liblzo2-dev libpam0g-dev ... libcmocka-dev ...
+    $ actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+    $ make -j3
+    $ echo 'RUN_SUDO="sudo -E"' >tests/t_server_null.rc
+    $ make -j3 check VERBOSE=1
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ make -j3
+  $ make -j3 check VERBOSE=1
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Autotools] Test run mismatch: original=26, LLM=31
+  - [Autotools] Test passed mismatch: original=25, LLM=25
+  - [Autotools] Test failed mismatch: original=0, LLM=4
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    FAIL: t_net
+    ./t_net.sh: line 36: ip: command not found
+    ./t_net.sh: line 37: ip: command not found
+    ./t_net.sh: line 38: ip: command not found
+    FAIL t_net.sh (exit status: 1)
+    FAIL: t_server_null
+    ERROR: failed to start server t_server_null_server-1194_udp
+    ./t_server_null_server.sh: 15: sudo: not found
+    ERROR: failed to start server t_server_null_server-1195_tcp
+    FAIL t_server_null.sh (exit status: 1)
+
+  [Root cause classification]
+  - `ip` command not found — `t_net.sh` requires iproute2: `t_net.sh` tests OpenVPN network interface management by calling `ip addr`, `ip link`, and `ip route` commands. Docker image doesn't have the `iproute2` package installed, so `ip: command not found` on lines 36-38. The original CI's apt install step includes `iproute2` or uses the GitHub Actions runner which has it pre-installed.
+  - `sudo` command not found — `t_server_null.sh` cannot start VPN servers: The original CI explicitly sets `echo 'RUN_SUDO="sudo -E"' >tests/t_server_null.rc` to run the server subprocess with sudo. The LLM's Docker container runs as root (no sudo), but the `t_server_null_server.sh` script calls `sudo` on line 15, which doesn't exist in the minimal Docker environment. All 4 VPN server instances (`-1194_udp`, `-1195_tcp`, `-1196_udp`, `-1197_multisocket`) fail to start.
+  - 5 extra tests in LLM (31 vs 26): The LLM ran the `t_cltsrv.sh` and other tests that were not run by the original CI in this specific job. The original's 1 SKIP was likely `t_server_null` (explicitly skipped with a different config), whereas LLM ran it and failed.
+
+--- Test Statistics Comparison ---
+  [Autotools]
+    Original: 26 run, 25 passed, 0 failed, 1 skipped
+    LLM:      31 run, 25 passed, 4 failed, 2 skipped

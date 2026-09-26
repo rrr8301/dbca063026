@@ -1,0 +1,67 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          4
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      unit-test
+  Test command(s) run in original CI:
+    $ actions/checkout@v2
+    $ actions/setup-java@v2 (java-version: 11)
+    $ burrunan/gradle-cache-action@v1
+    $ gradle --no-daemon --build-cache --scan -x :ambry-store:test build codeCoverageReport
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    6
+
+--- LLM run.sh Test Command(s) ---
+  $ service mysql start
+  $ mysql -uroot -proot  (setup AmbryRepairRequests DB)
+  $ azurite --silent &
+  $ ./gradlew --scan -x :ambry-store:test build codeCoverageReport
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Gradle] Test run mismatch: original=1657, LLM=178
+  - [Gradle] Test passed mismatch: original=1489, LLM=168
+  - [Gradle] Test failed mismatch: original=3, LLM=4
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    /workspace/ambry-api/src/test/java/com/github/ambry/rest/RequestPathTest.java:221:
+      error: unmappable character (0xCC) for encoding US-ASCII
+      {"/named/account/container/donne%CC%81es_2.xls", "/named/account/container/donne??es_2.xls"},
+    /workspace/ambry-api/src/test/java/com/github/ambry/rest/RequestPathTest.java:222:
+      error: unmappable character (0xE6) for encoding US-ASCII
+      {"/named/account/container/%E6%96%87%E4%BB%B6.txt", "/named/account/container/??????.txt"},
+
+    com.github.ambry.rest.RequestPathTest > testBlobNameInRequestHeader FAILED
+    java.lang.AssertionError: Unexpected result for testRequestPath(...)
+      expected:<RequestPath{...operationOrBlobId='/named/account/container/??????.txt'...}>
+       but was:<RequestPath{...operationOrBlobId='/named/account/container/??.txt'...}>
+
+  [Root cause classification]
+  - No LANG/locale set in Docker → platform encoding is US-ASCII (ANSI_X3.4-1968). The
+    `RequestPathTest.java` source file contains CJK character literals in test data rows:
+    the expected decoded path "/named/account/container/??????.txt" encodes 2 CJK characters
+    (`文件`, 3 bytes each in UTF-8 = 6 bytes total). Under US-ASCII compilation, each multi-byte
+    byte is replaced with a `?` marker, so the 6-byte UTF-8 sequence for 2 CJK chars becomes
+    6 `?` characters in the compiled class file. However, at runtime the URL-decoding of
+    `%E6%96%87%E4%BB%B6` produces the 2 Unicode characters `文件`, which when compared to
+    the 6-`?` expected string in the test fails. The assertion reads:
+      expected: `??????.txt` (6 question marks — garbled from US-ASCII compilation)
+      actual:   `??.txt` (2 question marks — 2 CJK chars replaced when printed in ASCII mode)
+    This exact string comparison fails because the expected and actual representations differ
+    under ASCII encoding.
+    Because the build fails at `:ambry-api:test`, Gradle aborts the multi-module build
+    (only the first module's 178 tests run), whereas in the original CI (UTF-8 encoding),
+    all modules build and test correctly for a total of 1657 tests.
+
+--- Test Statistics Comparison ---
+  [Gradle]
+    Original: 1657 run, 1489 passed, 3 failed, 165 skipped
+    LLM:      178 run, 168 passed, 4 failed, 6 skipped

@@ -1,0 +1,42 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          N/A
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      Orchestration Tests - python:3.13, sqlite
+
+--- LLM-Generated Dockerfile ---
+  Base image:   python:3.13-slim
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ uv run pytest tests/server/orchestration/ \
+
+Note: Original had test failures; LLM build passed all — failed build has passed.
+
+--- Reason(s) for Non-Reproducibility ---
+  - [pytest] Test passed mismatch: original=2821, LLM=2822
+  - [pytest] Test failed mismatch: original=1, LLM=0
+  - [pytest] 1 test(s) failed in original but passed in LLM: tests/server/orchestration/api/test_bulk_operations.py
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > (LLM run passed all 2822 tests; original CI failure shown below from prefect-65915605079.log)
+    > E       assert 503 == 200  (HTTP 503 Service Unavailable instead of 200 OK)
+    > ERROR   | prefect.server - Encountered retryable exception in request:
+    > sqlalchemy.dialects.sqlite.aiosqlite ... OperationalError: database is locked
+    > tests/server/orchestration/api/test_bulk_operations.py:319: AssertionError
+
+  [Root cause classification]
+  - The original CI failure in TestFlowRunBulkDelete.test_bulk_delete_by_state_type is a transient SQLite database-lock race condition: under concurrent async test workers, an aiosqlite write lock is not released in time, causing the server to return HTTP 503 instead of 200. The LLM Docker container runs the same SQLite-backed server but with sufficient isolation (no competing CI runner load) that the race condition does not trigger, so the bulk-delete test passes. This is a flaky, environment-sensitive timing failure that the LLM environment cannot reliably reproduce.
+
+--- Test Statistics Comparison ---
+  [pytest]
+    Original: 2823 run, 2821 passed, 1 failed, 1 skipped
+    LLM:      2823 run, 2822 passed, 0 failed, 1 skipped

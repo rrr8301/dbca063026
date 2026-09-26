@@ -1,0 +1,48 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          6
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Ubuntu latest wxGTK 3
+  Test command(s) run in original CI:
+    $ actions/checkout@v3
+    $ ./ci/github-pre-build.sh
+    $ cmake -B build -DCMAKE_BUILD_TYPE=Release
+    $ cmake --build build --config Release
+    $ make run-tests
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ cmake -B build -DCMAKE_BUILD_TYPE=Release
+  $ cmake --build build --config Release
+  $ make run-tests || true
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GTest] Test run mismatch: original=72, LLM=60
+  - [GTest] Test passed mismatch: original=71, LLM=60
+  - [GTest] Test failed mismatch: original=1, LLM=0
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    [==========] Running 52 tests from 26 test suites.
+    [  PASSED  ] 52 tests.
+    [==========] Running 8 tests from 2 test suites.
+    [  PASSED  ] 8 tests.
+    (Total: 60 tests, all passed; no DateTimeFormatTest suite present)
+
+  [Root cause classification]
+  - 12 missing tests — entire DateTimeFormatTest suite absent in LLM: The original CI ran 64+8=72 tests (first binary: 63 passed, 1 failed; second binary: 8 passed). The LLM ran 52+8=60 tests. The missing 12 tests are the complete `DateTimeFormatTest` suite from the first test binary (confirmed by the original CI log showing `[----------] 12 tests from DateTimeFormatTest`). The `DateTimeFormatTest` tests exercise wxDateTime timezone conversion (LMT zones, CET, EST, JST), and they were compiled into the test binary (`datetime_tests.cpp` is present in the build). The likely reason the suite is absent in LLM is that the `github-pre-build.sh` script installs specific packages or configures the system locale/tzdata that are required for the wxDateTime tests to register — the LLM skipped running `./ci/github-pre-build.sh` (it wasn't invoked in the same way). Without proper tzdata configuration, CMake's or wxWidgets' feature detection may conditionally exclude these tests at compile time.
+  - DateTimeFormatTest.LocalTimezoneCETSwedish failed in original: This test verifies wxDateTime Swedish CET/CEST DST conversion. It failed in the original Ubuntu GitHub Actions CI likely because the CI runner's tzdata for the Swedish timezone was not configured to the exact timezone rule set the test expects.
+
+--- Test Statistics Comparison ---
+  [GTest]
+    Original: 72 run, 71 passed, 1 failed, 0 skipped
+    LLM:      60 run, 60 passed, 0 failed, 0 skipped

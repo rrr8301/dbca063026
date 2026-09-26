@@ -1,0 +1,42 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          5
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      HTTP/2 test suite
+  Test command(s) run in original CI:
+    $ sudo apt-get install -o Acquire::Retries=5 cpanminus libtool-bin libapr1-dev libaprutil1-dev liblua5.3-dev libbrotli-dev libcurl4-openssl-dev libnghttp2-dev libjansson-dev libpcre2-dev gdb perl-doc libsasl2-dev curl python3-pytest nghttp2-client python3-cryptography python3-requests python3-multipart python3-filelock python3-websockets
+    $ actions/checkout@v4
+    $ ./test/travis_before_linux.sh
+    $ ./test/travis_run_linux.sh
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ ./test/travis_before_linux.sh
+  $ ./test/travis_run_linux.sh
+
+--- Reason(s) for Non-Reproducibility ---
+  - [pytest] Test result mismatch (same count 326): original=(318p/1f/7s), LLM=(284p/0f/42s)
+  - [pytest] Tests failed in original but passed in LLM: test/modules/http2/test_106_shutdown.py
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    5241:======================== 31 passed, 1 skipped in 5.12s =========================
+    5295:================= 253 passed, 41 skipped in 100.03s (0:01:40) ==================
+    5344:================== 253 passed, 41 skipped in 95.86s (0:01:35) =================
+
+  [Root cause classification]
+  - Missing Apache/HTTP2 modules in Docker: The LLM ran 42 tests as skipped versus 7 in the original CI. The httpd test suite auto-detects available modules and marks tests as skipped if the required mod_proxy_http2, mod_proxy, or other HTTP/2 proxy modules are absent or not compiled. The LLM built Apache from source without explicitly enabling all the modules the original CI had pre-installed. The 35 extra skips correspond to HTTP/2 proxy-related tests that were available in the original CI's fully configured environment. The original CI's `test_106_shutdown.py` failure (an HTTP/2 graceful shutdown test) passed in LLM because the Docker environment's scheduling or timing differed from the GitHub Actions runner.
+
+--- Test Statistics Comparison ---
+  [pytest]
+    Original: 326 run, 318 passed, 1 failed, 7 skipped
+    LLM:      326 run, 284 passed, 0 failed, 42 skipped

@@ -1,0 +1,36 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      test
+  Test command(s) run in original CI:
+    $ go test -timeout 30m -short -v ./...
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ go test -timeout 30m -short -v ./...
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoDefault] Test run mismatch: original=2468, LLM=1019
+  - [GoDefault] Test passed mismatch: original=2397, LLM=1017
+  - [GoDefault] Test failed mismatch: original=1, LLM=111
+  - [GoDefault] 110 test(s) failed in LLM but not in original: github.com/rilldata/rill/admin, github.com/rilldata/rill/admin/billing, github.com/rilldata/rill/admin/billing/payment, github.com/rilldata/rill/admin/database/postgres, github.com/rilldata/rill/admin/jobs/river ... (+105 more)
+
+--- Root Cause Analysis ---
+  - [GoDefault] LLM ran 1449 fewer tests than original — LLM likely used a narrower test scope or missed some test suites.
+  - [GoDefault] 110 test(s) failed in LLM but not original: github.com/rilldata/rill/admin, github.com/rilldata/rill/admin/billing, github.com/rilldata/rill/admin/billing/payment, github.com/rilldata/rill/admin/database/postgres, github.com/rilldata/rill/admin/jobs/river ... (+105 more)
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 2468 run, 2397 passed, 1 failed, 0 skipped
+    LLM:      1019 run, 1017 passed, 111 failed, 0 skipped

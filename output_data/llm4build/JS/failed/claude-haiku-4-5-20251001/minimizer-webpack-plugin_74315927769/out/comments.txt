@@ -1,0 +1,47 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          13
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Test - ubuntu-latest - Node v14.x, Webpack latest
+  Test command(s) run in original CI:
+    $ actions/checkout@v5
+    $ npm install -D typescript@4 --force
+    $ npm install -D --no-save cssnano@^6 --force
+    $ npm run test:coverage -- --ci
+
+--- LLM-Generated Dockerfile ---
+  Base image:   node:14
+  RUN steps:    1
+
+--- LLM run.sh Test Command(s) ---
+  $ npm run test:coverage -- --ci --passWithNoTests
+
+--- Reason(s) for Non-Reproducibility ---
+  - [jest] Test result mismatch (same count 260): original=(258p/2f/0s), LLM=(256p/4f/0s)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    +   "598697787b4a668faaa0.html": "Error: ENOENT: no such file or directory, open '/workspace/test/helpers/dist/598697787b4a668faaa0.html'",
+    +   "main.js": "Error: ENOENT: no such file or directory, open '/workspace/test/helpers/dist/main.js'",
+    +   "Error: 598697787b4a668faaa0.html from Terser plugin
+    +   "Error: 598697787b4a668faaa0.html from Terser plugin
+    +   "04f1ffca8fe68614c9da.css": "Error: ENOENT: no such file or directory, open '/workspace/test/helpers/dist/04f1ffca8fe68614c9da.css'",
+    +   "main.js": "Error: ENOENT: no such file or directory, open '/workspace/test/helpers/dist/main.js'",
+    +   "Error: 04f1ffca8fe68614c9da.css from Terser plugin
+    +   "Error: 04f1ffca8fe68614c9da.css from Terser plugin
+
+  [Root cause classification]
+  - The `test/helpers/dist/` directory contains pre-built webpack output files (HTML, JS, CSS with content-hash filenames like `598697787b4a668faaa0.html`) that the `css-minimizer-webpack-plugin` tests use as input assets. The hash in these filenames is derived from the file content, which changes depending on the exact versions of webpack, Terser, and other plugins. The original CI explicitly pinned `typescript@4` and `cssnano@^6 --force`, but the LLM's `node:14` image ran `npm install` without those specific overrides, resolving to different dependency versions. The different dependency versions produce different webpack output hashes, so `598697787b4a668faaa0.html` (the hash from the original) becomes a different hash in the LLM's environment, causing ENOENT when the test looks for the pre-generated file.
+
+  - The Terser plugin errors (`Error: 598697787b4a668faaa0.html from Terser plugin`) occur because the webpack compilation step tries to minimize an HTML file that doesn't exist. The 2 extra failures (4 vs 2) represent 2 additional test cases that check for specific CSS/HTML output files that were also affected by the version-driven hash change. The original CI's 2 failures were pre-existing issues unrelated to the hash problem.
+
+--- Test Statistics Comparison ---
+  [jest]
+    Original: 260 run, 258 passed, 2 failed, 0 skipped
+    LLM:      260 run, 256 passed, 4 failed, 0 skipped

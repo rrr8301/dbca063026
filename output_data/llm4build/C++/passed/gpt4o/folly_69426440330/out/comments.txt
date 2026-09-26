@@ -1,0 +1,36 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          4
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-22.04
+  CI job name:      build
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    4
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in LLM but not in original: GTest
+  - [CTest] Test run mismatch: original=14820, LLM=3698
+  - [CTest] Test passed mismatch: original=14804, LLM=3695
+  - [CTest] Test failed mismatch: original=0, LLM=1
+  - [CTest] Test skipped mismatch: original=16, LLM=2
+  - [CTest] 1 test(s) failed in LLM but not in original: file_util_test.WriteFileAtomic.directoryPermissions
+
+--- Root Cause Analysis ---
+  - [CTest] LLM ran 11122 fewer tests than original — LLM likely used a narrower test scope or missed some test suites.
+  - [CTest] 1 test(s) failed in LLM but not original: file_util_test.WriteFileAtomic.directoryPermissions
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 14820 run, 14804 passed, 0 failed, 16 skipped
+    LLM:      3698 run, 3695 passed, 1 failed, 2 skipped
+  [GTest]
+    Original: (not present)
+    LLM:      1 run, 0 passed, 1 failed, 0 skipped

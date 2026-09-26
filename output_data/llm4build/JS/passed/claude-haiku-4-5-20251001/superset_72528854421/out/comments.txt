@@ -1,0 +1,34 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      sharded-jest-tests (3)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    7
+
+--- LLM run.sh Test Command(s) ---
+  $ npm run test -- --coverage --shard=3/8 --coverageReporters=json
+
+--- Reason(s) for Non-Reproducibility ---
+  - [jest] Test result mismatch (same count 998): original=(998p/0f/0s), LLM=(997p/1f/0s)
+  - [jest] Tests failed in LLM but passed in original: src/pages/Chart/Chart.test.tsx (54.791 s)
+  - [jest] Tests failed in original but passed in LLM: Unknown
+
+--- Root Cause Analysis ---
+  [Root cause classification]
+  - `src/pages/Chart/Chart.test.tsx` fails in the LLM at 54.791 seconds — nearly a minute for a single test file. This is a React component test for the Apache Superset chart page, which renders complex chart components using `@testing-library/react`. The test includes asynchronous assertions that wait for chart data to load, mock API responses to resolve, and React state updates to propagate. In Docker containers, the jest worker has less CPU time available, causing `waitFor` polling and `act()` flushes to take longer than the test's implicit or explicit timeout.
+
+  - The original CI ran shard 3/8 on a GitHub Actions ubuntu-24.04 runner with dedicated CPU cores where the chart rendering mocks resolved within the timeout. The LLM's Docker environment has higher CPU scheduling latency, causing the async assertions in `Chart.test.tsx` to time out. This is the same flaky-timing pattern seen in the failed-category counterpart `superset_66241898323` (shard 4/8) — Superset's chart tests are particularly timing-sensitive due to complex React rendering trees and mock API orchestration.
+
+--- Test Statistics Comparison ---
+  [jest]
+    Original: 998 run, 998 passed, 0 failed, 0 skipped
+    LLM:      998 run, 997 passed, 1 failed, 0 skipped

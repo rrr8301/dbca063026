@@ -1,0 +1,47 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      unit-test
+  Test command(s) run in original CI:
+    $ actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+    $ pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda
+    $ pnpm install --frozen-lockfile
+    $ pnpm test:coverage
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ TEST_FAILED=0
+  $ TEST_FAILED=1
+  $ TEST_FAILED=1
+  $ TEST_FAILED=1
+
+--- Reason(s) for Non-Reproducibility ---
+  - [vitest] Test run mismatch: original=3806, LLM=3838
+  - [vitest] Test passed mismatch: original=3790, LLM=3824
+  - [vitest] Test failed mismatch: original=1, LLM=1
+  - [vitest] 1 test(s) failed in LLM but not in original: packages/mermaid/scripts/docs.spec.ts
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    11806: FAIL  packages/mermaid/scripts/docs.spec.ts [ packages/mermaid/scripts/docs.spec.ts ]
+    11807-Error: ENOENT: no such file or directory, open '../mermaid/package.json'
+
+  [Root cause classification]
+  - `packages/mermaid/scripts/docs.spec.ts` fails with `ENOENT: no such file or directory, open '../mermaid/package.json'`. This test script validates the Mermaid documentation generation logic and uses a relative path `../mermaid/package.json` to read the package version. In the LLM's Docker workspace, the test is run from a different working directory than expected — the relative path `../mermaid/package.json` resolves to a location outside the workspace or a sibling directory that doesn't exist in the Docker layout. The original CI ran `pnpm test:coverage` from the monorepo root where the relative path correctly resolves.
+
+  - The 32 extra tests in the LLM (3838 vs 3806) and 2 fewer skips (13 vs 15) are from additional test files discovered by the LLM's vitest configuration — possibly from running a broader glob pattern or having additional test files that the original CI's frozen lockfile excluded. The different test that fails in each run (docs.spec.ts in LLM vs an unspecified test in the original) confirms that the two environments are subtly different in working directory and file layout, even though both run the same `pnpm test:coverage` command.
+
+--- Test Statistics Comparison ---
+  [vitest]
+    Original: 3806 run, 3790 passed, 1 failed, 15 skipped
+    LLM:      3838 run, 3824 passed, 1 failed, 13 skipped

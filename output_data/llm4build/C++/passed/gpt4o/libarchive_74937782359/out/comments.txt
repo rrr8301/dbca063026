@@ -1,0 +1,39 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      Ubuntu (cmake, mbedtls)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    3
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in original but missing in LLM: CTest
+  - Framework(s) in LLM but not in original: Autotools
+
+--- Test Statistics Comparison ---
+  [Autotools]
+    Original: (not present)
+    LLM:      5 run, 4 passed, 1 failed, 0 skipped
+  [CTest]
+    Original: 902 run, 794 passed, 0 failed, 108 skipped
+    LLM:      (not present)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > bsdtar_test — Failing tests: 6: test_extract_tar_absolute_paths (1 failures)
+    > Assertions failed: 1 (out of 94512 checked)
+    > FAIL: bsdtar_test — make[3]: *** [test-suite.log] Error 1
+    > # TOTAL: 5 / # PASS: 4 / # FAIL: 1 (Autotools test suite)
+    > LLM built via Autotools instead of the required CMake+mbedtls build system
+
+  [Root cause classification]
+  The original CI job "Ubuntu (cmake, mbedtls)" builds libarchive with CMake and the mbedTLS cryptography backend, running 902 CTest tests. The LLM instead used the Autotools (./configure; make check) build path with the default OpenSSL backend, running only 5 test suites. The Autotools bsdtar_test suite failed on test_extract_tar_absolute_paths (1 assertion failure out of 94512), which is a known security-hardening test for absolute-path extraction behaviour — this test likely requires running as a non-root user or specific filesystem permissions. The build system mismatch (CMake+mbedtls vs Autotools+OpenSSL) caused both the wrong test framework and a coverage gap of 897 CTest tests that were never executed.

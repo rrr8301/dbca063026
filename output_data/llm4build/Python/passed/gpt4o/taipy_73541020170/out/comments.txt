@@ -1,0 +1,32 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          N/A
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      overall-tests (3.11, ubuntu-latest, max)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    6
+
+--- LLM run.sh Test Command(s) ---
+  $ pipenv run pytest -m "not orchestrator_dispatcher and not standalone and not teste2e" tests
+
+--- Reason(s) for Non-Reproducibility ---
+  - [pytest] Test passed mismatch: original=1777, LLM=1773
+  - [pytest] Test failed mismatch: original=0, LLM=4
+  - [pytest] 2 test(s) failed in LLM but not in original: tests/core/_orchestrator/_dispatcher/test_dispatcher__needs_to_run.py, tests/gui/e2e/test_metric_indicator.py
+
+--- Root Cause Analysis ---
+  - [pytest] 2 test(s) failed in LLM but not original: tests/core/_orchestrator/_dispatcher/test_dispatcher__needs_to_run.py, tests/gui/e2e/test_metric_indicator.py
+
+--- Test Statistics Comparison ---
+  [pytest]
+    Original: 1791 run, 1777 passed, 0 failed, 14 skipped
+    LLM:      1791 run, 1773 passed, 4 failed, 14 skipped

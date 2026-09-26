@@ -1,0 +1,61 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      build (ubuntu-latest, 25, false)
+  Test command(s) run in original CI:
+    $ actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+    $ actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 (java-version: 25, distribution: temurin)
+    $ mvn --errors --show-version --batch-mode --no-transfer-progress -Ddoclint=all
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ mvn --errors --show-version --batch-mode --no-transfer-progress -Ddoclint=all -Drat.skip=true -Dlicense.skip=true
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Maven] Test result mismatch (same count 64723): original=(64700p/7f/16s), LLM=(64707p/0f/16s)
+  - [Maven] 7 tests FAIL in original but PASS in LLM (inverted):
+    testTimeZoneStrategy_TimeZone(Locale)[349], [350], [351], [850], [851], [852], [853]
+    (all in org.apache.commons.lang3.time.FastDateParser_TimeZoneStrategyTest)
+
+--- Root Cause Analysis ---
+  [From original CI log]
+    ERROR FastDateParser_TimeZoneStrategyTest.testTimeZoneStrategy_TimeZone(Locale)[349]
+      org.opentest4j.AssertionFailedError: java.text.ParseException: Unparseable date:
+      'hora estándar de Palmer', parse position = [index=0,errorIndex=0]:
+        with id = 'Antarctica/Palmer', locale = es_US
+        displayName = 'hora estándar de Palmer'
+    (same error for [350], [351], [850], [851], [852], [853] — different Spanish-locale variants)
+
+  [Root cause classification]
+  - Temurin JDK 25 (Eclipse Adoptium) vs Ubuntu OpenJDK 25 differ in ICU/CLDR locale data for
+    Spanish timezone display names — `FastDateParser` can parse the Antarctic timezone names
+    in Ubuntu's JDK but not in Temurin's JDK:
+    The `FastDateParser_TimeZoneStrategyTest` is parameterized over all available locales × all
+    available timezones. For test indices [349–351] and [850–853], the failing combinations are
+    in Spanish locales (`es_US` and related), specifically for "Antarctica/Palmer". The test first
+    obtains the timezone display name from the JDK's locale data (e.g., "hora estándar de Palmer"),
+    then attempts to round-trip parse that display name back using FastDateParser with pattern "z".
+    On the original CI (Eclipse Temurin JDK 25.0.2), the CLDR locale data for `es_US` provides
+    timezone display names that `FastDateParser`'s `TimeZoneStrategy` cannot reverse-parse —
+    the displayed string "hora estándar de Palmer" is not in its timezone name lookup table for
+    that locale. On the LLM Docker container (Ubuntu OpenJDK 25.0.2), the CLDR data bundled with
+    the ubuntu `openjdk-25-jdk` package either uses different Spanish timezone abbreviations that
+    FastDateParser can match, or the JVM locale data reports these timezones as unavailable and
+    the test skips them. The result is that 7 parametrized test instances fail in the original CI
+    but pass (or are skipped) in the LLM environment — an inverted failure pattern caused solely
+    by JDK vendor/distribution differences in bundled locale/CLDR data.
+
+--- Test Statistics Comparison ---
+  [Maven]
+    Original: 64723 run, 64700 passed, 7 failed, 16 skipped
+    LLM:      64723 run, 64707 passed, 0 failed, 16 skipped

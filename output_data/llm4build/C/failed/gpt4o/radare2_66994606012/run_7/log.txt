@@ -1,0 +1,99 @@
+Error from docker build
+
+#1 [internal] load .dockerignore
+#1 transferring context: 2B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 1.25kB 0.0s done
+#2 DONE 0.0s
+
+#3 [auth] library/ubuntu:pull token for registry-1.docker.io
+#3 DONE 0.0s
+
+#4 [internal] load metadata for docker.io/library/ubuntu:22.04
+#4 DONE 0.3s
+
+#5 [ 1/13] FROM docker.io/library/ubuntu:22.04@sha256:962f6cadeae0ea6284001009daa4cc9a8c37e75d1f5191cf0eb83fe565b63dd7
+#5 DONE 0.0s
+
+#6 [internal] load build context
+#6 transferring context: 2.07MB 1.6s done
+#6 DONE 1.7s
+
+#7 [ 2/13] RUN ln -snf /usr/share/zoneinfo/America/Los_Angeles /etc/localtime && echo America/Los_Angeles > /etc/timezone
+#7 CACHED
+
+#8 [ 3/13] RUN apt-get update && apt-get install -y     git     make     gcc     python3     python3-pip     && rm -rf /var/lib/apt/lists/*
+#8 CACHED
+
+#9 [ 4/13] RUN python3 -m pip install --upgrade pip &&     pip3 install r2pipe wheel
+#9 CACHED
+
+#10 [ 5/13] WORKDIR /app
+#10 CACHED
+
+#11 [ 6/13] COPY . .
+#11 DONE 7.1s
+
+#12 [ 7/13] RUN chmod +x sys/install.sh sys/build.sh
+#12 DONE 0.8s
+
+#13 [ 8/13] RUN useradd -ms /bin/bash radareuser
+#13 DONE 1.2s
+
+#14 [ 9/13] RUN git config --global --add safe.directory /app
+#14 DONE 1.2s
+
+#15 [10/13] RUN chmod +x ./configure
+#15 DONE 1.0s
+
+#16 [11/13] RUN export CFLAGS="-O2 -Wno-unused-result" &&     sys/install.sh
+#16 1.233 fatal: detected dubious ownership in repository at '/app'
+#16 1.233 To add an exception for this directory, call:
+#16 1.233 
+#16 1.233 	git config --global --add safe.directory /app
+#16 1.263 Warning: Cannot find system wide capstone
+#16 1.263 ARGS=
+#16 1.263 /bin/sh ./sys/build.sh
+#16 1.263 /app
+#16 1.307 Building on Linux : computing number of allowed parallel jobs.
+#16 1.307 Maximum allowed RAM memory per job is 150000 kB.
+#16 1.323 Number of CPUs is 88 and current free RAM allows us to run 2439 jobs in parallel.
+#16 1.339 So, the build will run on 88 job(s).
+#16 1.432 /app
+#16 1.432 ./configure --with-rpath --prefix=/usr/local
+#16 1.544 touch: cannot touch 'libr/xps/deps.h': Permission denied
+#16 1.545 touch: cannot touch 'libr/xps/deps.mk': Permission denied
+#16 1.546 ./configure: 10: ./configure.hook: ./configure-plugins: Permission denied
+#16 1.640 checking build system type... x86_64-unknown-linux-gnu
+#16 1.640 checking host system type... x86_64-unknown-linux-gnu
+#16 1.640 checking target system type... x86_64-unknown-linux-gnu
+#16 1.640 checking for working directories... current
+#16 1.640 using prefix '/usr/local'
+#16 1.640 checking for c compiler... ./configure: 459: cannot create test.c: Permission denied
+#16 1.667 no
+#16 1.667 cleaning temporally files... done
+#16 1.679 ERROR: gcc cannot create executables
+#16 ERROR: process "/bin/sh -c export CFLAGS=\"-O2 -Wno-unused-result\" &&     sys/install.sh" did not complete successfully: exit code: 1
+------
+ > [11/13] RUN export CFLAGS="-O2 -Wno-unused-result" &&     sys/install.sh:
+#16 1.263 /app
+#16 1.307 Building on Linux : computing number of allowed parallel jobs.
+#16 1.307 Maximum allowed RAM memory per job is 150000 kB.
+#16 1.323 Number of CPUs is 88 and current free RAM allows us to run 2439 jobs in parallel.
+#16 1.339 So, the build will run on 88 job(s).
+#16 1.432 /app
+#16 1.432 ./configure --with-rpath --prefix=/usr/local
+#16 1.544 touch: cannot touch 'libr/xps/deps.h': Permission denied
+done
+#16 1.679 ERROR: gcc cannot create executables
+------
+Dockerfile:43
+--------------------
+  42 |     # Build Radare2 as non-root user
+  43 | >>> RUN export CFLAGS="-O2 -Wno-unused-result" && \
+  44 | >>>     sys/install.sh
+  45 |     
+--------------------
+ERROR: failed to solve: process "/bin/sh -c export CFLAGS=\"-O2 -Wno-unused-result\" &&     sys/install.sh" did not complete successfully: exit code: 1

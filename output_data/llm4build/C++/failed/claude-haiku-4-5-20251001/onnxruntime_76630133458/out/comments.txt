@@ -1,0 +1,34 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          20   (retry limit reached)
+Original build category: failed
+
+STATUS: NEVER REACHED TEST EXECUTION — exhausted the 20-attempt refinement budget
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    6
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    File "<string>", line 815, in save_build_and_package_info
+    FileNotFoundError: [Errno 2] No such file or directory:
+        'onnxruntime/capi/build_and_package_info.py'
+    ERROR: Failed to build 'file:///workspace' when getting requirements to build editable
+    Failed to install package in development mode
+
+  [Root cause classification]
+  - Build / Install Failure (tests never ran).
+    The LLM attempted to install onnxruntime with an editable/development install
+    (`pip install -e .`). onnxruntime's setup.py expects build_and_package_info.py to
+    have been produced by its native CMake build (the project's supported flow is
+    `build.sh --config ... --build_wheel`, which generates that file). Because the
+    proper CMake/wheel build was not run, setup.py raised FileNotFoundError and the
+    install aborted before any test ever executed. The harness retried 20 times and
+    never reached test execution, so TR=False and there are no LLM test stats to compare.
+
+--- Test Statistics Comparison ---
+  [CTest]   Original: 10 run, 1 failed     LLM: (no tests ran)
+  [GTest]   Original: 12207 run, 4 failed  LLM: (no tests ran)

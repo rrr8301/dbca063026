@@ -1,0 +1,45 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      ubuntu-latest, Latest CMake
+  Test command(s) run in original CI:
+    $ actions/checkout@v4
+    $ jwlawson/actions-setup-cmake@v2
+    $ cmake -G Ninja -S . -B build-static-dbg -DCMAKE_BUILD_TYPE=Debug "-DCMAKE_DEBUG_POSTFIX=d"
+    $ cmake --build build-static-dbg
+    $ ctest --output-on-failure
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ cmake -G Ninja -S . -B build-static-dbg -DCMAKE_BUILD_TYPE=Debug "-DCMAKE_DEBUG_POSTFIX=d"
+  $ cmake --build build-static-dbg
+  $ ctest --output-on-failure
+  $ cmake -G Ninja -S . -B build-shared-dbg -DCMAKE_BUILD_TYPE=Debug -DCMAKE_DEBUG_POSTFIX=d -DBUILD_SHARED_LIBS=ON
+  $ cmake --build build-shared-dbg
+
+--- Reason(s) for Non-Reproducibility ---
+  - [CTest] Test run mismatch: original=8, LLM=4
+  - [CTest] Test passed mismatch: original=8, LLM=4
+  - [CTest] Test failed mismatch: original=0, LLM=0
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    Error: cmake execution failed
+
+  [Root cause classification]
+  - Missing file or path not found — test data, certificate, or resource file absent in the Docker environment.
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 8 run, 8 passed, 0 failed, 0 skipped
+    LLM:      4 run, 4 passed, 0 failed, 0 skipped

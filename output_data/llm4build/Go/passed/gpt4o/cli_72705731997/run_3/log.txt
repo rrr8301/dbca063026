@@ -1,0 +1,58 @@
+Error from docker build
+
+#1 [internal] load .dockerignore
+#1 transferring context: 2B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 601B done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/golang:1.20
+#3 DONE 0.1s
+
+#4 [1/8] FROM docker.io/library/golang:1.20@sha256:8f9af7094d0cb27cc783c697ac5ba25efdc4da35f8526db21f7aebb0b0b4f18a
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 588.66kB 0.3s done
+#5 DONE 0.3s
+
+#6 [2/8] WORKDIR /app
+#6 CACHED
+
+#7 [3/8] COPY go.mod go.sum ./
+#7 CACHED
+
+#8 [4/8] RUN sed -i 's/1.26.1/1.20/' go.mod
+#8 DONE 0.3s
+
+#9 [5/8] RUN sed -i '/toolchain/d' go.mod
+#9 DONE 0.4s
+
+#10 [6/8] RUN go mod download
+#10 DONE 4.7s
+
+#11 [7/8] COPY . .
+#11 DONE 1.0s
+
+#12 [8/8] RUN go build -o myapp ./cmd/gh
+#12 0.332 go: errors parsing go.mod:
+#12 0.332 /app/go.mod:3: invalid go version '1.26.1': must match format 1.23
+#12 0.332 /app/go.mod:5: unknown directive: toolchain
+#12 ERROR: process "/bin/sh -c go build -o myapp ./cmd/gh" did not complete successfully: exit code: 1
+------
+ > [8/8] RUN go build -o myapp ./cmd/gh:
+#12 0.332 go: errors parsing go.mod:
+#12 0.332 /app/go.mod:3: invalid go version '1.26.1': must match format 1.23
+#12 0.332 /app/go.mod:5: unknown directive: toolchain
+------
+Dockerfile:22
+--------------------
+  20 |     
+  21 |     # Build the Go application
+  22 | >>> RUN go build -o myapp ./cmd/gh
+  23 |     
+  24 |     # Command to run the application
+--------------------
+ERROR: failed to solve: process "/bin/sh -c go build -o myapp ./cmd/gh" did not complete successfully: exit code: 1

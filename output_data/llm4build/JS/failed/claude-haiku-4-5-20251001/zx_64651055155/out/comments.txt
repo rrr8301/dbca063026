@@ -1,0 +1,44 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      test
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ npm ci
+    $ npm run test:coverage
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ test_failed=0
+  $ npm ci || { echo "npm ci failed"; test_failed=1; }
+  $ npm run test:coverage || { echo "Unit tests failed"; test_failed=1; }
+  $ npm run test:types || { echo "Type tests failed"; test_failed=1; }
+
+--- Reason(s) for Non-Reproducibility ---
+  - [node:test] Test result mismatch (same count 267): original=(265p/1f/1s), LLM=(264p/2f/1s)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    Error: /usr/bin/bash: line 1: wtf-cmd: command not found
+    Error: BrokenSpawn
+
+  [Root cause classification]
+  - Missing file or path not found — test data, certificate, or resource file absent in the Docker environment.
+  - Process aborted (SIGABRT) — likely a GLib g_assert() failure, AddressSanitizer/UBSan abort, or missing D-Bus/system service in Docker container.
+  - Test timed out — likely due to slower execution in Docker container or a blocking service call that never returns.
+  - I/O error — test encountered a system-level I/O failure, possibly due to filesystem permissions or missing mount points.
+
+--- Test Statistics Comparison ---
+  [node:test]
+    Original: 267 run, 265 passed, 1 failed, 1 skipped
+    LLM:      267 run, 264 passed, 2 failed, 1 skipped

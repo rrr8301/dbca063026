@@ -1,0 +1,38 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-22.04
+  CI job name:      test-others-replications
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    5
+
+Note: Original had test failures; LLM build passed all — failed build has passed.
+
+--- Reason(s) for Non-Reproducibility ---
+  - [mocha] Test passed mismatch: original=40, LLM=41
+  - [mocha] Test failed mismatch: original=1, LLM=0
+
+--- Root Cause Analysis ---
+  [Actual error messages from original CI log (test-others-replications)]
+    > AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+    > replication-google-drive.test.ts > live replication > should realtime sync on both sides
+    > at ensureCollectionsHaveEqualState (dist/esm/plugins/test-utils/test-util.js:17:12)
+    > at async awaitCollectionsHaveEqualState (dist/esm/plugins/test-utils/test-util.js:38:7)
+
+  [Root cause classification: Non-deterministic replication race condition]
+  - The test "should realtime sync on both sides" in replication-google-drive.test.ts asserts that two RxDB collections converge to identical state after a bidirectional sync; in the original CI run one side was still missing the "insert" document when the assertion fired, indicating a timing-dependent replication lag.
+  - The LLM Docker container passed because the replication completed within the assertion window under different scheduling conditions, making the failure environment-sensitive and non-deterministically reproducible.
+
+--- Test Statistics Comparison ---
+  [mocha]
+    Original: 41 run, 40 passed, 1 failed, 0 skipped
+    LLM:      41 run, 41 passed, 0 failed, 0 skipped

@@ -1,0 +1,39 @@
+FROM ubuntu:22.04
+
+# Set timezone to Pacific Time
+ENV TZ=America/Los_Angeles
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+# Install required packages
+RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    wget \
+    unzip \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install GraalVM
+RUN curl -L -o graalvm.tar.gz \
+    https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-21.3.0/graalvm-ce-java11-linux-amd64-21.3.0.tar.gz \
+    && tar -xzf graalvm.tar.gz -C /opt \
+    && rm graalvm.tar.gz
+
+# Set GraalVM as the default Java
+ENV JAVA_HOME=/opt/graalvm-ce-java11-21.3.0
+ENV PATH="$JAVA_HOME/bin:$PATH"
+
+# Install OpenJDK 17 for compatibility
+RUN apt-get update && apt-get install -y openjdk-17-jdk && rm -rf /var/lib/apt/lists/*
+
+# Create work directory
+WORKDIR /app
+
+# Copy repository
+COPY . .
+
+# Copy run.sh and make it executable
+COPY run.sh /usr/local/bin/run.sh
+RUN chmod +x /usr/local/bin/run.sh
+
+# Set entrypoint
+ENTRYPOINT ["/usr/local/bin/run.sh"]

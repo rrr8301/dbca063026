@@ -1,0 +1,30 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Reason(s) for Non-Reproducibility ---
+  - [CTest] Test run mismatch: original=126, LLM=63
+  - [CTest] Test passed mismatch: original=124, LLM=62
+  - [CTest] Test failed mismatch: original=2, LLM=1
+
+--- Test Statistics Comparison ---
+  [CTest] 126 run, 124 passed, 2 failed, 0 skipped
+    Failed: test_rtabmap_integration, test_registrationvis
+LLM:
+  [CTest] 63 run, 62 passed, 1 failed, 0 skipped
+    Failed: test_registrationvis
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > With g2o = NO (g2o not found)
+    > With GTSAM = NO (GTSAM not found)
+    > [  FAILED  ] RegistrationVisTest.RgbdTwoFramesMatchExpectedTransform
+    > 98% tests passed, 1 tests failed out of 63
+
+  [Root cause classification]
+  Missing optional graph-optimizer dependencies halve the test suite: The original CI environment had g2o and GTSAM installed, enabling 63 additional graph-optimization CTest entries (total 126). The LLM container lacked these packages so CMake disabled those modules and only 63 tests were registered. The shared failure (test_registrationvis / RegistrationVisTest.RgbdTwoFramesMatchExpectedTransform) is a numerical precision failure in RGBD two-frame transform estimation that is reproducible, but the missing g2o/GTSAM stack accounts for the 63-test count discrepancy.

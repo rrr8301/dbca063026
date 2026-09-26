@@ -1,0 +1,78 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      tests / 3.13 / ubuntu-latest
+  Test command(s) run in original CI:
+    $ actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+    $ nox -s test-3.13 -- tests/unit --verbose --numprocesses auto --showlocals
+    $ nox -s test-3.13 --no-install -- tests/functional --verbose --numprocesses auto
+            --showlocals --durations=15
+
+--- LLM-Generated Dockerfile ---
+  Base image:   python:3.13-slim
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ nox -s test-3.13 --install-only
+  $ nox -s test-3.13 -- tests/unit ...
+  $ nox -s test-3.13 --no-install -- tests/functional ...
+
+--- Reason(s) for Non-Reproducibility ---
+  - [pytest] Test result mismatch (same count 2866): original=(2764p/0f/75s), LLM=(2752p/3f/84s)
+  - [pytest] 3 tests failed in LLM but not in original:
+    test_download_metadata_server[colander-...] (tests/functional/test_download.py)
+    test_download_metadata_server[compilewheel-...] (tests/functional/test_download.py)
+    test_pip_wheel_readonly_cache (tests/functional/test_wheel.py)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > _ ERROR at setup of test_download_metadata_server[colander-expected_outputs2-...] _
+    >   /usr/local/lib/python3.13/socketserver.py:478:
+    > E       OSError: [Errno 98] Address already in use
+    >
+    > _ ERROR at setup of test_download_metadata_server[compilewheel-expected_outputs3-...] _
+    >   /usr/local/lib/python3.13/socketserver.py:478:
+    > E       OSError: [Errno 98] Address already in use
+    >
+    > ________________________ test_pip_wheel_readonly_cache _________________________
+    >   cache_dir = PosixPath('.../test_pip_wheel_readonly_cache0/cache')
+    >   assert 'The cache has been disabled.' in "Script result: python -m pip wheel
+    >     --cache-dir .../cache simple==3.0\n-- stdout: ...\n  Stored in directory:
+    >     .../cache/wheels/4b/fb/02/..."
+    > E       AssertionError: Script result: ...
+    > tests/functional/test_wheel.py:217: AssertionError
+
+  [Root cause classification]
+  Two separate issues:
+
+  (1) Port conflict in test_download_metadata_server: [Errno 98] Address already in use
+    The functional tests for `test_download_metadata_server` start a local HTTP server using
+    Python's `socketserver` module. With pytest-xdist running ~80 parallel workers, two
+    worker processes attempt to bind a server socket to the same port simultaneously.
+    The second bind attempt fails with `OSError: [Errno 98] Address already in use`. This
+    is a test isolation issue caused by running the functional server-based tests under
+    heavy parallelism. The original CI may have run with fewer workers or with a different
+    port assignment strategy that avoided collisions.
+
+  (2) test_pip_wheel_readonly_cache: Docker root user bypasses chmod 000
+    The test `test_pip_wheel_readonly_cache` verifies that when pip's cache directory is
+    set to a read-only path, pip prints "The cache has been disabled." and does not write
+    to the cache. The test marks the cache directory as read-only using `chmod 000`.
+    However, in the Docker container, the process runs as root. On Linux, root bypasses
+    file permission checks, so `chmod 000` does NOT prevent root from reading or writing
+    to the directory. Pip successfully writes the built wheel to the "read-only" cache
+    (stored in `.../cache/wheels/4b/fb/02/...`) without printing the expected disable
+    message. The assertion `assert 'The cache has been disabled.' in ...` fails because
+    pip never detected that the cache was inaccessible.
+
+--- Test Statistics Comparison ---
+  [pytest]
+    Original: 2866 run, 2764 passed, 0 failed, 75 skipped
+    LLM:      2866 run, 2752 passed, 3 failed, 84 skipped

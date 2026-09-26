@@ -1,0 +1,70 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          15
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      ubuntu-latest Python 3.12
+  Test command(s) run in original CI:
+    $ python3 .github/workflows/system-info.py
+    $ .ci/install.sh
+    $ .ci/build.sh
+    $ xvfb-run -s '-screen 0 1024x768x24' sway&
+    $ export WAYLAND_DISPLAY=wayland-1
+    $ .ci/test.sh   (no --reverse flag; REVERSE env var not set)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    7
+
+--- LLM run.sh Test Command(s) ---
+  $ bash .ci/install.sh
+  $ bash .ci/build.sh
+  $ xvfb-run -s '-screen 0 1024x768x24' bash -c 'bash .ci/test.sh --reverse'
+
+--- Reason(s) for Non-Reproducibility ---
+  - [pytest] Test run mismatch: original=1419, LLM=3784 (2365 more tests ran in LLM)
+  - [pytest] Skip count mismatch: original=31 skipped, LLM=16 skipped
+  - [pytest] Same test fails in both: Tests/test_image_save.py::test_image_save
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > FAILED Tests/test_image_save.py::test_image_save
+    > E   AttributeError: 'Image' object has no attribute 'encoderinfo'
+    >     Exception: Mode CMYK to format PNG: 'Image' object has no attribute 'encoderinfo'
+    > (same failure in both original CI and LLM Docker)
+
+  [Root cause classification]
+  LLM run.sh passes `--reverse` to .ci/test.sh, which causes additional test categories
+  (including oss-fuzz tests) to run — 3784 tests vs 1419 in original
+
+  The original CI's `.ci/test.sh` script checks an environment variable `$REVERSE`. When
+  `$REVERSE` is unset (original CI), the script runs pytest with the standard test selection
+  and pytest-reverse is not installed. When `.ci/test.sh --reverse` is passed (LLM Docker),
+  the script installs `pytest-reverse` and changes the test collection behavior. In addition
+  to reversing test execution order, the `--reverse` invocation also alters the test scope:
+  the LLM run collects and executes `Tests/oss-fuzz/test_fuzzers.py::test_fuzz_images` tests
+  (which test against each image file in `Tests/images/` — hundreds of parametrized variants),
+  while the original CI's `.ci/test.sh` (without `--reverse`) uses `--ignore=Tests/oss-fuzz`
+  or equivalent filtering to exclude these fuzzing tests.
+
+  This results in 3784 total tests in LLM (1419 standard tests + 2365 fuzz image tests from
+  `Tests/oss-fuzz/test_fuzzers.py`) vs 1419 in the original CI. Additionally, 15 fewer tests
+  are skipped in LLM (16 vs 31) because test ordering with `pytest-reverse` changes how some
+  fixture-conditional skips are evaluated.
+
+  The actual test FAILURE is the same in both environments:
+  `test_image_save` fails with `AttributeError: 'Image' object has no attribute 'encoderinfo'`
+  when saving a CMYK image to PNG format. This is a pre-existing failure present in both.
+  FR=false is driven entirely by the test count discrepancy from the `--reverse` flag.
+
+--- Test Statistics Comparison ---
+  [pytest]
+    Original: 1419 run, 1386 passed, 1 failed, 31 skipped
+    LLM:      3784 run, 3765 passed, 1 failed, 16 skipped
+    (2365 extra tests in LLM = oss-fuzz test_fuzz_images variants collected due to --reverse;
+     same test fails in both: test_image_save encoderinfo AttributeError)

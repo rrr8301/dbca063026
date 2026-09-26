@@ -1,0 +1,96 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          4
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      build / JUnit tests Java 25
+  Test command(s) run in original CI:
+    $ actions/checkout@v5
+    $ actions/setup-java@v5 (java-version: 25)
+    $ (download artifact: combined-test-catalog.txt, ID: 5995309141)
+    $ timeout ${TIMEOUT_MINUTES}m ./gradlew --build-cache --continue --no-scan \
+        -PtestLoggingEvents=started,passed,skipped,failed \
+        -PmaxParallelForks=4 \
+        -PmaxTestRetries=$TEST_RETRIES -PmaxTestRetryFailures=10 \
+        -Pkafka.test.catalog.file=/home/runner/work/kafka/kafka/combined-test-catalog.txt \
+        -Pkafka.test.run.new=$RUN_NEW_TESTS \
+        -Pkafka.test.run.flaky=$RUN_FLAKY_TESTS \
+        -Pkafka.test.xml.output.dir=$TEST_XML_OUTPUT_DIR \
+        -Pkafka.cluster.test.repeat=$TEST_REPEAT \
+        -Pkafka.test.verbose=$TEST_VERBOSE \
+        -PcommitId=... \
+        -x spotbugsMain -x spotbugsTest test
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    7
+
+--- LLM run.sh Test Command(s) ---
+  $ timeout ${TIMEOUT_MINUTES}m ./gradlew --build-cache --continue --no-scan \
+      -PtestLoggingEvents=started,passed,skipped,failed \
+      -PmaxParallelForks=4 \
+      -PmaxTestRetries=1 -PmaxTestRetryFailures=10 \
+      -Pkafka.test.catalog.file=.github/scripts/test-catalog.txt \
+      -Pkafka.test.run.new=false \
+      -Pkafka.test.run.flaky=false \
+      -Pkafka.test.xml.output.dir=build/junit-xml \
+      -Pkafka.cluster.test.repeat=1 \
+      -Pkafka.test.verbose=false \
+      -PcommitId=xxxxxxxxxxxxxxxx \
+      -x spotbugsMain -x spotbugsTest test
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Gradle] Test run mismatch: original=47012, LLM=64302
+  - [Gradle] Test passed mismatch: original=47006, LLM=64155
+  - [Gradle] Test failed mismatch: original=6, LLM=78
+  - [Gradle] Tests new failures in LLM (sample):
+    FormatterTest.testFormatterFailsOnUnwritableDirectory()
+    MetaPropertiesEnsembleTest.testMetaPropertiesEnsembleLoadError()
+    GlobalStateManagerImplTest.shouldLogWarningMessageWhenIOExceptionInCheckPoint()
+    ConnectPluginPathTest.testSyncManifestsDryRunReadOnlyManifest()
+    ConnectPluginPathTest.testSyncManifestsDryRunReadOnlyServices()
+    ... (+others)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    ERROR FormatterTest.testFormatterFailsOnUnwritableDirectory()
+    org.opentest4j.AssertionFailedError: Expected org.apache.kafka.metadata.storage.FormatterException
+      to be thrown, but nothing was thrown.
+      at FormatterTest.testFormatterFailsOnUnwritableDirectory(FormatterTest.java:175)
+
+    ERROR MetaPropertiesEnsembleTest.testMetaPropertiesEnsembleLoadError()
+    org.opentest4j.AssertionFailedError: expected: <1> but was: <0>
+      at MetaPropertiesEnsembleTest.testMetaPropertiesEnsembleLoadError(MetaPropertiesEnsembleTest.java:292)
+
+    ERROR GlobalStateManagerImplTest.shouldLogWarningMessageWhenIOExceptionInCheckPoint()
+    java.lang.AssertionError: Expected: a collection containing a string containing "Failed to write offset
+      checkpoint file to [...].checkpoint_t1-store]..." but: was empty
+
+  [Root cause classification]
+  - Two combined issues cause the test and count differences:
+    (1) Different test catalog → LLM runs 17,290 more tests. The original CI downloads a
+    `combined-test-catalog.txt` CI artifact (sha256:899d12de...) that specifies a curated subset
+    of 47,012 tests. The LLM uses the in-tree `.github/scripts/test-catalog.txt`, which selects
+    a different (larger) set of 64,302 tests. The combined catalog is built during the CI pipeline
+    and may exclude certain tests (e.g., known flaky or slow tests), while the local catalog
+    includes all registered tests.
+    (2) Docker runs as root → file/directory permission tests fail. Several failing tests call
+    `setWritable(false)` / `chmod 000` on a temp directory and then expect the production code
+    to throw an exception when trying to write to that directory. Running as root bypasses all
+    filesystem permission checks, so the writes succeed silently instead of throwing, causing
+    `assertThrows()` to fail (nothing was thrown). This explains the 78 failures in the LLM
+    vs 6 in the original CI: some original 6 failures are pre-existing known failures (counted
+    with `--continue`), while the LLM adds root-related permission bypass failures on top.
+    `GlobalStateManagerImplTest.shouldLogWarningMessageWhenIOExceptionInCheckPoint()` fails
+    because the test makes a path non-writable to force an IOException log message, but root
+    user writes successfully without triggering the warning.
+
+--- Test Statistics Comparison ---
+  [Gradle]
+    Original: 47012 run, 47006 passed,  6 failed,  0 skipped
+    LLM:      64302 run, 64155 passed, 78 failed, 69 skipped

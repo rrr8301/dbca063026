@@ -1,0 +1,47 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      unit-test
+  Test command(s) run in original CI:
+    $ actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+    $ pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda
+    $ pnpm install --frozen-lockfile
+    $ pnpm test:coverage
+    $ pnpm exec vitest run ./packages/mermaid/src/diagrams/gantt/ganttDb.spec.ts --coverage
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    6
+
+--- LLM run.sh Test Command(s) ---
+  $ TEST_FAILED=0
+  $ TEST_FAILED=1
+  $ TEST_FAILED=1
+  $ TEST_FAILED=1
+
+--- Reason(s) for Non-Reproducibility ---
+  - [vitest] Test run mismatch: original=3772, LLM=3759
+  - [vitest] Test passed mismatch: original=3758, LLM=3747
+  - [vitest] Test failed mismatch: original=0, LLM=0
+  - [vitest] 1 test(s) failed in LLM but not in original: packages/mermaid/scripts/docs.spec.ts
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    11792: FAIL  packages/mermaid/scripts/docs.spec.ts [ packages/mermaid/scripts/docs.spec.ts ]
+    11793-Error: ENOENT: no such file or directory, open '../mermaid/package.json'
+
+  [Root cause classification]
+  - Missing file or path not found — test data, certificate, or resource file absent in the Docker environment.
+  - TLS/SSL certificate path not found — test expects certificate files (e.g., tests/certs/) that are absent or not properly initialized.
+
+--- Test Statistics Comparison ---
+  [vitest]
+    Original: 3772 run, 3758 passed, 0 failed, 14 skipped
+    LLM:      3759 run, 3747 passed, 0 failed, 12 skipped

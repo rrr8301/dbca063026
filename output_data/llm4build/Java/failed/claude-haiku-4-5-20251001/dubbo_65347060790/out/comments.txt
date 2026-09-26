@@ -1,0 +1,76 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Unit Test On ubuntu-22.04 Java: 25
+  Test command(s) run in original CI:
+    $ actions/checkout@v4
+    $ actions/setup-java@v4 (java-version: 25)
+    $ ./mvnw -e --batch-mode --no-snapshot-updates --no-transfer-progress --fail-fast
+        clean test verify -Pjacoco,jdk15ge-simple,'!jdk15ge-add-open',skip-spotless
+        -DtrimStackTrace=false -Dmaven.test.skip=false -Dcheckstyle.skip=false
+        -Dcheckstyle_unix.skip=false -Drat.skip=false
+        -DembeddedZookeeperPath=/home/runner/work/dubbo/dubbo/.tmp/zookeeper
+        2>&1 | tee >(grep -n -B 1 -A 200 "FAILURE! -- in" > test_errors.log)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   azul/zulu-openjdk:25-latest
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ mvn $MAVEN_ARGS clean test verify -Pjacoco,jdk15ge-simple,'!jdk15ge-add-open',skip-spotless
+      -DtrimStackTrace=false -Dmaven.test.skip=false -Dcheckstyle.skip=false
+      -Dcheckstyle_unix.skip=false -Drat.skip=true -Dlicense.skip=true
+      -DembeddedZookeeperPath=/workspace/.tmp/zookeeper
+      2>&1 | tee >(grep -n -B 1 -A 200 "FAILURE! -- in" > test_errors.log)
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Maven] Test run mismatch: original=6620, LLM=5733
+  - [Maven] Test passed mismatch: original=6515, LLM=5676
+  - [Maven] Test failed mismatch: original=1, LLM=1 (but different failing test)
+  - [Maven] 1 test fails in LLM but not in original:
+    testStoreProvider(org.apache.dubbo.metadata.store.zookeeper.ZookeeperMetadataReportTest)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    ERROR ZookeeperMetadataReportTest.testStoreProvider
+      at ZookeeperMetadataReportTest.testStoreProvider:93 expected: not <null>
+      org.apache.curator.framework.api.CuratorClosedException:
+        Expected state [STARTED] was [STOPPED]
+      org.apache.zookeeper.ClientCnxn$EndOfStreamException:
+        Unable to read additional data from server sessionid 0x101ad19b87e0001,
+        likely server has closed socket
+    dubbo-metadata-report-zookeeper  FAILURE [02:05 min]
+
+  [From original CI log]
+    ERROR AnnotationIsolationTest (dubbo-config-spring module)
+    (org.apache.dubbo.config.spring.isolation.spring.annotation.AnnotationIsolationTest)
+    Tests run: 1, Failures: 0, Errors: 1, Skipped: 0
+
+  [Root cause classification]
+  - ZooKeeper session expires in Docker during `testStoreProvider` causing a different failing test
+    and stopping the build at an earlier module, leaving 887 tests from later modules unexecuted:
+    Both the original CI and LLM use embedded ZooKeeper (`-DembeddedZookeeperPath`) for Zookeeper-
+    dependent tests. In the Docker container, the embedded ZooKeeper session expires before
+    `testStoreProvider` can complete its metadata store operations — a `SessionExpiredException`
+    propagates through Curator (`CuratorClosedException: Expected state [STARTED] was [STOPPED]`),
+    causing the metadata report lookup to return null (`expected: not <null>` assertion fails).
+    This failure occurs in `dubbo-metadata-report-zookeeper`, which appears earlier in the Maven
+    build order than `dubbo-config-spring` (where the original CI's `AnnotationIsolationTest` fails).
+    Because the LLM's run.sh uses `set -e` (exit on failure), the build stops at
+    `dubbo-metadata-report-zookeeper` before reaching `dubbo-config-spring` and its subsequent
+    modules, explaining the 887 fewer tests in the LLM (5733 vs 6620). The original CI uses
+    `--fail-fast` and exits at `dubbo-config-spring` after running 6620 tests (the ZooKeeper test
+    passes in the original CI — possibly because GitHub Actions runners have lower I/O latency
+    for the embedded ZooKeeper server).
+
+--- Test Statistics Comparison ---
+  [Maven]
+    Original: 6620 run, 6515 passed, 1 failed, 104 skipped
+    LLM:      5733 run, 5676 passed, 1 failed, 56 skipped

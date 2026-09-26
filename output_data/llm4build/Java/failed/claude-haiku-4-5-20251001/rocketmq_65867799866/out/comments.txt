@@ -1,0 +1,54 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      maven-compile (ubuntu-latest, JDK-8)
+  Test command(s) run in original CI:
+    $ actions/checkout@v2
+    $ actions/setup-java@v1 (java-version: 1.8)
+    $ mvn -B package --file pom.xml
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ mvn -B package --file pom.xml -Drat.skip=true -Dlicense.skip=true
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Maven] Test run mismatch: original=936, LLM=2859
+  - [Maven] Test passed mismatch: original=923, LLM=2842
+  - [Maven] Test failed mismatch: original=1, LLM=0
+
+--- Root Cause Analysis ---
+  [From original CI log]
+    ERROR testSubscribe_PollMessageSuccess_WithCustomizedTraceTopic
+      (org.apache.rocketmq.client.trace.DefaultMQLitePullConsumerWithTraceTest)
+    Tests run: 936, Failures: 1, Errors: 0, Skipped: 12
+
+  [Root cause classification]
+  - Two issues: (1) The original CI command is `mvn -B package --file pom.xml` (no
+    `-Drat.skip`), but the original CI job name "maven-compile" suggests it runs only
+    certain modules or is filtered to a specific test scope (936 tests vs 2859 in LLM).
+    The LLM runs `mvn -B package` on the full multi-module project without restriction,
+    building and testing all modules and accumulating 2859 tests across all subprojects.
+    The original CI likely ran with `-pl client,remoting,...` or a partial reactor build
+    targeting only specific modules, producing only 936 tests. (2) The original CI's
+    1 failure (`testSubscribe_PollMessageSuccess_WithCustomizedTraceTopic` in
+    `DefaultMQLitePullConsumerWithTraceTest`) does not fail in the LLM. That test
+    exercises a customized trace topic in the Lite Pull Consumer and is likely flaky due
+    to timing or thread-scheduling sensitivity; the LLM log confirms the test runs and
+    passes (0 failures in that class). The original CI failure is environment-specific
+    and does not reproduce in Docker, while the LLM runs a broader test suite that
+    includes 1923 additional tests from other modules.
+
+--- Test Statistics Comparison ---
+  [Maven]
+    Original: 936 run, 923 passed, 1 failed, 12 skipped
+    LLM:      2859 run, 2842 passed, 0 failed, 17 skipped

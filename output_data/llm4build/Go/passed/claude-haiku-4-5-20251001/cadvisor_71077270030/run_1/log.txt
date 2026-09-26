@@ -1,0 +1,51 @@
+Error from docker build
+
+#1 [internal] load .dockerignore
+#1 transferring context: 2B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 1.45kB done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/ubuntu:24.04
+#3 DONE 0.1s
+
+#4 [1/8] FROM docker.io/library/ubuntu:24.04@sha256:c4a8d5503dfb2a3eb8ab5f807da5bc69a85730fb49b5cfca2330194ebcc41c7b
+#4 DONE 0.0s
+
+#5 [2/8] RUN ln -snf /usr/share/zoneinfo/America/Los_Angeles /etc/localtime && echo America/Los_Angeles > /etc/timezone
+#5 CACHED
+
+#6 [3/8] RUN apt-get update && apt-get install -y     git     build-essential     make     curl     wget     ca-certificates     && rm -rf /var/lib/apt/lists/*
+#6 CACHED
+
+#7 [internal] load build context
+#7 transferring context: 503.70kB 0.2s done
+#7 DONE 0.3s
+
+#8 [4/8] RUN set -e;     GO_VERSION="1.25";     GO_URL="https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz";     if ! curl -fsSL --head "$GO_URL" 2>/dev/null | grep -q "200\|301\|302"; then         echo "Go ${GO_VERSION} not found, attempting to fetch latest available version...";         GO_VERSION=$(curl -fsSL https://go.dev/dl/ | grep -oP 'go\d+\.\d+(?:\.\d+)?' | sort -V | tail -1 | sed 's/go//');         GO_URL="https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz";         echo "Using Go ${GO_VERSION}";     fi;     curl -fsSL "$GO_URL" -o /tmp/go.tar.gz &&     tar -C /usr/local -xzf /tmp/go.tar.gz &&     rm /tmp/go.tar.gz
+#8 3.609 curl: (22) The requested URL returned error: 404
+#8 ERROR: process "/bin/sh -c set -e;     GO_VERSION=\"1.25\";     GO_URL=\"https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz\";     if ! curl -fsSL --head \"$GO_URL\" 2>/dev/null | grep -q \"200\\|301\\|302\"; then         echo \"Go ${GO_VERSION} not found, attempting to fetch latest available version...\";         GO_VERSION=$(curl -fsSL https://go.dev/dl/ | grep -oP 'go\\d+\\.\\d+(?:\\.\\d+)?' | sort -V | tail -1 | sed 's/go//');         GO_URL=\"https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz\";         echo \"Using Go ${GO_VERSION}\";     fi;     curl -fsSL \"$GO_URL\" -o /tmp/go.tar.gz &&     tar -C /usr/local -xzf /tmp/go.tar.gz &&     rm /tmp/go.tar.gz" did not complete successfully: exit code: 22
+------
+ > [4/8] RUN set -e;     GO_VERSION="1.25";     GO_URL="https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz";     if ! curl -fsSL --head "$GO_URL" 2>/dev/null | grep -q "200\|301\|302"; then         echo "Go ${GO_VERSION} not found, attempting to fetch latest available version...";         GO_VERSION=$(curl -fsSL https://go.dev/dl/ | grep -oP 'go\d+\.\d+(?:\.\d+)?' | sort -V | tail -1 | sed 's/go//');         GO_URL="https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz";         echo "Using Go ${GO_VERSION}";     fi;     curl -fsSL "$GO_URL" -o /tmp/go.tar.gz &&     tar -C /usr/local -xzf /tmp/go.tar.gz &&     rm /tmp/go.tar.gz:
+#8 3.609 curl: (22) The requested URL returned error: 404
+------
+Dockerfile:18
+--------------------
+  17 |     # Install Go - attempt 1.25, fallback to latest available
+  18 | >>> RUN set -e; \
+  19 | >>>     GO_VERSION="1.25"; \
+  20 | >>>     GO_URL="https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz"; \
+  21 | >>>     if ! curl -fsSL --head "$GO_URL" 2>/dev/null | grep -q "200\|301\|302"; then \
+  22 | >>>         echo "Go ${GO_VERSION} not found, attempting to fetch latest available version..."; \
+  23 | >>>         GO_VERSION=$(curl -fsSL https://go.dev/dl/ | grep -oP 'go\d+\.\d+(?:\.\d+)?' | sort -V | tail -1 | sed 's/go//'); \
+  24 | >>>         GO_URL="https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz"; \
+  25 | >>>         echo "Using Go ${GO_VERSION}"; \
+  26 | >>>     fi; \
+  27 | >>>     curl -fsSL "$GO_URL" -o /tmp/go.tar.gz && \
+  28 | >>>     tar -C /usr/local -xzf /tmp/go.tar.gz && \
+  29 | >>>     rm /tmp/go.tar.gz
+  30 |     
+--------------------
+ERROR: failed to solve: process "/bin/sh -c set -e;     GO_VERSION=\"1.25\";     GO_URL=\"https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz\";     if ! curl -fsSL --head \"$GO_URL\" 2>/dev/null | grep -q \"200\\|301\\|302\"; then         echo \"Go ${GO_VERSION} not found, attempting to fetch latest available version...\";         GO_VERSION=$(curl -fsSL https://go.dev/dl/ | grep -oP 'go\\d+\\.\\d+(?:\\.\\d+)?' | sort -V | tail -1 | sed 's/go//');         GO_URL=\"https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz\";         echo \"Using Go ${GO_VERSION}\";     fi;     curl -fsSL \"$GO_URL\" -o /tmp/go.tar.gz &&     tar -C /usr/local -xzf /tmp/go.tar.gz &&     rm /tmp/go.tar.gz" did not complete successfully: exit code: 22

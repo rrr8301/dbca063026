@@ -1,0 +1,37 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          N/A
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      build / JUnit tests Java 23
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    4
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in original but missing in LLM: duckdb
+  - [Gradle] Test run mismatch: original=36265, LLM=57226
+  - [Gradle] Test passed mismatch: original=36222, LLM=57115
+  - [Gradle] Test failed mismatch: original=8, LLM=42
+  - [Gradle] Test skipped mismatch: original=35, LLM=69
+  - [Gradle] 3 test(s) failed in original but passed in LLM: AclControlManagerTest.testDeleteExceedsMaxRecords(), testConsumeUsingAssignWithNoAccess(String, String).testConsumeUsingAssignWithNoAccess(String, String).quorum=kraft.groupProtocol=consumer, testHWCheckpointWithFailuresMultipleLogSegments(String)."testHWCheckpointWithFailuresMultipleLogSegments(String).quorum=kraft"
+  - [Gradle] 18 test(s) failed in LLM but not in original: ConfigurationUtilsTest.testFileUnreadable(), ConnectPluginPathTest.testSyncManifestsDryRunReadOnlyManifest(), ConnectPluginPathTest.testSyncManifestsDryRunReadOnlyMetaInf(), ConnectPluginPathTest.testSyncManifestsDryRunReadOnlyServices(), DumpLogSegmentsTest.testDumpRemoteLogMetadataIoException() ... (+13 more)
+
+--- Root Cause Analysis ---
+  - [Gradle] LLM ran 20961 more tests than original — LLM likely used a broader test scope or included extra test suites.
+  - [Gradle] 18 test(s) failed in LLM but not original: ConfigurationUtilsTest.testFileUnreadable(), ConnectPluginPathTest.testSyncManifestsDryRunReadOnlyManifest(), ConnectPluginPathTest.testSyncManifestsDryRunReadOnlyMetaInf(), ConnectPluginPathTest.testSyncManifestsDryRunReadOnlyServices(), DumpLogSegmentsTest.testDumpRemoteLogMetadataIoException() ... (+13 more)
+
+--- Test Statistics Comparison ---
+  [Gradle]
+    Original: 36265 run, 36222 passed, 8 failed, 35 skipped
+    LLM:      57226 run, 57115 passed, 42 failed, 69 skipped
+  [duckdb]
+    Original: 1 run, 1 passed, 0 failed, 0 skipped
+    LLM:      (not present)

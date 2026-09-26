@@ -1,0 +1,47 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   False
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          20
+Original build category: passed
+
+STATUS: BUILD EXECUTION FAILED
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      sharded-jest-tests (3)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+--- Failure Analysis ---
+  Failure type: Docker build error
+  Failed at Docker build step: 6 of 10
+  Step label:   COPY package.json ./
+
+  Original build was passing. LLM failed to reproduce it after 20 attempt(s).
+
+--- Dockerfile Error Context ---
+  Dockerfile:23
+  --------------------
+    21 |     # Ensure package.json is present in the build context
+    22 |     # Copy package.json first for caching
+    23 | >>> COPY package.json ./
+    24 |     
+    25 |     # Install npm dependencies
+  --------------------
+
+--- Error Message(s) ---
+  #10 ERROR: failed to calculate checksum of ref bbf0bc14-1281-4098-922e-22d26f66be72::rbn2ryflqwk1iwuer6x729gzl: "/package.json": not found
+  ERROR: failed to solve: failed to compute cache key: failed to calculate checksum of ref bbf0bc14-1281-4098-922e-22d26f66be72::rbn2ryflqwk1iwuer6x729gzl: "/package.json": not found
+
+No test results could be produced due to build failure.
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > COPY package.json ./
+    > #10 ERROR: failed to calculate checksum of ref ...: "/package.json": not found
+
+  [Root cause classification]
+  - Same structural misunderstanding as the failed shard (superset_66241898323): Apache Superset stores its frontend package.json under superset-frontend/, not at the repository root. The LLM consistently assumed a flat layout and issued `COPY package.json ./`, which fails because no package.json exists at the build context root. This affected all sharded Jest test jobs regardless of shard number, as the Dockerfile structure was identical across attempts.

@@ -1,0 +1,32 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          N/A
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      Java 25 (ubuntu-latest)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    4
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Maven] Test run mismatch: original=20756, LLM=14602
+  - [Maven] Test passed mismatch: original=20716, LLM=14577
+  - [Maven] Test failed mismatch: original=0, LLM=4
+  - [Maven] Test skipped mismatch: original=40, LLM=21
+  - [Maven] 4 test(s) failed in LLM but not in original: should_fail_if_actual_exists_but_is_not_readable(org.assertj.core.internal.files.Files_assertHasDigest_AlgorithmBytes_Test), should_fail_if_actual_exists_but_is_not_readable(org.assertj.core.internal.files.Files_assertHasDigest_AlgorithmString_Test), should_fail_if_actual_exists_but_is_not_readable(org.assertj.core.internal.files.Files_assertHasDigest_DigestBytes_Test), should_fail_if_actual_exists_but_is_not_readable(org.assertj.core.internal.files.Files_assertHasDigest_DigestString_Test)
+
+--- Root Cause Analysis ---
+  - [Maven] LLM ran 6154 fewer tests than original — LLM likely used a narrower test scope or missed some test suites.
+  - [Maven] 4 test(s) failed in LLM but not original: should_fail_if_actual_exists_but_is_not_readable(org.assertj.core.internal.files.Files_assertHasDigest_AlgorithmBytes_Test), should_fail_if_actual_exists_but_is_not_readable(org.assertj.core.internal.files.Files_assertHasDigest_AlgorithmString_Test), should_fail_if_actual_exists_but_is_not_readable(org.assertj.core.internal.files.Files_assertHasDigest_DigestBytes_Test), should_fail_if_actual_exists_but_is_not_readable(org.assertj.core.internal.files.Files_assertHasDigest_DigestString_Test)
+
+--- Test Statistics Comparison ---
+  [Maven]
+    Original: 20756 run, 20716 passed, 0 failed, 40 skipped
+    LLM:      14602 run, 14577 passed, 4 failed, 21 skipped

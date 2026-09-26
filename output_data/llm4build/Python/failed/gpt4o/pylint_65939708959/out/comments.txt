@@ -1,0 +1,32 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      Tests
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    3
+
+--- Reason(s) for Non-Reproducibility ---
+  - [pytest] Test passed mismatch: original=2078, LLM=1992
+  - [pytest] Test skipped mismatch: original=214, LLM=299
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > (same 1 failure: TestRunTC::test_do_not_import_files_from_local_directory[args1])
+
+  [Root cause classification]
+  - 85 extra skips in LLM (299 vs 214) are Python-version-gated tests: pylint uses `skipIf` guards based on the Python minor version; ubuntu:22.04 ships Python 3.10 while original CI uses Python 3.12 on ubuntu-24.04, and several test_self.py tests only run on 3.12+. The same pre-existing failure appears in both runs.
+
+--- Test Statistics Comparison ---
+  [pytest]
+    Original: 2298 run, 2078 passed, 1 failed, 214 skipped
+    LLM:      2297 run, 1992 passed, 1 failed, 299 skipped

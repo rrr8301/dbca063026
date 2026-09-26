@@ -1,0 +1,56 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Ubuntu GCC ASAN
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ cmake -S . -DWITH_SANITIZER=Address -DWITH_BENCHMARKS=ON ...
+    $ cmake --build . --verbose -j2 --config Release
+    $ ctest --verbose -C Release -E benchmark_zlib --output-on-failure --max-width 120 -j 3
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ git clone https://github.com/zlib-ng/corpora.git test/data/corpora
+  $ cmake -S . -DWITH_SANITIZER=Address -DWITH_BENCHMARKS=ON ...
+  $ cmake --build . --verbose -j2 --config Release
+  $ ctest --verbose -C Release -E benchmark_zlib --output-on-failure --max-width 120 -j 3
+
+--- Reason(s) for Non-Reproducibility ---
+  - [CTest] Test run mismatch: original=78, LLM=750
+  - [CTest] Test passed mismatch: original=78, LLM=749
+  - [CTest] Test failed mismatch: original=0, LLM=1
+  - [CTest] 1 test(s) failed in LLM but not in original: benchmark_zlib
+  - [GTest] Test run mismatch: original=3775, LLM=4266
+  - [GTest] Test passed mismatch: original=2801, LLM=3616
+  - [GTest] Test failed mismatch: original=0, LLM=0
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    750: ==14137==ERROR: LeakSanitizer: detected memory leaks
+    750: Direct leak of 288197894 byte(s) in 58 object(s) allocated from:
+    750:     #0 in malloc asan_malloc_linux.cpp:69
+    750:     #1 in load_corpus_file benchmark_corpora.cc:142
+    750:     #2 in deflate_corpora::SetUp(benchmark::State const&) benchmark_corpora.cc:189
+
+  [Root cause classification]
+  - benchmark_zlib fails via LeakSanitizer: `benchmark_corpora.cc::load_corpus_file` allocates 288MB of corpus data in 58 objects during the benchmark `SetUp()` phase but never frees it. AddressSanitizer's LeakSanitizer detects this at process exit and aborts the `benchmark_zlib` CTest test. The original CI ctest command uses `-E benchmark_zlib` to exclude this test, but the LLM's run also specifies `-E benchmark_zlib` — despite this, `benchmark_zlib` still appears as failing, suggesting the test name filter didn't match exactly (the actual CTest test name may have a different case or prefix).
+  - 672 extra CTest tests in LLM (750 vs 78): The LLM's run.sh explicitly clones the `zlib-ng/corpora` repository to `test/data/corpora`. With the corpora data present, cmake generates a much larger set of parameterized benchmark CTest tests (one per corpus file per algorithm variant — e.g., `slide_hash/avx2/1024`, `deflate/avx512/silesia`, etc.), expanding from 78 to 750. The original CI did not clone corpora, so only the basic non-parameterized tests were generated.
+  - 491 extra GTest tests in LLM (4266 vs 3775): Similarly, with corpora data, GTest test parameterization expands, producing 491 extra test cases. All pass in both, but more were skipped in the original (974 skip) than LLM (650 skip) due to the different test set.
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 78 run, 78 passed, 0 failed, 0 skipped
+    LLM:      750 run, 749 passed, 1 failed, 0 skipped
+  [GTest]
+    Original: 3775 run, 2801 passed, 0 failed, 974 skipped
+    LLM:      4266 run, 3616 passed, 0 failed, 650 skipped

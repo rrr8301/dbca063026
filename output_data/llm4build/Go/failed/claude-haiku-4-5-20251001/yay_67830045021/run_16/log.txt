@@ -1,0 +1,269 @@
+Error from docker build
+
+#1 [internal] load .dockerignore
+#1 transferring context: 101B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 396B done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for ghcr.io/jguer/yay-builder:latest
+#3 DONE 0.2s
+
+#4 [1/7] FROM ghcr.io/jguer/yay-builder:latest@sha256:2c09438454ccfb3670de31a3692c35f9ed1b8187e4bfdbc783cbf298164a5c88
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 10.03kB 0.0s done
+#5 DONE 0.0s
+
+#6 [3/7] COPY . .
+#6 CACHED
+
+#7 [2/7] WORKDIR /workspace
+#7 CACHED
+
+#8 [4/7] RUN printf 'version: 2\nlinters:\n  disable:\n    - errcheck\n    - staticcheck\n' > .golangci.yml
+#8 CACHED
+
+#9 [5/7] RUN go mod download
+#9 DONE 1.0s
+
+#10 [6/7] RUN /app/bin/golangci-lint run -v ./...
+#10 0.521 level=info msg="golangci-lint has version 2.10.1 built with go1.26.0 from 5d1e709b on 2026-02-17T15:27:33Z"
+#10 0.521 level=info msg="[config_reader] Config search paths: [./ /workspace / /root]"
+#10 0.521 level=info msg="[config_reader] Used config file .golangci.yml"
+#10 0.536 level=info msg="[config_reader] Module name \"github.com/Jguer/yay/v12\""
+#10 0.604 level=info msg="[goenv] Read go env for 8.498157ms: map[string]string{\"GOCACHE\":\"/root/.cache/go-build\", \"GOROOT\":\"/usr/lib/go\"}"
+#10 0.604 level=info msg="[lintersdb] Active 3 linters: [govet ineffassign unused]"
+#10 12.17 level=info msg="[loader] Go packages loading at mode 8767 (deps|exports_file|imports|name|types_sizes|compiled_files|files) took 11.568191618s"
+#10 12.20 level=info msg="[runner/filename_unadjuster] Pre-built 0 adjustments in 25.371678ms"
+#10 14.54 level=info msg="[linters_context/goanalysis] analyzers took 2.150833111s with top 10 stages: printf: 761.548956ms, ctrlflow: 390.848431ms, inspect: 375.138948ms, unused: 200.85085ms, directives: 116.729671ms, stdversion: 64.308267ms, ineffassign: 45.967702ms, typeindex: 43.534972ms, copylocks: 17.606593ms, isgenerated: 14.315196ms"
+#10 14.54 level=info msg="[runner] processing took 4.404µs with stages: max_same_issues: 857ns, exclusion_rules: 529ns, exclusion_paths: 385ns, max_from_linter: 304ns, nolint_filter: 301ns, path_absoluter: 204ns, cgo: 202ns, filename_unadjuster: 196ns, diff: 190ns, path_shortener: 186ns, uniq_by_line: 186ns, path_relativity: 181ns, fixer: 93ns, severity-rules: 87ns, source_code: 86ns, path_prettifier: 85ns, max_per_file_from_linter: 84ns, generated_file_filter: 84ns, invalid_issue: 82ns, sort_results: 82ns"
+#10 14.54 level=info msg="[runner] linters took 2.339225808s with stages: goanalysis_metalinter: 2.339162078s"
+#10 14.54 level=info msg="File cache stats: 0 entries of total size 0B"
+#10 14.54 0 issues.
+#10 14.54 level=info msg="Memory: 141 samples, avg is 79.0MB, max is 333.8MB"
+#10 14.54 level=info msg="Execution took 13.942622103s"
+#10 DONE 14.7s
+
+#11 [7/7] RUN make test
+#11 0.382 go test -race -covermode=atomic -trimpath -mod=readonly -modcacherw ./...
+#11 24.02 --- FAIL: TestIntegrationLocalInstall (0.00s)
+#11 24.02     local_install_test.go:165: 
+#11 24.02         	Error Trace:	github.com/Jguer/yay/v12/local_install_test.go:165
+#11 24.02         	Error:      	Received unexpected error:
+#11 24.02         	            	cannot find PKGBUILD and .SRCINFO in directory: testdata/jfin
+#11 24.02         	Test:       	TestIntegrationLocalInstall
+#11 24.02 --- FAIL: TestIntegrationLocalBuildOnly (0.00s)
+#11 24.02     local_install_test.go:306: 
+#11 24.02         	Error Trace:	github.com/Jguer/yay/v12/local_install_test.go:306
+#11 24.02         	Error:      	Received unexpected error:
+#11 24.02         	            	cannot find PKGBUILD and .SRCINFO in directory: testdata/jfin
+#11 24.02         	Test:       	TestIntegrationLocalBuildOnly
+#11 24.02 --- FAIL: TestIntegrationLocalInstallMissingDep (0.00s)
+#11 24.02     local_install_test.go:424: 
+#11 24.02         	Error Trace:	github.com/Jguer/yay/v12/local_install_test.go:424
+#11 24.02         	Error:      	Error "cannot find PKGBUILD and .SRCINFO in directory: testdata/jfin" does not contain "could not find all required packages"
+#11 24.02         	Test:       	TestIntegrationLocalInstallMissingDep
+#11 24.02 --- FAIL: TestIntegrationLocalInstallNeeded (0.00s)
+#11 24.02     local_install_test.go:580: 
+#11 24.02         	Error Trace:	github.com/Jguer/yay/v12/local_install_test.go:580
+#11 24.02         	Error:      	Received unexpected error:
+#11 24.02         	            	cannot find PKGBUILD and .SRCINFO in directory: testdata/jfin
+#11 24.02         	Test:       	TestIntegrationLocalInstallNeeded
+#11 24.02 --- FAIL: TestIntegrationLocalInstallGenerateSRCINFO (0.00s)
+#11 24.02     local_install_test.go:615: 
+#11 24.02         	Error Trace:	github.com/Jguer/yay/v12/local_install_test.go:615
+#11 24.02         	Error:      	Received unexpected error:
+#11 24.02         	            	open testdata/jfin/.SRCINFO: no such file or directory
+#11 24.02         	Test:       	TestIntegrationLocalInstallGenerateSRCINFO
+#11 24.02 --- FAIL: TestIntegrationLocalInstallMissingFiles (0.00s)
+#11 24.02     local_install_test.go:775: 
+#11 24.02         	Error Trace:	github.com/Jguer/yay/v12/local_install_test.go:775
+#11 24.02         	Error:      	Received unexpected error:
+#11 24.02         	            	open testdata/jfin/.SRCINFO: no such file or directory
+#11 24.02         	Test:       	TestIntegrationLocalInstallMissingFiles
+#11 24.02 --- FAIL: TestIntegrationLocalInstallWithDepsProvides (0.00s)
+#11 24.02     local_install_test.go:1002: 
+#11 24.02         	Error Trace:	github.com/Jguer/yay/v12/local_install_test.go:1002
+#11 24.02         	Error:      	Received unexpected error:
+#11 24.02         	            	cannot find PKGBUILD and .SRCINFO in directory: testdata/cephbin
+#11 24.02         	Test:       	TestIntegrationLocalInstallWithDepsProvides
+#11 24.02 --- FAIL: TestIntegrationLocalInstallTwoSrcInfosWithDeps (0.00s)
+#11 24.02     local_install_test.go:1142: 
+#11 24.02         	Error Trace:	github.com/Jguer/yay/v12/local_install_test.go:1142
+#11 24.02         	Error:      	Received unexpected error:
+#11 24.02         	            	cannot find PKGBUILD and .SRCINFO in directory: testdata/gourou
+#11 24.02         	Test:       	TestIntegrationLocalInstallTwoSrcInfosWithDeps
+#11 24.02 FAIL
+#11 24.02 coverage: 47.5% of statements
+#11 24.02 FAIL	github.com/Jguer/yay/v12	0.125s
+#11 24.94 ok  	github.com/Jguer/yay/v12/pkg/cmd/graph	1.038s	coverage: 24.1% of statements
+#11 24.96 ok  	github.com/Jguer/yay/v12/pkg/completion	1.062s	coverage: 97.8% of statements
+#11 24.96 	github.com/Jguer/yay/v12/pkg/db		coverage: 0.0% of statements
+#11 24.96 ok  	github.com/Jguer/yay/v12/pkg/db/ialpm	1.056s	coverage: 20.1% of statements
+#11 24.96 	github.com/Jguer/yay/v12/pkg/db/mock		coverage: 0.0% of statements
+#11 25.00 ok  	github.com/Jguer/yay/v12/pkg/dep	1.095s	coverage: 79.1% of statements
+#11 25.00 	github.com/Jguer/yay/v12/pkg/dep/mock		coverage: 0.0% of statements
+#11 25.00 ok  	github.com/Jguer/yay/v12/pkg/dep/topo	1.044s	coverage: 76.7% of statements
+#11 25.00 ok  	github.com/Jguer/yay/v12/pkg/download	1.067s	coverage: 72.3% of statements
+#11 25.00 ok  	github.com/Jguer/yay/v12/pkg/intrange	1.039s	coverage: 94.6% of statements
+#11 25.00 ok  	github.com/Jguer/yay/v12/pkg/menus	1.051s	coverage: 39.3% of statements
+#11 25.00 ok  	github.com/Jguer/yay/v12/pkg/multierror	1.035s	coverage: 100.0% of statements
+#11 25.00 ok  	github.com/Jguer/yay/v12/pkg/news	1.094s	coverage: 92.3% of statements
+#11 25.00 ok  	github.com/Jguer/yay/v12/pkg/query	1.060s	coverage: 66.4% of statements
+#11 25.00 --- FAIL: TestBuildRuntime (0.01s)
+#11 25.00     runtime_test.go:40: 
+#11 25.00         	Error Trace:	github.com/Jguer/yay/v12/pkg/runtime/runtime_test.go:40
+#11 25.00         	Error:      	Received unexpected error:
+#11 25.00         	            	exit status 1
+#11 25.00         	            	error: config file /workspace/testdata/pacman.conf could not be read: No such file or directory
+#11 25.00         	            	error parsing '/workspace/testdata/pacman.conf'
+#11 25.00         	Test:       	TestBuildRuntime
+#11 25.00 --- FAIL: TestPacmanConf (0.02s)
+#11 25.00     pacman_test.go:90: 
+#11 25.00         	Error Trace:	github.com/Jguer/yay/v12/pkg/runtime/pacman_test.go:90
+#11 25.00         	Error:      	Expected nil, but got: &fmt.wrapError{msg:"exit status 1\nerror: config file /workspace/testdata/pacman.conf could not be read: No such file or directory\nerror parsing '/workspace/testdata/pacman.conf'\n", err:(*exec.ExitError)(0xc0001b8140)}
+#11 25.00         	Test:       	TestPacmanConf
+#11 25.00     pacman_test.go:91: 
+#11 25.00         	Error Trace:	github.com/Jguer/yay/v12/pkg/runtime/pacman_test.go:91
+#11 25.00         	Error:      	Expected value not to be nil.
+#11 25.00         	Test:       	TestPacmanConf
+#11 25.00 panic: runtime error: invalid memory address or nil pointer dereference [recovered, repanicked]
+#11 25.00 [signal SIGSEGV: segmentation violation code=0x1 addr=0x0 pc=0x9c346d]
+#11 25.00 
+#11 25.00 goroutine 23 [running]:
+#11 25.00 testing.tRunner.func1.2({0xaf3220, 0xee50b0})
+#11 25.00 	testing/testing.go:1974 +0x419
+#11 25.00 testing.tRunner.func1()
+#11 25.00 	testing/testing.go:1977 +0x67f
+#11 25.00 panic({0xaf3220?, 0xee50b0?})
+#11 25.00 	runtime/panic.go:860 +0x13a
+#11 25.00 github.com/Jguer/yay/v12/pkg/runtime.normalizePacmanConf(0x0)
+#11 25.00 	github.com/Jguer/yay/v12/pkg/runtime/pacman_test.go:39 +0x2d
+#11 25.00 github.com/Jguer/yay/v12/pkg/runtime.TestPacmanConf(0xc000271208)
+#11 25.00 	github.com/Jguer/yay/v12/pkg/runtime/pacman_test.go:96 +0x1238
+#11 25.00 testing.tRunner(0xc000271208, 0xb95430)
+#11 25.00 	testing/testing.go:2036 +0x21d
+#11 25.00 created by testing.(*T).Run in goroutine 1
+#11 25.00 	testing/testing.go:2101 +0xb13
+#11 25.00 FAIL	github.com/Jguer/yay/v12/pkg/runtime	0.051s
+#11 25.00 ok  	github.com/Jguer/yay/v12/pkg/settings	1.094s	coverage: 45.2% of statements
+#11 25.00 ok  	github.com/Jguer/yay/v12/pkg/settings/exe	1.054s	coverage: 36.4% of statements
+#11 25.00 ok  	github.com/Jguer/yay/v12/pkg/settings/parser	1.042s	coverage: 37.9% of statements
+#11 25.00 	github.com/Jguer/yay/v12/pkg/sync		coverage: 0.0% of statements
+#11 25.01 ok  	github.com/Jguer/yay/v12/pkg/sync/build	1.092s	coverage: 86.4% of statements
+#11 25.01 --- FAIL: TestNewService (0.00s)
+#11 25.01     service_test.go:36: 
+#11 25.01         	Error Trace:	github.com/Jguer/yay/v12/pkg/sync/srcinfo/service_test.go:36
+#11 25.01         	Error:      	Received unexpected error:
+#11 25.01         	            	failed to parse jellyfin: Unable to read file: ../../../testdata/jfin/.SRCINFO: open ../../../testdata/jfin/.SRCINFO: no such file or directory
+#11 25.01         	Test:       	TestNewService
+#11 25.01     service_test.go:37: 
+#11 25.01         	Error Trace:	github.com/Jguer/yay/v12/pkg/sync/srcinfo/service_test.go:37
+#11 25.01         	Error:      	Expected value not to be nil.
+#11 25.01         	Test:       	TestNewService
+#11 25.01 panic: runtime error: invalid memory address or nil pointer dereference [recovered, repanicked]
+#11 25.01 [signal SIGSEGV: segmentation violation code=0x1 addr=0x0 pc=0x783922]
+#11 25.01 
+#11 25.01 goroutine 8 [running]:
+#11 25.01 testing.tRunner.func1.2({0x87c6e0, 0xb49eb0})
+#11 25.01 	testing/testing.go:1974 +0x419
+#11 25.01 testing.tRunner.func1()
+#11 25.01 	testing/testing.go:1977 +0x67f
+#11 25.01 panic({0x87c6e0?, 0xb49eb0?})
+#11 25.01 	runtime/panic.go:860 +0x13a
+#11 25.01 github.com/Jguer/yay/v12/pkg/sync/srcinfo.TestNewService(0xc00029afc8)
+#11 25.01 	github.com/Jguer/yay/v12/pkg/sync/srcinfo/service_test.go:38 +0x502
+#11 25.01 testing.tRunner(0xc00029afc8, 0x8f2528)
+#11 25.01 	testing/testing.go:2036 +0x21d
+#11 25.01 created by testing.(*T).Run in goroutine 1
+#11 25.01 	testing/testing.go:2101 +0xb13
+#11 25.01 FAIL	github.com/Jguer/yay/v12/pkg/sync/srcinfo	0.038s
+#11 25.01 ok  	github.com/Jguer/yay/v12/pkg/sync/srcinfo/pgp	1.056s	coverage: 92.9% of statements
+#11 25.01 ok  	github.com/Jguer/yay/v12/pkg/sync/workdir	1.060s	coverage: 50.0% of statements
+#11 25.01 ==================
+#11 25.01 WARNING: DATA RACE
+#11 25.01 Read at 0x000000b15760 by goroutine 30:
+#11 25.01   github.com/Jguer/yay/v12/pkg/text.stylize()
+#11 25.01       github.com/Jguer/yay/v12/pkg/text/color.go:21 +0x544
+#11 25.01   github.com/Jguer/yay/v12/pkg/text.Bold()
+#11 25.01       github.com/Jguer/yay/v12/pkg/text/color.go:53 +0x58c
+#11 25.01   github.com/Jguer/yay/v12/pkg/text.(*Logger).ContinueTask()
+#11 25.01       github.com/Jguer/yay/v12/pkg/text/input.go:70 +0x47a
+#11 25.01   github.com/Jguer/yay/v12/pkg/text.TestContinueTask.func1()
+#11 25.01       github.com/Jguer/yay/v12/pkg/text/text_test.go:78 +0x310
+#11 25.01   testing.tRunner()
+#11 25.01       testing/testing.go:2036 +0x21c
+#11 25.01   testing.(*T).Run.gowrap1()
+#11 25.01       testing/testing.go:2101 +0x38
+#11 25.01 
+#11 25.01 Previous write at 0x000000b15760 by goroutine 9:
+#11 25.01   github.com/Jguer/yay/v12/pkg/text.TestColorHash.func1()
+#11 25.01       github.com/Jguer/yay/v12/pkg/text/color_test.go:16 +0x30
+#11 25.01   runtime.deferreturn()
+#11 25.01       runtime/panic.go:668 +0x5d
+#11 25.01   testing.tRunner()
+#11 25.01       testing/testing.go:2036 +0x21c
+#11 25.01   testing.(*T).Run.gowrap1()
+#11 25.01       testing/testing.go:2101 +0x38
+#11 25.01 
+#11 25.01 Goroutine 30 (running) created at:
+#11 25.01   testing.(*T).Run()
+#11 25.01       testing/testing.go:2101 +0xb12
+#11 25.01   github.com/Jguer/yay/v12/pkg/text.TestContinueTask()
+#11 25.01       github.com/Jguer/yay/v12/pkg/text/text_test.go:74 +0xde
+#11 25.01   testing.tRunner()
+#11 25.01       testing/testing.go:2036 +0x21c
+#11 25.01   testing.(*T).Run.gowrap1()
+#11 25.01       testing/testing.go:2101 +0x38
+#11 25.01 
+#11 25.01 Goroutine 9 (finished) created at:
+#11 25.01   testing.(*T).Run()
+#11 25.01       testing/testing.go:2101 +0xb12
+#11 25.01   testing.runTests.func1()
+#11 25.01       testing/testing.go:2585 +0x85
+#11 25.01   testing.tRunner()
+#11 25.01       testing/testing.go:2036 +0x21c
+#11 25.01   testing.runTests()
+#11 25.01       testing/testing.go:2583 +0x9e9
+#11 25.01   testing.(*M).Run()
+#11 25.01       testing/testing.go:2443 +0xf4b
+#11 25.01   main.main()
+#11 25.01       _testmain.go:74 +0x164
+#11 25.01 ==================
+#11 25.01 --- FAIL: TestLessRunes (0.00s)
+#11 25.01     testing.go:1712: race detected during execution of test
+#11 25.01 --- FAIL: TestContinueTask (0.01s)
+#11 25.01     --- FAIL: TestContinueTask/noinput-false (0.00s)
+#11 25.01         testing.go:1712: race detected during execution of test
+#11 25.01 FAIL
+#11 25.01 coverage: 65.7% of statements
+#11 25.01 FAIL	github.com/Jguer/yay/v12/pkg/text	0.043s
+#11 25.02 ok  	github.com/Jguer/yay/v12/pkg/upgrade	1.080s	coverage: 89.9% of statements
+#11 25.02 ok  	github.com/Jguer/yay/v12/pkg/vcs	1.055s	coverage: 87.2% of statements
+#11 25.02 FAIL
+#11 25.15 make: *** [Makefile:53: test] Error 1
+#11 ERROR: process "/bin/sh -c make test" did not complete successfully: exit code: 2
+------
+ > [7/7] RUN make test:
+#11 25.01 --- FAIL: TestContinueTask (0.01s)
+#11 25.01     --- FAIL: TestContinueTask/noinput-false (0.00s)
+#11 25.01         testing.go:1712: race detected during execution of test
+#11 25.01 FAIL
+#11 25.01 coverage: 65.7% of statements
+#11 25.01 FAIL	github.com/Jguer/yay/v12/pkg/text	0.043s
+#11 25.02 ok  	github.com/Jguer/yay/v12/pkg/upgrade	1.080s	coverage: 89.9% of statements
+#11 25.02 ok  	github.com/Jguer/yay/v12/pkg/vcs	1.055s	coverage: 87.2% of statements
+#11 25.02 FAIL
+#11 25.15 make: *** [Makefile:53: test] Error 1
+------
+Dockerfile:18
+--------------------
+  16 |     
+  17 |     # Run all tests without skipping
+  18 | >>> RUN make test
+--------------------
+ERROR: failed to solve: process "/bin/sh -c make test" did not complete successfully: exit code: 2

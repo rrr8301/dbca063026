@@ -1,0 +1,37 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          20
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      go-tests
+  Test command(s) run in original CI:
+    $ go test -p=8 -timeout 30m -ldflags "-w -s" -v ./backend/... | tee test.log; exit ${PIPESTATUS[0]}
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    7
+
+--- LLM run.sh Test Command(s) ---
+  $ go test ./... || true
+  $ go test ./...
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoDefault] Test run mismatch: original=2583, LLM=222
+  - [GoDefault] Test passed mismatch: original=2580, LLM=52
+  - [GoDefault] Test failed mismatch: original=0, LLM=170
+  - [GoDefault] 85 test(s) failed in LLM but not in original: github.com/bytebase/bytebase/backend/api/auth, github.com/bytebase/bytebase/backend/api/directory-sync, github.com/bytebase/bytebase/backend/api/lsp, github.com/bytebase/bytebase/backend/api/mcp, github.com/bytebase/bytebase/backend/api/oauth2 ... (+80 more)
+
+--- Root Cause Analysis ---
+  - [GoDefault] LLM ran 2361 fewer tests than original — LLM likely used a narrower test scope or missed some test suites.
+  - [GoDefault] 85 test(s) failed in LLM but not original: github.com/bytebase/bytebase/backend/api/auth, github.com/bytebase/bytebase/backend/api/directory-sync, github.com/bytebase/bytebase/backend/api/lsp, github.com/bytebase/bytebase/backend/api/mcp, github.com/bytebase/bytebase/backend/api/oauth2 ... (+80 more)
+  - Test command differences detected — original CI vs LLM run.sh may use different flags or test selection.
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 2583 run, 2580 passed, 0 failed, 0 skipped
+    LLM:      222 run, 52 passed, 170 failed, 0 skipped

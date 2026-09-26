@@ -1,0 +1,62 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          6
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Test (Ubuntu)
+  Test command(s) run in original CI:
+    $ actions/checkout@v5
+    $ if [[ ! -v CARGO_INCREMENTAL ]]; then
+    $ # Check if value is set
+    $ # Not all versions support setting CARGO_REGISTRIES_CRATES_IO_PROTOCOL
+    $ taiki-e/install-action@nextest
+
+--- LLM-Generated Dockerfile ---
+  Base image:   debian:trixie
+  RUN steps:    6
+
+--- LLM run.sh Test Command(s) ---
+  $ TEST_NEXTEST_FAILED=0
+  $ TEST_DOCTEST_FAILED=0
+  $ TEST_NEXTEST_FAILED=1
+  $ TEST_DOCTEST_FAILED=1
+  $ [ "$TEST_NEXTEST_FAILED" -eq 1 ] && echo "  - Nextest failed"
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in LLM but not in original: GoDefault
+  - [cargo] Test run mismatch: original=7, LLM=51
+  - [cargo] Test passed mismatch: original=7, LLM=7
+  - [cargo] Test failed mismatch: original=0, LLM=44
+  - [cargo] 22 test(s) failed in LLM but not in original: test_bom_kicad_fallback_json, test_fpid_change_preserves_position, test_fpid_change_replaces_footprint_geometry, test_layout_generation_with_complex, test_layout_generation_with_component_side_sync, test_layout_generation_with_dnp, test_layout_generation_with_graphics, test_layout_generation_with_module_layout (+14 more)
+  - [nexttest] Test result mismatch (same count 1182): original=(1181p/0f/1s), LLM=(1159p/22f/1s)
+  - [nexttest] Tests failed in LLM but passed in original: pcb-layout::fpid_change test_fpid_change_preserves_position, pcb-layout::fpid_change test_fpid_change_replaces_footprint_geometry, pcb-layout::layout_generation test_layout_generation_with_complex, pcb-layout::layout_generation test_layout_generation_with_component_side_sync, pcb-layout::layout_generation test_layout_generation_with_dnp, pcb-layout::layout_generation test_layout_generation_with_graphics, pcb-layout::layout_generation test_layout_generation_with_module_layout, pcb-layout::layout_generation test_layout_generation_with_multi_pads (+14 more)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    4083:    [0m[31;1mthread 'test_publish_board_with_description' (28167) panicked at /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/insta-1.43.1/src/runtime.rs:679:13:[0m
+    1310:    [0m[31;1mthread 'test_bom_kicad_fallback_json' (15368) panicked at /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/insta-1.43.1/src/runtime.rs:679:13:[0m
+    2054:    [0m[31;1mthread 'test_publish_board_full' (27587) panicked at crates/pcb/tests/release.rs:279:10:[0m
+    2099:    [0m[31;1mthread 'test_publish_board_simple_workspace' (28500) panicked at crates/pcb/tests/tag.rs:67:10:[0m
+    1310:    [0m[31;1mthread 'test_bom_kicad_fallback_json' (15368) panicked at /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/insta-1.43.1/src/runtime.rs:679:13:[0m
+    2054:    [0m[31;1mthread 'test_publish_board_full' (27587) panicked at crates/pcb/tests/release.rs:279:10:[0m
+    2099:    [0m[31;1mthread 'test_publish_board_simple_workspace' (28500) panicked at crates/pcb/tests/tag.rs:67:10:[0m
+    3993:    [0m[31;1mthread 'test_publish_board_with_file' (28130) panicked at /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/insta-1.43.1/src/runtime.rs:679:13:[0m
+
+  [Root cause classification]
+  - Rust panic: 4083:    [0m[31;1mthread 'test_publish_board_with_description' (28167) panicked at /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/insta-1.43.1/src/runtime.rs:679:13:[0m
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: (not present)
+    LLM:      44 run, 0 passed, 44 failed, 0 skipped
+  [cargo]
+    Original: 7 run, 7 passed, 0 failed, 0 skipped
+    LLM:      51 run, 7 passed, 44 failed, 0 skipped
+  [nexttest]
+    Original: 1182 run, 1181 passed, 0 failed, 1 skipped
+    LLM:      1182 run, 1159 passed, 22 failed, 1 skipped

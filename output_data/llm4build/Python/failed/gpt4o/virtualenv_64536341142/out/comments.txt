@@ -1,0 +1,37 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          N/A
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      🧪 test 3.10 - ubuntu-24.04
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    8
+
+--- Reason(s) for Non-Reproducibility ---
+  - [pytest] Test passed mismatch: original=415, LLM=403
+  - [pytest] Test failed mismatch: original=1, LLM=9
+  - [pytest] Test skipped mismatch: original=27, LLM=33
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > FAILED tests/unit/discovery/test_discovery.py::test_shim_resolved_to_real_binary[asdf]
+    > FAILED tests/unit/discovery/test_discovery.py::test_shim_resolved_to_real_binary[mise]
+    > FAILED tests/unit/discovery/test_discovery.py::test_shim_resolved_to_real_binary[pyenv]
+    > AssertionError: Expected 'from_exe' to have been called once. Called 3 times.
+    > Calls: [call('.../asdf_data_dir/installs/python/3.8.12/bin/python3.8'), call('/root/.local/share/uv/python/cpython-3.10-linux-x86_64-gnu/bin/python'), call('.../cpython-3.10.20-linux-x86_64-gnu/bin/python')]
+
+  [Root cause classification]
+  - The LLM container has the `uv` tool installed, which registers additional Python interpreters (cpython-3.10 and cpython-3.10.20) in `/root/.local/share/uv/python/`. The shim-resolution tests mock `PathPythonInfo.from_exe` and assert it is called exactly once (for the resolved shim binary), but uv's interpreter discovery causes virtualenv to probe the extra uv-managed Python paths as well, resulting in 3 calls instead of 1. The original ubuntu-24.04 CI runner does not have uv's interpreter registry on the PATH, so the mock is called only once. Six additional shim-discovery variants fail for the same reason, and the extra skips arise from missing conda in the LLM environment (6 more conda-related tests skipped than in CI).
+
+--- Test Statistics Comparison ---
+  [pytest]
+    Original: 445 run, 415 passed, 1 failed, 27 skipped
+    LLM:      445 run, 403 passed, 9 failed, 33 skipped

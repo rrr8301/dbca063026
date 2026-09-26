@@ -1,0 +1,41 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          N/A
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      test (linux-x86_64-gnu)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    6
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in original but missing in LLM: nexttest
+  - Framework(s) in LLM but not in original: GoDefault, cargo
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: (not present)
+    LLM:      4 run, 0 passed, 4 failed, 0 skipped
+  [nexttest]
+    Original: 3089 run, 3089 passed, 0 failed, 0 skipped
+    LLM:      (not present)
+  [cargo]
+    Original: (not present)
+    LLM:      1290 run, 0 passed, 2 failed, 1288 skipped
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > thread 'test_local_working_copy::test_check_out_existing_file_cannot_be_removed' panicked at lib/tests/test_local_working_copy.rs:1924:9:
+    > assertion failed: `Ok(CheckoutStats { updated_files: 1, ... })` does not match `Err(CheckoutError::Other { message, .. }) if message.contains("Failed to remove")`
+    > FAIL [0.288s] jj-lib::runner test_local_working_copy::test_check_out_existing_file_cannot_be_removed
+    > error: test run failed
+
+  [Root cause classification: nextest missing + filesystem permission behavior difference in Docker]
+  - The LLM generated a run.sh using cargo nextest but also appended redundant bare cargo build/nextest runs without the .cargo/config-ci.toml config, which caused the nexttest result to not be picked up by the harness parser (hence "nexttest not present" in LLM stats). The one genuine test failure, test_check_out_existing_file_cannot_be_removed, expects that checking out over a read-only file returns a CheckoutError, but inside the Docker container running as root, file removal always succeeds regardless of permissions, so the test gets Ok instead of Err. The GoDefault entries are spurious lines from jj's CLI output being misinterpreted by the test parser during the build steps.

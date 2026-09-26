@@ -1,0 +1,69 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      CI - Integration - Shade on Java 17
+  Test command(s) run in original CI:
+    $ actions/checkout@v4
+    $ actions/setup-java@v4 (java-version: 17)
+    $ gradle/actions/setup-gradle (with build cache)
+    $ actions/download-artifact@v4 (gradle-build-outputs.tar — pre-built binaries)
+    $ tar xf gradle-build-outputs.tar
+    $ actions/download-artifact@v4 (java-test-image — pre-built Docker image)
+    $ docker load -i /tmp/java-test-image.tar.gz
+    $ ./pulsar-build/run_integration_group_gradle.sh SHADE_BUILD
+    $ actions/setup-java@v4 (java-version: 17, for test runtime)
+    $ ./pulsar-build/run_integration_group_gradle.sh SHADE_RUN
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ ./gradlew assemble -x test --no-daemon
+  $ ./pulsar-build/run_integration_group_gradle.sh SHADE_BUILD
+  $ ./pulsar-build/run_integration_group_gradle.sh SHADE_RUN
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Gradle] Test run mismatch: original=0, LLM=68
+  - [Gradle] Test passed mismatch: original=0, LLM=0
+  - [Gradle] Test failed mismatch: original=0, LLM=34
+  - [Gradle] Task executed mismatch: original=11, LLM=40
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    Pulsar Shade Tests > pulsar-client-all-shade-suite > SmokeTest > setup FAILED
+    java.lang.IllegalStateException at SmokeTest.java:49
+    Pulsar Shade Tests > pulsar-client-all-shade-suite > SmokeTest > stateCheck FAILED
+    java.lang.IllegalStateException at SmokeTest.java:49
+    Pulsar Shade Tests > pulsar-client-all-shade-suite > SimpleProducerConsumerTest > setup FAILED
+    java.lang.IllegalStateException at SimpleProducerConsumerTest.java:84
+
+  [Root cause classification]
+  - Pre-built Pulsar Docker image not available → SHADE_RUN integration tests fail with
+    IllegalStateException. The original CI is a two-phase process: a prior CI job builds Pulsar
+    and packages it as `java-test-image.tar.gz` which is downloaded as a CI artifact and loaded
+    into the local Docker daemon (`docker load -i /tmp/java-test-image.tar.gz`). The SHADE_RUN
+    integration tests (`SmokeTest`, `SimpleProducerConsumerTest`) start a Pulsar cluster from
+    this pre-built image and test the shaded clients against it.
+    The LLM attempts to replicate this flow but does not have the pre-built image or the
+    pre-built Gradle artifacts. The LLM's `./gradlew assemble -x test` builds from scratch
+    (which succeeds), but when SHADE_RUN runs the integration tests, the Pulsar cluster cannot
+    start because the Docker image is not available (and even if Docker were available inside
+    the container, the `java-test-image.tar.gz` was never loaded). All 34 integration tests
+    fail at setup with `IllegalStateException`, and 34 more tests are skipped (the `stateCheck`
+    phases that depend on a running cluster).
+    The original CI's 0 tests reported is because the test results from the pre-built SHADE_RUN
+    integration tests are reported via a custom action (`apache/pulsar-test-infra/action-junit-report`)
+    rather than standard Gradle XML format, making the stats extractor report 0.
+
+--- Test Statistics Comparison ---
+  [Gradle]
+    Original:  0 run,  0 passed,  0 failed,  0 skipped (11 tasks — pre-built artifacts used)
+    LLM:      68 run,  0 passed, 34 failed, 34 skipped (40 tasks — built from scratch)

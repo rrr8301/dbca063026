@@ -1,0 +1,48 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          4
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      linux-build-and-test
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ : set $CARGO_HOME
+    $ : enable colors in Cargo output
+    $ : enable Cargo sparse registry
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    9
+
+--- LLM run.sh Test Command(s) ---
+  $ python3 test.py --ci --git --buck2=/tmp/artifacts/buck2
+
+--- Reason(s) for Non-Reproducibility ---
+  - [cargo] Test run mismatch: original=3233, LLM=1434
+  - [cargo] Test passed mismatch: original=3161, LLM=1433
+  - [cargo] Test failed mismatch: original=0, LLM=1
+  - [cargo] 1 test(s) failed in LLM but not in original: per_thread_instruction_counter::tests::test_perf_thread_instruction_counter
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    5416:thread 'per_thread_instruction_counter::tests::test_perf_thread_instruction_counter' (85674) panicked at app/buck2_util/src/per_thread_instruction_counter.rs:100:63:
+    5417-called `Result::unwrap()` on an `Err` value: Operation not permitted (os error 1)
+
+  [Root cause classification]
+  - TLS/SSL certificate path not found — test expects certificate files (e.g., tests/certs/) that are absent or not properly initialized.
+  - Process aborted (SIGABRT) — likely a GLib g_assert() failure, AddressSanitizer/UBSan abort, or missing D-Bus/system service in Docker container.
+  - Network connectivity issue — test requires network access or a service (e.g., local server) that is unavailable in Docker.
+  - Required environment variable not set — test reads a specific env var that was present in original CI but not in Docker container.
+  - Test timed out — likely due to slower execution in Docker container or a blocking service call that never returns.
+  - I/O error — test encountered a system-level I/O failure, possibly due to filesystem permissions or missing mount points.
+  - Rust panic: 5416:thread 'per_thread_instruction_counter::tests::test_perf_thread_instruction_counter' (85674) panicked at app/buck2_util/src/per_thread_instruction_counter.rs:100:63:
+
+--- Test Statistics Comparison ---
+  [cargo]
+    Original: 3233 run, 3161 passed, 0 failed, 72 skipped
+    LLM:      1434 run, 1433 passed, 1 failed, 0 skipped

@@ -1,0 +1,50 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      build
+  Test command(s) run in original CI:
+    $ actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+    $ make test-source-headers
+    $ make test-coverage
+    $ make build
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ TEST_FAILED=0
+  $ TEST_FAILED=1
+  $ TEST_FAILED=1
+  $ TEST_FAILED=1
+  $ TEST_FAILED=1
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoDefault] Test run mismatch: original=58, LLM=1
+  - [GoDefault] Test passed mismatch: original=58, LLM=0
+  - [GoDefault] Test failed mismatch: original=0, LLM=1
+  - [GoDefault] 1 test(s) failed in LLM but not in original: helm.sh/helm/v4/cmd/helm
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    53:    helm_test.go:74: Expected "level=WARN msg=\"failed to load plugin (ignoring)\" plugin_yaml=../../pkg/cmd/testdata/helmhome/helm/plugins/noversion/plugin.yaml error=\"failed to load plugin \\\".
+    55-FAIL
+    57:FAIL	helm.sh/helm/v4/cmd/helm	0.168s
+    58-FAIL
+
+  [Root cause classification]
+  - The LLM ran only 1 test (`cmd/helm`) vs 58 in the original because `make test-source-headers` failed (as in the failed-category counterpart `helm_73016499416`) and the LLM's run.sh set `TEST_FAILED=1` after each failed step but continued. The `cmd/helm` package is the only one that ran (and failed), while the 57 other packages never ran because `make test-coverage` also failed at the gate check before executing `go test`.
+
+  - The single `cmd/helm` failure at `helm_test.go:74` is a log message format assertion: the test expects a specific warning string format when a plugin fails to load (`level=WARN msg="failed to load plugin (ignoring)" plugin_yaml=...`). The actual log output from the Docker container's Helm binary differs from the expected string — either the log format changed between Go/slog versions, or the warning message template was updated in a newer Helm build. The plugin YAML path `../../pkg/cmd/testdata/helmhome/helm/plugins/noversion/plugin.yaml` exists but the resulting log message format doesn't match the hardcoded expected string in the test.
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 58 run, 58 passed, 0 failed, 0 skipped
+    LLM:      1 run, 0 passed, 1 failed, 0 skipped

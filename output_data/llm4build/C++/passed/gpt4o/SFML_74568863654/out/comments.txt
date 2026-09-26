@@ -1,0 +1,40 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          20
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT TESTS NOT REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      build / Linux GCC Shared Debug
+  Test command(s) run in original CI:
+    $ ctest --test-dir build --output-on-failure -C Debug --repeat until-pass:3
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ ctest --output-on-failure -C Debug --repeat until-pass:3 || echo "No tests were found or tests failed."
+
+--- Test Reproducibility Gap ---
+  Original ran 89 test(s) across [CTest].
+  LLM build produced no test results (empty llm_log_stats).
+
+--- Root Cause ---
+  Reason type: Test runner executed but produced no parseable output
+  Last log output before stopping:
+    21 |     [[maybe_unused]] const sf::Ftp       ftp;
+    |                                          ^~~
+    In file included from /usr/local/include/SFML/Network.hpp:32,
+    from /app/test/install/Install.cpp:5:
+    /usr/local/include/SFML/Network/Ftp.hpp:51:67: note: declared here
+    51 | class SFML_NETWORK_API [[deprecated("Use sf::Sftp if possible")]] Ftp
+    |                                                                   ^~~
+    [2/2] : && /usr/bin/c++ -g  CMakeFiles/test-sfml-install.dir/Install.cpp.o -o test-sfml-install  -Wl,-rpath,/usr/local/lib  /usr/local/lib/libsfml-graphics-d.so.3.2.0  /usr/local/lib/libsfml-network-d
+
+--- Original Test Statistics (not reproduced) ---
+  [CTest] 89 run, 89 passed, 0 failed, 0 skipped

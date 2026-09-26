@@ -1,0 +1,48 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      CMake Shared Libraries
+  Test command(s) run in original CI:
+    $ actions/checkout@v4
+    $ cmake --version
+    $ cmake -E make_directory /home/runner/work/openzl/openzl/build
+    $ make -j2
+    $ ctest --output-on-failure
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ cmake -E make_directory /workspace/build
+  $ CMAKE_ARGS="-DCMAKE_INSTALL_PREFIX=./install"
+  $ CMAKE_ARGS="$CMAKE_ARGS -DOPENZL_BUILD_TESTS=ON"
+  $ CMAKE_ARGS="$CMAKE_ARGS -DOPENZL_BUILD_SHARED_LIBS=ON"
+  $ CMAKE_ARGS="$CMAKE_ARGS -DZSTRONG_COMMON_FLAGS=\"-Werror\""
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in original but missing in LLM: GTest
+  - [CTest] Test result mismatch (same count 1713): original=(1712p/1f/0s), LLM=(1713p/0f/0s)
+  - [CTest] Tests failed in original but passed in LLM: ACETest.savePopulation
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    (All 1713 CTest tests passed in LLM; original had ACETest.savePopulation failure in GTest)
+
+  [Root cause classification]
+  - GTest direct execution not performed: The original CI ran `ctest` which invokes the test binary, and the test framework parser separately captured the GTest output (1 failure: `ACETest.savePopulation`). The LLM's cmake flags added `-DZSTRONG_COMMON_FLAGS="-Werror"` which may have changed the build configuration slightly. The `ACETest.savePopulation` failure in the original is likely a non-deterministic test (population-based algorithm with random seeds) that sometimes fails. In LLM it passed, either due to different random seed behavior or a slightly different compiled binary due to the extra `-Werror` flag enabling stricter compilation paths.
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 1713 run, 1712 passed, 1 failed, 0 skipped
+    LLM:      1713 run, 1713 passed, 0 failed, 0 skipped
+  [GTest]
+    Original: 1 run, 0 passed, 1 failed, 0 skipped
+    LLM:      (not present)

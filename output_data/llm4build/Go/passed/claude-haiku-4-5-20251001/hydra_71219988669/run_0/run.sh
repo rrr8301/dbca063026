@@ -1,0 +1,33 @@
+#!/bin/bash
+
+set -e
+
+# Set environment variables for database connections
+export TEST_DATABASE_POSTGRESQL="postgres://postgres:secret@localhost:5432/postgres?sslmode=disable"
+export TEST_DATABASE_MYSQL="mysql://root:secret@(localhost:3306)/mysql?multiStatements=true&parseTime=true"
+export TEST_DATABASE_COCKROACHDB="cockroach://root@localhost:26257/defaultdb?sslmode=disable"
+
+# Verify Go installation
+go version
+
+# Download Go dependencies
+echo "Downloading Go dependencies..."
+go mod download
+
+# Generate go.list for nancy
+echo "Generating go.list..."
+go list -json > go.list
+
+# Run nancy (dependency vulnerability check)
+echo "Running nancy..."
+nancy sleuth -o json || true
+
+# Run golangci-lint
+echo "Running golangci-lint..."
+golangci-lint run --timeout 10m0s || true
+
+# Run go tests with coverage
+echo "Running go tests..."
+go test -coverprofile coverage.out -failfast -timeout=20m ./...
+
+echo "All tests completed!"

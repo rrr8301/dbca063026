@@ -1,0 +1,70 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Linux
+  Test command(s) run in original CI:
+    $ actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+    $ actions/setup-java (java-version: 21, GraalVM Community)
+    $ actions/setup-java (java-version: 17, Temurin)
+    $ actions/setup-java (java-version: 25, Temurin)
+    $ gradle/actions/setup-gradle (with Develocity remote build cache)
+    $ ./gradlew \
+        -Dorg.gradle.java.installations.auto-download=false \
+        -Pjunit.develocity.buildCache.pushEnabled=true \
+        -Pjunit.develocity.predictiveTestSelection.enabled=true \
+        -Pjunit.develocity.predictiveTestSelection.selectRemainingTests=true \
+        "-Dscan.value.GitHub job=Linux" \
+        javaToolchains :platform-tooling-support-tests:test build jacocoRootReport \
+        --no-configuration-cache
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    6
+
+--- LLM run.sh Test Command(s) ---
+  $ ./gradlew \
+      -Dorg.gradle.java.installations.auto-download=false \
+      -Pjunit.develocity.buildCache.pushEnabled=false \
+      -Pjunit.develocity.predictiveTestSelection.enabled=true \
+      -Pjunit.develocity.predictiveTestSelection.selectRemainingTests=true \
+      "-Dscan.value.GitHub job=Linux" \
+      javaToolchains :platform-tooling-support-tests:test build jacocoRootReport \
+      --no-configuration-cache
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Gradle] Task executed mismatch: original=274, LLM=387
+  - [Gradle] Tasks up-to-date mismatch: original=52, LLM=49
+  (No test count difference: both report 0 tests run)
+
+--- Root Cause Analysis ---
+  [Root cause classification]
+  - Gradle Develocity remote build cache not accessible in Docker → LLM executes 113 more
+    tasks (387 vs 274). The original CI uses `gradle/actions/setup-gradle` with a populated
+    Develocity remote build cache (`-Pjunit.develocity.buildCache.pushEnabled=true` plus a valid
+    `DEVELOCITY_ACCESS_KEY`). Many Gradle tasks are loaded FROM-CACHE rather than re-executed,
+    reducing the executed task count to 274. The LLM build has no access to the Develocity
+    remote build cache (`-Pjunit.develocity.buildCache.pushEnabled=false`, no access key), so
+    all tasks that would have been cache hits must be executed from scratch, increasing the
+    count to 387.
+    Additionally, the Develocity predictive test selection
+    (`-Pjunit.develocity.predictiveTestSelection.enabled=true`) may further reduce the original
+    CI's executed task count by skipping test tasks deemed unchanged by the Develocity server
+    analysis. Without a Develocity server connection, the LLM build cannot benefit from this
+    optimization.
+    Both builds report 0 actual tests run — this project's CI build appears to use
+    the `build` task with tests delegated only to `:platform-tooling-support-tests:test`, and
+    the test count reported is 0 in both cases (tests may be run but not captured in the Gradle
+    test XML format parsed by the stats extractor, or the `selectRemainingTests` flag skips
+    all tests when no changed tests are detected).
+
+--- Test Statistics Comparison ---
+  [Gradle]
+    Original: 0 run, 0 passed, 0 failed, 0 skipped (274 tasks executed, 52 up-to-date)
+    LLM:      0 run, 0 passed, 0 failed, 0 skipped (387 tasks executed, 49 up-to-date)

@@ -1,0 +1,48 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   False
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          20
+Original build category: failed
+
+STATUS: BUILD EXECUTION FAILED
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      🔬 Test only Go
+
+--- LLM-Generated Dockerfile ---
+  Base image:   golang:1.20
+  RUN steps:    3
+
+--- Failure Analysis ---
+  Failure type: Docker build error
+
+  Original build was already failing. LLM could not reproduce or fix it after 20 attempt(s).
+
+--- Dockerfile Error Context ---
+  Dockerfile:14
+  --------------------
+    12 |     
+    13 |     # Download dependencies
+    14 | >>> RUN go mod tidy
+    15 |     
+    16 |     # Copy the rest of the application code
+  --------------------
+
+--- Error Message(s) ---
+  #12 ERROR: process "/bin/sh -c go mod tidy" did not complete successfully: exit code: 1
+  ERROR: failed to solve: process "/bin/sh -c go mod tidy" did not complete successfully: exit code: 1
+
+No test results could be produced due to build failure.
+
+--- Root Cause Analysis ---
+  [Actual error from LLM log.txt]
+    > go: errors parsing go.mod:
+    > /app/go.mod:203:2: unknown directive: github.com/dmarkham/enumer
+    > /app/go.mod:205:2: unknown directive: github.com/go-delve/delve/cmd/dlv
+    > /app/go.mod:209:2: unknown directive: go.uber.org/mock/mockgen
+    > (and 8 more unknown directives in the `tool` block)
+
+  [Root cause classification]
+  - The project's go.mod contains a `tool` block (introduced in Go 1.24) listing development tool dependencies, which is an unknown directive to the Go 1.20 toolchain used in the Dockerfile. The LLM's sed command removed only the `toolchain` line but left the entire `tool` block intact, causing `go mod tidy` to reject the file. Because akvorado is a large network traffic analysis project with many vendored tools (protoc plugins, mocking tools, linters), correctly stripping the `tool` block or using a Go 1.24+ base image was required to proceed.

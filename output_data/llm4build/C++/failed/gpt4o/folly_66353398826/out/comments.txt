@@ -1,0 +1,42 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-22.04
+  CI job name:      build
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    3
+
+--- Reason(s) for Non-Reproducibility ---
+  - [CTest] Test run mismatch: original=7410, LLM=3698
+  - [CTest] Test passed mismatch: original=7401, LLM=3694
+  - [CTest] Test failed mismatch: original=1, LLM=2
+  - [CTest] Test skipped mismatch: original=8, LLM=2
+  - [CTest] 1 test(s) failed in original but passed in LLM: container_heap_vector_types_test.HeapVectorTypes.SimpleSetTest
+  - [CTest] 2 test(s) failed in LLM but not in original: file_util_test.WriteFileAtomic.directoryPermissions, io_async_hh_wheel_timer_test.HHWheelTimerTest.CancelTimeout
+  - [GTest] Test run mismatch: original=1, LLM=2
+  - [GTest] Test failed mismatch: original=1, LLM=2
+  - [GTest] 1 test(s) failed in original but passed in LLM: HeapVectorTypes.SimpleSetTest
+  - [GTest] 2 test(s) failed in LLM but not in original: HHWheelTimerTest.CancelTimeout, WriteFileAtomic.directoryPermissions
+
+--- Root Cause Analysis ---
+  - [CTest] LLM ran 3712 fewer tests than original — LLM likely used a narrower test scope or missed some test suites.
+  - [CTest] 2 test(s) failed in LLM but not original: file_util_test.WriteFileAtomic.directoryPermissions, io_async_hh_wheel_timer_test.HHWheelTimerTest.CancelTimeout
+  - [GTest] LLM ran 1 more tests than original — LLM likely used a broader test scope or included extra test suites.
+  - [GTest] 2 test(s) failed in LLM but not original: HHWheelTimerTest.CancelTimeout, WriteFileAtomic.directoryPermissions
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 7410 run, 7401 passed, 1 failed, 8 skipped
+    LLM:      3698 run, 3694 passed, 2 failed, 2 skipped
+  [GTest]
+    Original: 1 run, 0 passed, 1 failed, 0 skipped
+    LLM:      2 run, 0 passed, 2 failed, 0 skipped

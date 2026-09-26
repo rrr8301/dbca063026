@@ -1,0 +1,48 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      linux-cmake-job (ubuntu-22.04, NONE)
+  Test command(s) run in original CI:
+    $ actions/checkout@v4
+    $ cmake -DEVENT__ENABLE_GCC_WARNINGS=ON ..
+    $ cmake --build .
+    $ ctest --output-on-failure -j4
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ cmake .. -DEVENT__ENABLE_GCC_WARNINGS=ON $EVENT_CMAKE_OPTIONS
+  $ cmake --build .
+  $ ctest --output-on-failure
+
+--- Reason(s) for Non-Reproducibility ---
+  - [CTest] Test run mismatch: original=84, LLM=68
+  - [CTest] Test passed mismatch: original=84, LLM=52
+  - [CTest] Test failed mismatch: original=0, LLM=16
+  - [CTest] 16 test(s) failed in LLM but not in original: test-eof__timerfd_EPOLL, test-time__timerfd_EPOLL, test-weof__timerfd_EPOLL, test-eof__changelist_EPOLL, test-time__changelist_EPOLL, test-weof__changelist_EPOLL, test-eof__timerfd_changelist_EPOLL (+9 more including ratelim tests)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    2/68 Test  #2: test-eof__timerfd_EPOLL ..............................***Failed    0.03 sec
+    [warn] epoll_wait: Function not implemented
+    6/68 Test  #6: test-time__timerfd_EPOLL .............................***Failed    0.03 sec
+    7/68 Test  #7: test-weof__timerfd_EPOLL .............................***Failed    0.03 sec
+    76% tests passed, 16 tests failed out of 68
+
+  [Root cause classification]
+  - epoll_wait returns ENOSYS for timerfd/signalfd in Docker: The `timerfd_EPOLL` and `changelist_EPOLL` tests use `timerfd_create` + `epoll_wait` with `EPOLLET` (edge-triggered) on timer file descriptors. In the Docker container, `epoll_wait` returns `ENOSYS` ("Function not implemented") for this specific combination because Docker's seccomp profile or kernel configuration blocks certain epoll operations on timer file descriptors. The original CI (ubuntu-22.04 GitHub Actions runner) passes all 84 tests because it runs on a real kernel without these restrictions.
+  - 16 fewer tests in LLM (68 vs 84): The original CI passed 84 tests, 16 more than LLM's 68. The missing 16 tests are the same tests that fail in LLM — these tests exist in both builds but the original CI runner passes them all. The LLM has 68 total because the cmake build detected the same event backends (EPOLL, SELECT, POLL) but some test parameterizations were excluded. The `ratelim` tests (test-ratelim__*) also fail due to the timerfd/epoll restriction affecting rate-limiting's timer implementation.
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 84 run, 84 passed, 0 failed, 0 skipped
+    LLM:      68 run, 52 passed, 16 failed, 0 skipped

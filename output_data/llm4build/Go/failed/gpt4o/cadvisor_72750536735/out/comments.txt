@@ -1,0 +1,36 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          20
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT TESTS NOT REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      test-integration (1.25, ubuntu-24.04, build/config/libipmctl.sh, bookworm)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ make test-integration GO_FLAGS="${GO_FLAGS}" || {
+
+--- Test Reproducibility Gap ---
+  Test results could not be matched between builds.
+  Test existence match: False
+  Test count match: False
+  Test names match: False
+  Test statuses match: False
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > GO_FLAGS=-tags=libipmctl,cgo -race ./build/build.sh
+    > /bin/sh: 1: -race: not found
+    > make: *** [Makefile:39: test-integration] Error 127
+    > Failed to run integration tests
+
+  [Root cause classification]
+  - The run.sh sources build/config/libipmctl.sh which sets GO_FLAGS='-tags=libipmctl,cgo -race', but the Makefile expands this as a single shell argument rather than splitting it — causing /bin/sh to interpret "-race" as a standalone command that does not exist. In the original CI, the runner shell (bash with build.sh) correctly parses the flags, but the LLM-generated container invokes /bin/sh which fails to split the compound GO_FLAGS string. Because the integration test suite never executed, the LLM produces zero test results versus the 32 tests observed in the original CI (4 passed), making test existence, count, name, and status all non-matching (TR=False).

@@ -1,0 +1,188 @@
+[sqlc-test-setup] 21:15:24 === Installing PostgreSQL and MySQL for test setup ===
+[sqlc-test-setup] 21:15:24 http_proxy is not set, skipping apt proxy configuration
+[sqlc-test-setup] 21:15:24 --- Installing PostgreSQL ---
+[sqlc-test-setup] 21:15:24 installing postgresql runtime dependencies
+[sqlc-test-setup] 21:15:24 exec: sudo apt-get install -y --no-install-recommends libossp-uuid16
+Reading package lists...
+Building dependency tree...
+Reading state information...
+libossp-uuid16 is already the newest version (1.6.2-1.5build13).
+libossp-uuid16 set to manually installed.
+0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.
+[sqlc-test-setup] 21:15:24 downloading PostgreSQL 18.2.0 from https://github.com/theseus-rs/postgresql-binaries/releases/download/18.2.0/postgresql-18.2.0-x86_64-unknown-linux-gnu.tar.gz
+[sqlc-test-setup] 21:15:25 verifying SHA256 checksum
+[sqlc-test-setup] 21:15:25 SHA256 checksum verified: cc2674e1641aa2a62b478971a22c131a768eb783f313e6a3385888f58a604074
+[sqlc-test-setup] 21:15:25 extracting postgresql to /root/.cache/sqlc/postgresql
+[sqlc-test-setup] 21:15:25 exec: tar -xzf /tmp/postgresql-18.2.0.tar.gz -C /root/.cache/sqlc/postgresql --strip-components=1
+[sqlc-test-setup] 21:15:25 exec: /root/.cache/sqlc/postgresql/bin/postgres --version
+[sqlc-test-setup] 21:15:25 postgresql installed successfully: postgres (PostgreSQL) 18.2
+[sqlc-test-setup] 21:15:25 --- Installing MySQL 9 ---
+[sqlc-test-setup] 21:15:25 exec: mysqld --version
+[sqlc-test-setup] 21:15:25 mysql is already installed: /usr/sbin/mysqld  Ver 8.0.45-0ubuntu0.24.04.1 for Linux on x86_64 ((Ubuntu))
+[sqlc-test-setup] 21:15:25 mysql version is too old, upgrading to MySQL 9
+[sqlc-test-setup] 21:15:27 removing old mysql packages
+[sqlc-test-setup] 21:15:27 exec: sudo apt-get remove -y mysql-server mysql-client mysql-common mysql-server-core-* mysql-client-core-*
+Reading package lists...
+Building dependency tree...
+Reading state information...
+Package 'mysql-server-core-5.7' is not installed, so not removed
+Package 'mysql-client-core-5.7' is not installed, so not removed
+E: Unable to locate package mysql-client
+[sqlc-test-setup] 21:15:27 clearing old mysql data directory
+[sqlc-test-setup] 21:15:27 exec: sudo rm -rf /var/lib/mysql
+[sqlc-test-setup] 21:15:27 exec: sudo mkdir -p /var/lib/mysql
+[sqlc-test-setup] 21:15:27 exec: sudo chown mysql:mysql /var/lib/mysql
+[sqlc-test-setup] 21:15:27 downloading MySQL 9 bundle from https://dev.mysql.com/get/Downloads/MySQL-9.1/mysql-server_9.1.0-1ubuntu24.04_amd64.deb-bundle.tar
+[sqlc-test-setup] 21:15:27 exec: curl -L -o /tmp/mysql-server-bundle.tar https://dev.mysql.com/get/Downloads/MySQL-9.1/mysql-server_9.1.0-1ubuntu24.04_amd64.deb-bundle.tar
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+  9  494M    9 46.1M    0     0  47.7M      0  0:00:10 --:--:--  0:00:10 47.7M 29  494M   29  146M    0     0  74.3M      0  0:00:06  0:00:01  0:00:05  100M 48  494M   48  239M    0     0  80.6M      0  0:00:06  0:00:02  0:00:04 96.5M 68  494M   68  337M    0     0  85.2M      0  0:00:05  0:00:03  0:00:02 97.3M 89  494M   89  444M    0     0  89.5M      0  0:00:05  0:00:04  0:00:01 99.5M100  494M  100  494M    0     0  91.1M      0  0:00:05  0:00:05 --:--:--  100M
+[sqlc-test-setup] 21:15:33 extracting bundle to /tmp/mysql9
+[sqlc-test-setup] 21:15:33 exec: tar -xf /tmp/mysql-server-bundle.tar -C /tmp/mysql9
+[sqlc-test-setup] 21:15:33 installing mysql-common_*.deb (dependency errors will be fixed afterwards)
+[sqlc-test-setup] 21:15:33 exec: bash -c sudo dpkg -i /tmp/mysql9/mysql-common_*.deb
+dpkg: regarding .../mysql-common_9.1.0-1ubuntu24.04_amd64.deb containing mysql-common:
+ mysql-common conflicts with mysql-client-8.0
+  mysql-client-8.0 (version 8.0.45-0ubuntu0.24.04.1) is present and installed.
+
+dpkg: error processing archive /tmp/mysql9/mysql-common_9.1.0-1ubuntu24.04_amd64.deb (--install):
+ conflicting packages - not installing mysql-common
+Errors were encountered while processing:
+ /tmp/mysql9/mysql-common_9.1.0-1ubuntu24.04_amd64.deb
+[sqlc-test-setup] 21:15:33 dpkg reported errors for mysql-common_*.deb (will fix with apt-get install -f)
+[sqlc-test-setup] 21:15:33 installing mysql-community-client-plugins_*.deb (dependency errors will be fixed afterwards)
+[sqlc-test-setup] 21:15:33 exec: bash -c sudo dpkg -i /tmp/mysql9/mysql-community-client-plugins_*.deb
+Selecting previously unselected package mysql-community-client-plugins.
+(Reading database ... 21153 files and directories currently installed.)
+Preparing to unpack .../mysql-community-client-plugins_9.1.0-1ubuntu24.04_amd64.deb ...
+Unpacking mysql-community-client-plugins (9.1.0-1ubuntu24.04) ...
+Setting up mysql-community-client-plugins (9.1.0-1ubuntu24.04) ...
+Processing triggers for libc-bin (2.39-0ubuntu8.7) ...
+[sqlc-test-setup] 21:15:33 installing mysql-community-client-core_*.deb (dependency errors will be fixed afterwards)
+[sqlc-test-setup] 21:15:33 exec: bash -c sudo dpkg -i /tmp/mysql9/mysql-community-client-core_*.deb
+Selecting previously unselected package mysql-community-client-core.
+dpkg: considering removing mysql-client-core-8.0 in favour of mysql-community-client-core ...
+dpkg: no, cannot proceed with removal of mysql-client-core-8.0 (--auto-deconfigure will help):
+ mysql-client-8.0 depends on mysql-client-core-8.0
+  mysql-client-core-8.0 is to be removed.
+
+dpkg: regarding .../mysql-community-client-core_9.1.0-1ubuntu24.04_amd64.deb containing mysql-community-client-core:
+ mysql-community-client-core conflicts with mysql-client-core-8.0
+  mysql-client-core-8.0 (version 8.0.45-0ubuntu0.24.04.1) is present and installed.
+
+dpkg: error processing archive /tmp/mysql9/mysql-community-client-core_9.1.0-1ubuntu24.04_amd64.deb (--install):
+ conflicting packages - not installing mysql-community-client-core
+Errors were encountered while processing:
+ /tmp/mysql9/mysql-community-client-core_9.1.0-1ubuntu24.04_amd64.deb
+[sqlc-test-setup] 21:15:33 dpkg reported errors for mysql-community-client-core_*.deb (will fix with apt-get install -f)
+[sqlc-test-setup] 21:15:33 installing mysql-community-client_*.deb (dependency errors will be fixed afterwards)
+[sqlc-test-setup] 21:15:33 exec: bash -c sudo dpkg -i /tmp/mysql9/mysql-community-client_*.deb
+Selecting previously unselected package mysql-community-client.
+dpkg: considering removing mysql-client-8.0 in favour of mysql-community-client ...
+dpkg: no, cannot proceed with removal of mysql-client-8.0 (--auto-deconfigure will help):
+ mysql-server-8.0 depends on mysql-client-8.0 (>= 8.0.45-0ubuntu0.24.04.1)
+  mysql-client-8.0 is to be removed.
+
+dpkg: regarding .../mysql-community-client_9.1.0-1ubuntu24.04_amd64.deb containing mysql-community-client:
+ mysql-community-client conflicts with mysql-client-8.0
+  mysql-client-8.0 (version 8.0.45-0ubuntu0.24.04.1) is present and installed.
+
+dpkg: error processing archive /tmp/mysql9/mysql-community-client_9.1.0-1ubuntu24.04_amd64.deb (--install):
+ conflicting packages - not installing mysql-community-client
+Errors were encountered while processing:
+ /tmp/mysql9/mysql-community-client_9.1.0-1ubuntu24.04_amd64.deb
+[sqlc-test-setup] 21:15:33 dpkg reported errors for mysql-community-client_*.deb (will fix with apt-get install -f)
+[sqlc-test-setup] 21:15:33 installing mysql-client_*.deb (dependency errors will be fixed afterwards)
+[sqlc-test-setup] 21:15:33 exec: bash -c sudo dpkg -i /tmp/mysql9/mysql-client_*.deb
+Selecting previously unselected package mysql-client.
+(Reading database ... 21167 files and directories currently installed.)
+Preparing to unpack .../mysql-client_9.1.0-1ubuntu24.04_amd64.deb ...
+Unpacking mysql-client (9.1.0-1ubuntu24.04) ...
+dpkg: dependency problems prevent configuration of mysql-client:
+ mysql-client depends on mysql-community-client (= 9.1.0-1ubuntu24.04); however:
+  Package mysql-community-client is not installed.
+
+dpkg: error processing package mysql-client (--install):
+ dependency problems - leaving unconfigured
+Errors were encountered while processing:
+ mysql-client
+[sqlc-test-setup] 21:15:34 dpkg reported errors for mysql-client_*.deb (will fix with apt-get install -f)
+[sqlc-test-setup] 21:15:34 installing mysql-community-server-core_*.deb (dependency errors will be fixed afterwards)
+[sqlc-test-setup] 21:15:34 exec: bash -c sudo dpkg -i /tmp/mysql9/mysql-community-server-core_*.deb
+Selecting previously unselected package mysql-community-server-core.
+dpkg: considering removing mysql-server-core-8.0 in favour of mysql-community-server-core ...
+dpkg: no, cannot proceed with removal of mysql-server-core-8.0 (--auto-deconfigure will help):
+ mysql-server-8.0 depends on mysql-server-core-8.0 (= 8.0.45-0ubuntu0.24.04.1)
+  mysql-server-core-8.0 is to be removed.
+
+dpkg: regarding .../mysql-community-server-core_9.1.0-1ubuntu24.04_amd64.deb containing mysql-community-server-core:
+ mysql-community-server-core conflicts with mysql-server-core-8.0
+  mysql-server-core-8.0 (version 8.0.45-0ubuntu0.24.04.1) is present and installed.
+
+dpkg: error processing archive /tmp/mysql9/mysql-community-server-core_9.1.0-1ubuntu24.04_amd64.deb (--install):
+ conflicting packages - not installing mysql-community-server-core
+Errors were encountered while processing:
+ /tmp/mysql9/mysql-community-server-core_9.1.0-1ubuntu24.04_amd64.deb
+[sqlc-test-setup] 21:15:34 dpkg reported errors for mysql-community-server-core_*.deb (will fix with apt-get install -f)
+[sqlc-test-setup] 21:15:34 installing mysql-community-server_*.deb (dependency errors will be fixed afterwards)
+[sqlc-test-setup] 21:15:34 exec: bash -c sudo dpkg -i /tmp/mysql9/mysql-community-server_*.deb
+Selecting previously unselected package mysql-community-server.
+dpkg: regarding .../mysql-community-server_9.1.0-1ubuntu24.04_amd64.deb containing mysql-community-server:
+ mysql-server-8.0 conflicts with virtual-mysql-server
+  mysql-community-server provides virtual-mysql-server and is to be installed.
+
+dpkg: error processing archive /tmp/mysql9/mysql-community-server_9.1.0-1ubuntu24.04_amd64.deb (--install):
+ conflicting packages - not installing mysql-community-server
+Errors were encountered while processing:
+ /tmp/mysql9/mysql-community-server_9.1.0-1ubuntu24.04_amd64.deb
+[sqlc-test-setup] 21:15:34 dpkg reported errors for mysql-community-server_*.deb (will fix with apt-get install -f)
+[sqlc-test-setup] 21:15:34 installing mysql-server_*.deb (dependency errors will be fixed afterwards)
+[sqlc-test-setup] 21:15:34 exec: bash -c sudo dpkg -i /tmp/mysql9/mysql-server_*.deb
+(Reading database ... 21173 files and directories currently installed.)
+Preparing to unpack .../mysql-server_9.1.0-1ubuntu24.04_amd64.deb ...
+Unpacking mysql-server (9.1.0-1ubuntu24.04) over (8.0.45-0ubuntu0.24.04.1) ...
+dpkg: dependency problems prevent configuration of mysql-server:
+ mysql-server depends on mysql-community-server (= 9.1.0-1ubuntu24.04); however:
+  Package mysql-community-server is not installed.
+
+dpkg: error processing package mysql-server (--install):
+ dependency problems - leaving unconfigured
+Errors were encountered while processing:
+ mysql-server
+[sqlc-test-setup] 21:15:34 dpkg reported errors for mysql-server_*.deb (will fix with apt-get install -f)
+[sqlc-test-setup] 21:15:34 fixing missing dependencies with apt-get install -f
+[sqlc-test-setup] 21:15:34 exec: sudo apt-get install -f -y
+Reading package lists...
+Building dependency tree...
+Reading state information...
+Correcting dependencies... Done
+The following packages were automatically installed and are no longer required:
+  libaio1t64 libcgi-fast-perl libcgi-pm-perl libclone-perl
+  libencode-locale-perl libevent-core-2.1-7t64 libevent-pthreads-2.1-7t64
+  libfcgi-bin libfcgi-perl libfcgi0t64 libhtml-parser-perl libhtml-tagset-perl
+  libhtml-template-perl libhttp-date-perl libhttp-message-perl libio-html-perl
+  liblwp-mediatypes-perl libmecab2 libnuma1 libprotobuf-lite32t64
+  libtimedate-perl libtirpc-common libtirpc3t64 liburi-perl mecab-ipadic
+  mecab-ipadic-utf8 mecab-utils mysql-client-8.0 mysql-client-core-8.0
+  mysql-common mysql-server-8.0 mysql-server-core-8.0
+Use 'sudo apt autoremove' to remove them.
+The following packages will be REMOVED:
+  mysql-client mysql-server
+0 upgraded, 0 newly installed, 2 to remove and 0 not upgraded.
+2 not fully installed or removed.
+After this operation, 137 kB disk space will be freed.
+(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 21176 files and directories currently installed.)
+Removing mysql-client (9.1.0-1ubuntu24.04) ...
+Removing mysql-server (9.1.0-1ubuntu24.04) ...
+[sqlc-test-setup] 21:15:34 mysql 9 installed successfully
+[sqlc-test-setup] 21:15:34 === Install complete ===
+[sqlc-test-setup] 21:15:34 === Starting PostgreSQL and MySQL ===
+[sqlc-test-setup] 21:15:34 --- Starting PostgreSQL ---
+[sqlc-test-setup] 21:15:34 initializing postgresql data directory
+[sqlc-test-setup] 21:15:34 exec: /root/.cache/sqlc/postgresql/bin/initdb -D /root/.cache/sqlc/postgresql/data --username=postgres --auth=trust
+initdb: error: cannot be run as root
+initdb: hint: Please log in (using, e.g., "su") as the (unprivileged) user that will own the server process.
+[sqlc-test-setup] 21:15:34 start failed: starting postgresql: initdb: exit status 1
+exit status 1
+/app/run.sh: line 13: gotestsum: command not found

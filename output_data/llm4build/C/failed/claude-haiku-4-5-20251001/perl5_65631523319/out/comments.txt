@@ -1,0 +1,46 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          5
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      linux (-Duseshrplib -Dusequadmath -Dusecbacktrace -Dusethreads)
+  Test command(s) run in original CI:
+    $ actions/checkout@v4
+    $ MALLOC_PERTURB_=254 MALLOC_CHECK_=3 make -j2 test_prep
+    $ LD_LIBRARY_PATH=`pwd` MALLOC_PERTURB_=254 MALLOC_CHECK_=3 TEST_JOBS=2 ./perl t/harness
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ MALLOC_PERTURB_=254 MALLOC_CHECK_=3 make -j2 test_prep
+  $ LD_LIBRARY_PATH=`pwd` MALLOC_PERTURB_=254 MALLOC_CHECK_=3 TEST_JOBS=2 ./perl t/harness
+
+--- Reason(s) for Non-Reproducibility ---
+  - [perl-harness] Test run mismatch: original=1384286, LLM=1384132
+  - [perl-harness] Test passed mismatch: original=1384286, LLM=1384132
+  - [perl-harness] Test failed mismatch: original=0, LLM=0
+  - [perl-harness] 5 test(s) failed in LLM but not in original: cpan/Test-Harness/t/regression.t (exited 13), cpan/Test-Harness/t/source_handler.t (exited 2), porting/authors.t (exited 5), porting/cmp_version.t, porting/exec-bit.t
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    (perl-harness reports 0 failed tests despite these 5 subtests exiting non-zero; they count as abnormal exits not failures)
+    (shell-tests: 1 failure in both original and LLM — consistent)
+
+  [Root cause classification]
+  - Test-count discrepancy (154 fewer in LLM): The original CI built with `-Duseshrplib -Dusequadmath -Dusecbacktrace -Dusethreads` which enables 128-bit quadmath floats, backtrace support, and shared Perl library. The LLM built with the same flags. The 154-test difference likely comes from the `porting/` test scripts, particularly `porting/cmp_version.t` and `porting/exec-bit.t`, which check repository-specific metadata that may differ between the Docker environment and the original CI runner.
+  - 5 subtests exit abnormally in LLM: `porting/authors.t` (exit 5) fails because the Docker container's git config lacks the committer identity in the author list. `porting/exec-bit.t` checks executable bit on repository files which may differ in Docker. `cpan/Test-Harness` tests fail due to CPAN module version differences. None of these are counted as "failed" by the harness framework (they show as non-zero exit with 0 framework-level failures), but their abnormal exits account for the missing 154 test-count items.
+
+--- Test Statistics Comparison ---
+  [perl-harness]
+    Original: 1384286 run, 1384286 passed, 0 failed, 0 skipped
+    LLM:      1384132 run, 1384132 passed, 0 failed, 0 skipped
+  [shell-tests]
+    Original: 1 run, 0 passed, 1 failed, 0 skipped
+    LLM:      1 run, 0 passed, 1 failed, 0 skipped

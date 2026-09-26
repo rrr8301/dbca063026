@@ -1,0 +1,35 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          N/A
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      ubuntu-latest / 3.11
+  Test command(s) run in original CI:
+    $ pytest dask/tests/test_imports.py
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    7
+
+--- LLM run.sh Test Command(s) ---
+  $ pytest dask/tests/test_imports.py || true
+
+--- Reason(s) for Non-Reproducibility ---
+  - [pytest] Test passed mismatch: original=16481, LLM=16476
+  - [pytest] Test failed mismatch: original=0, LLM=5
+  - [pytest] 2 test(s) failed in LLM but not in original: dask/tests/test_config.py, dask/tests/test_system.py
+
+--- Root Cause Analysis ---
+  - [pytest] 2 test(s) failed in LLM but not original: dask/tests/test_config.py, dask/tests/test_system.py
+  - Test command differences detected — original CI vs LLM run.sh may use different flags or test selection.
+
+--- Test Statistics Comparison ---
+  [pytest]
+    Original: 18115 run, 16481 passed, 0 failed, 1013 skipped
+    LLM:      18115 run, 16476 passed, 5 failed, 1013 skipped

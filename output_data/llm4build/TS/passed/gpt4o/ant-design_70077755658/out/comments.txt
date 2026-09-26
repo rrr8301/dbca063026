@@ -1,0 +1,35 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          4
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      test-react-legacy (18, 1/2)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   node:20-bullseye
+  RUN steps:    4
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in LLM but not in original: GoDefault
+  - [jest] Test run mismatch: original=3795, LLM=3814
+  - [jest] Test passed mismatch: original=3744, LLM=3726
+  - [jest] Test failed mismatch: original=0, LLM=37
+  - [jest] 1 test(s) failed in original but passed in LLM: Unknown
+  - [jest] 1 test(s) failed in LLM but not in original: components/calendar/__tests__/demo-extend.test.ts (5.346 s)
+
+--- Root Cause Analysis ---
+  - [jest] LLM ran 19 more tests than original — LLM likely used a broader test scope or included extra test suites.
+  - [jest] 1 test(s) failed in LLM but not original: components/calendar/__tests__/demo-extend.test.ts (5.346 s)
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: (not present)
+    LLM:      14 run, 0 passed, 12 failed, 0 skipped
+  [jest]
+    Original: 3795 run, 3744 passed, 0 failed, 51 skipped
+    LLM:      3814 run, 3726 passed, 37 failed, 51 skipped

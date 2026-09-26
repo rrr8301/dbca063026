@@ -1,0 +1,44 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      freebsd-cmake-job (14.1, DISABLE_THREAD_SUPPORT)
+  Test command(s) run in original CI:
+    $ actions/checkout@v4
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ EVENT_CMAKE_OPTIONS="-DEVENT__DISABLE_THREAD_SUPPORT=ON"
+  $ EVENT_CMAKE_OPTIONS=""
+  $ cmake .. $EVENT_CMAKE_OPTIONS || (rm -rf * && cmake .. $EVENT_CMAKE_OPTIONS)
+  $ cmake --build .
+  $ TEST_EXIT_CODE=$?
+
+--- Reason(s) for Non-Reproducibility ---
+  - [CTest] Test run mismatch: original=320, LLM=420
+  - [CTest] Test passed mismatch: original=307, LLM=300
+  - [CTest] Test failed mismatch: original=13, LLM=120
+  - [CTest] 24 test(s) failed in LLM but not in original: regress__changelist_EPOLL, regress__changelist_EPOLL_debug, regress__signalfd_EPOLL, regress__signalfd_EPOLL_debug, regress__timerfd_EPOLL, regress__timerfd_EPOLL_debug, regress__timerfd_changelist_EPOLL, regress__timerfd_changelist_EPOLL_debug (+16 more)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    1127:  FAIL /workspace/test/regress.c:1678: assert(event_count_active == 0): 1 vs 0
+    main/event_base_get_num_events: [Lost connection!]
+    (repeated for regress__timerfd_EPOLL, regress__timerfd_changelist_EPOLL and similar tests)
+
+  [Root cause classification]
+  - Platform mismatch and Docker container restrictions: The original CI ran on FreeBSD 14.1 (320 tests); the LLM ran on Ubuntu 22.04 Linux (420 tests). Linux supports additional EPOLL backends (`timerfd`, `signalfd`, `changelist`) that do not exist on FreeBSD, explaining the 100 extra tests. The `timerfd_EPOLL` and `signalfd_EPOLL` tests fail in Docker because the container kernel restricts certain event notification mechanisms — `timerfd` and `signalfd` work but exhibit different timing behavior under Docker's process isolation. The assertion `event_count_active == 0` fails when an active event remains after expected cleanup, suggesting the EPOLL event loop does not drain correctly within the containerized environment. The run.sh also toggled `DEVENT__DISABLE_THREAD_SUPPORT=ON` then reset it to empty, effectively running with thread support enabled — different from the original CI which explicitly disabled thread support.
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 320 run, 307 passed, 13 failed, 0 skipped
+    LLM:      420 run, 300 passed, 120 failed, 0 skipped

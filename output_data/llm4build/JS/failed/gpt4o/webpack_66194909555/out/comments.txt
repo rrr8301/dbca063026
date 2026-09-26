@@ -1,0 +1,44 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      basic
+  Test command(s) run in original CI:
+    $ yarn test:basic --ci
+
+--- LLM-Generated Dockerfile ---
+  Base image:   node:lts
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ yarn test:basic --ci || true
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoDefault] Test run mismatch: original=2, LLM=4
+  - [GoDefault] Test failed mismatch: original=2, LLM=4
+  - [GoDefault] 2 test(s) failed in LLM but not in original: test/Cli.basictest.js, test/TestCasesNormal.basictest.js
+  - [jest] Test run mismatch: original=12124, LLM=12141
+  - [jest] Test passed mismatch: original=12105, LLM=12124
+  - [jest] Test failed mismatch: original=2, LLM=6
+  - [jest] Test skipped mismatch: original=17, LLM=11
+
+--- Root Cause Analysis ---
+  - [GoDefault] LLM ran 2 more tests than original — LLM likely used a broader test scope or included extra test suites.
+  - [GoDefault] 2 test(s) failed in LLM but not original: test/Cli.basictest.js, test/TestCasesNormal.basictest.js
+  - [jest] LLM ran 17 more tests than original — LLM likely used a broader test scope or included extra test suites.
+  - Test command differences detected — original CI vs LLM run.sh may use different flags or test selection.
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 2 run, 0 passed, 2 failed, 0 skipped
+    LLM:      4 run, 0 passed, 4 failed, 0 skipped
+  [jest]
+    Original: 12124 run, 12105 passed, 2 failed, 17 skipped
+    LLM:      12141 run, 12124 passed, 6 failed, 11 skipped

@@ -1,0 +1,67 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          4
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      linux (ubuntu-latest, 3.12, defaults, integration, 3)
+  Test command(s) run in original CI:
+    $ actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+    $ conda install --yes --file tests/requirements.txt --file tests/requirements-Linux.txt
+                    --file tests/requirements-ci.txt --file tests/requirements-s3.txt python=3.12
+    $ python -m pytest --cov=conda --durations-path=durations/Linux.json --group=3 --splits=3 -m "integration"
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    8
+
+--- LLM run.sh Test Command(s) ---
+  $ conda install --yes --file tests/requirements.txt --file tests/requirements-Linux.txt
+                  --file tests/requirements-ci.txt --file tests/requirements-s3.txt python=3.12
+  $ python -m pytest --cov=conda --durations-path=durations/Linux.json --group=3 --splits=3 -m "integration"
+
+--- Reason(s) for Non-Reproducibility ---
+  - [pytest] Test run mismatch: original=151, LLM=102
+  - [pytest] Test passed mismatch: original=139, LLM=88
+  - [pytest] Test failed mismatch: original=0, LLM=1
+  - [pytest] 1 test(s) failed in LLM but not in original: tests/shell/test_powershell.py::test_shell_available[powershell]
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > [pytest-split] Splitting tests with algorithm: least_duration
+    > [pytest-split] Running group 3/3 (estimated duration: 479.35s)
+    > tests/shell/test_powershell.py::test_shell_available[powershell] ERROR   [ 50%]
+    > FileNotFoundError: Shell(name=('powershell', 'pwsh', 'pwsh-preview'), path=None, exe=None) not found
+
+  [Root cause classification]
+  Two distinct failure modes:
+
+  (1) No pre-existing durations/Linux.json -- pytest-split assigns different test set to group 3
+    The test suite uses `pytest-split` with `--splits=3 --group=3` to run 1/3 of integration
+    tests per CI job. The splitting strategy (`--algorithm=least_duration`) requires a pre-built
+    `durations/Linux.json` file containing per-test timing data from prior CI runs. In the original
+    CI, this file exists (either committed to the repo or cached by GitHub Actions), so group 3
+    contains the same 151 tests as expected. In the LLM run, no such pre-existing file is present
+    at the start; the log shows `[pytest-split] Splitting tests with algorithm: least_duration`
+    (creating it fresh), and at the end `[pytest-split] Stored test durations in durations/Linux.json`.
+    Without historical timing data, the test splitter distributes tests differently, putting only
+    102 tests into group 3 instead of 151 -- 49 fewer tests run.
+
+  (2) PowerShell not installed -- test_shell_available[powershell] fails with FileNotFoundError
+    `tests/shell/test_powershell.py::test_shell_available[powershell]` checks that a PowerShell
+    interpreter (any of: `powershell`, `pwsh`, `pwsh-preview`) is accessible on PATH. In the Docker
+    container (ubuntu:22.04), no PowerShell interpreter is installed -- the Dockerfile installs
+    shell helpers (ash, csh, fish, tcsh, zsh) but not PowerShell. The test fixture raises:
+    `FileNotFoundError: Shell(name=('powershell', 'pwsh', 'pwsh-preview'), path=None, exe=None) not found`
+    The GitHub Actions runner (ubuntu-latest) has PowerShell pre-installed as `pwsh`, so the test
+    passes in CI. This test happens to fall in group 3 of the LLM's split and fails at setup (ERROR),
+    while the original's group 3 may have excluded it due to different split boundaries.
+
+--- Test Statistics Comparison ---
+  [pytest]
+    Original: 151 run, 139 passed, 0 failed, 10 skipped, 2 xpassed
+    LLM:      102 run, 88 passed, 1 failed, 10 skipped, 3 xpassed

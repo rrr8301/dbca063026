@@ -1,0 +1,47 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          6
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      build
+  Test command(s) run in original CI:
+    $ actions/checkout@v2
+    $ npm install -g eslint@8.57.0
+    $ psql -d saltcorn_test --command='create extension "uuid-ossp";'
+    $ npm install --legacy-peer-deps
+    $ npm run tsc
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    7
+
+--- LLM run.sh Test Command(s) ---
+  $ PGDATABASE=${PGDATABASE:-saltcorn_test}
+  $ npm run tsc
+  $ packages/saltcorn-cli/bin/saltcorn run-tests
+
+--- Reason(s) for Non-Reproducibility ---
+  - [jest] Test run mismatch: original=1161, LLM=1123
+  - [jest] Test passed mismatch: original=1161, LLM=839
+  - [jest] Test failed mismatch: original=0, LLM=284
+  - [jest] 1 test(s) failed in LLM but not in original: tests/base.test.ts (7.46 s)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > echo "Error: no test specified"
+    Error: no test specified
+    > echo "Error: no test specified"
+    Error: no test specified
+
+  [Root cause classification]
+  - Database service unavailable or not properly configured — test requires an external database service.
+
+--- Test Statistics Comparison ---
+  [jest]
+    Original: 1161 run, 1161 passed, 0 failed, 0 skipped
+    LLM:      1123 run, 839 passed, 284 failed, 0 skipped

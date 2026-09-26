@@ -1,0 +1,35 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          N/A
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      build (ubuntu-latest, 25, false)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ mvn --errors --show-version --batch-mode --no-transfer-progress -Ddoclint=all -Drat.skip=true -Dlicense.skip=true clean install
+
+Note: Original had test failures; LLM build passed all — failed build has passed.
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Maven] Test run mismatch: original=64723, LLM=57937
+  - [Maven] Test passed mismatch: original=64700, LLM=57921
+  - [Maven] Test failed mismatch: original=7, LLM=0
+  - [Maven] 7 test(s) failed in original but passed in LLM: testTimeZoneStrategy_TimeZone(Locale)[349](org.apache.commons.lang3.time.FastDateParser_TimeZoneStrategyTest), testTimeZoneStrategy_TimeZone(Locale)[350](org.apache.commons.lang3.time.FastDateParser_TimeZoneStrategyTest), testTimeZoneStrategy_TimeZone(Locale)[351](org.apache.commons.lang3.time.FastDateParser_TimeZoneStrategyTest), testTimeZoneStrategy_TimeZone(Locale)[850](org.apache.commons.lang3.time.FastDateParser_TimeZoneStrategyTest), testTimeZoneStrategy_TimeZone(Locale)[851](org.apache.commons.lang3.time.FastDateParser_TimeZoneStrategyTest) ... (+2 more)
+
+--- Root Cause Analysis ---
+  - [Maven] LLM ran 6786 fewer tests than original — LLM likely used a narrower test scope or missed some test suites.
+
+--- Test Statistics Comparison ---
+  [Maven]
+    Original: 64723 run, 64700 passed, 7 failed, 16 skipped
+    LLM:      57937 run, 57921 passed, 0 failed, 16 skipped

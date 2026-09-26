@@ -1,0 +1,63 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Maven Build
+  Test command(s) run in original CI:
+    $ actions/checkout@v4
+    $ actions/setup-java@v4 (java-version: 17)
+    $ mvn -B deploy -DdeployAtEnd=true -Pcoverage,integrationTesting,javadoc \
+        -Dnsfixtures=SEGMENT_TAR,DOCUMENT_NS
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ mvn -B install -Pcoverage,integrationTesting,javadoc \
+      -Dnsfixtures=SEGMENT_TAR,DOCUMENT_NS
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Maven] Test run mismatch: original=24295, LLM=12695
+  - [Maven] Test passed mismatch: original=23789, LLM=11470
+  - [Maven] Test failed mismatch: original=0, LLM=876
+  - [Maven] 876 tests fail in LLM but pass in original (all are DOCUMENT_NS fixture variants;
+    sample):
+    testQueryLogger(org.apache.jackrabbit.oak.jcr.OperationLoggerTest)
+    testBinaryLogger(org.apache.jackrabbit.oak.jcr.OperationLoggerTest)
+    testGetRequiredPrimaryTypes(org.apache.jackrabbit.oak.jcr.nodetype.NodeDefinitionTest)
+    testRootType(org.apache.jackrabbit.oak.jcr.nodetype.NodeDefinitionTest)
+    ... (+872 more DOCUMENT_NS fixture tests)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    ERROR org.apache.jackrabbit.oak.jcr.OperationLoggerTest.testQueryLogger
+    Caused by: javax.jcr.RepositoryException: java.lang.NullPointerException: Couldn't obtain MongoConnection.
+    Caused by: java.lang.NullPointerException: Couldn't obtain MongoConnection.
+
+    (same root cause for all 876 failures)
+
+  [Root cause classification]
+  - MongoDB not started in Docker → 876 DOCUMENT_NS fixture tests fail. The build specifies
+    `-Dnsfixtures=SEGMENT_TAR,DOCUMENT_NS`, which runs every integration test twice: once against
+    the local segment-tar node store (SEGMENT_TAR) and once against MongoDB (DOCUMENT_NS).
+    The original CI (GitHub Actions) has a MongoDB service container available, so all DOCUMENT_NS
+    tests can obtain a MongoConnection and pass. In the LLM Docker container no MongoDB process
+    is started, so every test that uses the DOCUMENT_NS fixture throws
+    `NullPointerException: Couldn't obtain MongoConnection` and fails at JCR repository
+    initialization time.
+    Because Maven stops at the first failing module (no `--fail-at-end` / `-fae` flag), the build
+    aborts after the first module with DOCUMENT_NS failures, causing only 12695 of 24295 total
+    tests to execute (roughly half — the tests that had already run in SEGMENT_TAR fixture mode
+    in completed modules, plus whatever partial DOCUMENT_NS tests ran before the first failure).
+
+--- Test Statistics Comparison ---
+  [Maven]
+    Original: 24295 run, 23789 passed,   0 failed, 506 skipped
+    LLM:      12695 run, 11470 passed, 876 failed, 349 skipped

@@ -1,0 +1,37 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      build-and-dist (default)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Meson] Test run mismatch: original=10, LLM=9
+  - [Meson] Test skipped mismatch: original=1, LLM=0
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > 4/10 libratbag:ratbagctl-test  FAIL  0.05s  exit status 1
+    > ModuleNotFoundError: No module named 'gi'
+    > File "/app/builddir/ratbagctl.test", line 33, in <module>
+    >   import toolbox
+    > File "/app/builddir/toolbox.py", line 30, in <module>
+    >   from gi.repository import GLib
+
+  [Root cause classification]
+  - The `ratbagctl-test` test requires the Python `gi` (GObject Introspection) module to import GLib; this module is provided by the `python3-gi` package which the LLM did not install. In the original CI (ubuntu-24.04 GitHub runner) the package was available in the environment, allowing the test to run and be counted as skipped (since the test requires a live ratbagd D-Bus daemon). In the LLM container the import fails immediately with ModuleNotFoundError, causing the test to error out and not appear in the run count at all, reducing the visible test total from 10 to 9.
+
+--- Test Statistics Comparison ---
+  [Meson]
+    Original: 10 run, 9 passed, 0 failed, 1 skipped
+    LLM:      9 run, 9 passed, 0 failed, 0 skipped

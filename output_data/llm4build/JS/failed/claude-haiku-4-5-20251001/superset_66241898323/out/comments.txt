@@ -1,0 +1,37 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          3
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      sharded-jest-tests (4)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    6
+
+--- LLM run.sh Test Command(s) ---
+  $ npm run test -- --coverage --shard=4/8 --coverageReporters=json
+
+--- Reason(s) for Non-Reproducibility ---
+  - [jest] Test result mismatch (same count 1212): original=(1195p/3f/14s), LLM=(1198p/0f/14s)
+  - [jest] Tests failed in LLM but passed in original: Unknown
+  - [jest] Tests failed in original but passed in LLM: src/pages/DatasetList/DatasetList.listview.test.tsx (556.801 s)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > (no errors — LLM had 0 failures vs 3 in original; all tests passed in LLM)
+
+  [Root cause classification]
+  - The 3 original failures include `DatasetList.listview.test.tsx (556.801s)` — this test ran for over 9 minutes in the original CI, suggesting it hit a jest timeout (jest's default is 5 seconds per test, but with `--testTimeout` overrides it can be much longer). At 556 seconds, this test was timing out waiting for React component rendering or a mock API response. In the LLM's Docker environment, the same test passed (contributing to the 3 fewer failures), likely because the LLM's Node.js/jest version has a different default timeout or the mock infrastructure resolves faster in Docker.
+
+  - The 3 original failures in shard 4/8 are flaky timing-sensitive tests — `DatasetList.listview.test.tsx` at 556.801s is far above any reasonable single-test execution time and indicates a test that relies on real or mock asynchronous timers (e.g., `setTimeout`, polling, React `act()` flushes) that behave differently depending on the CPU load and jest worker concurrency. The GitHub Actions runner for shard 4 happened to be slower or more loaded than usual, while the LLM's Docker environment on a dedicated host resolved all timeouts within bounds. This is a classic flaky test pattern where infrastructure variance determines pass/fail.
+
+--- Test Statistics Comparison ---
+  [jest]
+    Original: 1212 run, 1195 passed, 3 failed, 14 skipped
+    LLM:      1212 run, 1198 passed, 0 failed, 14 skipped

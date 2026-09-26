@@ -1,0 +1,41 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          7
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-22.04
+  CI job name:      Test (Ubuntu)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    4
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in LLM but not in original: nexttest
+  - [GoDefault] Test run mismatch: original=12, LLM=390
+  - [GoDefault] Test failed mismatch: original=12, LLM=390
+  - [cargo] Test run mismatch: original=360, LLM=4914
+  - [cargo] Test failed mismatch: original=12, LLM=390
+  - [cargo] Test skipped mismatch: original=348, LLM=4524
+  - [cargo] 189 test(s) failed in LLM but not in original: interface_mixed_templates_and_types, interface_multiple_net_templates, interface_nested_template, interface_net_template_basic, interface_template_property_inheritance ... (+184 more)
+
+--- Root Cause Analysis ---
+  - [GoDefault] LLM ran 378 more tests than original — LLM likely used a broader test scope or included extra test suites.
+  - [cargo] LLM ran 4554 more tests than original — LLM likely used a broader test scope or included extra test suites.
+  - [cargo] 189 test(s) failed in LLM but not original: interface_mixed_templates_and_types, interface_multiple_net_templates, interface_nested_template, interface_net_template_basic, interface_template_property_inheritance ... (+184 more)
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 12 run, 0 passed, 12 failed, 0 skipped
+    LLM:      390 run, 0 passed, 390 failed, 0 skipped
+  [cargo]
+    Original: 360 run, 0 passed, 12 failed, 348 skipped
+    LLM:      4914 run, 0 passed, 390 failed, 4524 skipped
+  [nexttest]
+    Original: (not present)
+    LLM:      1123 run, 927 passed, 195 failed, 1 skipped

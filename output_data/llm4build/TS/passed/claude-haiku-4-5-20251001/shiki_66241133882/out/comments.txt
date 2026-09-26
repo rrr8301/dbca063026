@@ -1,0 +1,45 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      test (24.x, macos-latest)
+  Test command(s) run in original CI:
+    $ actions/checkout@v5
+    $ pnpm/action-setup@v3
+    $ npm i -g @antfu/ni
+    $ nr build
+    $ nr test --coverage
+
+--- LLM-Generated Dockerfile ---
+  Base image:   node:24-alpine
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ nr test --coverage
+
+--- Reason(s) for Non-Reproducibility ---
+  - [vitest] Test result mismatch (same count 596): original=(596p/0f/0s), LLM=(588p/8f/0s)
+  - [vitest] Tests failed in LLM but passed in original: packages/core/test/core-sync.test.ts, packages/core/test/core.test.ts, packages/core/test/tokens.test.ts, packages/engine-javascript/test/compare.test.ts, packages/engine-javascript/test/general.test.ts, packages/shiki/test/bundle.test.ts, packages/shiki/test/injections.test.ts, packages/transformers/test/transformer-meta-highlight-zeroIndexed.test.ts
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    1044:[41m[1m FAIL [22m[49m packages/transformers/test/transformer-meta-highlight-zeroIndexed.test.ts[2m > [22mtransformerMetaHighlight - zeroIndexed behavior[2m > [22mdefault mode should treat
+    1045-[31m[1mError[22m: Snapshot `transformerMetaHighlight - zeroIndexed behavior > default mode should treat meta as 1-indexed 1` mismatched[39m
+    519:[41m[1m FAIL [22m[49m packages/engine-javascript/test/compare.test.ts[2m > [22mcases[2m > [22mts-basic
+    520-[31m[1mError[22m: Snapshot `cases > ts-basic 2` mismatched[39m
+    1004:[41m[1m FAIL [22m[49m packages/engine-javascript/test/general.test.ts[2m > [22mshould[2m > [22mdynamic load theme and lang
+    1005-[31m[1mError[22m: Snapshot `should > dynamic load theme and lang 3` mismatched[39m
+
+  [Root cause classification]
+  - Test timed out — likely due to slower execution in Docker container or a blocking service call that never returns.
+
+--- Test Statistics Comparison ---
+  [vitest]
+    Original: 596 run, 596 passed, 0 failed, 0 skipped
+    LLM:      596 run, 588 passed, 8 failed, 0 skipped

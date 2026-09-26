@@ -1,0 +1,82 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      mvn (full-build-java-tests, 11, -Pfull-build verify -Dsurefire-forkcount=1 -DskipCppUnit ...)
+  Test command(s) run in original CI:
+    $ actions/checkout@v4
+    $ actions/setup-java@v4 (java-version: 11)
+    $ mvn -B -V -e -ntp "-Dstyle.color=always" -Pfull-build verify \
+        -Dsurefire-forkcount=1 -DskipCppUnit -Dsurefire.rerunFailingTestsCount=5
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ mvn -B -V -e -ntp "-Dstyle.color=always" -Pfull-build verify \
+      -Dsurefire-forkcount=1 -DskipCppUnit -Dsurefire.rerunFailingTestsCount=5 \
+      -Drat.skip=true -Dlicense.skip=true
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Maven] Test result mismatch (same count 3037): original=(3032p/1f/4s), LLM=(3025p/8f/4s)
+  - [Maven] 8 tests fail in LLM but pass in original:
+    testReadOnlySnapshotDir(org.apache.zookeeper.server.ZooKeeperServerMainTest)
+    testReadOnlyTxnLogDir(org.apache.zookeeper.server.ZooKeeperServerMainTest)
+    testUnreadableFileInput(org.apache.zookeeper.ZKUtilTest)
+    testQuorumV6(org.apache.zookeeper.server.quorum.QuorumPeerMainTest)
+    shouldStartClusterWithMultipleAddresses_IPv6(QuorumPeerMainMultiAddressTest)
+    shouldStartClusterWhenSomeAddressesAreUnreachable_IPv6(QuorumPeerMainMultiAddressTest)
+    shouldReconfigIncrementally_IPv6(QuorumPeerMainMultiAddressTest)
+    testClientServerUnifiedPortWithCnxnClassName(org.apache.zookeeper.test.ClientSSLTest)
+  - [Maven] 1 test failed in original but passes in LLM:
+    testRequestThrottler(org.apache.zookeeper.server.RequestThrottlerTest)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    ERROR testReadOnlySnapshotDir -- Time elapsed: 0.552 s
+      ZooKeeperServerMainTest.testReadOnlySnapshotDir:254
+        waiting for server being up ==> expected: <false> but was: <true>
+
+    ERROR testReadOnlyTxnLogDir -- Time elapsed: 0.524 s
+      ZooKeeperServerMainTest.testReadOnlyTxnLogDir:293
+        waiting for server being up ==> expected: <false> but was: <true>
+
+    ERROR testQuorumV6 -- Time elapsed: 30.056 s
+      QuorumPeerMainTest.testQuorumV6:139->testQuorumInternal:93
+        waiting for server 1 being up ==> expected: <true> but was: <false>
+
+    ERROR shouldStartClusterWhenSomeAddressesAreUnreachable_IPv6 -- Time elapsed: 30.094 s
+      RuntimeException (30-second timeout)
+
+    ERROR testUnreadableFileInput -- Time elapsed: 0.084 s
+      org.opentest4j.AssertionFailedError: expected: not <null>
+
+  [Root cause classification]
+  - Two distinct Docker environment issues cause the 8 failures:
+    (1) Docker runs as root → read-only directory tests fail: `testReadOnlySnapshotDir`,
+    `testReadOnlyTxnLogDir`, and `testUnreadableFileInput` set directories or files to
+    read-only via `chmod 000` / `setWritable(false)` and then expect ZooKeeper to either
+    fail to start (snapshot/txnlog tests: `expected: <false> but was: <true>`) or fail to
+    read a file. Root ignores all permission bits, so the server starts successfully and
+    file reads succeed, causing all three tests to fail their assertions.
+    (2) No IPv6 in Docker → IPv6 quorum tests time out: `testQuorumV6`,
+    `shouldStartClusterWithMultipleAddresses_IPv6`, `shouldStartClusterWhenSomeAddressesAreUnreachable_IPv6`,
+    and `shouldReconfigIncrementally_IPv6` start ZooKeeper quorum peers bound to `::1`
+    (IPv6 loopback). Docker's network stack doesn't expose IPv6 networking by default,
+    so the servers cannot bind to IPv6 addresses, fail to come up, and the tests time out
+    after 30 seconds. `testClientServerUnifiedPortWithCnxnClassName` likely also fails
+    due to an SSL/IPv6 binding issue (15-second timeout). The original CI's 1 failure
+    (`testRequestThrottler`) is a timing-sensitive throttling test that is flaky under
+    GitHub Actions load but passes in Docker's single-threaded environment.
+
+--- Test Statistics Comparison ---
+  [Maven]
+    Original: 3037 run, 3032 passed, 1 failed, 4 skipped
+    LLM:      3037 run, 3025 passed, 8 failed, 4 skipped

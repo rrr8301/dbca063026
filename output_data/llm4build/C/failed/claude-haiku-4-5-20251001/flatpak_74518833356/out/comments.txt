@@ -1,0 +1,56 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          3
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Build with gcc and test
+  Test command(s) run in original CI:
+    $ actions/checkout@v4
+    $ mkdir test-logs
+    $ meson compile -C _build
+    $ meson test -C _build
+    $ mv _build/meson-logs/* test-logs/ || true
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ -Dinternal_tests=true \
+  $ meson test -C _build || TEST_FAILED=1
+  $ mv _build/meson-logs/* test-logs/ || true
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Meson] Test result mismatch (same count 63): original=(62p/1f/0s), LLM=(9p/12f/42s)
+  - [Meson] Tests failed in LLM but passed in original: test-auth.sh, test-completion.sh, test-info@user.wrap, test-instance, test-metadata-validation.sh, test-override.sh, test-portal, test-preinstall.sh (+4 more)
+  - [Meson] Tests failed in original but passed in LLM: test-update-portal@system.wrap
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    546:19/63 test-instance                                    ERROR            0.30s   (exit status 134 or signal 6 SIGABRT)
+    549:20/63 test-portal                                      ERROR            0.29s   (exit status 134 or signal 6 SIGABRT)
+    552:21/63 testlibrary                                      ERROR            0.32s   (exit status 134 or signal 6 SIGABRT)
+    546:19/63 test-instance                                    ERROR            0.30s   (exit status 134 or signal 6 SIGABRT)
+    549:20/63 test-portal                                      ERROR            0.29s   (exit status 134 or signal 6 SIGABRT)
+    552:21/63 testlibrary                                      ERROR            0.32s   (exit status 134 or signal 6 SIGABRT)
+    546:19/63 test-instance                                    ERROR            0.30s   (exit status 134 or signal 6 SIGABRT)
+    549:20/63 test-portal                                      ERROR            0.29s   (exit status 134 or signal 6 SIGABRT)
+
+  [Root cause classification]
+  - Permission denied on executable/script — fake compiler or test helper script lacks execute permission in Docker container.
+  - Missing file or path not found — test data, certificate, or resource file absent in the Docker environment.
+  - Process aborted (SIGABRT) — likely a GLib g_assert() failure, AddressSanitizer/UBSan abort, or missing D-Bus/system service in Docker container.
+  - D-Bus session/system bus unavailable — tests require dbus-daemon running (not started in Docker).
+  - Linux user namespaces or bubblewrap sandboxing unavailable — Docker container lacks necessary kernel capabilities (CAP_SYS_ADMIN or nested namespaces).
+  - Network connectivity issue — test requires network access or a service (e.g., local server) that is unavailable in Docker.
+  - Test timed out — likely due to slower execution in Docker container or a blocking service call that never returns.
+
+--- Test Statistics Comparison ---
+  [Meson]
+    Original: 63 run, 62 passed, 1 failed, 0 skipped
+    LLM:      63 run, 9 passed, 12 failed, 42 skipped

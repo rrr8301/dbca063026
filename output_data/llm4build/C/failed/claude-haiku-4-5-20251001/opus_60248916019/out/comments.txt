@@ -1,0 +1,44 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          4
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Test build with CMake 3.16.0
+  Test command(s) run in original CI:
+    $ actions/checkout@v3
+    $ curl -sL https://github.com/Kitware/CMake/releases/download/v3.16.0/cmake-3.16.0-Linux-x86_64.sh -o cmakeinstall.sh
+    $ mkdir build
+    $ which cmake
+    $ make -j 2 -s
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ curl -sL https://github.com/Kitware/CMake/releases/download/v3.16.0/cmake-3.16.0-Linux-x86_64.sh -o cmakeinstall.sh
+  $ chmod +x cmakeinstall.sh
+  $ ./cmakeinstall.sh --prefix=/usr/local --exclude-subdir
+  $ which cmake
+  $ cmake -DCMAKE_BUILD_TYPE=Release ..
+
+--- Reason(s) for Non-Reproducibility ---
+  - [CTest] Test result mismatch (same count 5): original=(4p/1f/0s), LLM=(5p/0f/0s)
+  - [CTest] Tests failed in original but passed in LLM: test_opus_encode
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    (All 5 CTest tests passed in LLM; test_opus_encode passed without error)
+
+  [Root cause classification]
+  - Codec encode test is sensitive to host environment: The `test_opus_encode` test encodes audio samples and checks the output bitstream against a reference. This test is known to produce different results based on CPU architecture, compiler version, and compiler flags (particularly floating-point precision settings like `-ffast-math` or SSE vs AVX instructions). The original CI ran on a GitHub Actions ubuntu runner with a specific CPU and compiler, while the LLM ran on Docker with potentially different CPU features. The test passed in LLM because the floating-point sequence produced on the Docker host matched the expected reference, while the original CI runner's CPU instruction set (or flag combination) produced a slightly different encode output.
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 5 run, 4 passed, 1 failed, 0 skipped
+    LLM:      5 run, 5 passed, 0 failed, 0 skipped

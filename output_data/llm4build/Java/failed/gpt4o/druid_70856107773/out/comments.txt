@@ -1,0 +1,39 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          N/A
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT TESTS NOT REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      unit tests / unit tests(main) (21, K*,E*,W*,Z*,Y*,X*) / test-jdk21-[K*,E*,W*,Z*,Y*,X*]
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ mvn clean install -DskipTests
+  $ mvn test -Dtest=!QTest -Dmaven.test.failure.ignore=true || true
+
+--- Test Reproducibility Gap ---
+  Original ran 22103 test(s) across [Maven].
+  LLM build produced no test results (empty llm_log_stats).
+
+--- Root Cause ---
+  Reason type: Test runner executed but produced no parseable output
+  Last log output before stopping:
+    [[1;34mINFO[m] [1m------------------------------------------------------------------------[m
+    Running unit tests with JDK 17
+    The JAVA_HOME environment variable is not defined correctly,
+    this environment variable is needed to run this program.
+    Running unit tests with JDK 21
+    The JAVA_HOME environment variable is not defined correctly,
+    this environment variable is needed to run this program.
+    All tests executed.
+
+--- Original Test Statistics (not reproduced) ---
+  [Maven] 22103 run, 21781 passed, 1 failed, 321 skipped

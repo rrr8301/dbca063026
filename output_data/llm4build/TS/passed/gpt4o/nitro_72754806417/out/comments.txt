@@ -1,0 +1,38 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      tests-checks (ubuntu-latest)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    6
+
+--- LLM run.sh Test Command(s) ---
+  $ pnpm vitest run test/unit
+  $ pnpm vitest run test/minimal
+  $ pnpm vitest run test/vite
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in LLM but not in original: GoDefault
+  - [vitest] Test passed mismatch: original=146, LLM=145
+  - [vitest] Test failed mismatch: original=0, LLM=1
+  - [vitest] 1 test(s) failed in LLM but not in original: test/unit/bump-version.test.ts
+
+--- Root Cause Analysis ---
+  - [vitest] 1 test(s) failed in LLM but not original: test/unit/bump-version.test.ts
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: (not present)
+    LLM:      1 run, 0 passed, 1 failed, 0 skipped
+  [vitest]
+    Original: 148 run, 146 passed, 0 failed, 2 skipped
+    LLM:      148 run, 145 passed, 1 failed, 2 skipped

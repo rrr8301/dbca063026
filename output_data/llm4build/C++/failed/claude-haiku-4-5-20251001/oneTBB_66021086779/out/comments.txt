@@ -1,0 +1,40 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      ubuntu-latest_g++_cxx14_relwithdebinfo_preview=OFF
+  Test command(s) run in original CI:
+    $ actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ TEST_TIMEOUT=${TEST_TIMEOUT:-180}
+  $ cmake -DCMAKE_CXX_STANDARD=14 \
+  $ -DCMAKE_BUILD_TYPE=relwithdebinfo \
+  $ -DCMAKE_CXX_COMPILER=g++ \
+  $ -DCMAKE_C_COMPILER=gcc \
+
+--- Reason(s) for Non-Reproducibility ---
+  - [CTest] Test result mismatch (same count 141): original=(140p/1f/0s), LLM=(141p/0f/0s)
+  - [CTest] Tests failed in original but passed in LLM: test_buffer_node
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    (test_buffer_node: Passed 0.07 sec — no failure output)
+
+  [Root cause classification]
+  - `test_buffer_node` is an Intel TBB concurrency test that exercises the `tbb::flow::buffer_node` (a thread-safe, single-in/single-out buffer in TBB's flow graph). It failed in the original CI (GitHub-hosted `ubuntu-latest` runner) but passed in the LLM's Docker container on the same Ubuntu 24.04 with GCC. This pattern is characteristic of a timing-sensitive or load-dependent threading test: the GitHub Actions runner shares CPU resources and may experience scheduling jitter that triggers a race condition in the test, while the Docker container ran with more predictable scheduling. The test is flaky under contention; no LLM regression.
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 141 run, 140 passed, 1 failed, 0 skipped
+    LLM:      141 run, 141 passed, 0 failed, 0 skipped

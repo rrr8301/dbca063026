@@ -1,0 +1,76 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Maven Build
+  Test command(s) run in original CI:
+    $ actions/checkout@v4
+    $ mvn -B install -Pcoverage,integrationTesting,javadoc -Dnsfixtures=SEGMENT_TAR,DOCUMENT_NS
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ mvn -B install $MVN_ADDITIONAL_OPTS \
+      -Pcoverage,integrationTesting,javadoc \
+      -Dnsfixtures=SEGMENT_TAR,DOCUMENT_NS
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Maven] Test run mismatch: original=23145, LLM=12707
+  - [Maven] Test passed mismatch: original=22633, LLM=11482
+  - [Maven] Test failed mismatch: original=6, LLM=876
+  - [Maven] 876 tests fail in LLM but not in original (all due to MongoDB unavailable)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    ERROR OperationLoggerTest.testQueryLogger
+      javax.jcr.RepositoryException: java.lang.NullPointerException:
+        Couldn't obtain MongoConnection.
+      at org.apache.jackrabbit.oak.jcr.OakMongoNSRepositoryStub.<init>
+        (OakMongoNSRepositoryStub.java:66)
+    Caused by: java.lang.NullPointerException: Couldn't obtain MongoConnection.
+      at org.apache.jackrabbit.oak.jcr.OakMongoNSRepositoryStub.<init>
+        (OakMongoNSRepositoryStub.java:55)
+
+    (Same NullPointerException repeated across all 876 test failures in:
+     AccessControlManagementTest, ReadTest, WriteTest, UserTest, VersionManagementTest,
+     PrincipalManagerTest, UserManagerTest, PrivilegeRegistrationTest, and ~30 other
+     JCR security/user/versioning test classes)
+
+  [From original CI log]
+    ERROR listServices(org.apache.jackrabbit.oak.osgi.OSGiIT)
+    ERROR testLeaseFailureHandlerIsExported(org.apache.jackrabbit.oak.osgi.OSGiIT)
+    ERROR listBundles(org.apache.jackrabbit.oak.osgi.OSGiIT)
+    ERROR bundleStates(org.apache.jackrabbit.oak.osgi.OSGiIT)
+    ERROR testNodeStore(org.apache.jackrabbit.oak.osgi.OSGiIT)
+    ERROR testRepository(org.apache.jackrabbit.oak.osgi.OSGiIT)
+    Tests run: 23145, Failures: 0, Errors: 6, Skipped: 506
+
+  [Root cause classification]
+  - MongoDB is not running in the Docker container: `-Dnsfixtures=SEGMENT_TAR,DOCUMENT_NS`
+    instructs the JCR TCK and integration tests to run each test against both the
+    SEGMENT_TAR (file-based) and DOCUMENT_NS (MongoDB-backed) NodeStore implementations.
+    The Dockerfile installs Maven and JDK but does not install or start MongoDB. When
+    `OakMongoNSRepositoryStub` is constructed (the stub that backs the DOCUMENT_NS fixture),
+    it calls `MongoUtils.getConnection()` which returns null because no MongoDB server is
+    listening on localhost:27017. The null connection causes `NullPointerException: Couldn't
+    obtain MongoConnection` at `OakMongoNSRepositoryStub.java:55`, which is wrapped in a
+    `RepositoryException` and thrown from the constructor. Every JCR TCK test class that uses
+    the DOCUMENT_NS fixture fails in its test setup with this exception, producing 876 errors.
+    The 10438 fewer tests in the LLM (12707 vs 23145) are the DOCUMENT_NS variants of those
+    same test classes that should have run but errored in setUp before counting. The original
+    CI's GitHub Actions runner has MongoDB available (either pre-installed on ubuntu-latest or
+    provisioned by the workflow), so all DOCUMENT_NS tests pass and only the OSGiIT tests
+    (which test the OSGi deployment bundle wiring) fail with 6 errors.
+
+--- Test Statistics Comparison ---
+  [Maven]
+    Original: 23145 run, 22633 passed, 6 failed, 506 skipped
+    LLM:      12707 run, 11482 passed, 876 failed, 349 skipped

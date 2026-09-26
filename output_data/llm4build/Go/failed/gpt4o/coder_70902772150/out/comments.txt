@@ -1,0 +1,40 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      test-go-pg-17
+  Test command(s) run in original CI:
+    $ make test-postgres-docker
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ go test ./... -p 8 -count=1
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in original but missing in LLM: GoRace
+  - [GoDefault] Test run mismatch: original=220, LLM=1
+  - [GoDefault] Test passed mismatch: original=218, LLM=0
+  - [GoDefault] Test failed mismatch: original=2, LLM=95
+  - [GoDefault] 94 test(s) failed in LLM but not in original: github.com/coder/coder/v2/agent/reaper, github.com/coder/coder/v2/archive, github.com/coder/coder/v2/cli, github.com/coder/coder/v2/cli/clitest, github.com/coder/coder/v2/cli/exptest ... (+89 more)
+
+--- Root Cause Analysis ---
+  - [GoDefault] LLM ran 219 fewer tests than original — LLM likely used a narrower test scope or missed some test suites.
+  - [GoDefault] 94 test(s) failed in LLM but not original: github.com/coder/coder/v2/agent/reaper, github.com/coder/coder/v2/archive, github.com/coder/coder/v2/cli, github.com/coder/coder/v2/cli/clitest, github.com/coder/coder/v2/cli/exptest ... (+89 more)
+  - Test command differences detected — original CI vs LLM run.sh may use different flags or test selection.
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 220 run, 218 passed, 2 failed, 0 skipped
+    LLM:      1 run, 0 passed, 95 failed, 0 skipped
+  [GoRace]
+    Original: 20032 run, 19975 passed, 1 failed, 56 skipped
+    LLM:      (not present)

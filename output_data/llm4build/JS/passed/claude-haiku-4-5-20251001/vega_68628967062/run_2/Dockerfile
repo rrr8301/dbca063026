@@ -1,0 +1,36 @@
+FROM ubuntu:24.04
+
+# Set timezone to Pacific Time noninteractively
+ENV TZ=America/Los_Angeles
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+# Update package manager
+RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    build-essential \
+    libxml2-utils \
+    rsync \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Node.js 22
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
+    apt-get install -y nodejs && \
+    rm -rf /var/lib/apt/lists/*
+
+# Verify Node.js and npm installation
+RUN node --version && npm --version
+
+# Create working directory
+WORKDIR /workspace
+
+# Copy project files (package.json, package-lock.json, and source code)
+COPY package*.json ./
+COPY . .
+
+# Copy run.sh and make it executable
+COPY run.sh /workspace/run.sh
+RUN chmod +x /workspace/run.sh
+
+# Set entrypoint
+ENTRYPOINT ["/workspace/run.sh"]

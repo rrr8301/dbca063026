@@ -1,0 +1,27 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): True
+Attempt Number:          2
+Original build category: failed
+
+STATUS: FULLY REPRODUCIBLE
+
+The LLM build fully reproduces the original build results.
+Reason: Test case names, test counts, and pass/fail statuses all match.
+
+Matching test statistics:
+  [cargo] 1067 run, 0 passed, 1 failed, 1066 skipped
+    Failed tests (same in both): qr::qr_tests::test_withdraw_verifycontact_without_invite
+  [GoDefault] 2 run, 0 passed, 2 failed, 0 skipped
+    Failed tests (same in both): [, [
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > thread 'qr::qr_tests::test_withdraw_verifycontact_without_invite' panicked at src/token.rs:34:5: Got empty InviteNumber token
+    > FAIL [0.581s] deltachat qr::qr_tests::test_withdraw_verifycontact_without_invite
+    > test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 1063 filtered out; finished in 0.56s
+    > Cancelling due to test failure: 63 tests still running
+
+  [Root cause classification: Application logic bug in deltachat-core securejoin/QR token handling]
+  - The test qr::qr_tests::test_withdraw_verifycontact_without_invite asserts that withdrawing a contact-verification invite produces a valid QR code, but the token store returns an empty InviteNumber, triggering a panic at src/token.rs:34. This is a pre-existing application-level bug in the deltachat-core library, faithfully reproduced by the LLM-generated build. The failure is identical in both original CI and LLM environments, confirming that the bug is deterministic and not caused by any environmental or toolchain difference.

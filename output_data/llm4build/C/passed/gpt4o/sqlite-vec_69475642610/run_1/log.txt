@@ -1,0 +1,29 @@
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0  4 2669k    4  112k    0     0   200k      0  0:00:13 --:--:--  0:00:13  200k100 2669k  100 2669k    0     0  3137k      0 --:--:-- --:--:-- --:--:-- 3137k
+./scripts/vendor.sh: line 4: unzip: command not found
+mv: cannot stat 'sqlite-amalgamation-3450300/*': No such file or directory
+rmdir: failed to remove 'sqlite-amalgamation-3450300': No such file or directory
+VERSION=0.1.10-alpha.2 \
+DATE=2026-05-08T04:43:10Z+0000 \
+SOURCE=89f620353616194e20cae6feafbe2b14d6db27a1 \
+VERSION_MAJOR=$(echo $VERSION | cut -d. -f1) \
+VERSION_MINOR=$(echo $VERSION | cut -d. -f2) \
+VERSION_PATCH=$(echo $VERSION | cut -d. -f3 | cut -d- -f1) \
+envsubst < sqlite-vec.h.tmpl > sqlite-vec.h
+/bin/sh: 1: envsubst: not found
+make: *** [Makefile:153: sqlite-vec.h] Error 127
+/app/run.sh: line 10: uv: command not found
+mkdir -p dist
+cc \
+	-fPIC -shared \
+	-Wall -Wextra \
+	-Ivendor/ \
+	-O3 \
+	-lm -mavx -mavx2 -DSQLITE_VEC_ENABLE_AVX \
+	sqlite-vec.c -o dist/vec0.so
+sqlite-vec.c:19:10: fatal error: sqlite3ext.h: No such file or directory
+   19 | #include "sqlite3ext.h"
+      |          ^~~~~~~~~~~~~~
+compilation terminated.
+make: *** [Makefile:96: dist/vec0.so] Error 1

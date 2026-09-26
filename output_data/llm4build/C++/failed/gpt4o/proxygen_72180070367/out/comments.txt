@@ -1,0 +1,39 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-22.04
+  CI job name:      build
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    3
+
+--- Reason(s) for Non-Reproducibility ---
+  - [CTest] Test run mismatch: original=1547, LLM=1531
+  - [CTest] Test passed mismatch: original=1546, LLM=1527
+  - [CTest] Test failed mismatch: original=1, LLM=4
+  - [CTest] 3 test(s) failed in LLM but not in original: AcceptorTest.Basic, HTTPConnectorWithFizzTest.TestFizzConnect, HTTPConnectorWithFizzTest.TestFizzConnectFailure
+  - [GTest] Test run mismatch: original=1, LLM=2
+  - [GTest] Test failed mismatch: original=1, LLM=2
+  - [GTest] 1 test(s) failed in LLM but not in original: HTTPConnectorWithFizzTest.TestFizzConnect
+
+--- Root Cause Analysis ---
+  - [CTest] LLM ran 16 fewer tests than original — LLM likely used a narrower test scope or missed some test suites.
+  - [CTest] 3 test(s) failed in LLM but not original: AcceptorTest.Basic, HTTPConnectorWithFizzTest.TestFizzConnect, HTTPConnectorWithFizzTest.TestFizzConnectFailure
+  - [GTest] LLM ran 1 more tests than original — LLM likely used a broader test scope or included extra test suites.
+  - [GTest] 1 test(s) failed in LLM but not original: HTTPConnectorWithFizzTest.TestFizzConnect
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 1547 run, 1546 passed, 1 failed, 0 skipped
+    LLM:      1531 run, 1527 passed, 4 failed, 0 skipped
+  [GTest]
+    Original: 1 run, 0 passed, 1 failed, 0 skipped
+    LLM:      2 run, 0 passed, 2 failed, 0 skipped
