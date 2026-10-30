@@ -1,0 +1,50 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          5
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Build: Sanitizer (UndefinedBehavior)
+  Test command(s) run in original CI:
+    $ actions/checkout@v4
+    $ source/ci/setup-sanitizer-build.sh
+    $ ./source/.github/actions/download-or-build-container
+    $ mkdir build
+    $ ./source/.github/actions/run-build
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:noble
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ cmake $CMAKE_OPTIONS ..
+  $ cmake --build . --config Release
+  $ test_exit_code=0
+  $ bash ../source/ci/test.sh || test_exit_code=$?
+  $ ctest -V --output-on-failure || test_exit_code=$?
+
+--- Reason(s) for Non-Reproducibility ---
+  - [CTest] Test run mismatch: original=12, LLM=7
+  - [CTest] Test passed mismatch: original=7, LLM=2
+  - [CTest] Test failed mismatch: original=5, LLM=5
+  - [CTest] 1 test(s) failed in LLM but not in original: online
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    445:[285/743] Building C object tests/util/CMakeFiles/util_tests.dir/assert.c.o
+    1358:12: assert
+
+  [Root cause classification]
+  - TLS/SSL certificate path not found — test expects certificate files (e.g., tests/certs/) that are absent or not properly initialized.
+  - Network connectivity issue — test requires network access or a service (e.g., local server) that is unavailable in Docker.
+  - Test timed out — likely due to slower execution in Docker container or a blocking service call that never returns.
+  - Assertion failure: 445:[285/743] Building C object tests/util/CMakeFiles/util_tests.dir/assert.c.o
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 12 run, 7 passed, 5 failed, 0 skipped
+    LLM:      7 run, 2 passed, 5 failed, 0 skipped

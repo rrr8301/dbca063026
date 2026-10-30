@@ -1,0 +1,42 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          11
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Linux 3.12 tests
+  Test command(s) run in original CI:
+    $ actions/checkout@v6.0.1
+    $ LIBSODIUM_MAKE_ARGS="-j$(nproc)" nox -s tests
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ nox -s tests
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in original but missing in LLM: Autotools
+  - Framework(s) in LLM but not in original: pytest
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    E   ImportError: /workspace/.nox/tests/lib/python3.12/site-packages/nacl/_sodium.abi3.so: undefined symbol: crypto_aead_aegis128l_npubbytes
+    (16 out of 20 pytest tests fail with this ImportError on module import)
+
+  [Root cause classification]
+  - libsodium version too old: The symbol `crypto_aead_aegis128l_npubbytes` was added in libsodium 1.0.19 (AEGIS-128L AEAD support). Ubuntu 22.04's system libsodium is version 1.0.18, which does not include this symbol. The LLM's `nox -s tests` omitted the `LIBSODIUM_MAKE_ARGS="-j$(nproc)"` environment variable that the original CI used — this env var signals nox to rebuild libsodium from source (embedding the latest version). Without it, the nox session used the system libsodium 1.0.18, causing `nacl/_sodium.abi3.so` to fail to load because it was compiled against a newer libsodium API. All 16 import-dependent tests fail with the same `ImportError`.
+  - Missing Autotools framework: The original CI also ran 80 Autotools tests (79 passed, 1 failed) which are the libsodium self-tests built as part of the source build. These never ran in LLM because libsodium was not built from source.
+
+--- Test Statistics Comparison ---
+  [Autotools]
+    Original: 80 run, 79 passed, 1 failed, 0 skipped
+    LLM:      (not present)
+  [pytest]
+    Original: (not present)
+    LLM:      20 run, 4 passed, 16 failed, 0 skipped

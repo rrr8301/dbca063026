@@ -1,0 +1,42 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      Test (ubuntu-latest, 22.x)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    5
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoDefault] Test run mismatch: original=1, LLM=4
+  - [GoDefault] Test failed mismatch: original=1, LLM=4
+  - [GoDefault] 1 test(s) failed in original but passed in LLM: src/ui/auth/AuthDialog.test.tsx
+  - [GoDefault] 2 test(s) failed in LLM but not in original: src/skills/skill-activation.test.ts, src/ui/themes/detect-terminal-theme.test.ts
+  - [vitest] Test run mismatch: original=12656, LLM=12642
+  - [vitest] Test passed mismatch: original=12644, LLM=12625
+  - [vitest] Test failed mismatch: original=1, LLM=4
+  - [vitest] Test skipped mismatch: original=11, LLM=13
+  - [vitest] 1 test(s) failed in original but passed in LLM: src/ui/auth/AuthDialog.test.tsx
+  - [vitest] 2 test(s) failed in LLM but not in original: src/skills/skill-activation.test.ts, src/ui/themes/detect-terminal-theme.test.ts
+
+--- Root Cause Analysis ---
+  - [GoDefault] LLM ran 3 more tests than original — LLM likely used a broader test scope or included extra test suites.
+  - [GoDefault] 2 test(s) failed in LLM but not original: src/skills/skill-activation.test.ts, src/ui/themes/detect-terminal-theme.test.ts
+  - [vitest] LLM ran 14 fewer tests than original — LLM likely used a narrower test scope or missed some test suites.
+  - [vitest] 2 test(s) failed in LLM but not original: src/skills/skill-activation.test.ts, src/ui/themes/detect-terminal-theme.test.ts
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 1 run, 0 passed, 1 failed, 0 skipped
+    LLM:      4 run, 0 passed, 4 failed, 0 skipped
+  [vitest]
+    Original: 12656 run, 12644 passed, 1 failed, 11 skipped
+    LLM:      12642 run, 12625 passed, 4 failed, 13 skipped

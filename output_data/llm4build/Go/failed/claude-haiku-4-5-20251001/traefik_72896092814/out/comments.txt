@@ -1,0 +1,43 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          4
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      test-unit (github.com/traefik/traefik/v3/pkg/config/label github.com/traefik/traefik/v3/pkg/confi...
+  Test command(s) run in original CI:
+    $ actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
+    $ go test -v -parallel 8 github.com/traefik/traefik/v3/pkg/config/label github.com/traefik/traefik/v3/pkg/config/runtime github.com/traefik/traefik/v3/pkg/config/static github.com/traefik/traefik/v3/pkg/healthcheck github.com/traefik/traefik/v3/pkg/ip github.com/traefik/traefik/v3/pkg/job github.com/traefik/traefik/v3/pkg/middlewares github.com/traefik/traefik/v3/pkg/middlewares/accesslog github.com/traefik/traefik/v3/pkg/middlewares/addprefix github.com/traefik/traefik/v3/pkg/middlewares/auth github.com/traefik/traefik/v3/pkg/middlewares/buffering github.com/traefik/traefik/v3/pkg/middlewares/capture
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ go test -v -parallel 8 ${PACKAGE_GROUP}
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoDefault] Test run mismatch: original=291, LLM=3711
+  - [GoDefault] Test passed mismatch: original=289, LLM=3695
+  - [GoDefault] Test failed mismatch: original=2, LLM=2
+  - [GoDefault] 2 test(s) failed in LLM but not in original: github.com/traefik/traefik/v3/integration, github.com/traefik/traefik/v3/pkg/proxy/fast
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    1522:{"level":"debug","time":"2026-05-07T04:21:55-07:00","message":"Anonymous stats sent to https://collect.traefik.io/yYaUej3P42cziRVzv6T5w2aYy9po2Mrn: {\"global\":{\"checkNewVersion\":true,\"sendAno
+    458---- FAIL: TestAcmeSuite (0.00s)
+    461---- FAIL: TestThrottlingSuite (0.00s)
+
+  [Root cause classification]
+  - The original CI uses a matrix of specific package groups — the `test-unit` job name includes a long list of exactly 12 packages (starting with `pkg/config/label`, `pkg/config/runtime`, etc.). The LLM's `go test -v -parallel 8 ${PACKAGE_GROUP}` where `$PACKAGE_GROUP` was set to `./...` ran the entire traefik test suite (3711 individual tests vs 291 from 12 packages). Both environments have 2 failures.
+
+  - The 2 LLM failures differ from the original's 2 failures. `TestAcmeSuite` and `TestThrottlingSuite` are integration tests in `github.com/traefik/traefik/v3/integration` that require a Docker environment (Traefik uses Docker integration test infrastructure with Let's Encrypt ACME protocol simulation). `pkg/proxy/fast` fails because it tests Traefik's fast proxy implementation which needs TLS certificate files in `tests/certs/`. The original CI's 2 failures were different package-level test runs from the 12-package subset that had timing-related failures.
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 291 run, 289 passed, 2 failed, 0 skipped
+    LLM:      3711 run, 3695 passed, 2 failed, 0 skipped

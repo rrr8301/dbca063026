@@ -1,0 +1,60 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          5
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      full-build (ubuntu-latest, 21)
+  Test command(s) run in original CI:
+    $ actions/setup-java (java-version: 21)
+    $ actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+    $ mvn verify -Papache-release -Dgpg.skip=true -e -B -V
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ mvn verify -Papache-release -Dgpg.skip=true -Drat.skip=true -e -B -V
+  $ mvn site -e -B -V -Preporting -Drat.skip=true -DskipTests=true
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Maven] Test run mismatch: original=2311, LLM=1581
+  - [Maven] Test passed mismatch: original=2295, LLM=1573
+  - [Maven] Test failed mismatch: original=0, LLM=2
+  - [Maven] 2 tests fail in LLM but pass in original:
+    testPluginInjection(org.apache.maven.plugin.PluginParameterExpressionEvaluatorTest)
+    testPluginInjection(org.apache.maven.plugin.PluginParameterExpressionEvaluatorV4Test)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    ERROR PluginParameterExpressionEvaluatorTest.testPluginInjection
+    java.nio.file.InvalidPathException: Malformed input or input contains unmappable characters: rép➜α
+      at PluginParameterExpressionEvaluatorTest.testPluginInjection(PluginParameterExpressionEvaluatorTest.java:451)
+
+    ERROR PluginParameterExpressionEvaluatorV4Test.testPluginInjection
+    java.nio.file.InvalidPathException: Malformed input or input contains unmappable characters: rép➜α
+      at PluginParameterExpressionEvaluatorV4Test.testPluginInjection(PluginParameterExpressionEvaluatorV4Test.java:461)
+
+  [Root cause classification]
+  - No LANG/locale set in Docker → platform encoding is ANSI_X3.4-1968 (ASCII). The
+    `testPluginInjection` test in both `PluginParameterExpressionEvaluatorTest` and
+    `PluginParameterExpressionEvaluatorV4Test` attempts to construct a filesystem path
+    containing non-ASCII Unicode characters (`rép➜α` — a mix of French-accented characters
+    and a Unicode arrow/alpha symbol). When the JVM runs under ASCII encoding (no `LANG` env var
+    set, no UTF-8 locale), `java.nio.file.Paths.get()` cannot represent the multi-byte UTF-8
+    characters as valid path components and throws
+    `InvalidPathException: Malformed input or input contains unmappable characters: rép➜α`.
+    In the original CI (Ubuntu with UTF-8 locale and Java 21), the Unicode path is handled
+    correctly and the test passes.
+    Because Maven stops at the failing `maven-compat` module (no `-fae`), only 1581 of 2311
+    total tests execute before the build aborts, producing the test count mismatch.
+
+--- Test Statistics Comparison ---
+  [Maven]
+    Original: 2311 run, 2295 passed, 0 failed, 16 skipped
+    LLM:      1581 run, 1573 passed, 2 failed,  6 skipped

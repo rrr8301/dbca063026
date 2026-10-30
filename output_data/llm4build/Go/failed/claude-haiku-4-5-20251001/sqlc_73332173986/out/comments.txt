@@ -1,0 +1,55 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          7
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      test
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ go install gotest.tools/gotestsum@latest
+    $ go install github.com/sqlc-dev/sqlc-gen-test@v0.1.0
+    $ go install ./scripts/test-json-process-plugin/
+    $ go build ./...
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ go install gotest.tools/gotestsum@latest
+  $ go install github.com/sqlc-dev/sqlc-gen-test@v0.1.0
+  $ go install ./scripts/test-json-process-plugin/
+  $ cd /workspace/internal/endtoend/testdata
+  $ gotestsum --junitfile junit.xml -- --tags=examples -timeout 20m -failfast ./...
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoRace] Test run mismatch: original=1769, LLM=49
+  - [GoRace] Test passed mismatch: original=1721, LLM=45
+  - [GoRace] Test failed mismatch: original=2, LLM=4
+  - [GoRace] 4 test(s) failed in LLM but not in original: examples/authors/mysql/TestAuthors, examples/booktest/mysql/TestBooks, examples/ondeck/mysql/TestPrepared, examples/ondeck/mysql/TestQueries
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    137:=== FAIL: examples/authors/mysql TestAuthors (0.00s)
+    138-    db_test.go:17: Error 1698 (28000): Access denied for user 'root'@'localhost'
+    140-=== FAIL: examples/booktest/mysql TestBooks (0.00s)
+    143:=== FAIL: examples/ondeck/mysql TestPrepared (0.00s)
+    144-    db_test.go:146: Error 1698 (28000): Access denied for user 'root'@'localhost'
+    146-=== FAIL: examples/ondeck/mysql TestQueries (0.00s)
+    146:=== FAIL: examples/ondeck/mysql TestQueries (0.00s)
+    147-    db_test.go:164: Error 1698 (28000): Access denied for user 'root'@'localhost'
+
+  [Root cause classification]
+  - The 4 MySQL failures all show `Error 1698 (28000): Access denied for user 'root'@'localhost'` — MySQL on Ubuntu installs with the `auth_socket` authentication plugin for the `root` user by default. This means connecting as `root` via TCP (the standard JDBC/Go MySQL driver connection) fails unless the user connects via the Unix socket as the OS `root` user. The sqlc end-to-end examples connect via `root@localhost:3306` over TCP, which the auth_socket plugin rejects.
+
+  - The 1720 fewer tests (49 vs 1769) reflect that the LLM's `gotestsum -- --tags=examples -timeout 20m -failfast ./...` ran only the examples sub-package (49 tests), while the original CI ran the full sqlc test suite including all the unit tests, integration tests, and codegen tests from the root `./...` scope. The original's 2 failures (PostgreSQL-related) were different from the LLM's 4 MySQL failures because the original CI had PostgreSQL and MySQL services configured with proper credentials while the LLM only had a default MySQL install with auth_socket.
+
+--- Test Statistics Comparison ---
+  [GoRace]
+    Original: 1769 run, 1721 passed, 2 failed, 46 skipped
+    LLM:      49 run, 45 passed, 4 failed, 0 skipped

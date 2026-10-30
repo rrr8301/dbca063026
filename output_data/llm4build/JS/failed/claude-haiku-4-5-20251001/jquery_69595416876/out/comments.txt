@@ -1,0 +1,48 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          20
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT TESTS NOT REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      test:selector-native - Chrome
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    9
+
+--- Test Reproducibility Gap ---
+  Original ran 1205 test(s) across [jtr].
+  LLM build produced no test results (empty llm_log_stats).
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > at runScriptInThisContext (node:internal/vm:219:10)
+    > at node:internal/process/execution:451:12
+    > at [eval]-wrapper:6:24
+    > at evalTypeScript (node:internal/process/execution:295:3)
+    > Node.js v24.14.1
+
+  [Root cause classification]
+  - The CI job "test:selector-native - Chrome" runs jQuery's test suite in a real Chrome browser via the `jtr` (jQuery Test Runner) framework. `jtr` launches a headless Chromium instance, starts a local web server, and loads the jQuery test pages in the browser DOM. The LLM's Dockerfile installed Chrome/Chromium but the test runner script fails at the Node.js script evaluation stage — the `--eval` error from `node:internal/main/eval_string` indicates the TypeScript configuration script being passed to Node via `--eval` (or `--require` of a TypeScript file) fails because `tsx`/`ts-node` isn't configured for the eval context.
+
+  - After 20 attempts, the LLM could not produce any `jtr`-formatted test output. The root cause is that `jtr` is jQuery's proprietary test orchestration tool that spawns Chrome with specific flags, starts a Connect/Express server to serve the test HTML pages, and captures QUnit tap output from the browser's console. Without proper TypeScript runner configuration (the Node.js v24 eval error shows the runner script itself crashes before any browser is launched), no jtr-format output is ever produced and TR=False.
+
+--- Root Cause ---
+  Reason type: Test runner executed but produced no parseable output
+  Last log output before stopping:
+    at runScriptInThisContext (node:internal/vm:219:10)
+    at node:internal/process/execution:451:12
+    at [eval]-wrapper:6:24
+    at runScriptInContext (node:internal/process/execution:449:60)
+    at evalFunction (node:internal/process/execution:283:30)
+    at evalTypeScript (node:internal/process/execution:295:3)
+    at node:internal/main/eval_string:71:3
+    Node.js v24.14.1
+
+--- Original Test Statistics (not reproduced) ---
+  [jtr] 1205 run, 1180 passed, 0 failed, 25 skipped

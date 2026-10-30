@@ -1,0 +1,50 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      test (ubuntu-latest)
+  Test command(s) run in original CI:
+    $ actions/checkout@v4
+    $ npm ci
+    $ go install github.com/tkrajina/typescriptify-golang-structs/tscriptify@latest
+    $ npm test
+    $ go test -count=1 -benchtime=1x ./...
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    6
+
+--- LLM run.sh Test Command(s) ---
+  $ TEST_FAILED=0
+  $ go install github.com/tkrajina/typescriptify-golang-structs/tscriptify@latest
+  $ TEST_FAILED=1
+  $ TEST_FAILED=1
+  $ TEST_FAILED=1
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in original but missing in LLM: vitest
+  - [GoDefault] Test result mismatch (same count 73): original=(73p/0f/0s), LLM=(72p/1f/0s)
+  - [GoDefault] Tests failed in LLM but passed in original: github.com/ollama/ollama/cmd/internal/fileutil
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    37:FAIL	github.com/ollama/ollama/cmd/internal/fileutil	0.026s
+
+  [Root cause classification]
+  - `github.com/ollama/ollama/cmd/internal/fileutil` tests file locking and atomic file operations. The test likely uses `syscall.Flock` or `os.File.Lock` with specific Windows-style file locking semantics (the Ollama project targets Windows as a primary platform). On Linux in the Docker container, the file locking behavior differs: the test may assert that a file cannot be opened by a second process while locked, but Linux's advisory file locking (`flock`) allows the same process to re-acquire locks, leading to "should return error but got nil" failures. The same pattern appeared in the failed-category counterpart `ollama_70708388185` (Windows origin, Windows file locking semantics).
+
+  - The `vitest` framework results (29 tests) are missing because the LLM did not run `npm ci` and `npm test`. The original CI ran `npm ci` to install Node.js dependencies and then `npm test` to execute the vitest JavaScript/TypeScript test suite. The LLM's run.sh skipped the `npm ci` step (setting `TEST_FAILED=1` without running it), so no `node_modules` were installed and `npm test` / `vitest` could not execute. The 29 missing vitest tests are JavaScript tests for the Ollama API client library.
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 73 run, 73 passed, 0 failed, 0 skipped
+    LLM:      73 run, 72 passed, 1 failed, 0 skipped
+  [vitest]
+    Original: 29 run, 29 passed, 0 failed, 0 skipped
+    LLM:      (not present)

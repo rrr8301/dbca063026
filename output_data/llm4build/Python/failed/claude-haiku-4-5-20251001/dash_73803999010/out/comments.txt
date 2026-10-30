@@ -1,0 +1,86 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Typing Tests
+  Test command(s) run in original CI:
+    $ npm ci
+    $ npm run setup-tests.py
+    $ pytest tests/compliance/test_typing.py
+
+--- LLM-Generated Dockerfile ---
+  Base image:   python:3.12-slim
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ pip install -e ".[ci,testing,dev]"  (installs pyright==1.1.398, mypy==1.15.0)
+  $ npm run setup-tests.py
+  $ pytest tests/compliance/test_typing.py
+
+--- Reason(s) for Non-Reproducibility ---
+  - [pytest] Test result mismatch (same count 39): original=(35p/3f/1s), LLM=(32p/6f/1s)
+  - [pytest] 3 additional tests failed in LLM: test_typi002_typing_compliance (3 parametrized
+    variants — 2 pyright, 1 mypy)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > [pyright failures]
+    > /tmp/.../code.py:7:19 - error: "Div" is not a known attribute of module "dash"
+    >     (reportAttributeAccessIssue)
+    > /tmp/.../code.py:8:10 - error: "H2" is not a known attribute of module "dash"
+    >     (reportAttributeAccessIssue)
+    > /tmp/.../code.py:12:5 - error: Arguments missing for parameters "component_id",
+    >     "component_property" (reportCallIssue)
+    > E   AssertionError: Status: 1
+    >
+    > [mypy failures]
+    > dash/mcp/primitives/tools/results/result_plotly_figure.py:50: error: Argument 2 to
+    >     "matches" of "PropRole" has incompatible type "str | None"; expected "str"  [arg-type]
+    > dash/mcp/primitives/resources/resource_page_layout.py:54: error: Module has no
+    >     attribute "Div"  [attr-defined]
+    > dash/dash.py:148: error: Module has no attribute "Div"  [attr-defined]
+    > dash/dash.py:148: note: Error code "attr-defined" not covered by "type: ignore" comment
+    > dash/dash.py:150: error: Module has no attribute "Location"  [attr-defined]
+    > dash/dash.py:150: note: Error code "attr-defined" not covered by "type: ignore" comment
+    > (similar errors for dash.py:151-153 using Store, Div)
+    > E   AssertionError: Status: 1
+
+  [Root cause classification]
+  Two static type checker version bumps cause additional failures:
+
+  (1) pyright 1.1.398 stricter type checking → 2 new pyright test failures
+    The `test_typi002_typing_compliance` tests run pyright on sample Dash code to verify
+    type safety. pyright 1.1.398 (installed from dash's pinned requirements) is stricter than
+    the version used in the original CI. The sample test code uses `dash.Div(...)`,
+    `html.H2(...)`, and `dcc.Input(value='', id='in')` — attributes that pyright 1.1.398
+    reports as not known attributes of the `dash` module (`reportAttributeAccessIssue`).
+    Additionally, pyright 1.1.398 detects missing required parameters in `Input()` call
+    (`reportCallIssue`). The original CI's older pyright version accepted this code.
+    NOTE: pyright 1.1.398 itself warns `there is a new pyright version available (v1.1.409)`
+    indicating the installed version is not the latest; if the original CI used a newer version
+    before 1.1.398 froze these checks, those tests would have passed.
+
+  (2) mypy 1.15.0 requires specific `# type: ignore` error codes → 1 new mypy test failure
+    mypy 1.15.0 enforces that `# type: ignore` comments must cover the actual error codes
+    found at that line. In `dash/dash.py` lines 148-153, the code accesses `dash.html.Div`,
+    `dash.dcc.Location`, etc. via dynamic imports. These lines have `# type: ignore` comments
+    to suppress mypy errors, but the `# type: ignore` comment doesn't specify `[attr-defined]`.
+    mypy 1.15.0 reports:
+      `error: Module has no attribute "Div" [attr-defined]`
+      `note: Error code "attr-defined" not covered by "type: ignore" comment`
+    This means the `# type: ignore` is too generic (it covers `import` errors, not `attr-defined`
+    errors). Additionally, mypy 1.15.0 finds a new error in `result_plotly_figure.py` about
+    `str | None` vs `str` argument type mismatch for `PropRole.matches()`. None of these were
+    flagged by the older mypy version in the original CI.
+
+--- Test Statistics Comparison ---
+  [pytest]
+    Original: 39 run, 35 passed, 3 failed, 1 skipped
+    LLM:      39 run, 32 passed, 6 failed, 1 skipped
+    (3 new LLM failures: 2 pyright tests + 1 mypy test, all due to stricter type checker versions)

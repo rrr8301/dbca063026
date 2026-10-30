@@ -1,0 +1,1 @@
+mvn install -e -B -V -Prun-its,mimir

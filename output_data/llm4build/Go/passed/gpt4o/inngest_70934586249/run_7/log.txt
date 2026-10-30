@@ -1,0 +1,71 @@
+Error from docker build
+
+#1 [internal] load .dockerignore
+#1 transferring context: 2B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 1.56kB done
+#2 DONE 0.0s
+
+#3 [auth] library/ubuntu:pull token for registry-1.docker.io
+#3 DONE 0.0s
+
+#4 [internal] load metadata for docker.io/library/ubuntu:22.04
+#4 DONE 0.3s
+
+#5 [ 1/11] FROM docker.io/library/ubuntu:22.04@sha256:4f838adc7181d9039ac795a7d0aba05a9bd9ecd480d294483169c5def983b64d
+#5 DONE 0.0s
+
+#6 [internal] load build context
+#6 transferring context: 1.46MB 0.7s done
+#6 DONE 0.7s
+
+#7 [ 2/11] RUN echo "UTC" > /etc/timezone &&     ln -sf /usr/share/zoneinfo/UTC /etc/localtime &&     apt-get update &&     apt-get install -y --no-install-recommends     git curl wget make gcc g++ tzdata ca-certificates &&     rm -rf /var/lib/apt/lists/*
+#7 CACHED
+
+#8 [ 3/11] RUN useradd -m testuser
+#8 CACHED
+
+#9 [ 4/11] RUN git config --global http.sslVerify false &&     git clone https://github.com/syndbg/goenv.git /home/testuser/.goenv &&     mkdir -p /home/testuser/.goenv/versions &&     chown -R testuser:testuser /home/testuser/.goenv &&     echo 'export GOENV_ROOT="/home/testuser/.goenv"' >> /home/testuser/.bashrc &&     echo 'export PATH="$GOENV_ROOT/bin:$PATH"' >> /home/testuser/.bashrc &&     echo 'eval "$(goenv init -)"' >> /home/testuser/.bashrc
+#9 CACHED
+
+#10 [ 5/11] WORKDIR /workspace
+#10 CACHED
+
+#11 [ 6/11] COPY . /workspace
+#11 DONE 2.4s
+
+#12 [ 7/11] RUN git config --global --add safe.directory '*'
+#12 DONE 0.3s
+
+#13 [ 8/11] COPY run.sh /workspace/run.sh
+#13 DONE 0.0s
+
+#14 [ 9/11] RUN chmod +x /workspace/run.sh
+#14 DONE 0.4s
+
+#15 [10/11] RUN chown -R testuser:testuser /workspace
+#15 DONE 5.4s
+
+#16 [11/11] RUN curl -L -o /usr/local/bin/gotesplit https://correct-url-to-gotesplit &&     chmod +x /usr/local/bin/gotesplit
+#16 0.455   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+#16 0.455                                  Dload  Upload   Total   Spent    Left  Speed
+#16 0.455 
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0curl: (6) Could not resolve host: correct-url-to-gotesplit
+#16 ERROR: process "/bin/sh -c curl -L -o /usr/local/bin/gotesplit https://correct-url-to-gotesplit &&     chmod +x /usr/local/bin/gotesplit" did not complete successfully: exit code: 6
+------
+ > [11/11] RUN curl -L -o /usr/local/bin/gotesplit https://correct-url-to-gotesplit &&     chmod +x /usr/local/bin/gotesplit:
+#16 0.455   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+#16 0.455                                  Dload  Upload   Total   Spent    Left  Speed
+#16 0.455 
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0curl: (6) Could not resolve host: correct-url-to-gotesplit
+------
+Dockerfile:46
+--------------------
+  45 |     # Install gotesplit tool (provide the correct URL)
+  46 | >>> RUN curl -L -o /usr/local/bin/gotesplit https://correct-url-to-gotesplit && \
+  47 | >>>     chmod +x /usr/local/bin/gotesplit
+  48 |     
+--------------------
+ERROR: failed to solve: process "/bin/sh -c curl -L -o /usr/local/bin/gotesplit https://correct-url-to-gotesplit &&     chmod +x /usr/local/bin/gotesplit" did not complete successfully: exit code: 6

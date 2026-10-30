@@ -1,0 +1,18 @@
+{
+ "model": "claude-haiku-4-5-20251001",
+ "content": "```yamlfile\nname: Test on Beta Toolchain\n\non:\n  schedule:\n    - cron: '0 0 * * *'\n\nenv:\n  NUSHELL_CARGO_PROFILE: ci\n  NU_LOG_LEVEL: DEBUG\n\nconcurrency:\n  group: ${{ github.workflow }}-${{ github.head_ref && github.ref || github.run_id }}\n  cancel-in-progress: true\n\njobs:\n  build-and-test:\n    continue-on-error: true\n    runs-on: ubuntu-22.04\n\n    steps:\n      - uses: actions/checkout@v6\n\n      - run: rustup update beta\n\n      - name: Tests\n        run: cargo +beta test --workspace --profile ci --exclude nu_plugin_*\n\n      - name: Check for clean repo\n        shell: bash\n        run: |\n          if [ -n \"$(git status --porcelain)\" ]; then\n            echo \"there are changes\";\n            git status --porcelain\n            exit 1\n          else\n            echo \"no changes in working directory\";\n          fi\n```",
+ "reduced_yaml": "name: Test on Beta Toolchain\n\non:\n  schedule:\n    - cron: '0 0 * * *'\n\nenv:\n  NUSHELL_CARGO_PROFILE: ci\n  NU_LOG_LEVEL: DEBUG\n\nconcurrency:\n  group: ${{ github.workflow }}-${{ github.head_ref && github.ref || github.run_id }}\n  cancel-in-progress: true\n\njobs:\n  build-and-test:\n    continue-on-error: true\n    runs-on: ubuntu-22.04\n\n    steps:\n      - uses: actions/checkout@v6\n\n      - run: rustup update beta\n\n      - name: Tests\n        run: cargo +beta test --workspace --profile ci --exclude nu_plugin_*\n\n      - name: Check for clean repo\n        shell: bash\n        run: |\n          if [ -n \"$(git status --porcelain)\" ]; then\n            echo \"there are changes\";\n            git status --porcelain\n            exit 1\n          else\n            echo \"no changes in working directory\";\n          fi",
+ "input_tokens": 696,
+ "output_tokens": 265,
+ "cost_usd": 0.001617,
+ "seconds": 2.25,
+ "prompt_sha256": "954697d124fbde464a6d0d1d9cb27fe0bb9157bd4e9d1b5deb7ac9a7ba80915b",
+ "completed_steps": [
+  "Set up job",
+  "Run actions/checkout@v6",
+  "Run rustup update beta",
+  "Tests",
+  "Check for clean repo",
+  "Complete job"
+ ]
+}

@@ -1,0 +1,36 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          N/A
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Java 11 / core
+
+--- LLM-Generated Dockerfile ---
+  Base image:   eclipse-temurin:11-jdk
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ mvn -T 1C -B clean install -DskipTests
+  $ mvn -B verify $TEST_MODULES -Ptest-coverage -Ptest-$module -Dlog.dir=/tmp/fluss-logs -Dlog4j.configurationFile=tools/ci/log4j.properties
+
+Note: Original had test failures; LLM build passed all — failed build has passed.
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Maven] Test run mismatch: original=2610, LLM=3100
+  - [Maven] Test passed mismatch: original=2606, LLM=3094
+  - [Maven] Test failed mismatch: original=1, LLM=0
+  - [Maven] Test skipped mismatch: original=3, LLM=6
+  - [Maven] 1 test(s) failed in original but passed in LLM: testTableChanges(org.apache.fluss.server.coordinator.event.watcher.TableChangeWatcherTest)
+
+--- Root Cause Analysis ---
+  - [Maven] LLM ran 490 more tests than original — LLM likely used a broader test scope or included extra test suites.
+
+--- Test Statistics Comparison ---
+  [Maven]
+    Original: 2610 run, 2606 passed, 1 failed, 3 skipped
+    LLM:      3100 run, 3094 passed, 0 failed, 6 skipped

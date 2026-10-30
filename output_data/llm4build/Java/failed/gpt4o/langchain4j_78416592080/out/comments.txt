@@ -1,0 +1,53 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      compile_and_unit_test (21)
+  Test command(s) run in original CI:
+    $ mvn -B -U -DembeddingsSkipCache -T8C test javadoc:aggregate 2>&1 | tee maven-output.log
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    6
+
+--- LLM run.sh Test Command(s) ---
+  $ mvn -B -U -DembeddingsSkipCache -T8C test javadoc:aggregate -Drat.skip=true -Dlicense.skip=true
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Maven] Test run mismatch: original=4446, LLM=2
+  - [Maven] Test passed mismatch: original=4415, LLM=0
+  - [Maven] Test failed mismatch: original=0 (compilation errors not counted as test failures), LLM=2
+  - [Maven] Compilation error count mismatch: original=3, LLM=2
+  - The original had 3 compilation errors in StreamingIT.java (missing @Tool annotation symbol); the LLM produced 2 different compilation errors (Source option 5 not supported).
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    [ERROR] COMPILATION ERROR :
+    [ERROR] Source option 5 is no longer supported. Use 8 or later.
+    [ERROR] Target option 5 is no longer supported. Use 8 or later.
+    [ERROR] Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.1:compile on project langchain4j-internal-test-retry
+
+  [Actual error messages from original CI log]
+    [ERROR] COMPILATION ERROR :
+    [ERROR] /home/runner/work/langchain4j/langchain4j/langchain4j-agentic/src/test/java/dev/langchain4j/agentic/StreamingIT.java:[409,10] cannot find symbol
+      symbol:   class Tool
+      location: class dev.langchain4j.agentic.StreamingIT.ArticleSearchTool
+    [INFO] 3 errors
+
+  [Root cause classification]
+  - The LLM used Maven 3.8.6 with JDK 21 (ubuntu openjdk-21-jdk) on ubuntu:22.04, but a submodule (`langchain4j-internal-test-retry`) still declares Java source/target compatibility of level 5 (`maven-compiler-plugin:3.1`). Java 21 no longer supports `--source 5` or `--target 5`, causing a compilation failure that is different from the original CI's failure.
+
+  - The original CI ran on ubuntu-24.04 with Java 21.0.11 (Eclipse Adoptium/Temurin) and encountered 3 compilation errors in `StreamingIT.java` due to a missing `@Tool` annotation symbol — a pre-existing source code issue in the test class.
+
+  - The two builds failed with different compilation errors in different modules, resulting in drastically different test counts (4446 original vs 2 LLM). The LLM reproduced the general pattern of compilation failure but in a different location and for a different reason.
+
+--- Test Statistics Comparison ---
+  [Maven]
+    Original: 4446 run, 4415 passed, 0 failed, 31 skipped (3 compilation errors)
+    LLM:      2 run, 0 passed, 2 failed, 0 skipped (2 compilation errors)

@@ -1,0 +1,65 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Reason(s) for Non-Reproducibility ---
+  - [TAP] Test passed mismatch: original=505, LLM=483
+  - [TAP] Test failed mismatch: original=0, LLM=3
+  - [TAP] Test skipped mismatch: original=8, LLM=27
+
+--- Original CI Environment ---
+  Repo:       libuv/libuv
+  Platform:   GitHub Actions (ubuntu runner)
+  Build:      make distcheck (autotools)
+  Test:       TAP — 513 run, 505 passed, 0 failed, 8 skipped (BUILD PASSED)
+
+--- LLM-Generated Dockerfile ---
+  Base image:  ubuntu:latest
+  Timezone:    America/Los_Angeles
+  User:        root
+  Build:       ./autogen.sh && ../configure && make distcheck
+
+--- Test Statistics Comparison ---
+  [TAP]
+    Original: 513 run, 505 passed, 0 failed, 8 skipped
+    LLM:      513 run, 483 passed, 3 failed, 27 skipped
+      Failed: idle_starvation, shutdown_eof, timer_from_check
+      Extra skipped: 19 additional tests skipped in LLM vs original
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > not ok 206 - idle_starvation
+    > Assertion failed in test/test-idle.c:93: `idle_cb_called > 0` (0 > 0)
+    > not ok 301 - shutdown_eof
+    > Assertion failed in test/test-shutdown-eof.c:88: `status` okay (error: -125)
+    > not ok 439 - timer_from_check
+    > Assertion failed in test/test-timer-from-check.c:45: `1 == prepare_cb_called` (1 == 0)
+
+  [Root cause classification]
+  Non-deterministic event loop timing — three timing-sensitive libuv tests fail in Docker:
+
+  - `idle_starvation`: asserts that the idle handle's callback is invoked at least once
+    (`idle_cb_called > 0`). The callback count was 0, meaning the idle handle never ran.
+    This is sensitive to event loop scheduling — in Docker the scheduler may not yield CPU
+    to idle handles in the same order as the GitHub Actions runner.
+
+  - `shutdown_eof`: asserts that a TCP shutdown completes with status OK, but received
+    UV_ECANCELED (-125). The cancel indicates the async I/O operation was cancelled before
+    the EOF was delivered, a non-deterministic outcome tied to Docker's network stack and
+    socket teardown timing.
+
+  - `timer_from_check`: asserts that a prepare callback fires after a timer is started
+    from within a check handle (`prepare_cb_called == 1`), but the callback was never
+    invoked (`prepare_cb_called == 0`). This tests the ordering of libuv's check/prepare
+    event loop phases, which can vary under different kernel scheduler configurations.
+
+  All three are timing-sensitive or schedule-order-dependent tests that pass on the CI
+  runner but fail non-deterministically in Docker due to different kernel scheduler
+  behaviour and network stack characteristics.
+
+  FR=False: LLM has 3 failures not present in original (Existence=False).

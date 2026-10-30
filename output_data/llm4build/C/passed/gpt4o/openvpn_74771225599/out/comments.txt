@@ -1,0 +1,44 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-22.04
+  CI job name:      gcc - ubuntu-22.04 - OpenSSL 3.0.2 --enable-pkcs11
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    3
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in LLM but not in original: GoDefault
+  - [Autotools] Test run mismatch: original=26, LLM=31
+  - [Autotools] Test failed mismatch: original=0, LLM=4
+  - [Autotools] Test skipped mismatch: original=1, LLM=2
+
+--- Root Cause Analysis ---
+  [Actual errors from LLM log.txt]
+    > ERROR: failed to start server t_server_null_server-1197_multisocket_ipv4_ipv6
+    > ./t_server_null_server.sh: 15: sudo: not found
+    > ./t_net.sh: line 36: ip: command not found
+    > can't create interface ovpn-dummy0
+    > FAIL t_server_null.sh (exit status: 1)
+    > FAIL t_net.sh (exit status: 1)
+
+  [Root cause classification: Kernel TUN/TAP module and network tools absent in Docker container]
+  - t_server_null.sh fails because OpenVPN cannot bring up a TUN/TAP virtual network interface inside an unprivileged Docker container — the kernel module is not loaded and `sudo` is unavailable to attempt privilege escalation.
+  - t_net.sh fails because the `ip` command (iproute2) is not installed in the LLM's Dockerfile, so the test cannot create the dummy network interface (ovpn-dummy0) needed for the OpenVPN network stack tests.
+  - The original ubuntu-22.04 CI runner has full kernel access and iproute2 pre-installed, so both tests pass there. The 5-test count increase and GoDefault framework appearing in the LLM run indicate the LLM's run.sh invoked an additional Go-based test suite not present in the original CI, contributing 2 extra failing tests.
+
+--- Test Statistics Comparison ---
+  [Autotools]
+    Original: 26 run, 25 passed, 0 failed, 1 skipped
+    LLM:      31 run, 25 passed, 4 failed, 2 skipped
+  [GoDefault]
+    Original: (not present)
+    LLM:      2 run, 0 passed, 2 failed, 0 skipped

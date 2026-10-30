@@ -1,0 +1,34 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          8
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Reason(s) for Non-Reproducibility ---
+  - [CTest] Test passed mismatch: original=64, LLM=0
+  - [CTest] Test failed mismatch: original=1, LLM=65
+  - [GTest] Test run mismatch: original=4, LLM=0
+  - [GTest] Test passed mismatch: original=3, LLM=0
+  - [GTest] Test failed mismatch: original=1, LLM=0
+
+--- Test Statistics Comparison ---
+  [CTest] 65 run, 64 passed, 1 failed, 0 skipped
+    Failed: aviftunetest
+  [GTest] 4 run, 3 passed, 1 failed, 0 skipped
+    Failed: AomTuneMetricTest.TuneIqOnlySupportsAllIntra, 1, AomTuneMetricTest.TuneIqOnlySupportsAllIntra
+LLM:
+  [CTest] 65 run, 0 passed, 65 failed, 0 skipped
+    Failed: aviftest, avifyuv_limited, avifyuv_rgb, avif16bittest, avifallocationtest ... +60 more
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > /workspace/tests/test_cmd_transform.sh: line 36: /workspace/build/avifenc: No such file or directory
+    > /workspace/tests/test_cmd_avifgainmaputil.sh: line 35: /workspace/build/avifgainmaputil: No such file or directory
+    > 0% tests passed, 65 tests failed out of 65
+    > Total Test time (real) = 0.05 sec
+
+  [Root cause classification]
+  Missing CLI tool targets in CMake build: The LLM build did not enable the BUILD_APPS or equivalent CMake option that compiles the avifenc and avifdec command-line tools. Without these binaries the shell-based test_cmd_* scripts immediately fail, and the unit test executables (aviftest etc.) were also not found (shown as "Not Run"). The original CI build included these targets; the LLM reproduced the same 65-test CTest suite but produced zero passing tests because the required binaries were absent from /workspace/build.

@@ -1,0 +1,79 @@
+Error from docker build
+
+#1 [internal] load .dockerignore
+#1 transferring context: 2B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 1.36kB done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/ubuntu:24.04
+#3 DONE 0.1s
+
+#4 [ 1/12] FROM docker.io/library/ubuntu:24.04@sha256:786a8b558f7be160c6c8c4a54f9a57274f3b4fb1491cf65146521ae77ff1dc54
+#4 DONE 0.0s
+
+#5 [ 3/12] RUN apt-get update && apt-get install -y --no-install-recommends     git     curl     wget     build-essential     python3     ca-certificates     tzdata     && rm -rf /var/lib/apt/lists/*
+#5 CACHED
+
+#6 [ 2/12] RUN echo "UTC" > /etc/timezone &&     ln -sf /usr/share/zoneinfo/UTC /etc/localtime
+#6 CACHED
+
+#7 [ 4/12] RUN curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
+#7 CACHED
+
+#8 [internal] load build context
+#8 transferring context: 163.84kB 0.1s done
+#8 DONE 0.1s
+
+#9 [ 5/12] RUN . /root/.nvm/nvm.sh && nvm install 22 && nvm use 22 && nvm alias default 22
+#9 0.906 Downloading and installing node v22.22.3...
+#9 1.061 Downloading https://nodejs.org/dist/v22.22.3/node-v22.22.3-linux-x64.tar.xz...
+#9 1.199 
+#####                                                                      8.1%
+################################                                          45.0%
+###########################################################               82.3%
+######################################################################## 100.0%
+#9 1.489 Computing checksum with sha256sum
+#9 1.623 Checksums matched!
+#9 4.332 Creating default alias: default -> 22 (-> v22.22.3 *)
+#9 4.586 Now using node v22.22.3 (npm v10.9.8)
+#9 4.708 default -> 22 (-> v22.22.3 *)
+#9 DONE 5.0s
+
+#10 [ 6/12] RUN . /root/.nvm/nvm.sh && corepack enable && corepack prepare pnpm@10.33.0 --activate
+#10 0.934 Preparing pnpm@10.33.0 for immediate activation...
+#10 DONE 1.9s
+
+#11 [ 7/12] WORKDIR /workspace
+#11 DONE 0.0s
+
+#12 [ 8/12] COPY . .
+#12 DONE 0.3s
+
+#13 [ 9/12] RUN git config --global --add safe.directory '*'
+#13 DONE 0.4s
+
+#14 [10/12] RUN useradd -m testuser && chown -R testuser /workspace
+#14 DONE 0.9s
+
+#15 [11/12] COPY run.sh /workspace/run.sh
+#15 DONE 0.0s
+
+#16 [12/12] RUN chmod +x /workspace/run.sh
+#16 0.587 chmod: changing permissions of '/workspace/run.sh': Operation not permitted
+#16 ERROR: process "/bin/sh -c chmod +x /workspace/run.sh" did not complete successfully: exit code: 1
+------
+ > [12/12] RUN chmod +x /workspace/run.sh:
+#16 0.587 chmod: changing permissions of '/workspace/run.sh': Operation not permitted
+------
+Dockerfile:54
+--------------------
+  52 |     # Copy and set run.sh as entrypoint
+  53 |     COPY run.sh /workspace/run.sh
+  54 | >>> RUN chmod +x /workspace/run.sh
+  55 |     
+  56 |     ENTRYPOINT ["/workspace/run.sh"]
+--------------------
+ERROR: failed to solve: process "/bin/sh -c chmod +x /workspace/run.sh" did not complete successfully: exit code: 1

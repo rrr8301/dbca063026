@@ -1,0 +1,44 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Tests (22)
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ ./test/web-platform-tests/tests/wpt make-hosts-file | sudo tee -a /etc/hosts
+    $ npm ci --engine-strict
+    $ npm test
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ ./test/web-platform-tests/tests/wpt make-hosts-file >> /etc/hosts
+  $ npm test
+
+--- Reason(s) for Non-Reproducibility ---
+  - [mocha] Test run mismatch: original=9618, LLM=2384
+  - [mocha] Test passed mismatch: original=6866, LLM=2381
+  - [mocha] Test failed mismatch: original=0, LLM=3
+  - [mocha] 2 test(s) failed in LLM but not in original: "after all" hook: $mochaNoSugar in "{root}":, "before all" hook: $mochaNoSugar in "{root}":
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    2754-     Uncaught Error: Error starting python server process: spawn python ENOENT
+    2763:     done() called multiple times in hook <"before all" hook: $mochaNoSugar in "{root}"> (of root suite); in addition, done() received error: Error: WPT server terminated
+    2771:  Error: done() called multiple times in hook <"before all" hook: $mochaNoSugar in "{root}"> (of root suite); in addition, done() received error: Error: WPT server terminated
+
+  [Root cause classification]
+  - Missing file or path not found — test data, certificate, or resource file absent in the Docker environment.
+
+--- Test Statistics Comparison ---
+  [mocha]
+    Original: 9618 run, 6866 passed, 0 failed, 2752 skipped
+    LLM:      2384 run, 2381 passed, 3 failed, 0 skipped

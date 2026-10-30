@@ -1,0 +1,46 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          4
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      Test (ubuntu-latest, Node 24.x)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ bun install
+  $ bun run build:sdk
+  $ bun -F @cline/cli build
+  $ bun run test
+  $ bun run scripts/ci-node-smoke.ts
+  $ bun -F @cline/cli test:e2e:cli:tui
+  $ bun run scripts/check-publish.ts
+
+--- Reason(s) for Non-Reproducibility ---
+  - Test framework mismatch: original used vitest (1339 run), LLM used mocha (1444 run)
+  - Test count mismatch: original=1339 run / 1 failed, LLM=1444 run / 12 failed
+  - Failed tests differ: original had 1 vitest timeout; LLM had 12 mocha assertion errors in hook tests
+
+--- Root Cause Analysis ---
+  Actual error messages from LLM log.txt:
+    > AssertionError: expected '' to be 'TaskStart hook executed successfully'
+    > AssertionError: expected 'Should have thrown' to match /TaskStart.*exited with code 1/
+    > error: script "test:unit" exited with code 12
+    > error: Module not found "scripts/ci-node-smoke.ts"
+    > error: No packages matched the filter
+
+  Root cause classification: Wrong test runner / hook execution environment mismatch
+  - The LLM used mocha as the test runner instead of the original vitest, leading to a completely different test execution profile and different test counts. The hook-based tests (TaskCancel, TaskComplete, TaskResume, TaskStart, UserPromptSubmit) failed because the subprocess fixture runner behaved differently under mocha than under vitest, with hooks producing empty output instead of expected messages. Additionally, scripts referenced in run.sh were not found, indicating the build did not complete all necessary compilation steps.
+
+--- Test Statistics Comparison ---
+  vitest (original) / mocha (LLM)
+    Original: 1339 run, 1331 passed, 1 failed, 7 skipped
+    LLM:      1444 run, 1428 passed, 12 failed, 4 skipped

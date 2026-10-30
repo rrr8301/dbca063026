@@ -1,0 +1,72 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      java (11, mock-maker-subclass, member-accessor-reflection)
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ actions/setup-java@v4 (java-version: [11, 17, 21, 25], distribution: temurin)
+    $ ./gradlew -Pmockito.test.java=11 \
+        -Pmockito.test.mockmaker=mock-maker-subclass \
+        -Pmockito.test.member.accessor=member-accessor-reflection \
+        build --stacktrace --scan
+
+--- LLM-Generated Dockerfile ---
+  Base image:   eclipse-temurin:17-jdk-jammy
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ export MOCK_MAKER=mock-maker-subclass
+  $ export MEMBER_ACCESSOR=member-accessor-reflection
+  $ ./gradlew -Pmockito.test.java=11 build --stacktrace --scan
+  $ ./gradlew -Pmockito.test.java=11 coverageReport --stacktrace --scan
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Gradle] Test run mismatch: original=2556, LLM=290
+  - [Gradle] Test passed mismatch: original=2466, LLM=267
+  - [Gradle] Test failed mismatch: original=1, LLM=1 (same module, likely same test)
+  - [mocha] Test run mismatch: original=154, LLM=30
+  - [mocha] Test passed mismatch: original=64, LLM=7
+  - [mocha] Test failed mismatch: original=1, LLM=1
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    65 tests completed, 1 failed
+    > Task :mockito-integration-tests:inline-mocks-tests:test FAILED
+    Execution failed for task ':mockito-integration-tests:inline-mocks-tests:test'.
+    > There were failing tests. See the report at: .../inline-mocks-tests/build/reports/tests/
+
+    > Task :mockito-integration-tests:java-21-tests:testWithBytebuddyAgent SKIPPED
+    > Task :mockito-integration-tests:java-21-tests:testWithEnableDynamicAgentLoading SKIPPED
+    > Task :mockito-integration-tests:java-21-tests:testWithMockitoAgent SKIPPED
+    > Task :mockito-integration-tests:java-21-tests:test SKIPPED
+
+  [Root cause classification]
+  - The GitHub Actions runner for this job installs multiple JDK versions (11, 17, 21, 25)
+    via `actions/setup-java`, making all JDK toolchains available for Gradle. Even though
+    `-Pmockito.test.java=11` sets the primary test JVM to JDK 11, Gradle's toolchain API
+    can still resolve the JDK 21 toolchain for `java-21-tests` integration tests, allowing
+    those modules to run and contribute to the 2556 total. The Docker container uses
+    `eclipse-temurin:17-jdk-jammy` as base and only installs `openjdk-11-jdk` via apt;
+    no JDK 21 is present. When Gradle resolves toolchains for `java-21-tests`, it cannot
+    find a JDK 21 installation and SKIPS all test tasks in that module
+    (`testWithBytebuddyAgent`, `testWithEnableDynamicAgentLoading`, `testWithMockitoAgent`,
+    `test`). Similarly, other modules that require JDK 21+ are SKIPPED, reducing the
+    count from 2556 to 290. The 1 Gradle failure and 1 mocha failure in both environments
+    are the same `inline-mocks-tests` test, which fails for an unrelated reason in both.
+    The mocha count difference (154 vs 30) mirrors the same pattern: Node.js test suites
+    associated with the skipped Java modules also don't run.
+
+--- Test Statistics Comparison ---
+  [Gradle]
+    Original: 2556 run, 2466 passed, 1 failed, 89 skipped
+    LLM:      290 run, 267 passed, 1 failed, 22 skipped
+  [mocha]
+    Original: 154 run, 64 passed, 1 failed, 89 skipped
+    LLM:      30 run, 7 passed, 1 failed, 22 skipped

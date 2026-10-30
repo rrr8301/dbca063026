@@ -1,0 +1,40 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      ubuntu-24.04-clang
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ rake -m test:run:serial
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ rake -m test:run:serial
+
+--- Reason(s) for Non-Reproducibility ---
+  - [mruby] Test run mismatch: original=3714, LLM=5868
+  - [mruby] Test passed mismatch: original=3698, LLM=5849
+  - [mruby] Test failed mismatch: original=6, LLM=0
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    (LLM built and ran 3 build configurations: build/host, build/full-debug, build/cxx_abi)
+    (All 5868 tests passed — 0 failures in LLM; original had 6 failures)
+
+  [Root cause classification]
+  - Multiple build configurations ran: `rake -m test:run:serial` builds and tests all configurations defined in `build_config.rb`. The LLM's environment produced 3 builds — `host`, `full-debug`, and `cxx_abi` — and ran their test suites, totaling 5868 tests. The original CI (ubuntu-24.04-clang) likely had a `build_config.rb` configured for a single `host` build with the clang compiler, producing only 3714 tests. The difference in configuration count stems from the LLM using a default `build_config.rb` that enables more build variants.
+  - Original failures resolved: The 6 failures in the original CI were likely clang-specific assertions or edge cases that don't reproduce with the LLM's build configuration (which may use GCC or a different clang version in Docker).
+
+--- Test Statistics Comparison ---
+  [mruby]
+    Original: 3714 run, 3698 passed, 6 failed, 10 skipped
+    LLM:      5868 run, 5849 passed, 0 failed, 19 skipped

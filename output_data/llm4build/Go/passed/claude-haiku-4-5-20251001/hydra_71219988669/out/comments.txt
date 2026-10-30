@@ -1,0 +1,43 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          4
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Run tests and lints
+  Test command(s) run in original CI:
+    $ ory/ci/checkout@master
+    $ actions/checkout@v2
+    $ go test -coverprofile coverage.out -failfast -timeout=20m ./...
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ go test -coverprofile coverage.out -failfast -timeout=20m ./...
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoDefault] Test result mismatch (same count 32): original=(32p/0f/0s), LLM=(29p/3f/0s)
+  - [GoDefault] Tests failed in LLM but passed in original: github.com/ory/hydra/v2/oauth2, github.com/ory/hydra/v2/persistence/sql, github.com/ory/hydra/v2/persistence/sql/migratest
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    27735:        	Error Trace:	/workspace/persistence/sql/migratest/migration_test.go:83
+    27737-        	Error:      	Received unexpected error:
+    27740:        	Error Trace:	/workspace/persistence/sql/migratest/migration_test.go:79
+    27742-        	Error:      	Condition never satisfied
+
+  [Root cause classification]
+  - All 3 failing packages require PostgreSQL: `persistence/sql` connects to a PostgreSQL database for ORM operations, `persistence/sql/migratest` runs database migration tests (`migration_test.go:83` and `:79` fire "Received unexpected error" and "Condition never satisfied" when the DB connection is refused), and `oauth2` stores authorization codes and tokens in PostgreSQL. The original CI job "Run tests and lints" used `ory/ci/checkout@master` which provisions a PostgreSQL service container automatically via the Ory CI action. The LLM did not start PostgreSQL, so all three packages fail at the database connection step.
+
+  - `persistence/sql/migratest` runs incremental SQL migration tests — it applies each migration in sequence and verifies schema state after each step. The "Condition never satisfied" error at line 79 is a polling assertion waiting for the database to reach a certain state that never happens because no database is running. This is the same pattern as the failed-category counterpart `hydra_73915351263`, which had a scope mismatch (HSM tests only); in this passed-category case the full `./...` suite runs but PostgreSQL is missing.
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 32 run, 32 passed, 0 failed, 0 skipped
+    LLM:      32 run, 29 passed, 3 failed, 0 skipped

@@ -1,0 +1,48 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      macOS with shard 3/3 / Node v24.x
+  Test command(s) run in original CI:
+    $ actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+    $ yarn build:js
+    $ yarn workspace jest-environment-node test
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ yarn workspace jest-environment-node test || true
+  $ retry_command "yarn test-ci-partial:parallel --max-workers $CPU_CORES --shard=3/3" || true
+  $ retry_command "yarn jest-jasmine-ci --max-workers $CPU_CORES --shard=3/3" || true
+
+--- Reason(s) for Non-Reproducibility ---
+  - [jest] Test run mismatch: original=5865, LLM=11730
+  - [jest] Test passed mismatch: original=5853, LLM=11543
+  - [jest] Test failed mismatch: original=0, LLM=43
+  - [jest] 5 test(s) failed in LLM but not in original: e2e/__tests__/circusDeclarationErrors.test.ts, e2e/__tests__/consoleAfterTeardown.test.ts, e2e/__tests__/customMatcherStackTrace.test.ts, e2e/__tests__/nonSerializableStructuresInequality.test.ts, packages/jest-message-util/src/__tests__/messages.test.ts
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    664-[1m[31m › 1 snapshot test[39m[22m failed.
+    1016:[0m[7m[1m[31m FAIL [39m[22m[27m[0m [2me2e/__tests__/[22m[1mconsoleAfterTeardown.test.ts[22m ([0m[1m[41m6.603 s[49m[22m[0m)
+    1056-[0m[7m[1m[31m FAIL [39m[22m[27m[0m [2me2e/__tests__/[22m[1mcustomMatcherStackTrace.test.ts[22m ([0m[1m[41m7.575 s[49m[22m[0m)
+    284-[1m[31m  [1m● [22m[1mshould return the error cause if there is one[39m[22m
+    302-    [2m       Cause Error[22m
+    320-[1m[31m  [1m● [22m[1mshould return the inner errors of an AggregateError[39m[22m
+    1086:[0m[7m[1m[31m FAIL [39m[22m[27m[0m [2me2e/__tests__/[22m[1mnonSerializableStructuresInequality.test.ts[22m ([0m[1m[41m25.833 s[49m[22m[0m)
+
+  [Root cause classification]
+  - Test timed out — likely due to slower execution in Docker container or a blocking service call that never returns.
+
+--- Test Statistics Comparison ---
+  [jest]
+    Original: 5865 run, 5853 passed, 0 failed, 12 skipped
+    LLM:      11730 run, 11543 passed, 43 failed, 144 skipped

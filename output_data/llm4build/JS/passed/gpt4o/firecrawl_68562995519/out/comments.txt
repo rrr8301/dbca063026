@@ -1,0 +1,38 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Run tests
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > Error: "API key is required for the cloud API. Set FIRECRAWL_API_KEY env or pass apiKey."  (client.ts:112)
+    > All 53 e2e tests fail at suite initialization — thrown at new FirecrawlClient() constructor
+    > Test Suites: 8 failed, 8 total; Tests: 53 failed, 53 total
+    > GoDefault: 8 run, 0 passed, 8 failed (additional tool-install step failures)
+
+  [Root cause classification]
+  - All 53 e2e tests require a live Firecrawl cloud API key (FIRECRAWL_API_KEY environment variable) and active backend services (Redis, Playwright browser, scraping workers). The original CI job ("Run tests") had access to these secrets and running infrastructure, while the LLM container had no API key injected and no backend services available, causing every test to abort at construction time with an authentication error. This is a credentials/external-service dependency that cannot be replicated in an isolated Docker environment.
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in LLM but not in original: GoDefault
+  - [jest] Test passed mismatch: original=53, LLM=0
+  - [jest] Test failed mismatch: original=0, LLM=53
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: (not present)
+    LLM:      8 run, 0 passed, 8 failed, 0 skipped
+  [jest]
+    Original: 53 run, 53 passed, 0 failed, 0 skipped
+    LLM:      53 run, 0 passed, 53 failed, 0 skipped

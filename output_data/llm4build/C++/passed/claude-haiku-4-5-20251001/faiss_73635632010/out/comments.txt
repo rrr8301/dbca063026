@@ -1,0 +1,46 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      build-pull-request / Linux x86_64 (cmake)
+  Test command(s) run in original CI:
+    $ actions/checkout@v4
+    $ ./.github/actions/build_cmake
+    $ make -C build demo_diversity_result_handler
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ conda install -y -q python=3.12 cmake=3.30.4 make=4.2 swig=4.0 "numpy>=2.0,<3.0" scipy=1.16 pytest=7.4 gflags=2.2 setuptools
+  $ cmake -B build \
+  $ -DBUILD_TESTING=ON \
+  $ -DCMAKE_BUILD_TYPE=Release \
+  $ -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in original but missing in LLM: pytest
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > (no errors in CTest — exact match; pytest step not added to run.sh)
+
+  [Root cause classification]
+  - Faiss's CI composite action `./.github/actions/build_cmake` builds the C++ library with cmake/make AND then runs `cd build && python -m pytest tests/python/` (or equivalent) to test the SWIG-generated Python bindings. The LLM correctly reproduced the cmake CTest step (219 run, 216 passed, 3 skipped — exact match to original), but did not add the pytest step to the run.sh. The LLM's conda install line lists `pytest=7.4` as a version assignment variable rather than a `conda install` command, so pytest is never invoked.
+
+  - The missing 1265 pytest tests exercise the Faiss Python API: `faiss.IndexFlatL2`, `faiss.Kmeans`, GPU index fallback (107 skipped), and Python-level parameter validation. The original CI passes all 1265 pytest tests (0 failures). This is the same pattern as the failed-category counterpart `faiss_73235033822`, which also has a perfect CTest match but missing pytest. Both faiss cases share the same systematic gap: the LLM generates the cmake build correctly but omits the Python binding test step from the `.github/actions/build_cmake` composite action.
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 219 run, 216 passed, 0 failed, 3 skipped
+    LLM:      219 run, 216 passed, 0 failed, 3 skipped
+  [pytest]
+    Original: 1265 run, 1158 passed, 0 failed, 107 skipped
+    LLM:      (not present)

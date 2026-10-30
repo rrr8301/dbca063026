@@ -1,0 +1,39 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          5
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Reason(s) for Non-Reproducibility ---
+  - [pytest] Test failed mismatch: original=0, LLM=1
+  - [pytest] Test skipped mismatch: original=8124, LLM=8123
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > FAILED scipy/stats/tests/test_continuous.py::TestDistributions::test_funcs[logcdf-methods10-x-StandardNormal]
+    > AssertionError: Not equal to tolerance rtol=2e-07, atol=0
+    > Max relative difference among violations: 2.16317454e-06 (tolerance: 2e-07)
+    > You can reproduce this example by temporarily adding @reproduce_failure('6.155.0', b'AEMOt2tBAEEAAEEAQQAA')
+
+  [Root cause classification] Floating-Point Numerical Precision Difference (hypothesis-based)
+  - The failing test uses the Hypothesis property-based testing library to check that
+    `logcdf` for `StandardNormal` is consistent across multiple computation methods
+    (formula, quadrature, log/exp, complement); the LLM container finds a seed (964459)
+    where the `quadrature` method returns `-0.44662305` while the reference is `-0.44662089`,
+    a relative difference of ~2.2e-6 that exceeds the 2e-7 tolerance.
+  - This precision divergence is caused by a difference in the underlying BLAS/LAPACK or
+    NumPy version between the LLM Docker image and the original CI environment; even a minor
+    library version change can shift floating-point results at the last significant digit for
+    numerical integration routines.
+  - Because Hypothesis explores different random seeds, the CI run happened not to discover
+    this edge-case input (seed 964459) while the LLM container did, making the failure
+    non-deterministic and environment-dependent rather than a true correctness regression.
+
+--- Test Statistics Comparison ---
+  [pytest] 84710 run, 76362 passed, 0 failed, 8124 skipped
+LLM:
+  [pytest] 84710 run, 76362 passed, 1 failed, 8123 skipped
+    Failed: TestDistributions::test_funcs[logcdf-methods10-x-StandardNormal]

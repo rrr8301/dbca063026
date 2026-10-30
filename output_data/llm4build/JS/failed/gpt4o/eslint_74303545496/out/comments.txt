@@ -1,0 +1,32 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      Test (ubuntu-latest, 22.x)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ node Makefile mocha
+
+--- Reason(s) for Non-Reproducibility ---
+  - [mocha] Test run mismatch: original=38141, LLM=37980
+  - [mocha] Test passed mismatch: original=38129, LLM=37968
+  - [mocha] 1 test(s) failed in original but passed in LLM: ExperimentalWarning: vm.USE_MAIN_CONTEXT_DEFAULT_LOADER is an experimental feature and might change at any time
+
+--- Root Cause Analysis ---
+  - [mocha] LLM ran 161 fewer tests than original — LLM likely used a narrower test scope or missed some test suites.
+
+--- Test Statistics Comparison ---
+  [mocha]
+    Original: 38141 run, 38129 passed, 1 failed, 11 skipped
+    LLM:      37980 run, 37968 passed, 1 failed, 11 skipped

@@ -1,0 +1,37 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          N/A
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      build
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ mvn clean install
+  $ mvn test || true
+  $ mvn verify || true
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Maven] Test run mismatch: original=3035, LLM=434
+  - [Maven] Test passed mismatch: original=3033, LLM=433
+  - [Maven] Test failed mismatch: original=0, LLM=1
+  - [Maven] Test skipped mismatch: original=2, LLM=0
+  - [Maven] 1 test(s) failed in LLM but not in original: should_createSchema_when_pathContainsDecodedUTF8Characters(org.activiti.bpmn.converter.BpmnXMLConverterTest)
+
+--- Root Cause Analysis ---
+  - [Maven] LLM ran 2601 fewer tests than original — LLM likely used a narrower test scope or missed some test suites.
+  - [Maven] 1 test(s) failed in LLM but not original: should_createSchema_when_pathContainsDecodedUTF8Characters(org.activiti.bpmn.converter.BpmnXMLConverterTest)
+
+--- Test Statistics Comparison ---
+  [Maven]
+    Original: 3035 run, 3033 passed, 0 failed, 2 skipped
+    LLM:      434 run, 433 passed, 1 failed, 0 skipped

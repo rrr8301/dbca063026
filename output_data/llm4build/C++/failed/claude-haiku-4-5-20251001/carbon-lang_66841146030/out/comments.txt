@@ -1,0 +1,45 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      test (ubuntu-22.04, opt)
+  Test command(s) run in original CI:
+    $ actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+    $ ./.github/actions/test-setup
+    $ ./.github/actions/build-setup-common
+    $ ./.github/actions/build-setup-ubuntu
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    6
+
+--- LLM run.sh Test Command(s) ---
+  $ test --test_output=errors
+  $ test -c opt \
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Bazel] Test run mismatch: original=23, LLM=65
+  - [Bazel] Test passed mismatch: original=23, LLM=64
+  - [Bazel] Test failed mismatch: original=0, LLM=1
+  - [Bazel] 1 test(s) failed in LLM but not in original: //common:filesystem_test
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    15410:FAIL: //common:filesystem_test (Aborted) (see /root/.cache/bazel/_bazel_root/eab0d61a99b6696edb3d2aff87b585e8/execroot/_main/bazel-out/k8-opt/testlogs/common/filesystem_test/test.log)
+    16860://common:filesystem_test                                                 FAILED in 1.1s
+    16863-Executed 65 out of 77 tests: 64 tests pass, 1 fails locally, and 12 were skipped.
+
+  [Root cause classification]
+  - Process aborted (SIGABRT) — likely a GLib g_assert() failure, AddressSanitizer/UBSan abort, or missing D-Bus/system service in Docker container.
+  - Test timed out — likely due to slower execution in Docker container or a blocking service call that never returns.
+
+--- Test Statistics Comparison ---
+  [Bazel]
+    Original: 23 run, 23 passed, 0 failed, 0 skipped
+    LLM:      65 run, 64 passed, 1 failed, 0 skipped

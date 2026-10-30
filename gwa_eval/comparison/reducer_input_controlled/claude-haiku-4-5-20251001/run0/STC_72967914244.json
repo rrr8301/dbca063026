@@ -1,0 +1,11 @@
+{
+ "model": "claude-haiku-4-5-20251001",
+ "content": "```yamlfile\nname: CI\n\non:\n  pull_request:\n  push:\n\njobs:\n  meson-build-and-tests:\n    runs-on: ubuntu-22.04\n    name: ubuntu-22.04, clang debug\n    steps:\n      - name: Setup meson\n        run: |\n          pipx install meson ninja\n      - name: Checkout\n        uses: actions/checkout@v4\n      - name: Configuring\n        env:\n          CC: clang\n          CXX: clang++\n        run: |\n          meson setup build-debug --buildtype=debug -Dtests=enabled\n      - name: Building\n        run: |\n          meson compile -C build-debug\n      - name: Running tests\n        env:\n          CC: clang\n          CXX: clang++\n        run: |\n          meson test -C build-debug --timeout-multiplier 0\n      - uses: actions/upload-artifact@v4\n        if: failure()\n        with:\n          name: ubuntu-22.04-clang-debug-logs\n          path: build-debug/meson-logs\n```\n\n---YAML---",
+ "reduced_yaml": "name: CI\n\non:\n  pull_request:\n  push:\n\njobs:\n  meson-build-and-tests:\n    runs-on: ubuntu-22.04\n    name: ubuntu-22.04, clang debug\n    steps:\n      - name: Setup meson\n        run: |\n          pipx install meson ninja\n      - name: Checkout\n        uses: actions/checkout@v4\n      - name: Configuring\n        env:\n          CC: clang\n          CXX: clang++\n        run: |\n          meson setup build-debug --buildtype=debug -Dtests=enabled\n      - name: Building\n        run: |\n          meson compile -C build-debug\n      - name: Running tests\n        env:\n          CC: clang\n          CXX: clang++\n        run: |\n          meson test -C build-debug --timeout-multiplier 0\n      - uses: actions/upload-artifact@v4\n        if: failure()\n        with:\n          name: ubuntu-22.04-clang-debug-logs\n          path: build-debug/meson-logs",
+ "input_tokens": 1638,
+ "output_tokens": 282,
+ "cost_usd": 0.002438,
+ "seconds": 2.66,
+ "prompt_sha256": "9a106a89208378a04c43909192adccfbd4044e0425f7bddea9141418d06b8b7d",
+ "completed_steps": []
+}

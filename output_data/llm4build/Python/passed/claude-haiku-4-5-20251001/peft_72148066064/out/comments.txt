@@ -1,0 +1,66 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      tests (3.11, ubuntu-latest)
+  Test command(s) run in original CI:
+    $ actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+    $ make test
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ pip install -e .[test]
+  $ make test
+
+--- Reason(s) for Non-Reproducibility ---
+  - [pytest] Test result mismatch (same count 24671): original=(21312p/0f/3349s), LLM=(21302p/10f/3349s)
+  - [pytest] 10 tests failed in LLM but not in original (all in tests/test_integrations.py):
+    TestTransformersV5.test_mixtral_v4_lora_weight_conversion_transformers_load_adapter[without_transformers_moe_patch]
+    TestTransformersV5.test_mixtral_v4_lora_weight_conversion_transformers_load_adapter[with_transformers_moe_patch]
+    TestTransformersV5.test_mixtral_v4_lora_weight_conversion_peft_model_from_pretrained[without_transformers_moe_patch]
+    TestTransformersV5.test_mixtral_v4_lora_weight_conversion_peft_model_from_pretrained[with_transformers_moe_patch]
+    ... (6 more TestTransformersV5 tests, same root cause)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > /usr/local/lib/python3.11/dist-packages/transformers/integrations/peft.py:575:
+    >   load_adapter(...)
+    > weight_conversions = [WeightRenaming(...), WeightConverter(source_patterns=['...m.bias']),
+    >                       WeightRenaming(...), ...]
+    > /usr/local/lib/python3.11/dist-packages/transformers/integrations/peft.py:297:
+    >             distributed_operation=orig_conversion.distributed_operation,
+    > E   TypeError: WeightConverter.__init__() got an unexpected keyword argument 'distributed_operation'
+    >
+    > (identical error in src/peft/utils/transformers_weight_conversion.py:268 for the
+    >  peft_model_from_pretrained variant)
+
+  [Root cause classification]
+  - Dependency version drift: transformers 5.6.2 removed `distributed_operation` from WeightConverter
+    The Docker container installs peft 0.19.2.dev0 which resolves `transformers>=...` to the latest
+    version available at install time: `transformers-5.6.2`. The original CI used a pinned or earlier
+    version of transformers that still accepted `distributed_operation` as a keyword argument to
+    `WeightConverter.__init__()`.
+    In transformers 5.6.2, the `WeightConverter` class in
+    `transformers/integrations/peft.py` had the `distributed_operation` parameter removed from
+    its constructor signature. However, the peft source code in
+    `src/peft/utils/transformers_weight_conversion.py:268` still calls:
+      `WeightConverter(source_patterns=..., distributed_operation=orig_conversion.distributed_operation)`
+    and `transformers/integrations/peft.py:297` similarly passes:
+      `distributed_operation=orig_conversion.distributed_operation`
+    when creating WeightConverter instances during Mixtral MoE weight conversion.
+    Since transformers 5.6.2 no longer accepts this argument, all 10 tests in `TestTransformersV5`
+    that exercise the Mixtral v4 LoRA weight conversion path fail with TypeError.
+
+--- Test Statistics Comparison ---
+  [pytest]
+    Original: 24671 run, 21312 passed, 0 failed, 3349 skipped
+    LLM:      24671 run, 21302 passed, 10 failed, 3349 skipped

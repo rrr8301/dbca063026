@@ -1,0 +1,46 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          20
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT TESTS NOT REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      Go SDK / OS: (ubuntu-latest), key-queues: true, db: postgres / split: 4
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+--- Test Reproducibility Gap ---
+  Original ran 29 test(s) across [GoDefault].
+  LLM build produced no test results (empty llm_log_stats).
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > Installing gotesplit...
+    > go: github.com/inngest/gotesplit@latest: module github.com/inngest/gotesplit: git ls-remote -q origin in /root/go/pkg/mod/cache/vcs/...: exit status 128
+    > fatal: could not read Username for 'https://github.com': terminal prompts disabled
+    > Confirm the import path was entered correctly.
+    > If this is a private repository, see https://golang.org/doc/faq#git_https for additional information.
+
+  [Root cause classification]
+  - `github.com/inngest/gotesplit` is a private GitHub repository owned by the Inngest organization. When `go install github.com/inngest/gotesplit@latest` attempts to clone the repository, Go calls `git ls-remote` which requires GitHub authentication credentials. Inside Docker, no SSH keys or GitHub tokens are configured, so git fails with `terminal prompts disabled`. Without `gotesplit`, the test splitting infrastructure (which divides the full test suite into 4 shards per the CI job name `split: 4`) cannot be installed, and no test results are produced.
+
+  - After 20 attempts, the LLM could not work around this private module authentication requirement. The original CI used GitHub Actions OIDC authentication or repository secrets to provide GitHub credentials to `go install`, which is not replicable in a standalone Docker container without those secrets. The 29 original tests (27 passed, 1 failed) were a subset from one of the 4 shards of the full inngest test suite.
+
+--- Root Cause ---
+  Reason type: Test runner executed but produced no parseable output
+  Last log output before stopping:
+    Installing tools...
+    Installing gotesplit...
+    go: github.com/inngest/gotesplit@latest: module github.com/inngest/gotesplit: git ls-remote -q origin in /root/go/pkg/mod/cache/vcs/bc4187cfc849a647d6e06775ffabfd18a97bc3f0d5871afe47d6a69d285ac02a: ex
+    fatal: could not read Username for 'https://github.com': terminal prompts disabled
+    Confirm the import path was entered correctly.
+    If this is a private repository, see https://golang.org/doc/faq#git_https for additional information.
+
+--- Original Test Statistics (not reproduced) ---
+  [GoDefault] 29 run, 27 passed, 1 failed, 0 skipped

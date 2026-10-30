@@ -1,0 +1,75 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          12
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      cpu / build-and-test (arm64, arm64, Debug)
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ microsoft/onnxruntime-github-actions/setup-build-tools@v0.0.9
+    $ rm -rf /Users/runner/work/onnxruntime/onnxruntime/build/Debug
+    $ python ./tools/ci_build/build.py --build --build_dir ./build --skip_submodule_sync --parallel --use_binskim_compliant_compile_flags --build_shared_lib --build_nodejs --build_objc --build_java --build_wheel --enable_arm_neon_nchwc    --use_vcpkg --use_vcpkg_ms_internal_asset_cache --config Debug --osx_arch arm64
+    $ python ./tools/ci_build/build.py --test --build_dir ./build --skip_submodule_sync --parallel --use_binskim_compliant_compile_flags --build_shared_lib --build_nodejs --build_objc --build_java --build_wheel --enable_arm_neon_nchwc    --use_vcpkg --use_vcpkg_ms_internal_asset_cache --config Debug --osx_arch arm64
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    11
+
+--- LLM run.sh Test Command(s) ---
+  $ cmake --version
+  $ find /workspace -name "gradlew" -type f -exec chmod +x {} \;
+  $ make install DESTDIR=/workspace/build/installed 2>&1 | tee install.log
+  $ python ./tools/ci_build/build.py --test $BUILD_FLAGS 2>&1 | tee build_test.log
+  $ TEST_STATUS=${PIPESTATUS[0]}
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in original but missing in LLM: unittest
+  - [CTest] Test run mismatch: original=12, LLM=22
+  - [CTest] Test passed mismatch: original=12, LLM=20
+  - [CTest] Test failed mismatch: original=0, LLM=2
+  - [CTest] 1 test(s) failed in LLM but not in original: onnxruntime_provider_test
+  - [GTest] Test run mismatch: original=6455, LLM=15488
+  - [GTest] Test passed mismatch: original=6416, LLM=15404
+  - [GTest] Test failed mismatch: original=0, LLM=21
+  - [GTest] 8 test(s) failed in LLM but not in original: 7, ContribOpTest.StringNormalizerInsensitiveFilterOutUpperWithLocale, ContribOpTest.StringNormalizerSensitiveFilterOutLower, ContribOpTest.StringNormalizerSensitiveFilterOutNoCase, ContribOpTest.StringNormalizerSensitiveFilterOutUpper, ContribOpTest.StringNormalizerSensitiveFilterOutUpperEmptyCase, ContribOpTest.StringNormalizerSensitiveFilterOutUpperSameOutput, ContribOpTest.StringNormalizerSensitiveFilterOutUpperWithLocale
+  - [Gradle] Test run mismatch: original=2868, LLM=0
+  - [Gradle] Test passed mismatch: original=2864, LLM=0
+  - [Gradle] Test failed mismatch: original=0, LLM=0
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    31109:2: [  FAILED  ] ContribOpTest.StringNormalizerSensitiveFilterOutNoCase (2 ms)
+    31200:2: [  FAILED  ] ContribOpTest.StringNormalizerSensitiveFilterOutLower (2 ms)
+    31291:2: [  FAILED  ] ContribOpTest.StringNormalizerSensitiveFilterOutUpper (2 ms)
+    31109:2: [  FAILED  ] ContribOpTest.StringNormalizerSensitiveFilterOutNoCase (2 ms)
+    31200:2: [  FAILED  ] ContribOpTest.StringNormalizerSensitiveFilterOutLower (2 ms)
+    31291:2: [  FAILED  ] ContribOpTest.StringNormalizerSensitiveFilterOutUpper (2 ms)
+    31109:2: [  FAILED  ] ContribOpTest.StringNormalizerSensitiveFilterOutNoCase (2 ms)
+    31200:2: [  FAILED  ] ContribOpTest.StringNormalizerSensitiveFilterOutLower (2 ms)
+    972:-- Installing: /workspace/build/vcpkg/packages/gtest_x64-linux/src/gtest-assertion-result.cc
+    35934:7:     Error code - ORT_FAIL - message: Failed to get symbol RegisterCustomOps with error: /tmp/onnxruntime-java14432938641199693656/libonnxruntime.so: undefined symbol: RegisterCustomOps
+    38988:1: Schema error: Trying to register schema with name PrePackingTest (domain:  version: 1) from file /workspace/onnxruntime/test/framework/session_state_test.cc line 842, but it is already regist
+    40132:2: Skipping in Debug builds because CUDA device-side asserts poison the CUDA context.
+
+  [Root cause classification]
+  - Test timed out — likely due to slower execution in Docker container or a blocking service call that never returns.
+  - Assertion failure: 972:-- Installing: /workspace/build/vcpkg/packages/gtest_x64-linux/src/gtest-assertion-result.cc
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 12 run, 12 passed, 0 failed, 0 skipped
+    LLM:      22 run, 20 passed, 2 failed, 0 skipped
+  [GTest]
+    Original: 6455 run, 6416 passed, 0 failed, 39 skipped
+    LLM:      15488 run, 15404 passed, 21 failed, 63 skipped
+  [Gradle]
+    Original: 2868 run, 2864 passed, 0 failed, 4 skipped
+    LLM:      0 run, 0 passed, 0 failed, 0 skipped
+  [unittest]
+    Original: 14 run, 14 passed, 0 failed, 0 skipped
+    LLM:      (not present)

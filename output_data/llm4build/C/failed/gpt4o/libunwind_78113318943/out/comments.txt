@@ -1,0 +1,51 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          12
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      arm-linux-gnueabi (cross)
+  Test command(s) run in original CI:
+    $ autoreconf -i
+    $ ../configure --build=$(../config/config.guess) --host=arm-linux-gnueabi --enable-debug --enable-coredump
+    $ make -j$(nproc)
+    $ make check -j$(nproc)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:20.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ autoreconf -i
+  $ ../configure --build=$(../config/config.guess) --host=arm-linux-gnueabi --with-testdriver="$(pwd)/libtool execute $(pwd)/../scripts/qemu-test-driver" --enable-debug --enable-coredump CC=arm-linux-gnueabi-gcc-10 CXX=arm-linux-gnueabi-g++-10 CFLAGS="-I/usr/include/libunwind"
+  $ make -j$(nproc)
+  $ ulimit -c unlimited
+  $ make check -j$(nproc) LOG_DRIVER_FLAGS="--qemu-arch arm" QEMU_LD_PREFIX="/usr/arm-linux-gnueabi" LDFLAGS="-L/usr/arm-linux-gnueabi/lib"
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Autotools] Test failed mismatch: original=1 failed, LLM=3 failed
+  - [Autotools] Test passed mismatch: original=38 passed, LLM=36 passed
+  - [Autotools] Test skipped count: original=2 skipped, LLM=2 skipped (same)
+  - [Autotools] 2 additional failures in LLM: Gtest-resume-sig, Ltest-resume-sig (in addition to run-coredump-unwind which failed in both)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    664: FAIL: /workspace/build/tests/.libs/Gtest-resume-sig
+    666: FAIL: /workspace/build/tests/.libs/Ltest-resume-sig
+    667: FAIL: run-coredump-unwind
+    675: # PASS:  36
+    678: # FAIL:  3
+
+  [Root cause classification]
+  - The `run-coredump-unwind` test failed in both the original CI and the LLM environment; this is a known flaky test that requires specific kernel coredump configuration (`/proc/sys/kernel/core_pattern`) which is not accessible inside a Docker container without privileged mode. The LLM correctly used `ulimit -c unlimited` but could not modify the kernel coredump pattern.
+  - The two additional failures in the LLM (`Gtest-resume-sig` and `Ltest-resume-sig`) are signal-handling resume tests that depend on specific QEMU user-mode emulation behavior for the ARM target. The LLM uses `ubuntu:20.04` with `qemu-user` from its standard repository, while the original CI may have a newer or differently configured QEMU version or different kernel signal handling. These tests exercise `sigreturn` behavior under QEMU which is sensitive to QEMU version and host kernel version differences.
+  - The QEMU emulation differences between the Docker host (linux 5.4.0) and the GitHub Actions runner may also contribute to the signal-handling test failures.
+
+--- Test Statistics Comparison ---
+  [Autotools]
+    Original: 41 run, 38 passed, 1 failed, 2 skipped
+    LLM:      41 run, 36 passed, 3 failed, 2 skipped

@@ -1,0 +1,54 @@
+Error from docker build
+
+#1 [internal] load .dockerignore
+#1 transferring context: 111B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 647B done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/golang:1.17
+#3 DONE 0.1s
+
+#4 [1/7] FROM docker.io/library/golang:1.17@sha256:87262e4a4c7db56158a80a18fefdc4fee5accc41b59cde821e691d05541bbb18
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 86.78kB 0.1s done
+#5 DONE 0.1s
+
+#6 [2/7] WORKDIR /app
+#6 CACHED
+
+#7 [3/7] COPY go.mod go.sum ./
+#7 CACHED
+
+#8 [4/7] RUN sed -i 's/^go .*/go 1.17/' go.mod
+#8 DONE 0.3s
+
+#9 [5/7] RUN go mod tidy -compat=1.17
+#9 0.362 go: warning: "all" matched no packages
+#9 DONE 0.4s
+
+#10 [6/7] COPY . .
+#10 DONE 0.2s
+
+#11 [7/7] RUN go build -o my-go-app ./...
+#11 0.306 go: errors parsing go.mod:
+#11 0.306 /app/go.mod:3: invalid go version '1.24.0': must match format 1.23
+#11 ERROR: process "/bin/sh -c go build -o my-go-app ./..." did not complete successfully: exit code: 1
+------
+ > [7/7] RUN go build -o my-go-app ./...:
+#11 0.306 go: errors parsing go.mod:
+#11 0.306 /app/go.mod:3: invalid go version '1.24.0': must match format 1.23
+------
+Dockerfile:20
+--------------------
+  18 |     
+  19 |     # Build the Go application
+  20 | >>> RUN go build -o my-go-app ./...
+  21 |     
+  22 |     # Set the entrypoint to the built Go application
+--------------------
+ERROR: failed to solve: process "/bin/sh -c go build -o my-go-app ./..." did not complete successfully: exit code: 1

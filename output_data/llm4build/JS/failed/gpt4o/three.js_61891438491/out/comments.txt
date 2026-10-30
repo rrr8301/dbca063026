@@ -1,0 +1,35 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      Lint, Unit, Unit addons, Circular dependencies & Examples testing
+
+--- LLM-Generated Dockerfile ---
+  Base image:   node:24-bullseye
+  RUN steps:    4
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoDefault] Test run mismatch: original=1239, LLM=1243
+  - [GoDefault] Test passed mismatch: original=1239, LLM=1243
+  - [tap] Test run mismatch: original=1292, LLM=1302
+  - [tap] Test passed mismatch: original=1240, LLM=1244
+  - [tap] Test failed mismatch: original=52, LLM=58
+
+--- Root Cause Analysis ---
+  - [GoDefault] LLM ran 4 more tests than original — LLM likely used a broader test scope or included extra test suites.
+  - [tap] LLM ran 10 more tests than original — LLM likely used a broader test scope or included extra test suites.
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 1239 run, 1239 passed, 0 failed, 0 skipped
+    LLM:      1243 run, 1243 passed, 0 failed, 0 skipped
+  [tap]
+    Original: 1292 run, 1240 passed, 52 failed, 0 skipped
+    LLM:      1302 run, 1244 passed, 58 failed, 0 skipped

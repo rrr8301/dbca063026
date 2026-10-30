@@ -1,0 +1,36 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          N/A
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      integration-tests (ubuntu-latest, 21)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ mvn install -e -B -V -Prun-its,mimir -Drat.skip=true -Dlicense.skip=true
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Maven] Test run mismatch: original=2323, LLM=1581
+  - [Maven] Test passed mismatch: original=2307, LLM=1573
+  - [Maven] Test failed mismatch: original=0, LLM=2
+  - [Maven] Test skipped mismatch: original=16, LLM=6
+  - [Maven] 2 test(s) failed in LLM but not in original: testPluginInjection(org.apache.maven.plugin.PluginParameterExpressionEvaluatorTest), testPluginInjection(org.apache.maven.plugin.PluginParameterExpressionEvaluatorV4Test)
+  - [Maven] Compilation error status: original=True, LLM=False
+
+--- Root Cause Analysis ---
+  - [Maven] LLM ran 742 fewer tests than original — LLM likely used a narrower test scope or missed some test suites.
+  - [Maven] 2 test(s) failed in LLM but not original: testPluginInjection(org.apache.maven.plugin.PluginParameterExpressionEvaluatorTest), testPluginInjection(org.apache.maven.plugin.PluginParameterExpressionEvaluatorV4Test)
+
+--- Test Statistics Comparison ---
+  [Maven]
+    Original: 2323 run, 2307 passed, 0 failed, 16 skipped
+    LLM:      1581 run, 1573 passed, 2 failed, 6 skipped

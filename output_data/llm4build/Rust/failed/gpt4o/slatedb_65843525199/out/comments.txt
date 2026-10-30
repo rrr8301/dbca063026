@@ -1,0 +1,38 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          10
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      detect-flaky-tests
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    4
+
+Note: Original had test failures; LLM build passed all — failed build has passed.
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in original but missing in LLM: GoDefault, cargo
+  - [nexttest] Test run mismatch: original=9317, LLM=45254
+  - [nexttest] Test passed mismatch: original=9310, LLM=45220
+  - [nexttest] Test skipped mismatch: original=7, LLM=34
+
+--- Root Cause Analysis ---
+  - [nexttest] LLM ran 35937 more tests than original — LLM likely used a broader test scope or included extra test suites.
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 2 run, 0 passed, 2 failed, 0 skipped
+    LLM:      (not present)
+  [cargo]
+    Original: 1248 run, 0 passed, 1 failed, 1247 skipped
+    LLM:      (not present)
+  [nexttest]
+    Original: 9317 run, 9310 passed, 0 failed, 7 skipped
+    LLM:      45254 run, 45220 passed, 0 failed, 34 skipped

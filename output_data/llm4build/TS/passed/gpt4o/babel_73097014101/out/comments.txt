@@ -1,0 +1,37 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      Test on Node.js 24
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    6
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in LLM but not in original: GoDefault
+  - [jest] Test run mismatch: original=168655, LLM=74
+  - [jest] Test passed mismatch: original=168602, LLM=5
+  - [jest] Test failed mismatch: original=0, LLM=69
+  - [jest] Test skipped mismatch: original=53, LLM=0
+  - [jest] 1 test(s) failed in original but passed in LLM: Unknown
+  - [jest] 261 test(s) failed in LLM but not in original: codemods/babel-plugin-codemod-object-assign-to-object-spread/test/index.js, codemods/babel-plugin-codemod-optional-catch-binding/test/index.js, eslint/babel-eslint-parser/test/index.js, eslint/babel-eslint-parser/test/typescript-estree.test.js, eslint/babel-eslint-plugin-development-internal/test/rules/report-error-message-formtat.js ... (+256 more)
+
+--- Root Cause Analysis ---
+  - [jest] LLM ran 168581 fewer tests than original — LLM likely used a narrower test scope or missed some test suites.
+  - [jest] 261 test(s) failed in LLM but not original: codemods/babel-plugin-codemod-object-assign-to-object-spread/test/index.js, codemods/babel-plugin-codemod-optional-catch-binding/test/index.js, eslint/babel-eslint-parser/test/index.js, eslint/babel-eslint-parser/test/typescript-estree.test.js, eslint/babel-eslint-plugin-development-internal/test/rules/report-error-message-formtat.js ... (+256 more)
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: (not present)
+    LLM:      522 run, 0 passed, 522 failed, 0 skipped
+  [jest]
+    Original: 168655 run, 168602 passed, 0 failed, 53 skipped
+    LLM:      74 run, 5 passed, 69 failed, 0 skipped

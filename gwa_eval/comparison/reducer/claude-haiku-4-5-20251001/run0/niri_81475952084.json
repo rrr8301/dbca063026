@@ -1,0 +1,20 @@
+{
+ "model": "claude-haiku-4-5-20251001",
+ "content": "```yamlfile\nname: CI\n\non:\n  push:\n  pull_request:\n  workflow_dispatch:\n  schedule:\n    - cron: '0 0 1 * *' # Monthly\n\nenv:\n  DEPS_APT: curl gcc clang libudev-dev libgbm-dev libxkbcommon-dev libegl1-mesa-dev libwayland-dev libinput-dev libdbus-1-dev libsystemd-dev libseat-dev libpipewire-0.3-dev libpango1.0-dev libdisplay-info-dev\n\njobs:\n  test:\n    strategy:\n      fail-fast: false\n\n    name: test\n    runs-on: ubuntu-24.04\n\n    steps:\n      - uses: actions/checkout@v6\n        with:\n          show-progress: false\n\n      - name: Install dependencies\n        run: |\n          sudo apt-get update -y\n          sudo apt-get install -y ${{ env.DEPS_APT }}\n\n      - uses: dtolnay/rust-toolchain@stable\n\n      - uses: Swatinem/rust-cache@v2\n\n      - name: Build tests\n        run: cargo test --no-run --all --exclude niri-visual-tests\n\n      - name: Test\n        run: cargo test --all --exclude niri-visual-tests -- --nocapture\n```",
+ "reduced_yaml": "name: CI\n\non:\n  push:\n  pull_request:\n  workflow_dispatch:\n  schedule:\n    - cron: '0 0 1 * *' # Monthly\n\nenv:\n  DEPS_APT: curl gcc clang libudev-dev libgbm-dev libxkbcommon-dev libegl1-mesa-dev libwayland-dev libinput-dev libdbus-1-dev libsystemd-dev libseat-dev libpipewire-0.3-dev libpango1.0-dev libdisplay-info-dev\n\njobs:\n  test:\n    strategy:\n      fail-fast: false\n\n    name: test\n    runs-on: ubuntu-24.04\n\n    steps:\n      - uses: actions/checkout@v6\n        with:\n          show-progress: false\n\n      - name: Install dependencies\n        run: |\n          sudo apt-get update -y\n          sudo apt-get install -y ${{ env.DEPS_APT }}\n\n      - uses: dtolnay/rust-toolchain@stable\n\n      - uses: Swatinem/rust-cache@v2\n\n      - name: Build tests\n        run: cargo test --no-run --all --exclude niri-visual-tests\n\n      - name: Test\n        run: cargo test --all --exclude niri-visual-tests -- --nocapture",
+ "input_tokens": 3243,
+ "output_tokens": 337,
+ "cost_usd": 0.003942,
+ "seconds": 3.48,
+ "prompt_sha256": "9edace2e5ef206d774c943bfc7c6c899df085155e1a0350f54cdfa045fbc31f2",
+ "completed_steps": [
+  "Set up job",
+  "Run actions/checkout@v6",
+  "Install dependencies",
+  "Run dtolnay/rust-toolchain@stable",
+  "Run Swatinem/rust-cache@v2",
+  "Build tests",
+  "Test",
+  "Complete job"
+ ]
+}

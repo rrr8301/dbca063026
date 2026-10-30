@@ -1,0 +1,52 @@
+Error from docker build
+
+#1 [ 1/10] FROM docker.io/library/ubuntu:22.04
+#1 CACHED
+
+#2 [2/9] RUN ln -snf /usr/share/zoneinfo/America/Los_Angeles /etc/localtime && echo America/Los_Angeles > /etc/timezone
+#2 CACHED
+
+#3 [internal] load .dockerignore
+#3 transferring context: 2B done
+#3 DONE 0.0s
+
+#4 [internal] load build definition from Dockerfile
+#4 transferring dockerfile: 1.16kB done
+#4 DONE 0.0s
+
+#5 [internal] load metadata for docker.io/library/ubuntu:22.04
+#5 DONE 0.0s
+
+#6 [3/9] RUN apt-get update && apt-get install -y --no-install-recommends     git     make     curl     wget     && rm -rf /var/lib/apt/lists/*
+#6 CACHED
+
+#7 [internal] load build context
+#7 transferring context: 25.86MB 0.6s done
+#7 DONE 0.6s
+
+#8 [4/9] RUN wget https://golang.org/dl/go1.17.6.linux-amd64.tar.gz &&     tar -C /usr/local -xzf go1.17.6.linux-amd64.tar.gz &&     rm go1.17.6.linux-amd64.tar.gz
+#0 0.386 --2026-06-01 00:13:07--  https://golang.org/dl/go1.17.6.linux-amd64.tar.gz
+#0 0.393 Resolving golang.org (golang.org)... 142.251.218.241, 2607:f8b0:4005:815::2011
+#0 0.429 Connecting to golang.org (golang.org)|142.251.218.241|:443... connected.
+#0 0.482 ERROR: cannot verify golang.org's certificate, issued by ‘CN=WR2,O=Google Trust Services,C=US’:
+#0 0.482   Unable to locally verify the issuer's authority.
+#0 0.483 To connect to golang.org insecurely, use `--no-check-certificate'.
+#8 ERROR: process "/bin/sh -c wget https://golang.org/dl/go1.17.6.linux-amd64.tar.gz &&     tar -C /usr/local -xzf go1.17.6.linux-amd64.tar.gz &&     rm go1.17.6.linux-amd64.tar.gz" did not complete successfully: exit code: 5
+------
+ > [4/9] RUN wget https://golang.org/dl/go1.17.6.linux-amd64.tar.gz &&     tar -C /usr/local -xzf go1.17.6.linux-amd64.tar.gz &&     rm go1.17.6.linux-amd64.tar.gz:
+#0 0.386 --2026-06-01 00:13:07--  https://golang.org/dl/go1.17.6.linux-amd64.tar.gz
+#0 0.393 Resolving golang.org (golang.org)... 142.251.218.241, 2607:f8b0:4005:815::2011
+#0 0.429 Connecting to golang.org (golang.org)|142.251.218.241|:443... connected.
+#0 0.482 ERROR: cannot verify golang.org's certificate, issued by ‘CN=WR2,O=Google Trust Services,C=US’:
+#0 0.482   Unable to locally verify the issuer's authority.
+#0 0.483 To connect to golang.org insecurely, use `--no-check-certificate'.
+------
+Dockerfile:22
+--------------------
+  21 |     # Install Go
+  22 | >>> RUN wget https://golang.org/dl/go1.17.6.linux-amd64.tar.gz && \
+  23 | >>>     tar -C /usr/local -xzf go1.17.6.linux-amd64.tar.gz && \
+  24 | >>>     rm go1.17.6.linux-amd64.tar.gz
+  25 |     ENV PATH="/usr/local/go/bin:${PATH}"
+--------------------
+ERROR: failed to solve: process "/bin/sh -c wget https://golang.org/dl/go1.17.6.linux-amd64.tar.gz &&     tar -C /usr/local -xzf go1.17.6.linux-amd64.tar.gz &&     rm go1.17.6.linux-amd64.tar.gz" did not complete successfully: exit code: 5

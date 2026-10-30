@@ -1,0 +1,11 @@
+{
+ "model": "claude-haiku-4-5-20251001",
+ "content": "```yamlfile\nname: Test on Beta Toolchain\n\non:\n  schedule:\n    - cron: '0 0 * * *'\n\nenv:\n  NUSHELL_CARGO_PROFILE: ci\n  NU_LOG_LEVEL: DEBUG\n\nconcurrency:\n  group: ${{ github.workflow }}-${{ github.head_ref && github.ref || github.run_id }}\n  cancel-in-progress: true\n\njobs:\n  build-and-test:\n    continue-on-error: true\n    strategy:\n      fail-fast: true\n      matrix:\n        platform: [ubuntu-22.04]\n    runs-on: ubuntu-22.04\n    steps:\n      - uses: actions/checkout@v6\n      - run: rustup update beta\n      - name: Tests\n        run: cargo +beta test --workspace --profile ci --exclude nu_plugin_*\n      - name: Check for clean repo\n        shell: bash\n        run: |\n          if [ -n \"$(git status --porcelain)\" ]; then\n            echo \"there are changes\";\n            git status --porcelain\n            exit 1\n          else\n            echo \"no changes in working directory\";\n          fi\n```",
+ "reduced_yaml": "name: Test on Beta Toolchain\n\non:\n  schedule:\n    - cron: '0 0 * * *'\n\nenv:\n  NUSHELL_CARGO_PROFILE: ci\n  NU_LOG_LEVEL: DEBUG\n\nconcurrency:\n  group: ${{ github.workflow }}-${{ github.head_ref && github.ref || github.run_id }}\n  cancel-in-progress: true\n\njobs:\n  build-and-test:\n    continue-on-error: true\n    strategy:\n      fail-fast: true\n      matrix:\n        platform: [ubuntu-22.04]\n    runs-on: ubuntu-22.04\n    steps:\n      - uses: actions/checkout@v6\n      - run: rustup update beta\n      - name: Tests\n        run: cargo +beta test --workspace --profile ci --exclude nu_plugin_*\n      - name: Check for clean repo\n        shell: bash\n        run: |\n          if [ -n \"$(git status --porcelain)\" ]; then\n            echo \"there are changes\";\n            git status --porcelain\n            exit 1\n          else\n            echo \"no changes in working directory\";\n          fi",
+ "input_tokens": 669,
+ "output_tokens": 291,
+ "cost_usd": 0.001699,
+ "seconds": 2.39,
+ "prompt_sha256": "62d485868fc74000bbf59aac386e91da5a9c86ddb1ac360392ae2d18c0343f9d",
+ "completed_steps": []
+}

@@ -1,0 +1,43 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Test
+  Test command(s) run in original CI:
+    $ actions/checkout@v4
+    $ pnpm/action-setup@v4
+    $ pnpm i --frozen-lockfile
+    $ pnpm exec playwright install chromium
+    $ pnpm run test
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    6
+
+--- LLM run.sh Test Command(s) ---
+  $ pnpm run test
+
+--- Reason(s) for Non-Reproducibility ---
+  - [vitest] Test run mismatch: original=1736, LLM=994
+  - [vitest] Test passed mismatch: original=1396, LLM=663
+  - [vitest] Test failed mismatch: original=1, LLM=4
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    - [pid=1040] exception while trying to kill process: Error: kill ESRCH
+    - [pid=1040] exception while trying to kill process: Error: kill ESRCH
+
+  [Root cause classification]
+  - Missing file or path not found — test data, certificate, or resource file absent in the Docker environment.
+  - Network connectivity issue — test requires network access or a service (e.g., local server) that is unavailable in Docker.
+
+--- Test Statistics Comparison ---
+  [vitest]
+    Original: 1736 run, 1396 passed, 1 failed, 339 skipped
+    LLM:      994 run, 663 passed, 4 failed, 327 skipped

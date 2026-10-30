@@ -1,0 +1,106 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      test (core/trino-main)
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ $MAVEN test ${MAVEN_TEST} -pl core/trino-main
+    $ ./.github/actions/process-test-results
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ TEST_RESULT=0
+  $ $MAVEN test ${MAVEN_TEST} -pl core/trino-main || TEST_RESULT=$?
+  $ exit $TEST_RESULT
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Maven] Test run mismatch: original=8997, LLM=8983
+  - [Maven] Test passed mismatch: original=8992, LLM=8951
+  - [Maven] Test failed mismatch: original=0, LLM=27
+  - [Maven] 27 test(s) failed in LLM but not in original
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > [ERROR] TestFileSingleStreamSpillerFactory.testDistributesSpillOverPathsBadDisk
+    >   java.lang.AssertionError: Expecting empty but was: [/tmp/.../spill...bin, ...]
+    > [ERROR] TestFileSingleStreamSpillerFactory.testCacheInvalidatedOnBadDisk
+    >   java.lang.AssertionError: Expecting code to raise a throwable.
+    > [ERROR] TestOAuth2WebUiAuthenticationFilterWithJwt
+    >   java.lang.IllegalStateException: Could not find a valid Docker environment.
+    >   ... at org.testcontainers.containers.GenericContainer.start(GenericContainer.java:316)
+    >   ... at TestingHydraIdentityProvider.start(TestingHydraIdentityProvider.java:124)
+    > [ERROR] TestBinPackingNodeAllocator.testAllocateDifferentSizes
+    >   java.util.concurrent.TimeoutException: testAllocateDifferentSizes() timed out after 2500 milliseconds
+    > [ERROR] TestWebUi.testCertAuthenticator
+    >   java.net.SocketTimeoutException: timeout
+    > [ERROR] TestRecursiveCte.testVarchar -- Time elapsed: 10526 s
+    >   io.trino.operator.PageTransportTimeoutException: Encountered too many errors talking to a
+    >   worker node. (http://127.0.0.1:.../v1/task/... - 7 failures, failure duration 61.55s)
+    > [ERROR] TestConnectorTracingContextPropagation.testTracingContextCapture
+    >   io.trino.testing.QueryFailedException: Task ... has not been accessed since ...:
+    >   currentTime ...  (task abandoned after 2 min inactivity)
+
+  [Root cause classification]
+  Three distinct failure modes:
+
+  (1) Docker root user bypasses filesystem permission checks -- TestFileSingleStreamSpillerFactory
+    (2 tests: testDistributesSpillOverPathsBadDisk, testCacheInvalidatedOnBadDisk)
+    These tests simulate a "bad disk" by creating a temp directory and making it non-writable
+    with `chmod 000` / `setReadable(false)`. They then expect the spiller either to avoid
+    writing spill files to that path, or to throw an IOException when attempting to write.
+    When the container runs as root, Unix permission bits (including mode 000) are ignored for
+    root processes. So:
+    - `testDistributesSpillOverPathsBadDisk` expects no spill files in the "bad" directory,
+      but root writes there anyway -> `Expecting empty but was: [/tmp/.../spill...bin, ...]`
+    - `testCacheInvalidatedOnBadDisk` expects an IOException from writing to the bad directory,
+      but root succeeds silently -> `Expecting code to raise a throwable`
+    The original CI runner is a non-root user where `chmod 000` actually restricts access.
+
+  (2) No Docker socket -- Testcontainers-dependent OAuth2 tests fail
+    (3 test classes: TestOAuth2WebUiAuthenticationFilterWithJwt, ...WithOpaque,
+     ...WithRefreshTokens)
+    The Hydra identity provider (an OAuth2/OIDC server used in tests) is started via
+    Testcontainers (`TestingHydraIdentityProvider.start()`), which requires access to
+    `/var/run/docker.sock`. The Docker container running the build does not expose the host
+    Docker socket, so Testcontainers throws:
+    `IllegalStateException: Could not find a valid Docker environment`.
+    Once the first class fails to find Docker, subsequent classes immediately fail with
+    `Previous attempts to find a Docker environment failed. Will not retry.`
+
+  (3) Resource exhaustion in Docker container causes distributed query timeouts
+    (22 tests across: TestBinPackingNodeAllocator, TestWebUi, TestRecursiveCte,
+     TestConnectorTracingContextPropagation, TestJsonExtract, TestBigintOperators,
+     TestVarbinaryFunctions, TestDriver)
+    Trino's integration tests start an embedded single-node Trino coordinator+worker per
+    test class, executing real SQL queries via HTTP. When many test classes run in parallel
+    inside a resource-limited Docker container (shared CPU, memory), several problems arise:
+    - `TestBinPackingNodeAllocator`: The allocator test asserts that node assignment
+      completes within 2500ms. Under Docker resource contention, the scheduler thread
+      cannot respond in time -> `TimeoutException: timed out after 2500 milliseconds`
+    - `TestWebUi`: The embedded HTTPS server takes 56s-4874s to respond to HTTP requests
+      -> `SocketTimeoutException: timeout` for all 7 tested auth flows
+    - `TestRecursiveCte`: The embedded worker node becomes unresponsive for over 60s
+      -> `PageTransportTimeoutException: 7 failures, failure duration 61.55s`. All 6 queries
+      that involved the slow worker node fail; 6 tests complete after 10526 total seconds
+    - `TestConnectorTracingContextPropagation`, `TestJsonExtract`, `TestBigintOperators`,
+      `TestVarbinaryFunctions`, `TestDriver`: All exceed 10000+ seconds. The embedded Trino
+      task management marks tasks as abandoned after 2 minutes of inactivity, and JWT tokens
+      used for internal auth expire mid-test (JWT expired 2589971 ms ago).
+    The original CI runs on a dedicated GitHub Actions runner with sufficient CPU/memory,
+    completing all tests within 178 seconds wall time. The LLM run completes in 154 seconds
+    total, but the parallel test execution causes some slow queries to time out.
+
+--- Test Statistics Comparison ---
+  [Maven]
+    Original: 8997 run, 8992 passed, 0 failed, 5 skipped (178s)
+    LLM:      8983 run, 8951 passed, 27 failed, 5 skipped (154s total, but some tests ran for hours)

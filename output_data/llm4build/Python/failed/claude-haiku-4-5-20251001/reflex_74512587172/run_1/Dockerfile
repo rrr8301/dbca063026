@@ -1,0 +1,1 @@
+RUN /root/.cargo/bin/uv sync

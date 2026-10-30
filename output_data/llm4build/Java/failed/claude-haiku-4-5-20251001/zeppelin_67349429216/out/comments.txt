@@ -1,0 +1,67 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      core-modules (11)
+  Test command(s) run in original CI:
+    $ actions/checkout@v4
+    $ actions/setup-java@v4 (java-version: 11)
+    $ ./mvnw install -Pbuild-distr -DskipTests -pl zeppelin-server,zeppelin-web,...
+    $ ./mvnw verify -Pusing-packaged-distr -pl zeppelin-server,zeppelin-web,... \
+        -Dtests.to.exclude=**/org/apache/zeppelin/spark/* -DfailIfNoTests=false
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ ./mvnw install -Pbuild-distr -DskipTests -pl zeppelin-server,... -am -Pweb-classic
+  $ ./mvnw package -pl zeppelin-plugins -amd
+  $ ./mvnw verify -Pusing-packaged-distr -pl zeppelin-server,... \
+      -Dtests.to.exclude=**/org/apache/zeppelin/spark/* -DfailIfNoTests=false
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Maven] Test run mismatch: original=665, LLM=111
+  - [Maven] Test passed mismatch: original=646, LLM=111
+  - [Maven] Test failed mismatch: original=1, LLM=0
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    [INFO] --- failsafe:3.3.0:integration-test (default) @ zeppelin-server ---
+    [INFO] Tests are skipped.
+    [INFO] --- failsafe:3.3.0:verify (default) @ zeppelin-server ---
+    [INFO] Tests are skipped.
+
+  [From original CI log]
+    ERROR testCreatedInterpreterDependencies
+      (org.apache.zeppelin.rest.InterpreterRestApiTest)
+    Tests run: 665, Failures: 1, Errors: 0, Skipped: 18
+
+  [Root cause classification]
+  - The `maven-failsafe-plugin` integration tests for `zeppelin-server` are skipped in
+    Docker: the log shows `[INFO] Tests are skipped.` for both the `integration-test` and
+    `verify` goals of `failsafe:3.3.0`. The `zeppelin-server` integration tests (including
+    `InterpreterRestApiTest`) require the Zeppelin server to be started in the
+    pre-integration-test phase. The `-Pusing-packaged-distr` profile is supposed to use
+    the packaged Zeppelin distribution to start the server before running IT tests.
+    In the original CI (GitHub Actions with Java 11), the profile fully activates and
+    the Zeppelin server starts successfully, enabling ~554 integration tests. In Docker,
+    the server start-up fails silently (possibly because the packaged distribution expects
+    certain environment variables, a non-root user, or specific filesystem paths not
+    present), causing the failsafe plugin to skip all integration tests. The 111 LLM tests
+    are unit tests from non-server modules (zeppelin-core, zeppelin-R, spark, etc.) that
+    run without requiring a live server. The original CI's 1 failure
+    (`testCreatedInterpreterDependencies`) is an integration test verifying that interpreter
+    dependencies are persisted after server restart — it fails in CI due to a transient
+    server state issue, and never runs in Docker.
+
+--- Test Statistics Comparison ---
+  [Maven]
+    Original: 665 run, 646 passed, 1 failed, 18 skipped
+    LLM:      111 run, 111 passed, 0 failed, 0 skipped

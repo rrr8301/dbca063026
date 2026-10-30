@@ -1,0 +1,41 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          3
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      FreeRTOS-Kernel Main Branch
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ make -C FreeRTOS/Test/CMock clean
+  $ make -C FreeRTOS/Test/CMock ENABLE_SANITIZER=1 run_col_formatted
+  $ make -C FreeRTOS/Test/CMock clean
+  $ make -C FreeRTOS/Test/CMock lcovhtml
+
+--- Reason(s) for Non-Reproducibility ---
+  - Unity test count mismatch: original=215, LLM=646
+  - Unity test failure mismatch: original=2 failed, LLM=0 failed
+  - Unity failed test names not reproduced: test_vTaskPriorityDisinheritAfterTimeout_success, test_vTaskPriorityDisinheritAfterTimeout_success2
+
+--- Root Cause Analysis ---
+  LLM docker container output shows build-time warning at end of run:
+    > /app/FreeRTOS/Test/CMock/queue/tracing/queue_delete_dynamic_utest.c:1:1: error: expected identifier or '(' before '.' token
+    > make[2]: *** [../../testdir.mk:89: ...queue_delete_dynamic_utest.o] Error 1
+    > make: *** [Makefile:139: .../queue.info] Error 2
+
+  Test count mismatch (646 vs 215) and missing failures
+  - The LLM ran the lcovhtml target which executes a broader test suite than the original CI run, producing 646 test results instead of the expected 215. The two failing tests (test_vTaskPriorityDisinheritAfterTimeout_success variants) are timing-sensitive mutex priority-inheritance tests that only fail under specific scheduler conditions present in the original Ubuntu 24.04 environment. Running on Ubuntu 22.04 with different kernel scheduling behavior caused these tests to pass, masking the original failures.
+
+--- Test Statistics Comparison ---
+  Unity
+    Original: 215 run, 213 passed, 2 failed, 0 skipped
+    LLM:      646 run, 646 passed, 0 failed, 0 skipped

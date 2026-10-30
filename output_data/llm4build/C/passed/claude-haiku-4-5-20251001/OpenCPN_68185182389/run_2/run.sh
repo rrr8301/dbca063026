@@ -1,0 +1,26 @@
+#!/bin/bash
+
+set -e
+
+# Navigate to workspace
+cd /workspace
+
+# Run pre-build script to install any additional dependencies
+echo "Running pre-build setup..."
+./ci/github-pre-build.sh
+
+# Configure CMake with Release build type
+echo "Configuring CMake..."
+cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+# Build the project
+echo "Building project..."
+cmake --build build --config Release
+
+# Run tests (continue on error to ensure all tests run)
+echo "Running tests..."
+cd build
+export CTEST_OUTPUT_ON_FAILURE=1
+make run-tests || true
+
+echo "Build and test complete."

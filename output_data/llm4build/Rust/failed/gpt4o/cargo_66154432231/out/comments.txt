@@ -1,0 +1,40 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          4
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Tests Linux aarch64 stable
+  Test command(s) run in original CI:
+    $ cargo test -p cargo
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    6
+
+--- LLM run.sh Test Command(s) ---
+  $ cargo test -p cargo
+  $ cargo test -p cargo git
+  $ cargo test --workspace --exclude cargo --exclude benchsuite --exclude resolver-tests
+  $ cargo test -p benchsuite --all-targets -- cargo
+
+--- Reason(s) for Non-Reproducibility ---
+  - [cargo] Test run mismatch: original=4324, LLM=12931
+  - [cargo] Test passed mismatch: original=3932, LLM=4228
+  - [cargo] Test failed mismatch: original=1, LLM=149
+  - [cargo] Test skipped mismatch: original=391, LLM=8554
+  - [cargo] 132 test(s) failed in LLM but not in original: artifact_dep::artifact_dep_target_does_not_propagate_to_deps_of_build_script, cargo::help::case, cargo_add::add_basic::case, cargo_add::add_multiple::case, cargo_add::add_toolchain::case ... (+127 more)
+
+--- Root Cause Analysis ---
+  - [cargo] LLM ran 8607 more tests than original — LLM likely used a broader test scope or included extra test suites.
+  - [cargo] 132 test(s) failed in LLM but not original: artifact_dep::artifact_dep_target_does_not_propagate_to_deps_of_build_script, cargo::help::case, cargo_add::add_basic::case, cargo_add::add_multiple::case, cargo_add::add_toolchain::case ... (+127 more)
+  - Test command differences detected — original CI vs LLM run.sh may use different flags or test selection.
+
+--- Test Statistics Comparison ---
+  [cargo]
+    Original: 4324 run, 3932 passed, 1 failed, 391 skipped
+    LLM:      12931 run, 4228 passed, 149 failed, 8554 skipped

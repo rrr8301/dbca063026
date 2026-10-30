@@ -1,0 +1,46 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      build-ubuntu
+  Test command(s) run in original CI:
+    $ git clone --depth=1 https://github.com/gs1/gs1-syntax-engine && cd gs1-syntax-engine/src/c-lib && make lib && sudo make install
+    $ CMAKE_PREFIX_PATH=$QT_ROOT_DIR cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DZINT_TEST=ON -DZINT_STATIC=ON
+    $ cmake --build . -j8 --config $BUILD_TYPE
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ make lib && make install
+  $ QT_ROOT_DIR=$(qmake -query QT_INSTALL_PREFIX)
+  $ CMAKE_PREFIX_PATH=$QT_ROOT_DIR cmake /workspace -DCMAKE_BUILD_TYPE=Release -DZINT_TEST=ON -DZINT_STATIC=ON
+  $ cmake --build . -j$(nproc)
+  $ ctest -V || true
+
+--- Reason(s) for Non-Reproducibility ---
+  - [CTest] Test run mismatch: original=124, LLM=119
+  - [CTest] Test passed mismatch: original=124, LLM=119
+  - [CTest] Test failed mismatch: original=0, LLM=0
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    -- Could NOT find Qt5 (Qt5UiTools component missing)
+    -- Could NOT find Qt5 (Qt5Svg component missing)
+    -- Using Qt5 (partial: some components not found)
+    100% tests passed, 0 tests failed out of 119
+
+  [Root cause classification]
+  - 5 missing Qt5-dependent tests: The original Ubuntu CI had a full Qt5 installation at `$QT_ROOT_DIR` including `Qt5UiTools` and `Qt5Svg` components. The LLM's Docker image (ubuntu:22.04) had Qt5 partially installed — `qmake` was found but `Qt5UiTools` and `Qt5Svg` were missing. When cmake finds Qt5 partially, it compiles the main library tests but skips the Qt5 GUI/frontend tests that depend on those missing components. The 5 missing tests are the Qt5 frontend tests (`test_qzint`, `test_zgui`, or similar GUI components) that require `Qt5UiTools` for loading `.ui` files and `Qt5Svg` for SVG rendering. All 119 non-Qt5 tests pass.
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 124 run, 124 passed, 0 failed, 0 skipped
+    LLM:      119 run, 119 passed, 0 failed, 0 skipped

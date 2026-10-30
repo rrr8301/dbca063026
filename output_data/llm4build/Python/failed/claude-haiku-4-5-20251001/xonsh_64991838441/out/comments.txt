@@ -1,0 +1,113 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Test Python 3.11 ubuntu-latest
+  Platform:         ubuntu-latest with bash-completion, col, pip in PATH
+  Test command(s) run in original CI:
+    $ uv pip install --system -e ".[test]"
+    $ python -m xonsh run-tests.xsh test -- --timeout=240
+      (pytest plugins: subprocess-1.5.4, rerunfailures-16.1, timeout-2.4.0, xonsh-0.22.4)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ uv pip install --system -e ".[test]"
+  $ python -m xonsh run-tests.xsh test -- --timeout=240
+
+--- Reason(s) for Non-Reproducibility ---
+  - [pytest] Test result mismatch (same count 5250): original=(5215p/1f/30s), LLM=(5186p/25f/35s)
+  - [pytest] 24 new failures in LLM: tests/completers/ (19), tests/test_man.py (2),
+    tests/test_builtins.py (1), tests/test_pip_completer.py (2), tests/platform/ (1)
+  - [pytest] 1 original failure (test_callable_alias_no_bad_file_descriptor) PASSES in LLM
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > bash_completions = set(), completions = {'--debug', '--debugger'} → AssertionError
+    > bash_completions = set(), completions = {"'spaced dir/'", "'testdir/'"} → AssertionError
+    > (all 19 bash_completer tests return empty set() instead of expected completions)
+    >
+    > FileNotFoundError: [Errno 2] No such file or directory: 'pip'
+    >   (test_pip_completer tries to run `pip` as a subprocess to get completions)
+    >
+    > FileNotFoundError: [Errno 2] No such file or directory: 'col'
+    >   (test_man_completion: man page formatter 'col' strips control chars from man output)
+    >
+    > AssertionError: assert 'Feb 26 05:10:21 2026' is None
+    >   (test_githash_value_error: expects date_=None when open() is mocked)
+    >
+    > AssertionError: assert set() == {'~/\\w\\w.*'}
+    >   (test_repath_backslash: pathsearch regex returns empty set vs expected paths)
+
+  [Root cause classification]
+  Multiple missing system components in ubuntu:24.04 Docker image cause 24 new failures
+
+  (1) bash-completion package not installed → 19 bash_completer test failures
+    xonsh's bash completer (`complete_from_bash`) sources system bash completion scripts
+    from `/usr/share/bash-completion/` and invokes bash programmatic completion to generate
+    candidate completions for commands like `xonsh --`, `~/A`, `'/proc/'`, etc.
+    On GitHub Actions ubuntu-latest, the `bash-completion` package is pre-installed, giving
+    per-command completion scripts (e.g., for `ls`, `git`, `pip` etc.) and the framework.
+    In ubuntu:24.04 Docker, `bash-completion` is not installed. When `complete_from_bash`
+    sources the completion infrastructure and tries to get completions, it gets nothing back,
+    returning `set()` instead of the expected set of completions. All 19 test cases where
+    non-empty completions are expected fail with:
+      `AssertionError: assert (set() == {'--debug', '--debugger'}`
+
+  (2) `pip` command not in PATH → 2 test_pip_completer failures
+    xonsh's pip completer runs `pip completion --bash` to get pip's registered bash
+    completions. The LLM Docker installs packages using `uv pip install --system`, which
+    makes packages available via Python but does NOT create a `pip` symlink in PATH.
+    When the test tries to run `pip` as a subprocess, Python raises:
+      `FileNotFoundError: [Errno 2] No such file or directory: 'pip'`
+    On GitHub Actions, `pip` is available as a standalone command in PATH.
+
+  (3) `col` command not installed → 2 test_man_completion failures
+    `col` is a Unix utility that filters reverse linefeeds from man page output — it converts
+    the man page's groff/troff output into plain text by removing bold/underline control chars.
+    xonsh's man completer pipes `man <command>` output through `col -bx` to strip formatting.
+    In ubuntu:24.04 Docker, `col` is not installed (it's part of the `bsdmainutils` or
+    `util-linux` package, which is not in the minimal ubuntu:24.04 image). The test fails:
+      `FileNotFoundError: [Errno 2] No such file or directory: 'col'`
+
+  (4) test_githash_value_error assertion failure
+    The test patches `builtins.open` with a MagicMock that returns "abc123" when `.read()` is
+    called, expecting `xp.githash()` to return `(sha, None)` (no date). In the LLM Docker, the
+    git repository has a recent commit (the Docker was built from the repo), and `xp.githash()`
+    falls back to calling `git log` via subprocess when the mocked open fails to parse the
+    expected file format. The subprocess call succeeds and returns the actual git date:
+      `AssertionError: assert 'Feb 26 05:10:21 2026' is None`
+    In the original CI, this test passes — the mock is sufficient to short-circuit git.
+
+  (5) test_repath_backslash — pathsearch regex difference
+    The test uses `pathsearch(regexsearch, r"~/\w\w.*")` expecting it to expand `~/` to
+    `HOME_PATH` and match files. In the Docker container, the regex expansion behavior
+    or the HOME directory contents are different, causing `set()` to be returned rather
+    than the set of `~/XX...` paths from the home directory.
+
+  (6) Original CI failure (test_callable_alias_no_bad_file_descriptor) PASSES in LLM
+    This test checks that a custom xonsh alias with stdin/stdout piping doesn't produce
+    file descriptor errors. The original CI fails with `assert 'Error' not in '...'`,
+    indicating occasional stderr output. In the LLM Docker's quieter environment, the
+    file descriptor management is stable and no "Error" string appears. This is a flaky
+    test with timing/environment sensitivity.
+
+--- Test Statistics Comparison ---
+  [pytest]
+    Original: 5250 run, 5215 passed, 1 failed, 30 skipped, 3 xfailed, 1 xpassed
+      (1 failure: test_callable_alias_no_bad_file_descriptor — file descriptor flakiness)
+    LLM:      5250 run, 5186 passed, 25 failed, 35 skipped, 3 xfailed, 1 xpassed
+      (19 bash_completer: bash-completion not installed → empty completions;
+       2 test_pip_completer: pip not in PATH → FileNotFoundError;
+       2 test_man_completion: col not installed → FileNotFoundError;
+       1 test_githash_value_error: git subprocess returns date despite mocked open;
+       1 test_repath_backslash: pathsearch/HOME difference in Docker;
+       original flaky test passes in Docker's stable environment)

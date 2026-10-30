@@ -1,0 +1,54 @@
+Error from docker build
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 1.02kB done
+#1 DONE 0.0s
+
+#2 [internal] load .dockerignore
+#2 transferring context: 2B done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/ubuntu:22.04
+#3 DONE 0.1s
+
+#4 [ 1/11] FROM docker.io/library/ubuntu:22.04@sha256:4f838adc7181d9039ac795a7d0aba05a9bd9ecd480d294483169c5def983b64d
+#4 DONE 0.0s
+
+#5 [ 2/11] RUN echo "UTC" > /etc/timezone &&     ln -snf /usr/share/zoneinfo/UTC /etc/localtime &&     apt-get update &&     apt-get install -y --no-install-recommends     git     curl     build-essential     tzdata &&     rm -rf /var/lib/apt/lists/*
+#5 CACHED
+
+#6 [internal] load build context
+#6 ...
+
+#7 [ 3/11] RUN useradd -m testuser
+#7 DONE 0.4s
+
+#6 [internal] load build context
+#6 ...
+
+#8 [ 4/11] WORKDIR /home/testuser
+#8 DONE 0.0s
+
+#6 [internal] load build context
+#6 transferring context: 1.24MB 0.6s done
+#6 DONE 0.7s
+
+#9 [ 5/11] RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+#9 0.531 curl: (77) error setting certificate file: /etc/ssl/certs/ca-certificates.crt
+#9 DONE 0.6s
+
+#10 [ 6/11] RUN /home/testuser/.cargo/bin/rustup toolchain install stable &&     /home/testuser/.cargo/bin/rustup default stable
+#10 0.377 /bin/sh: 1: /home/testuser/.cargo/bin/rustup: not found
+#10 ERROR: process "/bin/sh -c /home/testuser/.cargo/bin/rustup toolchain install stable &&     /home/testuser/.cargo/bin/rustup default stable" did not complete successfully: exit code: 127
+------
+ > [ 6/11] RUN /home/testuser/.cargo/bin/rustup toolchain install stable &&     /home/testuser/.cargo/bin/rustup default stable:
+#10 0.377 /bin/sh: 1: /home/testuser/.cargo/bin/rustup: not found
+------
+Dockerfile:32
+--------------------
+  31 |     # Set up Rust environment
+  32 | >>> RUN /home/testuser/.cargo/bin/rustup toolchain install stable && \
+  33 | >>>     /home/testuser/.cargo/bin/rustup default stable
+  34 |     
+--------------------
+ERROR: failed to solve: process "/bin/sh -c /home/testuser/.cargo/bin/rustup toolchain install stable &&     /home/testuser/.cargo/bin/rustup default stable" did not complete successfully: exit code: 127

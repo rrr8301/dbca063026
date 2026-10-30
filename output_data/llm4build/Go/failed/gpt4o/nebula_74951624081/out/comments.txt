@@ -1,0 +1,36 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      Build and test on linux with pkcs11
+  Test command(s) run in original CI:
+    $ make test-pkcs11
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ make test-pkcs11
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoDefault] Test run mismatch: original=253, LLM=23
+  - [GoDefault] Test passed mismatch: original=251, LLM=1
+  - [GoDefault] Test failed mismatch: original=1, LLM=22
+  - [GoDefault] 21 test(s) failed in LLM but not in original: github.com/slackhq/nebula/cert, github.com/slackhq/nebula/cert/p256, github.com/slackhq/nebula/cert_test, github.com/slackhq/nebula/cmd/nebula, github.com/slackhq/nebula/cmd/nebula-cert ... (+16 more)
+
+--- Root Cause Analysis ---
+  - [GoDefault] LLM ran 230 fewer tests than original — LLM likely used a narrower test scope or missed some test suites.
+  - [GoDefault] 21 test(s) failed in LLM but not original: github.com/slackhq/nebula/cert, github.com/slackhq/nebula/cert/p256, github.com/slackhq/nebula/cert_test, github.com/slackhq/nebula/cmd/nebula, github.com/slackhq/nebula/cmd/nebula-cert ... (+16 more)
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 253 run, 251 passed, 1 failed, 0 skipped
+    LLM:      23 run, 1 passed, 22 failed, 0 skipped

@@ -1,0 +1,49 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   False
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          20
+Original build category: failed
+
+STATUS: BUILD EXECUTION FAILED
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      unit_front (node: 20)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   node:20
+  RUN steps:    6
+
+--- Failure Analysis ---
+  Failure type: Docker build error
+  Failed at Docker build step: 8 of 10
+  Step label:   RUN yarn install --immutable --inline-builds --network-timeout 100000 || yarn install --network-timeout 100000
+
+  Original build was already failing. LLM could not reproduce or fix it after 20 attempt(s).
+
+--- Dockerfile Error Context ---
+  Dockerfile:19
+  --------------------
+    17 |     RUN yarn set version stable
+    18 |     RUN yarn config set enableImmutableInstalls false
+    19 | >>> RUN yarn install --immutable --inline-builds --network-timeout 100000 || yarn install --network-timeout 100000
+    20 |     
+    21 |     # Copy the rest of the application code into the container
+  --------------------
+
+--- Error Message(s) ---
+  #12 ERROR: process "/bin/sh -c yarn install --immutable --inline-builds --network-timeout 100000 || yarn install --network-timeout 100000" did not complete successfully: exit code: 1
+  ERROR: failed to solve: process "/bin/sh -c yarn install --immutable --inline-builds --network-timeout 100000 || yarn install --network-timeout 100000" did not complete successfully: exit code: 1
+
+No test results could be produced due to build failure.
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > ➤ YN0000: · Yarn 4.14.1
+    > ➤ YN0082: │ vitest@catalog:: default catalog not found or empty
+    > ➤ YN0000: └ Completed
+    > ➤ YN0000: · Failed with errors in 0s 91ms
+
+  [Root cause classification]
+  - Strapi's monorepo uses a Yarn 4 workspace catalog (a feature introduced in Yarn 4.x) that references package versions via symbolic names defined in the root yarn.lock or a catalogs section. The LLM ran `yarn set version stable` which upgraded to Yarn 4.14.1, but the copied workspace files were stripped of the catalog definition, causing the resolution step to fail immediately with YN0082 "default catalog not found or empty". The build context likely did not include all required configuration files (e.g., .yarn/releases, catalog entries in package.json) needed for Yarn 4 catalog resolution.

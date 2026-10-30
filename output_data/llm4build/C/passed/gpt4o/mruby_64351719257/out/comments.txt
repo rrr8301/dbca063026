@@ -1,0 +1,39 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-22.04
+  CI job name:      ubuntu-22.04-clang
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    3
+
+--- Reason(s) for Non-Reproducibility ---
+  - [mruby] Test run mismatch: original=5521, LLM=1782
+  - [mruby] Test passed mismatch: original=5502, LLM=1773
+  - [mruby] Test skipped mismatch: original=19, LLM=9
+
+--- Root Cause Analysis ---
+  [Key facts from LLM log.txt]
+    > >>> Test host <<<
+    > Total: 1682  OK: 1673  KO: 0  Skip: 9
+    > >>> Bintest host <<<
+    > Total: 100  OK: 100  KO: 0  Skip: 0
+    > (LLM total: 1782 tests; original total: 5521 tests)
+
+  [Root cause classification: LLM's rake command omits cross-compiled target test suites]
+  - The original CI job (ubuntu-22.04-clang) runs the full mruby test suite including host tests AND multiple cross-compiled target builds (e.g., ARM, RISC-V, WASM), which together account for roughly 3739 additional tests not present in the LLM run.
+  - The LLM's run.sh uses `rake -m test:run:serial`, which only exercises the native host target (1682 mrbtest + 100 bintest = 1782 total), skipping all cross-target test configurations that the CI's full rake test task would invoke.
+  - No test failures occur in either run; the discrepancy is purely a matter of scope: the LLM did not configure or build the additional cross-compilation targets needed to reproduce the original test count.
+
+--- Test Statistics Comparison ---
+  [mruby]
+    Original: 5521 run, 5502 passed, 0 failed, 19 skipped
+    LLM:      1782 run, 1773 passed, 0 failed, 9 skipped

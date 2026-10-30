@@ -1,0 +1,37 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          7
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      Linux / Electron
+  Docker image pulled: nginx
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    6
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in original but missing in LLM: Gradle, node:test
+  - [mocha] Test run mismatch: original=32186, LLM=9345
+  - [mocha] Test passed mismatch: original=31547, LLM=9210
+  - [mocha] Test skipped mismatch: original=639, LLM=135
+
+--- Root Cause Analysis ---
+  - [mocha] LLM ran 22841 fewer tests than original — LLM likely used a narrower test scope or missed some test suites.
+
+--- Test Statistics Comparison ---
+  [Gradle]
+    Original: 32022 run, 31383 passed, 0 failed, 639 skipped
+    LLM:      (not present)
+  [mocha]
+    Original: 32186 run, 31547 passed, 0 failed, 639 skipped
+    LLM:      9345 run, 9210 passed, 0 failed, 135 skipped
+  [node:test]
+    Original: 61 run, 61 passed, 0 failed, 0 skipped
+    LLM:      (not present)

@@ -1,0 +1,57 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          3
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Linux / Electron
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ mkdir -p .build && node build/azure-pipelines/common/computeNodeModulesCacheKey.ts linux $VSCODE_ARCH $(node -p process.arch) > .build/packagelockhash
+    $ tar -xzf .build/node_modules_cache/cache.tgz
+    $ mkdir -p .build
+    $ node build/azure-pipelines/common/computeBuiltInDepsCacheKey.ts > .build/builtindepshash
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ npm run gulp transpile-client-esbuild transpile-extensions
+  $ ./scripts/test.sh --tfs "Unit Tests" || TEST_FAILED=1
+  $ npm run test-node || TEST_FAILED=1
+  $ npm run gulp \
+  $ compile-extension:vscode-api-tests \
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in original but missing in LLM: Gradle
+  - [mocha] Test run mismatch: original=17995, LLM=8119
+  - [mocha] Test passed mismatch: original=17632, LLM=7963
+  - [mocha] Test failed mismatch: original=4, LLM=19
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > .build/electron/code-oss: error while loading shared libraries: libnspr4.so: cannot open shared object file: No such file or directory
+    > electron.launch: Process failed to launch!
+    > - [pid=7368][err] /workspace/.build/electron/code-oss: error while loading shared libraries: libnspr4.so: cannot open shared object file: No such file or directory
+
+  [Root cause classification]
+  - The LLM ran only 8,119 of the 17,995 mocha tests that executed in the original CI, and produced 19 failures compared to only 4 in the original. The primary cause is that the Electron binary downloaded into `.build/electron/` requires a set of system shared libraries — `libnspr4.so`, `libatk-1.0.so`, `libcups.so`, `libdrm.so`, and others from the Electron/Chromium stack — that are not present in the `ubuntu:22.04` Docker base image. Every Electron-based test suite that attempts `electron.launch` immediately fails with "Process failed to launch!" before any test can run.
+
+  - The vscode test suite is divided into pure Node.js unit tests (which run via `./scripts/test.sh --tfs "Unit Tests"` and `npm run test-node`) and Electron-hosted integration/API tests (which require a working Electron process). The LLM ran the Node.js unit tests successfully (7,963 passing / 19 failing), but the Electron-hosted extension API tests, workbench tests, and browser integration tests — which together account for roughly 9,800 additional test cases — could not execute because the Electron process could not be launched. These missing tests appear as a reduction in total count (17,995 → 8,119) rather than as explicit failures.
+
+  - The 19 failures in the LLM output are a mix of tests that invoke Electron indirectly (attempting to spawn the binary and timing out) and a handful of pre-existing failures in the Node.js layer. In the original CI (GitHub Actions `ubuntu-latest` runner), Electron's shared library dependencies are pre-installed as part of the runner image. The LLM's Dockerfile did not install the required apt packages (`libnspr4`, `libatk1.0-0`, `libcups2`, `libdrm2`, `libgtk-3-0`, etc.), making Electron non-functional.
+
+  - The Gradle framework seen in the original test statistics (17,991 run) is not a real Gradle build — this is a test framework name mismatch in the result parser. The vscode repo uses a custom test runner that reports results in a format the parser attributed to "Gradle". In practice, these are the same mocha-based test results; the framework count discrepancy reflects a reporting artifact rather than a genuinely missing test tool. The fundamental gap is the missing Electron system dependencies.
+
+--- Test Statistics Comparison ---
+  [Gradle]
+    Original: 17991 run, 17632 passed, 0 failed, 359 skipped
+    LLM:      (not present)
+  [mocha]
+    Original: 17995 run, 17632 passed, 4 failed, 359 skipped
+    LLM:      8119 run, 7963 passed, 19 failed, 137 skipped

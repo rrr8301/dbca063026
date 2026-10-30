@@ -1,0 +1,33 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          9
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      Build: Sanitizer (UndefinedBehavior)
+  Docker image pulled: ${DOCKER_REGISTRY_CONTAINER_SHA}
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    3
+
+Note: Original had test failures; LLM build passed all — failed build has passed.
+
+--- Reason(s) for Non-Reproducibility ---
+  - [CTest] Test run mismatch: original=12, LLM=11
+  - [CTest] Test passed mismatch: original=7, LLM=11
+  - [CTest] Test failed mismatch: original=5, LLM=0
+  - [CTest] 1 test(s) failed in original but passed in LLM: proxy
+
+--- Root Cause Analysis ---
+  - [CTest] LLM ran 1 fewer tests than original — LLM likely used a narrower test scope or missed some test suites.
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 12 run, 7 passed, 5 failed, 0 skipped
+    LLM:      11 run, 11 passed, 0 failed, 0 skipped

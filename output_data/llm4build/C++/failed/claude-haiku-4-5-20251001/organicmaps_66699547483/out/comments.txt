@@ -1,0 +1,50 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          4
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      ubuntu-24.04 gcc-13 Debug
+  Test command(s) run in original CI:
+    $ actions/checkout@v4
+    $ cmake . -B build -G Ninja \
+    $ ctest -L "omim-test" -E "$CTEST_EXCLUDE_REGEX" --output-on-failure
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    7
+
+--- LLM run.sh Test Command(s) ---
+  $ cmake . -B $BUILD_DIR -G Ninja \
+  $ -DCMAKE_BUILD_TYPE=Debug \
+  $ -DCMAKE_C_FLAGS=-g1 \
+  $ -DCMAKE_CXX_FLAGS=-g1 \
+  $ -DCMAKE_UNITY_BUILD=ON
+
+--- Reason(s) for Non-Reproducibility ---
+  - [CTest] Test result mismatch (same count 36): original=(35p/1f/0s), LLM=(30p/6f/0s)
+  - [CTest] Tests failed in LLM but passed in original: OmimStopTestServer, opening_hours_tests, osm_auth_tests, routing_tests, storage_tests
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    12:Submodule 'assert' (https://github.com/boostorg/assert.git) registered for path '3party/boost/libs/assert'
+    136:Submodule 'static_assert' (https://github.com/boostorg/static_assert.git) registered for path '3party/boost/libs/static_assert'
+    179:Cloning into '/workspace/3party/boost/libs/assert'...
+    304:Cloning into '/workspace/3party/boost/libs/static_assert'...
+    12:Submodule 'assert' (https://github.com/boostorg/assert.git) registered for path '3party/boost/libs/assert'
+    136:Submodule 'static_assert' (https://github.com/boostorg/static_assert.git) registered for path '3party/boost/libs/static_assert'
+    179:Cloning into '/workspace/3party/boost/libs/assert'...
+    304:Cloning into '/workspace/3party/boost/libs/static_assert'...
+
+  [Root cause classification]
+  - Process aborted (SIGABRT) — likely a GLib g_assert() failure, AddressSanitizer/UBSan abort, or missing D-Bus/system service in Docker container.
+  - Assertion failure: 12:Submodule 'assert' (https://github.com/boostorg/assert.git) registered for path '3party/boost/libs/assert'
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 36 run, 35 passed, 1 failed, 0 skipped
+    LLM:      36 run, 30 passed, 6 failed, 0 skipped

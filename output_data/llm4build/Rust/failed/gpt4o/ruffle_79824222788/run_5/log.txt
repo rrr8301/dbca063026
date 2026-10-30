@@ -1,0 +1,51 @@
+Error from docker build
+
+#1 [ 1/11] FROM docker.io/library/ubuntu:24.04
+#1 CACHED
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 1.24kB done
+#2 DONE 0.0s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 399B done
+#3 DONE 0.1s
+
+#4 [internal] load metadata for docker.io/library/ubuntu:24.04
+#4 DONE 0.0s
+
+#5 [2/9] RUN apt-get update &&     apt-get install -y --no-install-recommends     tzdata     git     curl     ca-certificates     libasound2-dev     mesa-vulkan-drivers     libudev-dev     libfontconfig-dev     build-essential &&     rm -rf /var/lib/apt/lists/*
+#5 CACHED
+
+#6 [3/9] RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain stable &&     /root/.cargo/bin/rustup component add rustfmt
+#6 CACHED
+
+#7 [4/9] RUN useradd -m testuser
+#7 CACHED
+
+#8 [5/9] WORKDIR /workspace
+#8 CACHED
+
+#9 [6/9] RUN chown -R testuser /workspace
+#9 CACHED
+
+#10 [internal] load build context
+#10 transferring context: 765.25kB 0.4s done
+#10 CANCELED
+
+#11 [7/9] RUN /root/.cargo/bin/rustup toolchain install stable --profile minimal --component rustfmt &&     /root/.cargo/bin/rustup target add x86_64-unknown-linux-gnu &&     echo 'source $HOME/.cargo/env' >> /home/testuser/.bashrc
+#0 0.316 /bin/sh: 1: /root/.cargo/bin/rustup: Permission denied
+#11 ERROR: process "/bin/sh -c /root/.cargo/bin/rustup toolchain install stable --profile minimal --component rustfmt &&     /root/.cargo/bin/rustup target add x86_64-unknown-linux-gnu &&     echo 'source $HOME/.cargo/env' >> /home/testuser/.bashrc" did not complete successfully: exit code: 126
+------
+ > [7/9] RUN /root/.cargo/bin/rustup toolchain install stable --profile minimal --component rustfmt &&     /root/.cargo/bin/rustup target add x86_64-unknown-linux-gnu &&     echo 'source $HOME/.cargo/env' >> /home/testuser/.bashrc:
+#0 0.316 /bin/sh: 1: /root/.cargo/bin/rustup: Permission denied
+------
+Dockerfile:37
+--------------------
+  36 |     # Set up Rust environment for the non-root user
+  37 | >>> RUN /root/.cargo/bin/rustup toolchain install stable --profile minimal --component rustfmt && \
+  38 | >>>     /root/.cargo/bin/rustup target add x86_64-unknown-linux-gnu && \
+  39 | >>>     echo 'source $HOME/.cargo/env' >> /home/testuser/.bashrc
+  40 |     
+--------------------
+ERROR: failed to solve: process "/bin/sh -c /root/.cargo/bin/rustup toolchain install stable --profile minimal --component rustfmt &&     /root/.cargo/bin/rustup target add x86_64-unknown-linux-gnu &&     echo 'source $HOME/.cargo/env' >> /home/testuser/.bashrc" did not complete successfully: exit code: 126

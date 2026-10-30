@@ -1,0 +1,70 @@
+Error from docker build
+
+#1 [internal] load .dockerignore
+#1 transferring context: 2B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 1.51kB done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/ubuntu:22.04
+#3 DONE 0.1s
+
+#4 [ 1/10] FROM docker.io/library/ubuntu:22.04@sha256:4f838adc7181d9039ac795a7d0aba05a9bd9ecd480d294483169c5def983b64d
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 263.20kB 0.1s done
+#5 DONE 0.2s
+
+#6 [ 2/10] RUN echo "UTC" > /etc/timezone &&     ln -s /usr/share/zoneinfo/UTC /etc/localtime &&     apt-get update &&     apt-get install -y --no-install-recommends tzdata &&     rm -rf /var/lib/apt/lists/*
+#6 CACHED
+
+#7 [ 3/10] RUN apt-get update && apt-get install -y --no-install-recommends     git     build-essential     cmake     g++     make     curl     wget     ca-certificates     libopenblas-dev     liblapack-dev     libsuitesparse-dev     && rm -rf /var/lib/apt/lists/*
+#7 CACHED
+
+#8 [ 4/10] WORKDIR /workspace
+#8 CACHED
+
+#9 [ 5/10] COPY . /workspace/
+#9 DONE 0.8s
+
+#10 [ 6/10] RUN git config --global --add safe.directory '*'
+#10 DONE 0.4s
+
+#11 [ 7/10] RUN curl -LsSf https://astral.sh/uv/install.sh | sh &&     mv /root/.cargo/bin/uv /usr/local/bin/uv &&     chmod +x /usr/local/bin/uv
+#11 0.791 downloading uv 0.11.21 x86_64-unknown-linux-gnu
+#11 1.799 installing to /root/.local/bin
+#11 1.812   uv
+#11 1.816   uvx
+#11 1.823 everything's installed!
+#11 1.869 
+#11 1.869 To add $HOME/.local/bin to your PATH, either restart your shell or run:
+#11 1.869 
+#11 1.869     source $HOME/.local/bin/env (sh, bash, zsh)
+#11 1.869     source $HOME/.local/bin/env.fish (fish)
+#11 1.885 mv: cannot stat '/root/.cargo/bin/uv': No such file or directory
+#11 ERROR: process "/bin/sh -c curl -LsSf https://astral.sh/uv/install.sh | sh &&     mv /root/.cargo/bin/uv /usr/local/bin/uv &&     chmod +x /usr/local/bin/uv" did not complete successfully: exit code: 1
+------
+ > [ 7/10] RUN curl -LsSf https://astral.sh/uv/install.sh | sh &&     mv /root/.cargo/bin/uv /usr/local/bin/uv &&     chmod +x /usr/local/bin/uv:
+#11 1.799 installing to /root/.local/bin
+#11 1.812   uv
+#11 1.816   uvx
+#11 1.823 everything's installed!
+#11 1.869 
+#11 1.869 To add $HOME/.local/bin to your PATH, either restart your shell or run:
+#11 1.869 
+#11 1.869     source $HOME/.local/bin/env (sh, bash, zsh)
+#11 1.869     source $HOME/.local/bin/env.fish (fish)
+#11 1.885 mv: cannot stat '/root/.cargo/bin/uv': No such file or directory
+------
+Dockerfile:42
+--------------------
+  41 |     # Install uv in a system-wide location
+  42 | >>> RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \
+  43 | >>>     mv /root/.cargo/bin/uv /usr/local/bin/uv && \
+  44 | >>>     chmod +x /usr/local/bin/uv
+  45 |     
+--------------------
+ERROR: failed to solve: process "/bin/sh -c curl -LsSf https://astral.sh/uv/install.sh | sh &&     mv /root/.cargo/bin/uv /usr/local/bin/uv &&     chmod +x /usr/local/bin/uv" did not complete successfully: exit code: 1

@@ -1,0 +1,45 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          20
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Test Packages
+  Test command(s) run in original CI:
+    $ pnpm install
+    $ for package in $PACKAGES; do bun run --filter $package test:coverage; done
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    7
+
+--- LLM run.sh Test Command(s) ---
+  $ pnpm install
+  $ pnpm approve-builds --all
+  $ for package in $PACKAGES; do bun run --filter $package test:coverage || exit 1; done
+
+--- Reason(s) for Non-Reproducibility ---
+  - [vitest] TR=False: LLM test run produced no parseable test output (empty llm_log_stats)
+  - [vitest] Zero tests ran in LLM environment despite ER=True (Docker container built successfully)
+  - [vitest] Original ran 423 tests with 2 failures in @lobechat/prompts
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    (pnpm install warning at log end): Ignored build scripts: core-js, electron, es5-ext, esbuild, msgpackr-extract, protobufjs, sharp, unrs-resolver
+    [WARN] The "pnpm" field in package.json is no longer read by pnpm...
+
+  [Root cause classification]
+  - The LLM log shows pnpm install completing but no test output was generated. After 20 attempts the LLM was unable to produce a working test execution. The `pnpm approve-builds --all` step added by the LLM is not a valid pnpm command (the correct command would be `pnpm approve-builds` interactively or setting `onlyBuiltDependencies` in config). This causes the build script approval to fail silently or the test runner to never execute.
+
+  - The original CI used Node.js 24.11.1 and bun 1.3.2. The LLM Dockerfile used ubuntu:22.04 with Node.js 24.x and attempted to install bun 1.3.2 for the non-root testuser. The bun installation for a non-root user inside a Docker container with `curl | bash` installs to `/home/testuser/.bun` but the test PACKAGES environment variable is not set in the run.sh (it is an empty string), so the `for` loop runs 0 iterations.
+
+  - The original failing tests were in `@lobechat/prompts` (`summaryGenerationTitle`): the test expected Chinese-language strings (`资深的 AI 艺术创作者`, `提示词：`) but the prompt template returned English strings, indicating a locale/language configuration mismatch in the original.
+
+--- Test Statistics Comparison ---
+  [vitest]
+    Original: 423 run, 421 passed, 2 failed, 0 skipped
+    LLM:      0 run, 0 passed, 0 failed, 0 skipped

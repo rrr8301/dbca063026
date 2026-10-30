@@ -1,0 +1,20 @@
+{
+ "model": "claude-haiku-4-5-20251001",
+ "content": "```yamlfile\nname: CI\n\non:\n  pull_request:\n  push:\n\njobs:\n  meson-build-and-tests:\n    runs-on: ubuntu-22.04\n    name: ubuntu-22.04, clang debug\n    strategy:\n      fail-fast: false\n      matrix:\n        flavor:\n          - debug\n        mode:\n          - name: clang\n            args: -Dtests=enabled\n            extra_envs:\n              CC: clang\n              CXX: clang++\n        platform:\n          - ubuntu-22.04\n    steps:\n      - name: Setup meson\n        run: |\n          pipx install meson ninja\n      - name: Checkout\n        uses: actions/checkout@v4\n      - name: Configuring\n        env:\n          CC: clang\n          CXX: clang++\n        run: |\n          meson setup build-debug --buildtype=debug -Dtests=enabled\n      - name: Building\n        run: |\n          meson compile -C build-debug\n      - name: Running tests\n        env:\n          CC: clang\n          CXX: clang++\n        run: |\n          meson test -C build-debug --timeout-multiplier 0\n      - uses: actions/upload-artifact@v4\n        if: failure()\n        with:\n          name: ubuntu-22.04-clang-debug-logs\n          path: build-debug/meson-logs\n```",
+ "reduced_yaml": "name: CI\n\non:\n  pull_request:\n  push:\n\njobs:\n  meson-build-and-tests:\n    runs-on: ubuntu-22.04\n    name: ubuntu-22.04, clang debug\n    strategy:\n      fail-fast: false\n      matrix:\n        flavor:\n          - debug\n        mode:\n          - name: clang\n            args: -Dtests=enabled\n            extra_envs:\n              CC: clang\n              CXX: clang++\n        platform:\n          - ubuntu-22.04\n    steps:\n      - name: Setup meson\n        run: |\n          pipx install meson ninja\n      - name: Checkout\n        uses: actions/checkout@v4\n      - name: Configuring\n        env:\n          CC: clang\n          CXX: clang++\n        run: |\n          meson setup build-debug --buildtype=debug -Dtests=enabled\n      - name: Building\n        run: |\n          meson compile -C build-debug\n      - name: Running tests\n        env:\n          CC: clang\n          CXX: clang++\n        run: |\n          meson test -C build-debug --timeout-multiplier 0\n      - uses: actions/upload-artifact@v4\n        if: failure()\n        with:\n          name: ubuntu-22.04-clang-debug-logs\n          path: build-debug/meson-logs",
+ "input_tokens": 1670,
+ "output_tokens": 355,
+ "cost_usd": 0.002756,
+ "seconds": 3.24,
+ "prompt_sha256": "1ee6a26c51827d2bcc7c5d452396a560a44adec1579dc4988ded4352223fad9c",
+ "completed_steps": [
+  "Set up job",
+  "Setup meson",
+  "Checkout",
+  "Configuring",
+  "Building",
+  "Running tests",
+  "Run actions/upload-artifact@v4",
+  "Complete job"
+ ]
+}

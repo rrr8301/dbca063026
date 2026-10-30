@@ -1,0 +1,35 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          3
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      FreeRTOS-Kernel Main Branch
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    4
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Unity] Test run mismatch: original=968, LLM=646
+  - [Unity] Test passed mismatch: original=968, LLM=646
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > /app/FreeRTOS/Test/CMock/queue/dynamic/queue_create_dynamic_utest.c:1:1: error: expected identifier or '(' before '.' token
+    > make[2]: *** [../../testdir.mk:89: .../queue_create_dynamic_utest.o] Error 1
+    > /app/FreeRTOS/Test/CMock/queue/sets/queue_send_nonblocking_utest.c:1:1: error: expected identifier or '(' before '.' token
+    > make: *** [Makefile:36: queue] Error 2
+
+  [Root cause classification]
+  - Several queue test files in the `dynamic`, `static`, `sets`, and `tracing` subdirectories are stub files that contain only a relative `#include` path (e.g. `../generic/queue_delete_dynamic_utest.c`) rather than actual C code; when compiled directly, the preprocessor sees a filename as a statement and emits a parse error. These stubs are meant to be compiled via a Makefile that resolves the include path, but the LLM's build invocation did not trigger that indirection, so those entire test groups were aborted. The original CI used the correct CMock build harness which handled the include-based stub pattern, allowing 322 additional queue subtests to run and pass.
+
+--- Test Statistics Comparison ---
+  [Unity]
+    Original: 968 run, 968 passed, 0 failed, 0 skipped
+    LLM:      646 run, 646 passed, 0 failed, 0 skipped

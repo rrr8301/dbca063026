@@ -1,0 +1,39 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      latest majors (25, 9, 8, 8)
+  Test command(s) run in original CI:
+    $ actions/checkout@v4
+    $ npm run unit-test
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ npm run unit-test
+
+--- Reason(s) for Non-Reproducibility ---
+  - [mocha] Test result mismatch (same count 17791): original=(17569p/222f/0s), LLM=(11665p/6126f/0s)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    6126 failing
+    ConfigError: ESLint configuration in rule-tester is invalid: Config (unnamed):
+      Key "parserOptions": This appears to be in eslintrc format rather than flat config format.
+    (repeated for every test that uses parserOptions with typescript-eslint or @typescript-eslint/parser)
+
+  [Root cause classification]
+  - The original CI uses specific pinned versions of ESLint (25), React (9), and TypeScript ESLint (8, 8) as listed in the job name "latest majors (25, 9, 8, 8)". The LLM's Docker pulled `npm install` without pinning, which resolved to a newer ESLint (likely ESLint 9+). ESLint 9 dropped the eslintrc-style `parserOptions` key from `RuleTester` — it now requires flat config format. The test suite still passes `parserOptions` in legacy eslintrc format, causing `ConfigError` in 6126 tests. The 222 failures in the original also include some `parserOptions`-related errors, but with the pinned ESLint version (25.x = npm tag, presumably an older 8.x/flat-config-optional version) only a fraction of tests fail this way.
+
+--- Test Statistics Comparison ---
+  [mocha]
+    Original: 17791 run, 17569 passed, 222 failed, 0 skipped
+    LLM:      17791 run, 11665 passed, 6126 failed, 0 skipped

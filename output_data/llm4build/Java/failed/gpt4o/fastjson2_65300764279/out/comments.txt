@@ -1,0 +1,36 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          N/A
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT TESTS NOT REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      Test Reflect JDK 11 on ubuntu-24.04
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ mvn -V --no-transfer-progress -Dfastjson2.creator=reflect clean package \
+  $ mvn test -Drat.skip=true -Dlicense.skip=true -Dtest=!com.alibaba.fastjson2.issues_3600.issue3601.* || true
+
+--- Test Reproducibility Gap ---
+  Test results could not be matched between builds.
+  Test existence match: False
+  Test count match: False
+  Test names match: False
+  Test statuses match: False
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > ERROR: /app/core/src/test/java/com/alibaba/fastjson2/codec/UnicodeClassNameTest.java:[19,19] error while writing com.alibaba.fastjson2.codec.UnicodeClassNameTest.动物: bad filename RelativeFile[com/alibaba/fastjson2/codec/UnicodeClassNameTest$动物.class]
+    > COMPILATION ERROR: Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.14.0:testCompile (java-test-compile) on project fastjson2: Compilation failure
+    > BUILD FAILURE — fastjson2 module failed after 53.603 s; all downstream modules SKIPPED
+
+  [Root cause classification]
+  - The Docker container's filesystem or JVM locale settings do not support Unicode (CJK) characters in .class file names. The test class UnicodeClassNameTest defines an inner class named 动物 (Chinese for "animal"), and the compiler fails to write the corresponding .class file because the container's file.encoding or underlying filesystem rejects the non-ASCII filename. The LLM's run.sh did not set -Dfile.encoding=UTF-8 in the Maven compiler invocation (only in JAVA_TOOL_OPTIONS after the build step), nor did it configure the container locale to UTF-8, resulting in a test compilation failure that prevents any test results from being produced.

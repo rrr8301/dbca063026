@@ -1,0 +1,57 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      test-react-legacy (18, 2/2)
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ ut test -- --maxWorkers=2 --shard=2/2 --coverage
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ ut test -- --maxWorkers=2 --shard=2/2 --coverage
+
+--- Reason(s) for Non-Reproducibility ---
+  - [jest] Test result mismatch (same count 3249): original=(3210p/1f/38s), LLM=(3195p/16f/38s)
+  - [jest] Tests failed in LLM but passed in original: components/space/__tests__/demo-extend.test.ts (12.616 s)
+  - [jest] Tests failed in original but passed in LLM: Unknown
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > FAIL components/calendar/__tests__/demo.test.ts
+    >   ● renders components/calendar/demo/week.tsx correctly
+    >     expect(received).toMatchSnapshot()
+    >     Snapshot name: `renders components/calendar/demo/week.tsx correctly 1`
+    >     - Snapshot  - 8
+    > › 7 snapshots failed.
+    > FAIL components/form/__tests__/demo-extend.test.ts (28.995 s)
+    >   ● renders components/form/demo/variant.tsx extend context correctly
+    >     Snapshot name: `renders components/form/demo/variant.tsx extend context correctly 1`
+    >     - Snapshot  - 4
+    > › 5 snapshots failed.
+    > FAIL components/space/__tests__/demo-extend.test.ts (12.616 s)
+    > › 2 snapshots failed.
+    > FAIL components/typography/__tests__/semantic.test.tsx
+    > FAIL components/calendar/__tests__/select.test.tsx
+    > › 14 snapshots failed from 3 test suites.
+
+  [Root cause classification]
+  - The test suite uses `--shard=2/2` (same in both original and LLM), producing the same total of 3,249 tests. The original CI had only 1 failure; the LLM has 16 failures. All 15 new LLM-only failures are Jest snapshot mismatches across four component test files: `components/calendar/__tests__/demo.test.ts` (7 snapshots), `components/form/__tests__/demo-extend.test.ts` (5 snapshots), `components/space/__tests__/demo-extend.test.ts` (2 snapshots), and `components/typography/__tests__/semantic.test.tsx` (1 semantic DOM snapshot).
+
+  - The snapshots stored in the repository were generated on a specific runtime environment and with specific versions of `antd`'s peer dependencies (React 18, `@ant-design/cssinjs`, `dayjs`). The calendar demo snapshots include locale-dependent date values and CSS-in-JS class hashes. When any transitive dependency of the rendering pipeline changes — for example, a different `dayjs` locale output format, a shifted CSS hash from a `@ant-design/cssinjs` patch release, or a different React 18 patch — the rendered HTML diverges from the stored snapshot, causing the `toMatchSnapshot()` assertions to fail with `- Snapshot - N` lines showing missing nodes.
+
+  - The LLM ran on `ubuntu:24.04` whereas the original CI used `ubuntu-latest` (currently 22.04). The system's default locale, timezone, and font metrics can affect how `dayjs` formats calendar cells and how CSS layout engines round pixel values — both of which appear verbatim in the HTML snapshots. Calendar components are particularly sensitive because they embed localized day-of-week headers and month names. The `components/typography/__tests__/semantic.test.tsx` failure (`received value must be an HTMLElement or an SVGElement`) suggests a slightly different DOM tree structure under the newer Ubuntu environment. Together, these environment differences cause the stored snapshots to be stale relative to the LLM's rendering output.
+
+--- Test Statistics Comparison ---
+  [jest]
+    Original: 3249 run, 3210 passed, 1 failed, 38 skipped
+    LLM:      3249 run, 3195 passed, 16 failed, 38 skipped

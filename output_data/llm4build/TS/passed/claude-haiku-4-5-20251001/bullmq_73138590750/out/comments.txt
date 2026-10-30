@@ -1,0 +1,45 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      testing node@lts/*, redis@6-alpine
+  Test command(s) run in original CI:
+    $ actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+    $ yarn build
+    $ yarn test
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    6
+
+--- LLM run.sh Test Command(s) ---
+  $ yarn test || TEST_FAILED=1
+
+--- Reason(s) for Non-Reproducibility ---
+  - [vitest] Test result mismatch (same count 962): original=(947p/0f/15s), LLM=(945p/2f/15s)
+  - [vitest] Tests failed in LLM but passed in original: tests/job_scheduler.test.ts
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    [22m[39mError: connect ECONNREFUSED 127.0.0.1:1234
+    [22m[39mError: connect ECONNREFUSED 127.0.0.1:1234
+    [22m[39mUnexpected Error in AsyncFifoQueue Error: test
+
+  [Root cause classification]
+  - Process aborted (SIGABRT) — likely a GLib g_assert() failure, AddressSanitizer/UBSan abort, or missing D-Bus/system service in Docker container.
+  - Required environment variable not set — test reads a specific env var that was present in original CI but not in Docker container.
+  - Database service unavailable or not properly configured — test requires an external database service.
+  - Test timed out — likely due to slower execution in Docker container or a blocking service call that never returns.
+  - I/O error — test encountered a system-level I/O failure, possibly due to filesystem permissions or missing mount points.
+  - Assertion failure: [22m[39mUnexpected Error in AsyncFifoQueue Error: test
+
+--- Test Statistics Comparison ---
+  [vitest]
+    Original: 962 run, 947 passed, 0 failed, 15 skipped
+    LLM:      962 run, 945 passed, 2 failed, 15 skipped

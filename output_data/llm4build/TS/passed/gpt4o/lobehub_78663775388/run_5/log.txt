@@ -1,0 +1,80 @@
+Error from docker build
+
+#1 [ 1/10] FROM docker.io/library/ubuntu:22.04
+#1 CACHED
+
+#2 [2/9] RUN ln -snf /usr/share/zoneinfo/America/Los_Angeles /etc/localtime && echo America/Los_Angeles > /etc/timezone
+#2 CACHED
+
+#3 [internal] load build definition from Dockerfile
+#3 transferring dockerfile: 1.62kB done
+#3 DONE 0.0s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 129B done
+#4 DONE 0.0s
+
+#5 [internal] load metadata for docker.io/library/ubuntu:22.04
+#5 DONE 0.0s
+
+#6 [ 3/11] RUN apt-get update && apt-get install -y --no-install-recommends     git     curl     wget     ca-certificates     unzip     && rm -rf /var/lib/apt/lists/*
+#6 CACHED
+
+#7 [ 4/11] RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash     && . /root/.nvm/nvm.sh     && nvm install 24.11.1     && nvm use 24.11.1     && nvm alias default 24.11.1
+#7 CACHED
+
+#8 [ 5/11] RUN . /root/.nvm/nvm.sh && npm install -g pnpm
+#8 CACHED
+
+#9 [internal] load build context
+#9 transferring context: 977.99kB 0.5s done
+#9 DONE 0.5s
+
+#10 [ 6/11] RUN curl -fsSL https://bun.sh/install | bash     && export BUN_INSTALL="/root/.bun"     && export PATH="$BUN_INSTALL/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"     && bun --version
+#0 0.593 #=#=#                                                                         
+##O#-#                                                                        
+
+#                                                                          2.3%
+########                                                                  11.8%
+#########################                                                 36.1%
+#################################################                         68.3%
+######################################################################## 100.0%
+#10 2.071 bun was installed successfully to ~/.bun/bin/bun 
+#10 2.074 
+#10 2.089 Added "~/.bun/bin" to $PATH in "~/.bashrc" 
+#10 2.089 
+#10 2.089 To get started, run: 
+#10 2.089 
+#10 2.089   source /root/.bashrc 
+#10 2.089   bun --help 
+#10 2.092 1.3.14
+#10 DONE 2.2s
+
+#11 [ 7/11] WORKDIR /workspace
+#11 DONE 0.0s
+
+#12 [ 8/11] COPY . /workspace
+#12 DONE 1.2s
+
+#13 [ 9/11] RUN git config --global --add safe.directory '*'
+#13 DONE 0.3s
+
+#14 [10/11] RUN useradd -m testuser && chown -R testuser /workspace
+#14 DONE 2.9s
+
+#15 [11/11] RUN cp -r /root/.nvm /home/testuser/.nvm &&     cp -r /root/.bun /home/testuser/.bun &&     chown -R testuser:testuser /home/testuser/.nvm /home/testuser/.bun
+#15 0.412 cp: cannot stat '/root/.nvm': Permission denied
+#15 ERROR: process "/bin/sh -c cp -r /root/.nvm /home/testuser/.nvm &&     cp -r /root/.bun /home/testuser/.bun &&     chown -R testuser:testuser /home/testuser/.nvm /home/testuser/.bun" did not complete successfully: exit code: 1
+------
+ > [11/11] RUN cp -r /root/.nvm /home/testuser/.nvm &&     cp -r /root/.bun /home/testuser/.bun &&     chown -R testuser:testuser /home/testuser/.nvm /home/testuser/.bun:
+#15 0.412 cp: cannot stat '/root/.nvm': Permission denied
+------
+Dockerfile:52
+--------------------
+  51 |     # Copy nvm and bun installations to the user's home directory
+  52 | >>> RUN cp -r /root/.nvm /home/testuser/.nvm && \
+  53 | >>>     cp -r /root/.bun /home/testuser/.bun && \
+  54 | >>>     chown -R testuser:testuser /home/testuser/.nvm /home/testuser/.bun
+  55 |     
+--------------------
+ERROR: failed to solve: process "/bin/sh -c cp -r /root/.nvm /home/testuser/.nvm &&     cp -r /root/.bun /home/testuser/.bun &&     chown -R testuser:testuser /home/testuser/.nvm /home/testuser/.bun" did not complete successfully: exit code: 1

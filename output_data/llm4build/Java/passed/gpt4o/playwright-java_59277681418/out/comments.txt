@@ -1,0 +1,41 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          N/A
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      Java_21 (chromium)
+  Test command(s) run in original CI:
+    $ mvn test --no-transfer-progress --fail-at-end
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ mvn -B install -D skipTests --no-transfer-progress
+  $ mvn exec:java -e -D exec.mainClass=com.microsoft.playwright.CLI -D exec.args="install --with-deps" -f playwright/pom.xml --no-transfer-progress
+  $ mvn test --no-transfer-progress --fail-at-end
+  $ mvn package -D skipTests --no-transfer-progress
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Maven] Test run mismatch: original=1603, LLM=7
+  - [Maven] Test passed mismatch: original=1576, LLM=3
+  - [Maven] Test failed mismatch: original=0, LLM=4
+  - [Maven] Test skipped mismatch: original=27, LLM=0
+  - [Maven] 2 test(s) failed in LLM but not in original: playwrightCliInstalled(com.microsoft.playwright.impl.driver.jar.TestInstall), playwrightDriverDefaultImpl(com.microsoft.playwright.impl.driver.jar.TestInstall)
+
+--- Root Cause Analysis ---
+  - [Maven] LLM ran 1596 fewer tests than original — LLM likely used a narrower test scope or missed some test suites.
+  - [Maven] 2 test(s) failed in LLM but not original: playwrightCliInstalled(com.microsoft.playwright.impl.driver.jar.TestInstall), playwrightDriverDefaultImpl(com.microsoft.playwright.impl.driver.jar.TestInstall)
+  - Test command differences detected — original CI vs LLM run.sh may use different flags or test selection.
+
+--- Test Statistics Comparison ---
+  [Maven]
+    Original: 1603 run, 1576 passed, 0 failed, 27 skipped
+    LLM:      7 run, 3 passed, 4 failed, 0 skipped

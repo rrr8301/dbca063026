@@ -1,0 +1,25 @@
+# command: act push -W .github/workflows/cmake-multi-platform.yml --directory project_path/omath -j linux-build-and-test --matrix name:Linux (Clang) (x86-linux) --matrix triplet:x86-linux --matrix runner:ubuntu-latest --matrix preset:linux-release-vcpkg-x86 --matrix coverage:False --matrix install_cmd:# Add LLVM 21 repository
+wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | sudo tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc
+sudo add-apt-repository -y "deb http://apt.llvm.org/noble/ llvm-toolchain-noble-21 main"
+# Add GCC Toolchain PPA
+sudo add-apt-repository -y "deb http://archive.ubuntu.com/ubuntu plucky main universe"
+# Enable i386 architecture
+sudo dpkg --add-architecture i386
+sudo apt-get update
+# Install Clang 21
+sudo apt-get install -y git build-essential cmake ninja-build \
+       zip unzip curl pkg-config ca-certificates \
+       clang-21 lld-21 libc++-21-dev libc++abi-21-dev
+sudo apt-get install -y -t plucky binutils
+# Install GCC 15 with multilib support
+sudo apt-get install -y gcc-15-multilib g++-15-multilib
+# Set up alternatives for Clang
+sudo update-alternatives --install /usr/bin/cc cc /usr/bin/clang-21 100
+sudo update-alternatives --install /usr/bin/c++ c++ /usr/bin/clang++-21 100
+sudo update-alternatives --install /usr/bin/lld lld /usr/bin/lld-21 100
+# Set up alternatives for GCC
+sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-15 100
+sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-15 100
+
+
+time="2026-05-11T13:52:29-07:00" level=info msg="Using docker host 'unix:///var/run/docker.sock', and daemon socket 'unix:///var/run/docker.sock'"

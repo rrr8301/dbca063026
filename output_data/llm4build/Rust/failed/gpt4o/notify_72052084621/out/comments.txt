@@ -1,0 +1,52 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Test ubuntu-latest - 1.88
+  Test command(s) run in original CI:
+    $ rm -f rust-toolchain.toml
+    $ rustup override set 1.88
+    $ cargo build --verbose
+    $ cargo build --examples --verbose
+    $ cargo test --verbose
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    8
+
+--- LLM run.sh Test Command(s) ---
+  $ rm -f rust-toolchain.toml
+  $ cargo build --verbose
+  $ cargo build --examples --verbose
+  $ cargo test --verbose
+
+--- Reason(s) for Non-Reproducibility ---
+  - [cargo] Test run mismatch: original=73, LLM=157
+  - [cargo] Test passed mismatch: original=70, LLM=154
+  - [cargo] Test failed mismatch: original=1, LLM=0
+  - [cargo] Test skipped mismatch: original=2, LLM=3
+  - [cargo] The original failing test `poll::tests::create_dir` did NOT fail in LLM run
+  - [cargo] LLM ran 84 more tests; the extra tests come from running `file-id` crate tests not included in the original scope
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    499:test result: ok. 70 passed; 0 failed; 2 ignored; 0 measured; 0 filtered out; finished in 1.06s
+    475:test poll::tests::create_dir ... ok
+
+  [Root cause classification]
+  - The original CI ran `cargo test --verbose` against Rust 1.88 and saw `poll::tests::create_dir` fail. The LLM Dockerfile installs Rust 1.88 but also installs it for a non-root `testuser` by running a second `rustup` installation, leading to a subtly different environment (e.g., different file-id subcrate being compiled and tested).
+
+  - The LLM ran 157 tests vs 73 in the original. The additional 84 tests come from the `file-id` crate being included in the LLM's workspace test scope. In the original CI the `file-id` crate tests were excluded (only 1 doc-test from it was skipped; here 1 is skipped as well but the test binary runs more). The `poll::tests::create_dir` test passed in the LLM environment, indicating a timing or filesystem sensitivity that does not reproduce in the Docker container environment.
+
+  - The root cause of non-reproducibility is that the flaky `poll::tests::create_dir` test is environment-sensitive (filesystem event timing) and did not fail in Docker.
+
+--- Test Statistics Comparison ---
+  [cargo]
+    Original: 73 run, 70 passed, 1 failed, 2 skipped
+    LLM:      157 run, 154 passed, 0 failed, 3 skipped

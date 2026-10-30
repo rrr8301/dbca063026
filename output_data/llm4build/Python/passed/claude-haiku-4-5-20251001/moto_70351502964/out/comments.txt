@@ -1,0 +1,69 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          5
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      test (3.11)
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ pytest tests
+
+--- LLM-Generated Dockerfile ---
+  Base image:   python:3.11-slim
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ pip install pytest-github-actions-annotate-failures
+  $ pytest . -v --tb=short -p no:warnings
+
+--- Reason(s) for Non-Reproducibility ---
+  - [pytest] Test run mismatch: original=11766, LLM=3
+  - [pytest] Test passed mismatch: original=11692, LLM=0
+  - [pytest] Test failed mismatch: original=0, LLM=3
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > ImportError while importing test module
+    >   '.../moto/stepfunctions/parser/asl/component/test_state/program/test_state_program.py'
+    >     import boto3
+    > E   ModuleNotFoundError: No module named 'boto3'
+    >
+    > ImportError while importing test module
+    >   '.../moto/stepfunctions/parser/asl/component/test_state/state/test_state_state_props.py'
+    >     import boto3
+    > E   ModuleNotFoundError: No module named 'boto3'
+    >
+    > ImportError while importing test module
+    >   '.../moto/stepfunctions/parser/asl/static_analyser/test_state/test_state_analyser.py'
+    >     import boto3
+    > E   ModuleNotFoundError: No module named 'boto3'
+
+  [Root cause classification]
+  - `boto3` not installed — LLM run.sh omits the core moto dependency entirely
+    The moto library is a mock framework for AWS services and requires `boto3` as its primary
+    runtime dependency. The Dockerfile installs `requirements-dev.txt` (if it exists) but does
+    not install the package itself (`pip install -e .` or `pip install moto[all]`). The run.sh
+    only installs `pytest-github-actions-annotate-failures`, making no attempt to install moto's
+    dependencies.
+    At test collection time, pytest discovers 3 test files inside the moto source tree at:
+      `moto/stepfunctions/parser/asl/component/test_state/program/test_state_program.py`
+      `moto/stepfunctions/parser/asl/component/test_state/state/test_state_state_props.py`
+      `moto/stepfunctions/parser/asl/static_analyser/test_state/test_state_analyser.py`
+    These test files are located under `moto/` itself (not under `tests/`), so `pytest .` discovers
+    them while walking the full workspace. Each of these files imports `boto3` at the module level,
+    causing `ModuleNotFoundError: No module named 'boto3'` during collection.
+    Pytest aborts with 3 collection errors (counted as failures in summary.json).
+    The original CI runs `pytest tests` (scoped to `tests/` directory only) and has boto3 installed
+    via the test requirements. In the Docker container, `pytest .` discovers the 3 internal test
+    files that the original CI never runs, and boto3 is not installed so all 3 fail immediately.
+    The 11763 tests from the `tests/` directory are never collected because boto3 is missing.
+
+--- Test Statistics Comparison ---
+  [pytest]
+    Original: 11766 run, 11692 passed, 0 failed, 72 skipped
+    LLM:      3 run, 0 passed, 3 failed, 0 skipped

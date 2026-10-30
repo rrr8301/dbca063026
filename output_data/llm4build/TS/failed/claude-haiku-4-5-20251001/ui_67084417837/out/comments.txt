@@ -1,0 +1,46 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      pnpm test
+  Test command(s) run in original CI:
+    $ pnpm test
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ pnpm test
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > tests:test:    × shadcn init - next-app > should init with default configuration 24099ms
+    >       → expected false to be true // Object.is equality
+    > tests:test:  FAIL  src/tests/init.test.ts > shadcn init - next-app > should init with default configuration
+    > tests:test: AssertionError: expected false to be true // Object.is equality
+
+  [Root cause classification]
+  - The single vitest failure is `shadcn init - next-app > should init with default configuration`, which tests the `shadcn init` command against a fresh Next.js app scaffold. The test asserts that after running `shadcn init` with defaults, certain configuration files or conditions evaluate to `true`, but the assertion receives `false`. This is a state-verification failure in an end-to-end integration test: the test calls the actual `shadcn` CLI binary, scaffolds a Next.js project via `create-next-app`, and then checks that the resulting `components.json` or configuration matches the expected default. The `false` result indicates that either the configuration was not written, or its content didn't match the hardcoded expected values.
+
+  - The most likely cause is a version mismatch in `create-next-app`: the `npx create-next-app` command invoked during the test fetches the latest Next.js template, which may have changed its default folder structure or configuration format since the test's expected values were written. When `shadcn init` reads the generated app's `package.json` or `tsconfig.json` to determine defaults, it may encounter a newer template that returns different values, causing the test's `expected false to be true` assertion to fail.
+
+  - The original CI ran both vitest (1364 tests, 1362 passed, 1 failed, 1 skipped) and a GoDefault test (1 run, 1 failed) with the same 1 vitest failure — meaning the `shadcn init - next-app > should init with default configuration` test failure is a pre-existing issue in the original too (the repo is in the "failed" category). The LLM matches the vitest result exactly. The only reproducibility gap is the missing GoDefault test, which is a separate component the LLM's run script did not invoke.
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in original but missing in LLM: GoDefault
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 1 run, 0 passed, 1 failed, 0 skipped
+    LLM:      (not present)
+  [vitest]
+    Original: 1364 run, 1362 passed, 1 failed, 1 skipped
+    LLM:      1364 run, 1362 passed, 1 failed, 1 skipped

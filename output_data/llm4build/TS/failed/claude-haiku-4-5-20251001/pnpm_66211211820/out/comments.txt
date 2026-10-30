@@ -1,0 +1,39 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          20
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT TESTS NOT REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      Test ubuntu-latest / Node.js 22
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    7
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > > node ../pnpm/dist/pnpm.mjs install -rf --frozen-lockfile --no-shared-workspace-lockfile --no-link-workspace-packages
+    > Error: Cannot find module '/workspace/pnpm/dist/pnpm.mjs'
+
+  [Root cause classification]
+  - The test suite fails because `pnpm/dist/pnpm.mjs` does not exist at test time. The pnpm monorepo builds its own `pnpm` CLI binary from TypeScript source into `packages/pnpm/dist/` as part of the build pipeline. When the LLM ran tests without first executing the pnpm build step (`pnpm run compile` or the equivalent build task that populates `dist/`), the `pnpm.mjs` artifact was absent. Test fixtures and integration tests that invoke the pnpm CLI directly via `node ../pnpm/dist/pnpm.mjs` all fail immediately with "Cannot find module".
+
+  - The original CI (job name "Test ubuntu-latest / Node.js 22") ran 1,647 jest tests, 1,620 of which passed. The CI workflow includes a build step before the test step that compiles the TypeScript source and produces `dist/pnpm.mjs`. The LLM reproduced only the test invocation without the prerequisite build. This is the same root cause pattern as the Babel case: a monorepo that builds itself as part of the test pipeline, where the LLM omitted the compilation step.
+
+  - The GoDefault tests (2 run, both failed) visible in the original are likely integration tests run via a separate shell script or tool that the LLM also did not reproduce. Without `dist/pnpm.mjs` and without the Go-based test harness, the result parser receives no test output (empty llm_log_stats), classifying the result as TR=False.
+
+--- Test Reproducibility Gap ---
+  Original ran 1649 test(s) across [jest, GoDefault].
+  LLM build produced no test results (empty llm_log_stats).
+
+--- Root Cause ---
+  Reason type: Compilation / linker failure during build
+
+--- Original Test Statistics (not reproduced) ---
+  [jest] 1647 run, 1620 passed, 1 failed, 26 skipped
+  [GoDefault] 2 run, 0 passed, 2 failed, 0 skipped

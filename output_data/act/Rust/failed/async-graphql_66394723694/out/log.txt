@@ -1,0 +1,104 @@
+# command: act pull_request -W .github/workflows/ci.yml --directory project_path/async-graphql -j examples
+
+time="2026-06-02T07:08:13-07:00" level=info msg="Using docker host 'unix:///var/run/docker.sock', and daemon socket 'unix:///var/run/docker.sock'"
+[CI/Build examples - Rust (stable) on ubuntu-22.04] ⭐ Run Set up job
+[CI/Build examples - Rust (stable) on ubuntu-22.04] 🚀  Start image=node:16-bullseye-slim
+[CI/Build examples - Rust (stable) on ubuntu-22.04]   🐳  docker pull image=node:16-bullseye-slim platform= username= forcePull=true
+[CI/Build examples - Rust (stable) on ubuntu-22.04] using DockerAuthConfig authentication for docker pull
+[CI/Build examples - Rust (stable) on ubuntu-22.04]   🐳  docker create image=node:16-bullseye-slim platform= entrypoint=["tail" "-f" "/dev/null"] cmd=[] network="host"
+[CI/Build examples - Rust (stable) on ubuntu-22.04]   🐳  docker run image=node:16-bullseye-slim platform= entrypoint=["tail" "-f" "/dev/null"] cmd=[] network="host"
+[CI/Build examples - Rust (stable) on ubuntu-22.04]   🐳  docker exec cmd=[node --no-warnings -e console.log(process.execPath)] user= workdir=
+[CI/Build examples - Rust (stable) on ubuntu-22.04]   ✅  Success - Set up job
+[CI/Build examples - Rust (stable) on ubuntu-22.04]   ☁  git clone 'https://github.com/dtolnay/rust-toolchain' # ref=stable
+[CI/Build examples - Rust (stable) on ubuntu-22.04] ⭐ Run Pre dtolnay/rust-toolchain@stable
+[CI/Build examples - Rust (stable) on ubuntu-22.04]   ✅  Success - Pre dtolnay/rust-toolchain@stable [48.643083ms]
+[CI/Build examples - Rust (stable) on ubuntu-22.04] 🧪  Matrix: map[os:ubuntu-22.04 rust:stable]
+[CI/Build examples - Rust (stable) on ubuntu-22.04] ⭐ Run Main Checkout
+[CI/Build examples - Rust (stable) on ubuntu-22.04]   🐳  docker cp src=/scratch/raian-files/LLM4Build/project_path/async-graphql/. dst=/scratch/raian-files/LLM4Build/project_path/async-graphql
+[CI/Build examples - Rust (stable) on ubuntu-22.04]   ✅  Success - Main Checkout [538.750748ms]
+[CI/Build examples - Rust (stable) on ubuntu-22.04] ⭐ Run Main dtolnay/rust-toolchain@stable
+[CI/Build examples - Rust (stable) on ubuntu-22.04]   🐳  docker cp src=/home/mnabil/.cache/act/dtolnay-rust-toolchain@stable/ dst=/var/run/act/actions/dtolnay-rust-toolchain@stable/
+[CI/Build examples - Rust (stable) on ubuntu-22.04] ⭐ Run Main : parse toolchain version
+if [[ -z $toolchain ]]; then
+  # GitHub does not enforce `required: true` inputs itself. https://github.com/actions/runner/issues/1070
+  echo "'toolchain' is a required input" >&2
+  exit 1
+elif [[ $toolchain =~ ^stable' '[0-9]+' '(year|month|week|day)s?' 'ago$ ]]; then
+  if [[ Linux == macOS ]]; then
+    echo "toolchain=1.$((($(date -v-$(sed 's/stable \([0-9]*\) \(.\).*/\1\2/' <<< $toolchain) +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT
+  else
+    echo "toolchain=1.$((($(date --date "${toolchain#stable }" +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT
+  fi
+elif [[ $toolchain =~ ^stable' 'minus' '[0-9]+' 'releases?$ ]]; then
+  echo "toolchain=1.$((($(date +%s)/60/60/24-16569)/7/6-${toolchain//[^0-9]/}))" >> $GITHUB_OUTPUT
+elif [[ $toolchain =~ ^1\.[0-9]+$ ]]; then
+  echo "toolchain=1.$((i=${toolchain#1.}, c=($(date +%s)/60/60/24-16569)/7/6, i+9*i*(10*i<=c)+90*i*(100*i<=c)))" >> $GITHUB_OUTPUT
+else
+  echo "toolchain=$toolchain" >> $GITHUB_OUTPUT
+fi
+[CI/Build examples - Rust (stable) on ubuntu-22.04]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/1-composite-parse.sh] user= workdir=
+[CI/Build examples - Rust (stable) on ubuntu-22.04]   ✅  Success - Main : parse toolchain version
+if [[ -z $toolchain ]]; then
+  # GitHub does not enforce `required: true` inputs itself. https://github.com/actions/runner/issues/1070
+  echo "'toolchain' is a required input" >&2
+  exit 1
+elif [[ $toolchain =~ ^stable' '[0-9]+' '(year|month|week|day)s?' 'ago$ ]]; then
+  if [[ Linux == macOS ]]; then
+    echo "toolchain=1.$((($(date -v-$(sed 's/stable \([0-9]*\) \(.\).*/\1\2/' <<< $toolchain) +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT
+  else
+    echo "toolchain=1.$((($(date --date "${toolchain#stable }" +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT
+  fi
+elif [[ $toolchain =~ ^stable' 'minus' '[0-9]+' 'releases?$ ]]; then
+  echo "toolchain=1.$((($(date +%s)/60/60/24-16569)/7/6-${toolchain//[^0-9]/}))" >> $GITHUB_OUTPUT
+elif [[ $toolchain =~ ^1\.[0-9]+$ ]]; then
+  echo "toolchain=1.$((i=${toolchain#1.}, c=($(date +%s)/60/60/24-16569)/7/6, i+9*i*(10*i<=c)+90*i*(100*i<=c)))" >> $GITHUB_OUTPUT
+else
+  echo "toolchain=$toolchain" >> $GITHUB_OUTPUT
+fi
+ [184.84266ms]
+[CI/Build examples - Rust (stable) on ubuntu-22.04]   ⚙  ::set-output:: toolchain=stable
+[CI/Build examples - Rust (stable) on ubuntu-22.04] ⭐ Run Main : construct rustup command line
+echo "targets=$(for t in ${targets//,/ }; do echo -n ' --target' $t; done)" >> $GITHUB_OUTPUT
+echo "components=$(for c in ${components//,/ }; do echo -n ' --component' $c; done)" >> $GITHUB_OUTPUT
+echo "downgrade=" >> $GITHUB_OUTPUT
+[CI/Build examples - Rust (stable) on ubuntu-22.04]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/1-composite-flags.sh] user= workdir=
+[CI/Build examples - Rust (stable) on ubuntu-22.04]   ✅  Success - Main : construct rustup command line
+echo "targets=$(for t in ${targets//,/ }; do echo -n ' --target' $t; done)" >> $GITHUB_OUTPUT
+echo "components=$(for c in ${components//,/ }; do echo -n ' --component' $c; done)" >> $GITHUB_OUTPUT
+echo "downgrade=" >> $GITHUB_OUTPUT
+ [171.506761ms]
+[CI/Build examples - Rust (stable) on ubuntu-22.04]   ⚙  ::set-output:: targets=
+[CI/Build examples - Rust (stable) on ubuntu-22.04]   ⚙  ::set-output:: components= --component clippy --component rustfmt
+[CI/Build examples - Rust (stable) on ubuntu-22.04]   ⚙  ::set-output:: downgrade=
+[CI/Build examples - Rust (stable) on ubuntu-22.04] ⭐ Run Main : set $CARGO_HOME
+echo CARGO_HOME=${CARGO_HOME:-"$HOME/.cargo"} >> $GITHUB_ENV
+[CI/Build examples - Rust (stable) on ubuntu-22.04]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/1-composite-2.sh] user= workdir=
+[CI/Build examples - Rust (stable) on ubuntu-22.04]   ✅  Success - Main : set $CARGO_HOME
+echo CARGO_HOME=${CARGO_HOME:-"$HOME/.cargo"} >> $GITHUB_ENV
+ [159.667442ms]
+[CI/Build examples - Rust (stable) on ubuntu-22.04]   ⚙  ::set-env:: CARGO_HOME=/root/.cargo
+[CI/Build examples - Rust (stable) on ubuntu-22.04] ⭐ Run Main : install rustup if needed
+if ! command -v rustup &>/dev/null; then
+  curl --proto '=https' --tlsv1.2 --retry 10 --retry-connrefused --location --silent --show-error --fail https://sh.rustup.rs | sh -s -- --default-toolchain none -y
+  echo "$CARGO_HOME/bin" >> $GITHUB_PATH
+fi
+[CI/Build examples - Rust (stable) on ubuntu-22.04]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/1-composite-3.sh] user= workdir=
+[CI/Build examples - Rust (stable) on ubuntu-22.04]   | /var/run/act/workflow/1-composite-3.sh: line 4: curl: command not found
+[CI/Build examples - Rust (stable) on ubuntu-22.04]   ❌  Failure - Main : install rustup if needed
+if ! command -v rustup &>/dev/null; then
+  curl --proto '=https' --tlsv1.2 --retry 10 --retry-connrefused --location --silent --show-error --fail https://sh.rustup.rs | sh -s -- --default-toolchain none -y
+  echo "$CARGO_HOME/bin" >> $GITHUB_PATH
+fi
+ [172.38051ms]
+[CI/Build examples - Rust (stable) on ubuntu-22.04] exitcode '127': command not found, please refer to https://github.com/nektos/act/issues/107 for more information
+[CI/Build examples - Rust (stable) on ubuntu-22.04]   ⚙  ::set-output:: cachekey=
+[CI/Build examples - Rust (stable) on ubuntu-22.04]   ⚙  ::set-output:: name=stable
+[CI/Build examples - Rust (stable) on ubuntu-22.04]   ❌  Failure - Main dtolnay/rust-toolchain@stable [1.726839488s]
+[CI/Build examples - Rust (stable) on ubuntu-22.04] exitcode '127': command not found, please refer to https://github.com/nektos/act/issues/107 for more information
+[CI/Build examples - Rust (stable) on ubuntu-22.04] ⭐ Run Post dtolnay/rust-toolchain@stable
+[CI/Build examples - Rust (stable) on ubuntu-22.04]   🐳  docker cp src=/home/mnabil/.cache/act/dtolnay-rust-toolchain@stable/ dst=/var/run/act/actions/dtolnay-rust-toolchain@stable/
+[CI/Build examples - Rust (stable) on ubuntu-22.04]   ✅  Success - Post dtolnay/rust-toolchain@stable [200.287264ms]
+[CI/Build examples - Rust (stable) on ubuntu-22.04] ⭐ Run Complete job
+[CI/Build examples - Rust (stable) on ubuntu-22.04]   ✅  Success - Complete job
+[CI/Build examples - Rust (stable) on ubuntu-22.04] 🏁  Job failed
+Error: Job 'Build examples - Rust (${{ matrix.rust }}) on ${{ matrix.os }}' failed

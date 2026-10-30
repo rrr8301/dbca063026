@@ -1,0 +1,48 @@
+Error from docker build
+
+#1 [internal] load .dockerignore
+#1 transferring context: 2B done
+#1 DONE 0.1s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 1.11kB done
+#2 DONE 0.1s
+
+#3 [internal] load metadata for docker.io/library/ubuntu:22.04
+#3 DONE 0.1s
+
+#4 [ 1/11] FROM docker.io/library/ubuntu:22.04@sha256:4f838adc7181d9039ac795a7d0aba05a9bd9ecd480d294483169c5def983b64d
+#4 DONE 0.0s
+
+#5 [ 3/11] RUN apt-get update && apt-get install -y     git     curl     build-essential
+#5 CACHED
+
+#6 [ 2/11] RUN apt-get update && apt-get install -y tzdata && ln -fs /usr/share/zoneinfo/UTC /etc/localtime && dpkg-reconfigure --frontend noninteractive tzdata
+#6 CACHED
+
+#7 [ 4/11] RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain nightly
+#7 CACHED
+
+#8 [internal] load build context
+#8 transferring context: 258.41kB 0.1s done
+#8 DONE 0.2s
+
+#9 [ 5/11] RUN useradd -m testuser
+#9 DONE 0.6s
+
+#10 [ 6/11] RUN /bin/bash -c "source $HOME/.cargo/env && rustup default nightly"
+#10 0.355 /bin/bash: line 1: /home/testuser/.cargo/env: No such file or directory
+#10 ERROR: process "/bin/sh -c /bin/bash -c \"source $HOME/.cargo/env && rustup default nightly\"" did not complete successfully: exit code: 1
+------
+ > [ 6/11] RUN /bin/bash -c "source $HOME/.cargo/env && rustup default nightly":
+#10 0.355 /bin/bash: line 1: /home/testuser/.cargo/env: No such file or directory
+------
+Dockerfile:30
+--------------------
+  28 |     
+  29 |     # Set up Rust environment for the non-root user
+  30 | >>> RUN /bin/bash -c "source $HOME/.cargo/env && rustup default nightly"
+  31 |     
+  32 |     # Create work directory
+--------------------
+ERROR: failed to solve: process "/bin/sh -c /bin/bash -c \"source $HOME/.cargo/env && rustup default nightly\"" did not complete successfully: exit code: 1

@@ -1,0 +1,1077 @@
+# command: act pull_request -W .github/workflows/ci.yml --directory project_path/ratatui -j test-docs --matrix os:ubuntu-latest --matrix backend:crossterm
+
+time="2026-05-10T14:58:16-07:00" level=info msg="Using docker host 'unix:///var/run/docker.sock', and daemon socket 'unix:///var/run/docker.sock'"
+[Continuous Integration/Test Docs] ⭐ Run Set up job
+[Continuous Integration/Test Docs] 🚀  Start image=catthehacker/ubuntu:act-latest
+[Continuous Integration/Test Docs]   🐳  docker pull image=catthehacker/ubuntu:act-latest platform= username= forcePull=true
+[Continuous Integration/Test Docs] using DockerAuthConfig authentication for docker pull
+[Continuous Integration/Test Docs]   🐳  docker create image=catthehacker/ubuntu:act-latest platform= entrypoint=["tail" "-f" "/dev/null"] cmd=[] network="host"
+[Continuous Integration/Test Docs]   🐳  docker run image=catthehacker/ubuntu:act-latest platform= entrypoint=["tail" "-f" "/dev/null"] cmd=[] network="host"
+[Continuous Integration/Test Docs]   🐳  docker exec cmd=[node --no-warnings -e console.log(process.execPath)] user= workdir=
+[Continuous Integration/Test Docs]   ✅  Success - Set up job
+[Continuous Integration/Test Docs]   ☁  git clone 'https://github.com/dtolnay/rust-toolchain' # ref=f7ccc83f9ed1e5b9c81d8a67d7ad1a747e22a561
+[Continuous Integration/Test Docs] ⭐ Run Pre dtolnay/rust-toolchain@f7ccc83f9ed1e5b9c81d8a67d7ad1a747e22a561
+[Continuous Integration/Test Docs]   ✅  Success - Pre dtolnay/rust-toolchain@f7ccc83f9ed1e5b9c81d8a67d7ad1a747e22a561 [37.908416ms]
+[Continuous Integration/Test Docs]   ☁  git clone 'https://github.com/taiki-e/install-action' # ref=1e67dedb5e3c590e1c9d9272ace46ef689da250d
+[Continuous Integration/Test Docs] ⭐ Run Pre taiki-e/install-action@1e67dedb5e3c590e1c9d9272ace46ef689da250d
+[Continuous Integration/Test Docs]   ✅  Success - Pre taiki-e/install-action@1e67dedb5e3c590e1c9d9272ace46ef689da250d [42.401762ms]
+[Continuous Integration/Test Docs]   ☁  git clone 'https://github.com/Swatinem/rust-cache' # ref=779680da715d629ac1d338a641029a2f4372abb5
+[Continuous Integration/Test Docs] ⭐ Run Main actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+[Continuous Integration/Test Docs]   🐳  docker cp src=/scratch/raian-files/LLM4Build/project_path/ratatui/. dst=/scratch/raian-files/LLM4Build/project_path/ratatui
+[Continuous Integration/Test Docs]   ✅  Success - Main actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd [942.099498ms]
+[Continuous Integration/Test Docs] ⭐ Run Main dtolnay/rust-toolchain@f7ccc83f9ed1e5b9c81d8a67d7ad1a747e22a561
+[Continuous Integration/Test Docs]   🐳  docker cp src=/home/mnabil/.cache/act/dtolnay-rust-toolchain@f7ccc83f9ed1e5b9c81d8a67d7ad1a747e22a561/ dst=/var/run/act/actions/dtolnay-rust-toolchain@f7ccc83f9ed1e5b9c81d8a67d7ad1a747e22a561/
+[Continuous Integration/Test Docs] ⭐ Run Main : parse toolchain version
+if [[ -z $toolchain ]]; then
+  # GitHub does not enforce `required: true` inputs itself. https://github.com/actions/runner/issues/1070
+  echo "'toolchain' is a required input" >&2
+  exit 1
+elif [[ $toolchain =~ ^stable' '[0-9]+' '(year|month|week|day)s?' 'ago$ ]]; then
+  if [[ Linux == macOS ]]; then
+    echo "toolchain=1.$((($(date -v-$(sed 's/stable \([0-9]*\) \(.\).*/\1\2/' <<< $toolchain) +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT
+  else
+    echo "toolchain=1.$((($(date --date "${toolchain#stable }" +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT
+  fi
+elif [[ $toolchain =~ ^stable' 'minus' '[0-9]+' 'releases?$ ]]; then
+  echo "toolchain=1.$((($(date +%s)/60/60/24-16569)/7/6-${toolchain//[^0-9]/}))" >> $GITHUB_OUTPUT
+elif [[ $toolchain =~ ^1\.[0-9]+$ ]]; then
+  echo "toolchain=1.$((i=${toolchain#1.}, c=($(date +%s)/60/60/24-16569)/7/6, i+9*i*(10*i<=c)+90*i*(100*i<=c)))" >> $GITHUB_OUTPUT
+else
+  echo "toolchain=$toolchain" >> $GITHUB_OUTPUT
+fi
+[Continuous Integration/Test Docs]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/1-composite-parse.sh] user= workdir=
+[Continuous Integration/Test Docs]   ✅  Success - Main : parse toolchain version
+if [[ -z $toolchain ]]; then
+  # GitHub does not enforce `required: true` inputs itself. https://github.com/actions/runner/issues/1070
+  echo "'toolchain' is a required input" >&2
+  exit 1
+elif [[ $toolchain =~ ^stable' '[0-9]+' '(year|month|week|day)s?' 'ago$ ]]; then
+  if [[ Linux == macOS ]]; then
+    echo "toolchain=1.$((($(date -v-$(sed 's/stable \([0-9]*\) \(.\).*/\1\2/' <<< $toolchain) +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT
+  else
+    echo "toolchain=1.$((($(date --date "${toolchain#stable }" +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT
+  fi
+elif [[ $toolchain =~ ^stable' 'minus' '[0-9]+' 'releases?$ ]]; then
+  echo "toolchain=1.$((($(date +%s)/60/60/24-16569)/7/6-${toolchain//[^0-9]/}))" >> $GITHUB_OUTPUT
+elif [[ $toolchain =~ ^1\.[0-9]+$ ]]; then
+  echo "toolchain=1.$((i=${toolchain#1.}, c=($(date +%s)/60/60/24-16569)/7/6, i+9*i*(10*i<=c)+90*i*(100*i<=c)))" >> $GITHUB_OUTPUT
+else
+  echo "toolchain=$toolchain" >> $GITHUB_OUTPUT
+fi
+ [169.316515ms]
+[Continuous Integration/Test Docs]   ⚙  ::set-output:: toolchain=stable
+[Continuous Integration/Test Docs] ⭐ Run Main : construct rustup command line
+echo "targets=$(for t in ${targets//,/ }; do echo -n ' --target' $t; done)" >> $GITHUB_OUTPUT
+echo "components=$(for c in ${components//,/ }; do echo -n ' --component' $c; done)" >> $GITHUB_OUTPUT
+echo "downgrade=" >> $GITHUB_OUTPUT
+[Continuous Integration/Test Docs]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/1-composite-flags.sh] user= workdir=
+[Continuous Integration/Test Docs]   ✅  Success - Main : construct rustup command line
+echo "targets=$(for t in ${targets//,/ }; do echo -n ' --target' $t; done)" >> $GITHUB_OUTPUT
+echo "components=$(for c in ${components//,/ }; do echo -n ' --component' $c; done)" >> $GITHUB_OUTPUT
+echo "downgrade=" >> $GITHUB_OUTPUT
+ [154.196892ms]
+[Continuous Integration/Test Docs]   ⚙  ::set-output:: targets=
+[Continuous Integration/Test Docs]   ⚙  ::set-output:: components=
+[Continuous Integration/Test Docs]   ⚙  ::set-output:: downgrade=
+[Continuous Integration/Test Docs] ⭐ Run Main : set $CARGO_HOME
+echo CARGO_HOME=${CARGO_HOME:-"$HOME/.cargo"} >> $GITHUB_ENV
+[Continuous Integration/Test Docs]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/1-composite-2.sh] user= workdir=
+[Continuous Integration/Test Docs]   ✅  Success - Main : set $CARGO_HOME
+echo CARGO_HOME=${CARGO_HOME:-"$HOME/.cargo"} >> $GITHUB_ENV
+ [147.559976ms]
+[Continuous Integration/Test Docs]   ⚙  ::set-env:: CARGO_HOME=/root/.cargo
+[Continuous Integration/Test Docs] ⭐ Run Main : install rustup if needed
+if ! command -v rustup &>/dev/null; then
+  curl --proto '=https' --tlsv1.2 --retry 10 --retry-connrefused --location --silent --show-error --fail https://sh.rustup.rs | sh -s -- --default-toolchain none -y
+  echo "$CARGO_HOME/bin" >> $GITHUB_PATH
+fi
+[Continuous Integration/Test Docs]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/1-composite-3.sh] user= workdir=
+[Continuous Integration/Test Docs]   | info: downloading installer
+[Continuous Integration/Test Docs]   | warn: It looks like you have an existing rustup settings file at:
+[Continuous Integration/Test Docs]   | warn: /root/.rustup/settings.toml
+[Continuous Integration/Test Docs]   | warn: Rustup will install the default toolchain as specified in the settings file,
+[Continuous Integration/Test Docs]   | warn: instead of the one inferred from the default host triple.
+[Continuous Integration/Test Docs]   | info: profile set to default
+[Continuous Integration/Test Docs]   | info: default host triple is x86_64-unknown-linux-gnu
+[Continuous Integration/Test Docs]   | info: skipping toolchain installation
+[Continuous Integration/Test Docs]   | 
+[Continuous Integration/Test Docs]   | 
+[Continuous Integration/Test Docs]   | Rust is installed now. Great!
+[Continuous Integration/Test Docs]   | 
+[Continuous Integration/Test Docs]   | To get started you may need to restart your current shell.
+[Continuous Integration/Test Docs]   | This would reload your PATH environment variable to include
+[Continuous Integration/Test Docs]   | Cargo's bin directory ($HOME/.cargo/bin).
+[Continuous Integration/Test Docs]   | 
+[Continuous Integration/Test Docs]   | To configure your current shell, you need to source
+[Continuous Integration/Test Docs]   | the corresponding env file under $HOME/.cargo.
+[Continuous Integration/Test Docs]   | 
+[Continuous Integration/Test Docs]   | This is usually done by running one of the following (note the leading DOT):
+[Continuous Integration/Test Docs]   | . "$HOME/.cargo/env"            # For sh/bash/zsh/ash/dash/pdksh
+[Continuous Integration/Test Docs]   | source "$HOME/.cargo/env.fish"  # For fish
+[Continuous Integration/Test Docs]   | source "~/.cargo/env.nu"  # For nushell
+[Continuous Integration/Test Docs]   | source "$HOME/.cargo/env.tcsh"  # For tcsh
+[Continuous Integration/Test Docs]   | . "$HOME/.cargo/env.ps1"        # For pwsh
+[Continuous Integration/Test Docs]   | source "$HOME/.cargo/env.xsh"   # For xonsh
+[Continuous Integration/Test Docs]   ✅  Success - Main : install rustup if needed
+if ! command -v rustup &>/dev/null; then
+  curl --proto '=https' --tlsv1.2 --retry 10 --retry-connrefused --location --silent --show-error --fail https://sh.rustup.rs | sh -s -- --default-toolchain none -y
+  echo "$CARGO_HOME/bin" >> $GITHUB_PATH
+fi
+ [773.731208ms]
+[Continuous Integration/Test Docs]   ⚙  ::add-path:: /root/.cargo/bin
+[Continuous Integration/Test Docs] ⭐ Run Main rustup toolchain install stable
+[Continuous Integration/Test Docs]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/1-composite-5.sh] user= workdir=
+[Continuous Integration/Test Docs]   | info: syncing channel updates for stable-x86_64-unknown-linux-gnu
+[Continuous Integration/Test Docs]   | info: latest update on 2026-04-16 for version 1.95.0 (59807616e 2026-04-14)
+[Continuous Integration/Test Docs]   | info: downloading 3 components
+[Continuous Integration/Test Docs]   | 
+[Continuous Integration/Test Docs]   |   stable-x86_64-unknown-linux-gnu installed - rustc 1.95.0 (59807616e 2026-04-14)
+[Continuous Integration/Test Docs]   | 
+[Continuous Integration/Test Docs]   | info: default toolchain set to stable-x86_64-unknown-linux-gnu
+[Continuous Integration/Test Docs]   ✅  Success - Main rustup toolchain install stable [9.940588867s]
+[Continuous Integration/Test Docs] ⭐ Run Main rustup default stable
+[Continuous Integration/Test Docs]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/1-composite-6.sh] user= workdir=
+[Continuous Integration/Test Docs]   | info: using existing install for stable-x86_64-unknown-linux-gnu
+[Continuous Integration/Test Docs]   | info: default toolchain set to stable-x86_64-unknown-linux-gnu
+[Continuous Integration/Test Docs]   | 
+[Continuous Integration/Test Docs]   |   stable-x86_64-unknown-linux-gnu unchanged - rustc 1.95.0 (59807616e 2026-04-14)
+[Continuous Integration/Test Docs]   | 
+[Continuous Integration/Test Docs]   | info: note that the toolchain 'stable-x86_64-unknown-linux-gnu' is currently in use (overridden by '/scratch/raian-files/LLM4Build/project_path/ratatui/rust-toolchain.toml')
+[Continuous Integration/Test Docs]   ✅  Success - Main rustup default stable [204.512723ms]
+[Continuous Integration/Test Docs] ⭐ Run Main : create cachekey
+DATE=$(rustc +stable --version --verbose | sed -ne 's/^commit-date: \(20[0-9][0-9]\)-\([01][0-9]\)-\([0-3][0-9]\)$/\1\2\3/p')
+HASH=$(rustc +stable --version --verbose | sed -ne 's/^commit-hash: //p')
+echo "cachekey=$(echo $DATE$HASH | head -c12)" >> $GITHUB_OUTPUT
+[Continuous Integration/Test Docs]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/1-composite-rustc-version.sh] user= workdir=
+[Continuous Integration/Test Docs]   ✅  Success - Main : create cachekey
+DATE=$(rustc +stable --version --verbose | sed -ne 's/^commit-date: \(20[0-9][0-9]\)-\([01][0-9]\)-\([0-3][0-9]\)$/\1\2\3/p')
+HASH=$(rustc +stable --version --verbose | sed -ne 's/^commit-hash: //p')
+echo "cachekey=$(echo $DATE$HASH | head -c12)" >> $GITHUB_OUTPUT
+ [215.511188ms]
+[Continuous Integration/Test Docs]   ⚙  ::set-output:: cachekey=202604145980
+[Continuous Integration/Test Docs] ⭐ Run Main : disable incremental compilation
+if [ -z "${CARGO_INCREMENTAL+set}" ]; then
+  echo CARGO_INCREMENTAL=0 >> $GITHUB_ENV
+fi
+[Continuous Integration/Test Docs]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/1-composite-8.sh] user= workdir=
+[Continuous Integration/Test Docs]   ✅  Success - Main : disable incremental compilation
+if [ -z "${CARGO_INCREMENTAL+set}" ]; then
+  echo CARGO_INCREMENTAL=0 >> $GITHUB_ENV
+fi
+ [173.260236ms]
+[Continuous Integration/Test Docs]   ⚙  ::set-env:: CARGO_INCREMENTAL=0
+[Continuous Integration/Test Docs] ⭐ Run Main : enable colors in Cargo output
+if [ -z "${CARGO_TERM_COLOR+set}" ]; then
+  echo CARGO_TERM_COLOR=always >> $GITHUB_ENV
+fi
+[Continuous Integration/Test Docs]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/1-composite-9.sh] user= workdir=
+[Continuous Integration/Test Docs]   ✅  Success - Main : enable colors in Cargo output
+if [ -z "${CARGO_TERM_COLOR+set}" ]; then
+  echo CARGO_TERM_COLOR=always >> $GITHUB_ENV
+fi
+ [178.609583ms]
+[Continuous Integration/Test Docs]   ⚙  ::set-env:: CARGO_TERM_COLOR=always
+[Continuous Integration/Test Docs] ⭐ Run Main : enable Cargo sparse registry
+# implemented in 1.66, stabilized in 1.68, made default in 1.70
+if [ -z "${CARGO_REGISTRIES_CRATES_IO_PROTOCOL+set}" -o -f "/tmp"/.implicit_cargo_registries_crates_io_protocol ]; then
+  if rustc +stable --version --verbose | grep -q '^release: 1\.6[89]\.'; then
+    touch "/tmp"/.implicit_cargo_registries_crates_io_protocol || true
+    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse >> $GITHUB_ENV
+  elif rustc +stable --version --verbose | grep -q '^release: 1\.6[67]\.'; then
+    touch "/tmp"/.implicit_cargo_registries_crates_io_protocol || true
+    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=git >> $GITHUB_ENV
+  fi
+fi
+[Continuous Integration/Test Docs]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/1-composite-10.sh] user= workdir=
+[Continuous Integration/Test Docs]   ✅  Success - Main : enable Cargo sparse registry
+# implemented in 1.66, stabilized in 1.68, made default in 1.70
+if [ -z "${CARGO_REGISTRIES_CRATES_IO_PROTOCOL+set}" -o -f "/tmp"/.implicit_cargo_registries_crates_io_protocol ]; then
+  if rustc +stable --version --verbose | grep -q '^release: 1\.6[89]\.'; then
+    touch "/tmp"/.implicit_cargo_registries_crates_io_protocol || true
+    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse >> $GITHUB_ENV
+  elif rustc +stable --version --verbose | grep -q '^release: 1\.6[67]\.'; then
+    touch "/tmp"/.implicit_cargo_registries_crates_io_protocol || true
+    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=git >> $GITHUB_ENV
+  fi
+fi
+ [213.677624ms]
+[Continuous Integration/Test Docs] ⭐ Run Main : work around spurious network errors in curl 8.0
+# https://rust-lang.zulipchat.com/#narrow/stream/246057-t-cargo/topic/timeout.20investigation
+if rustc +stable --version --verbose | grep -q '^release: 1\.7[01]\.'; then
+  echo CARGO_HTTP_MULTIPLEXING=false >> $GITHUB_ENV
+fi
+[Continuous Integration/Test Docs]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/1-composite-11.sh] user= workdir=
+[Continuous Integration/Test Docs]   ✅  Success - Main : work around spurious network errors in curl 8.0
+# https://rust-lang.zulipchat.com/#narrow/stream/246057-t-cargo/topic/timeout.20investigation
+if rustc +stable --version --verbose | grep -q '^release: 1\.7[01]\.'; then
+  echo CARGO_HTTP_MULTIPLEXING=false >> $GITHUB_ENV
+fi
+ [173.399756ms]
+[Continuous Integration/Test Docs] ⭐ Run Main rustc +stable --version --verbose
+[Continuous Integration/Test Docs]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/1-composite-12.sh] user= workdir=
+[Continuous Integration/Test Docs]   | rustc 1.95.0 (59807616e 2026-04-14)
+[Continuous Integration/Test Docs]   | binary: rustc
+[Continuous Integration/Test Docs]   | commit-hash: 59807616e1fa2540724bfbac14d7976d7e4a3860
+[Continuous Integration/Test Docs]   | commit-date: 2026-04-14
+[Continuous Integration/Test Docs]   | host: x86_64-unknown-linux-gnu
+[Continuous Integration/Test Docs]   | release: 1.95.0
+[Continuous Integration/Test Docs]   | LLVM version: 22.1.2
+[Continuous Integration/Test Docs]   ✅  Success - Main rustc +stable --version --verbose [189.622339ms]
+[Continuous Integration/Test Docs]   ⚙  ::set-output:: cachekey=202604145980
+[Continuous Integration/Test Docs]   ⚙  ::set-output:: name=stable
+[Continuous Integration/Test Docs]   ✅  Success - Main dtolnay/rust-toolchain@f7ccc83f9ed1e5b9c81d8a67d7ad1a747e22a561 [13.730602696s]
+[Continuous Integration/Test Docs] ⭐ Run Main taiki-e/install-action@1e67dedb5e3c590e1c9d9272ace46ef689da250d
+[Continuous Integration/Test Docs]   🐳  docker cp src=/home/mnabil/.cache/act/taiki-e-install-action@1e67dedb5e3c590e1c9d9272ace46ef689da250d/ dst=/var/run/act/actions/taiki-e-install-action@1e67dedb5e3c590e1c9d9272ace46ef689da250d/
+[Continuous Integration/Test Docs] ⭐ Run Main set -eu
+if ! command -v bash >/dev/null; then
+  if grep -Eq '^ID=alpine' /etc/os-release; then
+    printf '::group::Install packages required for install-action (bash)\n'
+    # NB: sync with apk_install in main.sh
+    if command -v sudo >/dev/null; then
+      sudo apk --no-cache add bash
+    elif command -v doas >/dev/null; then
+      doas apk --no-cache add bash
+    else
+      apk --no-cache add bash
+    fi
+    printf '::endgroup::\n'
+  else
+    printf '::error::install-action requires bash\n'
+    exit 1
+  fi
+fi
+[Continuous Integration/Test Docs]   🐳  docker exec cmd=[sh -e /var/run/act/workflow/2-composite-0.sh] user= workdir=
+[Continuous Integration/Test Docs]   ✅  Success - Main set -eu
+if ! command -v bash >/dev/null; then
+  if grep -Eq '^ID=alpine' /etc/os-release; then
+    printf '::group::Install packages required for install-action (bash)\n'
+    # NB: sync with apk_install in main.sh
+    if command -v sudo >/dev/null; then
+      sudo apk --no-cache add bash
+    elif command -v doas >/dev/null; then
+      doas apk --no-cache add bash
+    else
+      apk --no-cache add bash
+    fi
+    printf '::endgroup::\n'
+  else
+    printf '::error::install-action requires bash\n'
+    exit 1
+  fi
+fi
+ [189.760417ms]
+[Continuous Integration/Test Docs] ⭐ Run Main bash --noprofile --norc "${GITHUB_ACTION_PATH:?}/main.sh"
+[Continuous Integration/Test Docs]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/2-composite-1.sh] user= workdir=
+[Continuous Integration/Test Docs]   | info: host platform: x86_64_linux
+[Continuous Integration/Test Docs]   | info: installing cargo-hack@latest
+[Continuous Integration/Test Docs]   | info: downloading https://github.com/taiki-e/cargo-hack/releases/download/v0.6.42/cargo-hack-x86_64-unknown-linux-musl.tar.gz
+[Continuous Integration/Test Docs]   | info: verifying sha256 checksum for cargo-hack-x86_64-unknown-linux-musl.tar.gz
+[Continuous Integration/Test Docs]   | info: cargo-hack installed at /root/.cargo/bin/cargo-hack
+[Continuous Integration/Test Docs]   | + cargo-hack hack --version
+[Continuous Integration/Test Docs]   | cargo-hack 0.6.42
+[Continuous Integration/Test Docs]   | 
+[Continuous Integration/Test Docs]   ✅  Success - Main bash --noprofile --norc "${GITHUB_ACTION_PATH:?}/main.sh" [1.122002199s]
+[Continuous Integration/Test Docs]   ✅  Success - Main taiki-e/install-action@1e67dedb5e3c590e1c9d9272ace46ef689da250d [2.233765099s]
+[Continuous Integration/Test Docs] ⭐ Run Main Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5
+[Continuous Integration/Test Docs]   🐳  docker cp src=/home/mnabil/.cache/act/Swatinem-rust-cache@779680da715d629ac1d338a641029a2f4372abb5/ dst=/var/run/act/actions/Swatinem-rust-cache@779680da715d629ac1d338a641029a2f4372abb5/
+[Continuous Integration/Test Docs]   🐳  docker exec cmd=[/opt/acttoolcache/node/24.15.0/x64/bin/node /var/run/act/actions/Swatinem-rust-cache@779680da715d629ac1d338a641029a2f4372abb5/dist/restore/index.js] user= workdir=
+[Continuous Integration/Test Docs]   | (node:348) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+[Continuous Integration/Test Docs]   | (Use `node --trace-deprecation ...` to show where the warning was created)
+[Continuous Integration/Test Docs]   ❓  ::group::Cache Configuration
+[Continuous Integration/Test Docs]   | Cache Provider:
+[Continuous Integration/Test Docs]   |     github
+[Continuous Integration/Test Docs]   | Workspaces:
+[Continuous Integration/Test Docs]   |     /scratch/raian-files/LLM4Build/project_path/ratatui
+[Continuous Integration/Test Docs]   | Cache Paths:
+[Continuous Integration/Test Docs]   |     /root/.cargo/bin
+[Continuous Integration/Test Docs]   |     /root/.cargo/.crates.toml
+[Continuous Integration/Test Docs]   |     /root/.cargo/.crates2.json
+[Continuous Integration/Test Docs]   |     /root/.cargo/registry
+[Continuous Integration/Test Docs]   |     /root/.cargo/git
+[Continuous Integration/Test Docs]   |     /scratch/raian-files/LLM4Build/project_path/ratatui/target
+[Continuous Integration/Test Docs]   | Restore Key:
+[Continuous Integration/Test Docs]   |     v0-rust-test-docs-Linux-x64-a5549a25
+[Continuous Integration/Test Docs]   | Cache Key:
+[Continuous Integration/Test Docs]   |     v0-rust-test-docs-Linux-x64-a5549a25-3d75feef
+[Continuous Integration/Test Docs]   | .. Prefix:
+[Continuous Integration/Test Docs]   |   - v0-rust-test-docs-Linux-x64
+[Continuous Integration/Test Docs]   | .. Environment considered:
+[Continuous Integration/Test Docs]   |   - Rust Version: 1.95.0 x86_64-unknown-linux-gnu (59807616e1fa2540724bfbac14d7976d7e4a3860)
+[Continuous Integration/Test Docs]   |   - CARGO_HOME
+[Continuous Integration/Test Docs]   |   - CARGO_INCREMENTAL
+[Continuous Integration/Test Docs]   |   - CARGO_TERM_COLOR
+[Continuous Integration/Test Docs]   | .. Lockfiles considered:
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/.cargo/config.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/Cargo.lock
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/advanced-widget-impl/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/async-github/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/calendar-explorer/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/canvas/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/chart/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/color-explorer/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/colors-rgb/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/constraint-explorer/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/constraints/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/custom-widget/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/demo/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/demo2/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/flex/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/gauge/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/hello-world/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/hyperlink/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/inline/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/input-form/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/minimal/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/modifiers/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/mouse-drawing/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/panic/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/popup/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/release-header/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/scrollbar/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/table/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/todo-list/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/tracing/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/user-input/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/volatility-surface/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/weather/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/apps/widget-ref-container/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/examples/concepts/state/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/ratatui-core/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/ratatui-crossterm/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/ratatui-macros/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/ratatui-termion/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/ratatui-termwiz/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/ratatui-widgets/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/ratatui/Cargo.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/rust-toolchain.toml
+[Continuous Integration/Test Docs]   |   - /scratch/raian-files/LLM4Build/project_path/ratatui/xtask/Cargo.toml
+[Continuous Integration/Test Docs]   ❓  ::endgroup::
+[Continuous Integration/Test Docs]   | 
+[Continuous Integration/Test Docs]   | ... Restoring cache ...
+[Continuous Integration/Test Docs]   | No cache found.
+[Continuous Integration/Test Docs]   ✅  Success - Main Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5 [933.570334ms]
+[Continuous Integration/Test Docs]   ⚙  ::set-env:: CACHE_ON_FAILURE=false
+[Continuous Integration/Test Docs]   ⚙  ::set-env:: CARGO_INCREMENTAL=0
+[Continuous Integration/Test Docs]   ⚙  ::set-output:: cache-hit=false
+[Continuous Integration/Test Docs] ⭐ Run Main cargo xtask test-docs
+[Continuous Integration/Test Docs]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/4] user= workdir=
+[Continuous Integration/Test Docs]   | [1m[92m    Updating[0m crates.io index
+[Continuous Integration/Test Docs]   | [1m[92m Downloading[0m crates ...
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m anstyle-query v1.1.4
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m cfg-if v1.0.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m owo-colors v4.2.2
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m indenter v0.3.4
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m eyre v0.6.12
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m utf8parse v0.2.2
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m sigchld v0.2.4
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m strsim v0.11.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m thread_local v1.1.9
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m log v0.4.27
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m tracing-core v0.1.36
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m clap_builder v4.5.56
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m proc-macro2 v1.0.101
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m tracing v0.1.44
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m rustc-demangle v0.1.26
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m tracing-subscriber v0.3.22
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m gimli v0.31.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m tracing-log v0.2.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m unicode-ident v1.0.18
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m tracing-attributes v0.1.31
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m signal-hook-registry v1.4.6
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m color-eyre v0.6.5
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m quote v1.0.40
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m is_terminal_polyfill v1.70.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m once_cell v1.21.3
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m signal-hook v0.3.18
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m object v0.36.7
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m nu-ansi-term v0.50.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m memchr v2.7.5
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m heck v0.5.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m smallvec v1.15.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m sharded-slab v0.1.7
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m syn v2.0.106
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m pin-project-lite v0.2.16
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m miniz_oxide v0.8.9
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m lazy_static v1.5.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m shared_child v1.1.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m colorchoice v1.0.4
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m color-spantrace v0.3.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m clap_lex v0.7.5
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m clap_derive v4.5.55
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m clap-verbosity-flag v3.0.4
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m tracing-error v0.2.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m shared_thread v0.2.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m os_pipe v1.2.2
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m duct v1.1.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m backtrace v0.3.75
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m addr2line v0.24.2
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m clap v4.5.56
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m anstream v0.6.20
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m anstyle-parse v0.2.7
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m anstyle v1.0.13
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m adler2 v2.0.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m libc v0.2.175
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m proc-macro2 v1.0.101
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m unicode-ident v1.0.18
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m libc v0.2.175
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m once_cell v1.21.3
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m cfg-if v1.0.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m lazy_static v1.5.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m utf8parse v0.2.2
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m signal-hook v0.3.18
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m log v0.4.27
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m owo-colors v4.2.2
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m pin-project-lite v0.2.16
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m anstyle v1.0.13
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m is_terminal_polyfill v1.70.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m colorchoice v1.0.4
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m anstyle-query v1.1.4
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m smallvec v1.15.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m nu-ansi-term v0.50.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m object v0.36.7
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m clap_lex v0.7.5
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m memchr v2.7.5
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m color-spantrace v0.3.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m heck v0.5.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m adler2 v2.0.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m eyre v0.6.12
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m strsim v0.11.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m gimli v0.31.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m indenter v0.3.4
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m rustc-demangle v0.1.26
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m shared_thread v0.2.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m sharded-slab v0.1.7
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m thread_local v1.1.9
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m anstyle-parse v0.2.7
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m tracing-core v0.1.36
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m miniz_oxide v0.8.9
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m anstream v0.6.20
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m clap_builder v4.5.56
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m tracing-log v0.2.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m quote v1.0.40
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m tracing-subscriber v0.3.22
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m signal-hook-registry v1.4.6
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m os_pipe v1.2.2
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m syn v2.0.106
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m sigchld v0.2.4
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m shared_child v1.1.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m duct v1.1.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m addr2line v0.24.2
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m backtrace v0.3.75
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m tracing-attributes v0.1.31
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m clap_derive v4.5.55
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m tracing v0.1.44
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m tracing-error v0.2.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m clap v4.5.56
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m clap-verbosity-flag v3.0.4
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m color-eyre v0.6.5
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m xtask v0.0.0 (/scratch/raian-files/LLM4Build/project_path/ratatui/xtask)
+[Continuous Integration/Test Docs]   | [1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 7.16s
+[Continuous Integration/Test Docs]   | [1m[92m     Running[0m `target/debug/xtask test-docs`
+[Continuous Integration/Test Docs]   | [32m INFO[0m [2mxtask[0m[2m:[0m running command: Cmd(["cargo", "hack", "--workspace", "--ignore-private", "--exclude", "ratatui-crossterm", "test", "--doc", "--all-features"])
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `xtask`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `advanced-widget-impl`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `async-github`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `calendar-explorer`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `canvas`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `chart`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `color-explorer`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `colors-rgb`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `constraint-explorer`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `constraints`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `custom-widget`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `demo`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `demo2`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `flex`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `gauge`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `hello-world`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `hyperlink`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `inline`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `input-form`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `minimal`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `modifiers`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `mouse-drawing`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `panic`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `popup`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `release-header`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `scrollbar`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `table`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `todo-list`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `tracing`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `user-input`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `volatility-surface`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `weather`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `widget-ref-container`
+[Continuous Integration/Test Docs]   | [0m[1minfo[0m[1m:[0m skipped running on private package `ratatui-state-examples`
+[Continuous Integration/Test Docs]   ❓  ::group::running `cargo test --doc --all-features` on ratatui (1/6)
+[Continuous Integration/Test Docs]   | [1m[92m Downloading[0m crates ...
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m castaway v0.2.4
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m ciborium v0.2.2
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m bytemuck v1.23.2
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m indoc v2.0.7
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m nom v7.1.3
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m getrandom v0.2.16
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m time-core v0.1.7
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m matchers v0.2.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m memmem v0.1.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m fixedbitset v0.4.2
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m ordered-float v4.6.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m mio v1.0.4
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m zmij v1.0.2
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m page_size v0.6.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m oorandom v11.1.5
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m palette_derive v0.7.6
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m tracing-appender v0.2.4
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m rand v0.9.2
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m wezterm-color-types v0.3.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m version_check v0.9.5
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m tokio-macros v2.6.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m rustversion v1.0.22
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m wezterm-dynamic v0.2.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m same-file v1.0.6
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m litrs v1.0.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m rstest v0.26.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m strum v0.27.2
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m winnow v0.7.12
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m serde_core v1.0.228
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m static_assertions v1.1.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m siphasher v1.0.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m thiserror v2.0.18
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m ucd-trie v0.1.7
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m phf_codegen v0.11.3
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m wezterm-dynamic-derive v0.1.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m phf_macros v0.11.3
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m hashbrown v0.16.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m uuid v0.8.2
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m wezterm-blob-leases v0.1.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m vtparse v0.6.2
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m fancy-regex v0.11.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m powerfmt v0.2.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m toml_datetime v0.6.11
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m rustc_version v0.4.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m thiserror-impl v2.0.18
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m zerocopy v0.8.26
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m wezterm-input-types v0.1.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m semver v1.0.26
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m relative-path v1.9.3
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m rand_core v0.6.4
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m walkdir v2.5.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m phf v0.11.3
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m tinytemplate v1.2.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m finl_unicode v1.3.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m rand v0.8.5
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m typenum v1.18.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m wezterm-bidi v0.2.3
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m yansi v1.0.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m plotters v0.3.7
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m unicode-segmentation v1.12.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m rayon v1.11.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m rayon-core v1.13.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m syn v1.0.109
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m portable-atomic v1.11.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m time v0.3.45
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m serde_json v1.0.149
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m parking_lot v0.12.4
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m serde v1.0.228
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m regex v1.11.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m unicode-width v0.2.2
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m regex-syntax v0.8.5
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m termwiz v0.23.3
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m uuid v1.18.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m toml_edit v0.22.27
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m serde_derive v1.0.228
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m rustix v1.0.8
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m rustix v0.38.44
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m rstest_macros v0.26.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m pretty_assertions v1.4.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m terminfo v0.9.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m termios v0.3.3
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m ppv-lite86 v0.2.21
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m pest_meta v2.8.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m time-macros v0.2.25
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m termion v4.0.6
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m regex-automata v0.4.9
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m rand_chacha v0.9.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m pest_generator v2.8.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m plotters-svg v0.3.7
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m pin-utils v0.1.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m itertools v0.13.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m hashbrown v0.15.5
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m simplerand v1.6.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m plotters-backend v0.3.7
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m nix v0.29.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m crossterm v0.28.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m linux-raw-sys v0.9.4
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m criterion v0.8.2
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m thiserror-impl v1.0.69
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m tokio v1.49.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m strum_macros v0.27.2
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m deltae v0.3.2
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m compact_str v0.9.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m indexmap v2.10.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m sha2 v0.10.9
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m thiserror v1.0.69
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m phf_generator v0.11.3
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m futures-channel v0.3.31
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m deranged v0.5.3
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m pest_derive v2.8.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m instability v0.3.10
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m ident_case v1.0.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m generic-array v0.14.7
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m fast-srgb8 v1.0.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m equivalent v1.0.2
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m crossbeam-epoch v0.9.18
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m ciborium-ll v0.2.2
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m block-buffer v0.10.4
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m bit-vec v0.6.3
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m signal-hook-mio v0.2.4
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m shlex v1.3.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m ryu v1.0.20
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m num-conv v0.1.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m cpufeatures v0.2.17
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m proc-macro-crate v3.3.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m portable-atomic-util v0.2.4
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m futures-timer v3.0.3
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m crossbeam-utils v0.8.21
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m base64 v0.22.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m itertools v0.14.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m crossbeam-deque v0.8.6
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m criterion-plot v0.8.2
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m convert_case v0.7.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m bit-set v0.5.3
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m ciborium-io v0.2.2
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m cfg_aliases v0.2.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m unicode-truncate v2.0.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m scopeguard v1.2.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m filedescriptor v0.8.3
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m euclid v0.22.11
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m phf_shared v0.11.3
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m slab v0.4.11
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m parking_lot_core v0.9.11
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m anes v0.1.6
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m num_threads v0.1.7
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m linux-raw-sys v0.4.15
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m numtoa v0.2.4
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m num-derive v0.4.2
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m crossterm v0.29.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m atomic v0.6.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m approx v0.5.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m anyhow v1.0.99
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m allocator-api2 v0.2.21
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m rand_core v0.9.3
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m pest v2.8.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m palette v0.7.6
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m memoffset v0.9.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m lru v0.16.3
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m itoa v1.0.15
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m diff v0.1.13
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m csscolorparser v0.6.2
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m aho-corasick v1.1.3
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m num-traits v0.2.19
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m line-clipping v0.3.5
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m futures-executor v0.3.31
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m derive_more v2.0.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m cc v1.2.33
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m autocfg v1.5.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m errno v0.3.13
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m darling_core v0.20.11
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m darling v0.20.11
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m bitflags v2.10.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m half v2.6.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m getrandom v0.3.3
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m futures-util v0.3.31
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m futures-macro v0.3.31
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m futures-core v0.3.31
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m futures v0.3.31
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m foldhash v0.2.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m fnv v1.0.7
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m either v1.15.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m darling_macro v0.20.11
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m document-features v0.2.12
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m mac_address v1.1.8
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m lock_api v0.4.13
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m lab v0.11.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m kasuari v0.4.11
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m glob v0.3.3
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m futures-task v0.3.31
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m futures-sink v0.3.31
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m fakeit v1.4.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m digest v0.10.7
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m futures-io v0.3.31
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m cast v0.3.0
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m bitflags v1.3.2
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m minimal-lexical v0.2.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m derive_more-impl v2.0.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m crossbeam-channel v0.5.15
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m hex v0.4.3
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m crypto-common v0.1.6
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m by_address v1.2.1
+[Continuous Integration/Test Docs]   | [1m[92m  Downloaded[0m alloca v0.4.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m libc v0.2.175
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m autocfg v1.5.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m memchr v2.7.5
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m serde_core v1.0.228
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m serde v1.0.228
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m siphasher v1.0.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m rand_core v0.6.4
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m thiserror v2.0.18
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m equivalent v1.0.2
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m unicode-segmentation v1.12.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m itoa v1.0.15
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m regex-syntax v0.8.5
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m either v1.15.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m fnv v1.0.7
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m rustversion v1.0.22
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m version_check v0.9.5
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m portable-atomic v1.11.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m typenum v1.18.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m thiserror v1.0.69
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m getrandom v0.3.3
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m foldhash v0.2.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m syn v1.0.109
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m allocator-api2 v0.2.21
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m portable-atomic-util v0.2.4
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m crossbeam-utils v0.8.21
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m ident_case v1.0.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m palette v0.7.6
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m by_address v1.2.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m signal-hook v0.3.18
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m futures-core v0.3.31
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m fast-srgb8 v1.0.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m ryu v1.0.20
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m indoc v2.0.7
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m unicode-width v0.2.2
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m static_assertions v1.1.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m cfg_aliases v0.2.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m semver v1.0.26
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m instability v0.3.10
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m parking_lot_core v0.9.11
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m ucd-trie v0.1.7
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m scopeguard v1.2.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m powerfmt v0.2.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m bytemuck v1.23.2
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m zerocopy v0.8.26
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m minimal-lexical v0.2.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m futures-sink v0.3.31
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m lab v0.11.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m bit-vec v0.6.3
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m zmij v1.0.2
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m rustix v0.38.44
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m time-core v0.1.7
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m anyhow v1.0.99
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m shlex v1.3.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m num_threads v0.1.7
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m cpufeatures v0.2.17
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m hashbrown v0.15.5
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m rustix v1.0.8
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m num-conv v0.1.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m futures-task v0.3.31
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m pin-utils v0.1.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m slab v0.4.11
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m linux-raw-sys v0.4.15
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m winnow v0.7.12
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m rayon-core v1.13.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m litrs v1.0.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m serde_json v1.0.149
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m bitflags v1.3.2
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m futures-io v0.3.31
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m deltae v0.3.2
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m linux-raw-sys v0.9.4
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m toml_datetime v0.6.11
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m rand v0.8.5
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m vtparse v0.6.2
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m half v2.6.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m plotters-backend v0.3.7
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m numtoa v0.2.4
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m finl_unicode v1.3.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m fixedbitset v0.4.2
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m hex v0.4.3
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m memmem v0.1.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m phf_shared v0.11.3
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m itertools v0.14.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m nix v0.29.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m bit-set v0.5.3
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m futures-channel v0.3.31
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m cc v1.2.33
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m base64 v0.22.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m ciborium-io v0.2.2
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m itertools v0.13.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m same-file v1.0.6
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m relative-path v1.9.3
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m glob v0.3.3
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m cast v0.3.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m simplerand v1.6.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m futures-timer v3.0.3
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m syn v2.0.106
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m num-traits v0.2.19
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m generic-array v0.14.7
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m memoffset v0.9.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m lock_api v0.4.13
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m convert_case v0.7.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m atomic v0.6.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m deranged v0.5.3
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m clap_builder v4.5.56
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m yansi v1.0.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m diff v0.1.13
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m anes v0.1.6
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m oorandom v11.1.5
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m aho-corasick v1.1.3
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m nom v7.1.3
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m plotters-svg v0.3.7
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m object v0.36.7
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m ciborium-ll v0.2.2
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m walkdir v2.5.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m hashbrown v0.16.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m indexmap v2.10.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m document-features v0.2.12
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m phf_generator v0.11.3
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m pretty_assertions v1.4.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m rustc_version v0.4.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m phf_codegen v0.11.3
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m castaway v0.2.4
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m terminfo v0.9.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m rstest_macros v0.26.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m crossbeam-epoch v0.9.18
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m crossbeam-channel v0.5.15
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m approx v0.5.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m ordered-float v4.6.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m euclid v0.22.11
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m plotters v0.3.7
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m lru v0.16.3
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m crossbeam-deque v0.8.6
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m alloca v0.4.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m block-buffer v0.10.4
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m crypto-common v0.1.6
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m criterion-plot v0.8.2
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m digest v0.10.7
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m toml_edit v0.22.27
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m rayon v1.11.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m sha2 v0.10.9
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m regex-automata v0.4.9
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m signal-hook-registry v1.4.6
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m mio v1.0.4
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m time v0.3.45
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m termios v0.3.3
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m getrandom v0.2.16
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m page_size v0.6.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m unicode-truncate v2.0.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m rand_core v0.9.3
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m uuid v0.8.2
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m parking_lot v0.12.4
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m clap v4.5.56
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m signal-hook-mio v0.2.4
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m ppv-lite86 v0.2.21
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m wezterm-dynamic-derive v0.1.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m bitflags v2.10.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m rand_chacha v0.9.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m line-clipping v0.3.5
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m rand v0.9.2
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m fakeit v1.4.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m proc-macro-crate v3.3.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m backtrace v0.3.75
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m darling_core v0.20.11
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m regex v1.11.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m serde_derive v1.0.228
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m thiserror-impl v2.0.18
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m phf_macros v0.11.3
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m thiserror-impl v1.0.69
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m palette_derive v0.7.6
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m strum_macros v0.27.2
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m tracing-attributes v0.1.31
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m derive_more-impl v2.0.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m futures-macro v0.3.31
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m num-derive v0.4.2
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m tokio-macros v2.6.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m mac_address v1.1.8
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m phf v0.11.3
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m tokio v1.49.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m csscolorparser v0.6.2
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m matchers v0.2.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m derive_more v2.0.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m futures-util v0.3.31
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m tracing v0.1.44
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m kasuari v0.4.11
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m pest v2.8.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m fancy-regex v0.11.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m wezterm-dynamic v0.2.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m filedescriptor v0.8.3
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m tracing-subscriber v0.3.22
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m darling_macro v0.20.11
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m wezterm-bidi v0.2.3
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m strum v0.27.2
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m darling v0.20.11
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m pest_meta v2.8.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m tracing-error v0.2.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m tracing-appender v0.2.4
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m color-spantrace v0.3.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m color-eyre v0.6.5
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m compact_str v0.9.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m uuid v1.18.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m wezterm-input-types v0.1.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m wezterm-color-types v0.3.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m termion v4.0.6
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m crossterm v0.29.0
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m crossterm v0.28.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m ciborium v0.2.2
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m tinytemplate v1.2.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m pest_generator v2.8.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m wezterm-blob-leases v0.1.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m futures-executor v0.3.31
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m rstest v0.26.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m criterion v0.8.2
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m futures v0.3.31
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m pest_derive v2.8.1
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m termwiz v0.23.3
+[Continuous Integration/Test Docs]   | [1m[92m   Compiling[0m ratatui-core v0.1.0 (/scratch/raian-files/LLM4Build/project_path/ratatui/ratatui-core)
+[Continuous Integration/Test Docs]   | [1m[91merror[E0277][0m[1m: the trait bound `EmbeddedStr: serde::Serialize` is not satisfied[0m
+[Continuous Integration/Test Docs]   |     [1m[94m--> [0mratatui-core/src/buffer/cell.rs:132:38
+[Continuous Integration/Test Docs]   |      [1m[94m|[0m
+[Continuous Integration/Test Docs]   | [1m[94m 132[0m [1m[94m|[0m #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+[Continuous Integration/Test Docs]   |      [1m[94m|[0m                                      [1m[91m^^^^^^^^^^^^^^^^[0m [1m[91munsatisfied trait bound[0m
+[Continuous Integration/Test Docs]   | [1m[94m 133[0m [1m[94m|[0m pub struct Cell {
+[Continuous Integration/Test Docs]   | [1m[94m 134[0m [1m[94m|[0m     /// The string to be drawn in the cell.
+[Continuous Integration/Test Docs]   |      [1m[94m|[0m     [1m[94m---------------------------------------[0m [1m[94mrequired by a bound introduced by this call[0m
+[Continuous Integration/Test Docs]   |      [1m[94m|[0m
+[Continuous Integration/Test Docs]   | [1m[96mhelp[0m: the trait `Serialize` is not implemented for `EmbeddedStr`
+[Continuous Integration/Test Docs]   |     [1m[94m--> [0mratatui-core/src/buffer/cell.rs:33:1
+[Continuous Integration/Test Docs]   |      [1m[94m|[0m
+[Continuous Integration/Test Docs]   | [1m[94m  33[0m [1m[94m|[0m pub struct EmbeddedStr {
+[Continuous Integration/Test Docs]   |      [1m[94m|[0m [1m[96m^^^^^^^^^^^^^^^^^^^^^^[0m
+[Continuous Integration/Test Docs]   |      [1m[94m= [0m[1mnote[0m: for local types consider adding `#[derive(serde::Serialize)]` to your `EmbeddedStr` type
+[Continuous Integration/Test Docs]   |      [1m[94m= [0m[1mnote[0m: for types from other crates check whether the crate offers a `serde` feature flag
+[Continuous Integration/Test Docs]   |      [1m[94m= [0m[1mhelp[0m: the following other types implement trait `Serialize`:
+[Continuous Integration/Test Docs]   |                &'a T
+[Continuous Integration/Test Docs]   |                &'a mut T
+[Continuous Integration/Test Docs]   |                ()
+[Continuous Integration/Test Docs]   |                (T,)
+[Continuous Integration/Test Docs]   |                (T0, T1)
+[Continuous Integration/Test Docs]   |                (T0, T1, T2)
+[Continuous Integration/Test Docs]   |                (T0, T1, T2, T3)
+[Continuous Integration/Test Docs]   |                (T0, T1, T2, T3, T4)
+[Continuous Integration/Test Docs]   |              and 108 others
+[Continuous Integration/Test Docs]   | [1m[92mnote[0m: required by a bound in `style::_::_serde::ser::SerializeStruct::serialize_field`
+[Continuous Integration/Test Docs]   |     [1m[94m--> [0m/root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_core-1.0.228/src/ser/mod.rs:1917:21
+[Continuous Integration/Test Docs]   |      [1m[94m|[0m
+[Continuous Integration/Test Docs]   | [1m[94m1915[0m [1m[94m|[0m     fn serialize_field<T>(&mut self, key: &'static str, value: &T) -> Result<(), Self::Error>
+[Continuous Integration/Test Docs]   |      [1m[94m|[0m        [1m[94m---------------[0m [1m[94mrequired by a bound in this associated function[0m
+[Continuous Integration/Test Docs]   | [1m[94m1916[0m [1m[94m|[0m     where
+[Continuous Integration/Test Docs]   | [1m[94m1917[0m [1m[94m|[0m         T: ?Sized + Serialize;
+[Continuous Integration/Test Docs]   |      [1m[94m|[0m                     [1m[92m^^^^^^^^^[0m [1m[92mrequired by this bound in `SerializeStruct::serialize_field`[0m
+[Continuous Integration/Test Docs]   |      [1m[94m= [0m[1mnote[0m: this error originates in the derive macro `serde::Serialize` (in Nightly builds, run with -Z macro-backtrace for more info)
+[Continuous Integration/Test Docs]   | 
+[Continuous Integration/Test Docs]   | [1m[91merror[E0277][0m[1m: the trait bound `EmbeddedStr: serde::Deserialize<'de>` is not satisfied[0m
+[Continuous Integration/Test Docs]   |     [1m[94m--> [0mratatui-core/src/buffer/cell.rs:137:13
+[Continuous Integration/Test Docs]   |      [1m[94m|[0m
+[Continuous Integration/Test Docs]   | [1m[94m 137[0m [1m[94m|[0m     symbol: EmbeddedStr,
+[Continuous Integration/Test Docs]   |      [1m[94m|[0m             [1m[91m^^^^^^^^^^^[0m [1m[91munsatisfied trait bound[0m
+[Continuous Integration/Test Docs]   |      [1m[94m|[0m
+[Continuous Integration/Test Docs]   | [1m[96mhelp[0m: the trait `Deserialize<'_>` is not implemented for `EmbeddedStr`
+[Continuous Integration/Test Docs]   |     [1m[94m--> [0mratatui-core/src/buffer/cell.rs:33:1
+[Continuous Integration/Test Docs]   |      [1m[94m|[0m
+[Continuous Integration/Test Docs]   | [1m[94m  33[0m [1m[94m|[0m pub struct EmbeddedStr {
+[Continuous Integration/Test Docs]   |      [1m[94m|[0m [1m[96m^^^^^^^^^^^^^^^^^^^^^^[0m
+[Continuous Integration/Test Docs]   |      [1m[94m= [0m[1mnote[0m: for local types consider adding `#[derive(serde::Deserialize)]` to your `EmbeddedStr` type
+[Continuous Integration/Test Docs]   |      [1m[94m= [0m[1mnote[0m: for types from other crates check whether the crate offers a `serde` feature flag
+[Continuous Integration/Test Docs]   |      [1m[94m= [0m[1mhelp[0m: the following other types implement trait `Deserialize<'de>`:
+[Continuous Integration/Test Docs]   |                &'a Path
+[Continuous Integration/Test Docs]   |                &'a [u8]
+[Continuous Integration/Test Docs]   |                &'a str
+[Continuous Integration/Test Docs]   |                ()
+[Continuous Integration/Test Docs]   |                (T,)
+[Continuous Integration/Test Docs]   |                (T0, T1)
+[Continuous Integration/Test Docs]   |                (T0, T1, T2)
+[Continuous Integration/Test Docs]   |                (T0, T1, T2, T3)
+[Continuous Integration/Test Docs]   |              and 113 others
+[Continuous Integration/Test Docs]   | [1m[92mnote[0m: required by a bound in `next_element`
+[Continuous Integration/Test Docs]   |     [1m[94m--> [0m/root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_core-1.0.228/src/de/mod.rs:1771:12
+[Continuous Integration/Test Docs]   |      [1m[94m|[0m
+[Continuous Integration/Test Docs]   | [1m[94m1769[0m [1m[94m|[0m     fn next_element<T>(&mut self) -> Result<Option<T>, Self::Error>
+[Continuous Integration/Test Docs]   |      [1m[94m|[0m        [1m[94m------------[0m [1m[94mrequired by a bound in this associated function[0m
+[Continuous Integration/Test Docs]   | [1m[94m1770[0m [1m[94m|[0m     where
+[Continuous Integration/Test Docs]   | [1m[94m1771[0m [1m[94m|[0m         T: Deserialize<'de>,
+[Continuous Integration/Test Docs]   |      [1m[94m|[0m            [1m[92m^^^^^^^^^^^^^^^^[0m [1m[92mrequired by this bound in `SeqAccess::next_element`[0m
+[Continuous Integration/Test Docs]   | 
+[Continuous Integration/Test Docs]   | [1m[91merror[E0277][0m[1m: the trait bound `EmbeddedStr: serde::Deserialize<'de>` is not satisfied[0m
+[Continuous Integration/Test Docs]   |     [1m[94m--> [0mratatui-core/src/buffer/cell.rs:137:13
+[Continuous Integration/Test Docs]   |      [1m[94m|[0m
+[Continuous Integration/Test Docs]   | [1m[94m 137[0m [1m[94m|[0m     symbol: EmbeddedStr,
+[Continuous Integration/Test Docs]   |      [1m[94m|[0m             [1m[91m^^^^^^^^^^^[0m [1m[91munsatisfied trait bound[0m
+[Continuous Integration/Test Docs]   |      [1m[94m|[0m
+[Continuous Integration/Test Docs]   | [1m[96mhelp[0m: the trait `Deserialize<'_>` is not implemented for `EmbeddedStr`
+[Continuous Integration/Test Docs]   |     [1m[94m--> [0mratatui-core/src/buffer/cell.rs:33:1
+[Continuous Integration/Test Docs]   |      [1m[94m|[0m
+[Continuous Integration/Test Docs]   | [1m[94m  33[0m [1m[94m|[0m pub struct EmbeddedStr {
+[Continuous Integration/Test Docs]   |      [1m[94m|[0m [1m[96m^^^^^^^^^^^^^^^^^^^^^^[0m
+[Continuous Integration/Test Docs]   |      [1m[94m= [0m[1mnote[0m: for local types consider adding `#[derive(serde::Deserialize)]` to your `EmbeddedStr` type
+[Continuous Integration/Test Docs]   |      [1m[94m= [0m[1mnote[0m: for types from other crates check whether the crate offers a `serde` feature flag
+[Continuous Integration/Test Docs]   |      [1m[94m= [0m[1mhelp[0m: the following other types implement trait `Deserialize<'de>`:
+[Continuous Integration/Test Docs]   |                &'a Path
+[Continuous Integration/Test Docs]   |                &'a [u8]
+[Continuous Integration/Test Docs]   |                &'a str
+[Continuous Integration/Test Docs]   |                ()
+[Continuous Integration/Test Docs]   |                (T,)
+[Continuous Integration/Test Docs]   |                (T0, T1)
+[Continuous Integration/Test Docs]   |                (T0, T1, T2)
+[Continuous Integration/Test Docs]   |                (T0, T1, T2, T3)
+[Continuous Integration/Test Docs]   |              and 113 others
+[Continuous Integration/Test Docs]   | [1m[92mnote[0m: required by a bound in `next_value`
+[Continuous Integration/Test Docs]   |     [1m[94m--> [0m/root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_core-1.0.228/src/de/mod.rs:1916:12
+[Continuous Integration/Test Docs]   |      [1m[94m|[0m
+[Continuous Integration/Test Docs]   | [1m[94m1914[0m [1m[94m|[0m     fn next_value<V>(&mut self) -> Result<V, Self::Error>
+[Continuous Integration/Test Docs]   |      [1m[94m|[0m        [1m[94m----------[0m [1m[94mrequired by a bound in this associated function[0m
+[Continuous Integration/Test Docs]   | [1m[94m1915[0m [1m[94m|[0m     where
+[Continuous Integration/Test Docs]   | [1m[94m1916[0m [1m[94m|[0m         V: Deserialize<'de>,
+[Continuous Integration/Test Docs]   |      [1m[94m|[0m            [1m[92m^^^^^^^^^^^^^^^^[0m [1m[92mrequired by this bound in `MapAccess::next_value`[0m
+[Continuous Integration/Test Docs]   | 
+[Continuous Integration/Test Docs]   | [1m[91merror[E0277][0m[1m: the trait bound `EmbeddedStr: serde::Deserialize<'de>` is not satisfied[0m
+[Continuous Integration/Test Docs]   |    [1m[94m--> [0mratatui-core/src/buffer/cell.rs:132:56
+[Continuous Integration/Test Docs]   |     [1m[94m|[0m
+[Continuous Integration/Test Docs]   | [1m[94m132[0m [1m[94m|[0m #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+[Continuous Integration/Test Docs]   |     [1m[94m|[0m                                                        [1m[91m^^^^^^^^^^^^^^^^^^[0m [1m[91munsatisfied trait bound[0m
+[Continuous Integration/Test Docs]   |     [1m[94m|[0m
+[Continuous Integration/Test Docs]   | [1m[96mhelp[0m: the trait `Deserialize<'_>` is not implemented for `EmbeddedStr`
+[Continuous Integration/Test Docs]   |    [1m[94m--> [0mratatui-core/src/buffer/cell.rs:33:1
+[Continuous Integration/Test Docs]   |     [1m[94m|[0m
+[Continuous Integration/Test Docs]   | [1m[94m 33[0m [1m[94m|[0m pub struct EmbeddedStr {
+[Continuous Integration/Test Docs]   |     [1m[94m|[0m [1m[96m^^^^^^^^^^^^^^^^^^^^^^[0m
+[Continuous Integration/Test Docs]   |     [1m[94m= [0m[1mnote[0m: for local types consider adding `#[derive(serde::Deserialize)]` to your `EmbeddedStr` type
+[Continuous Integration/Test Docs]   |     [1m[94m= [0m[1mnote[0m: for types from other crates check whether the crate offers a `serde` feature flag
+[Continuous Integration/Test Docs]   |     [1m[94m= [0m[1mhelp[0m: the following other types implement trait `Deserialize<'de>`:
+[Continuous Integration/Test Docs]   |               &'a Path
+[Continuous Integration/Test Docs]   |               &'a [u8]
+[Continuous Integration/Test Docs]   |               &'a str
+[Continuous Integration/Test Docs]   |               ()
+[Continuous Integration/Test Docs]   |               (T,)
+[Continuous Integration/Test Docs]   |               (T0, T1)
+[Continuous Integration/Test Docs]   |               (T0, T1, T2)
+[Continuous Integration/Test Docs]   |               (T0, T1, T2, T3)
+[Continuous Integration/Test Docs]   |             and 113 others
+[Continuous Integration/Test Docs]   | [1m[92mnote[0m: required by a bound in `style::_::_serde::__private228::de::missing_field`
+[Continuous Integration/Test Docs]   |    [1m[94m--> [0m/root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs:26:8
+[Continuous Integration/Test Docs]   |     [1m[94m|[0m
+[Continuous Integration/Test Docs]   | [1m[94m 24[0m [1m[94m|[0m pub fn missing_field<'de, V, E>(field: &'static str) -> Result<V, E>
+[Continuous Integration/Test Docs]   |     [1m[94m|[0m        [1m[94m-------------[0m [1m[94mrequired by a bound in this function[0m
+[Continuous Integration/Test Docs]   | [1m[94m 25[0m [1m[94m|[0m where
+[Continuous Integration/Test Docs]   | [1m[94m 26[0m [1m[94m|[0m     V: Deserialize<'de>,
+[Continuous Integration/Test Docs]   |     [1m[94m|[0m        [1m[92m^^^^^^^^^^^^^^^^[0m [1m[92mrequired by this bound in `missing_field`[0m
+[Continuous Integration/Test Docs]   |     [1m[94m= [0m[1mnote[0m: this error originates in the derive macro `serde::Deserialize` (in Nightly builds, run with -Z macro-backtrace for more info)
+[Continuous Integration/Test Docs]   | 
+[Continuous Integration/Test Docs]   | [1mFor more information about this error, try `rustc --explain E0277`.[0m
+[Continuous Integration/Test Docs]   | [1m[91merror[0m: could not compile `ratatui-core` (lib) due to 4 previous errors
+[Continuous Integration/Test Docs]   | [1m[33mwarning[0m: build failed, waiting for other jobs to finish...
+[Continuous Integration/Test Docs]   ❓  ::endgroup::
+[Continuous Integration/Test Docs]   | [0m[1m[31merror[0m[1m:[0m process didn't exit successfully: `/root/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/bin/cargo test --doc --all-features --manifest-path ratatui/Cargo.toml` (exit status: 101)
+[Continuous Integration/Test Docs]   | [31mERROR[0m [2mxtask[0m[2m:[0m failed to run command: Cmd(["cargo", "hack", "--workspace", "--ignore-private", "--exclude", "ratatui-crossterm", "test", "--doc", "--all-features"])
+[Continuous Integration/Test Docs]   | [31mERROR[0m [2mxtask[0m[2m:[0m command ["cargo", "hack", "--workspace", "--ignore-private", "--exclude", "ratatui-crossterm", "test", "--doc", "--all-features"] exited with code 1
+[Continuous Integration/Test Docs]   ❌  Failure - Main cargo xtask test-docs [21.036004773s]
+[Continuous Integration/Test Docs] exitcode '1': failure
+[Continuous Integration/Test Docs] ⭐ Run Post taiki-e/install-action@1e67dedb5e3c590e1c9d9272ace46ef689da250d
+[Continuous Integration/Test Docs]   🐳  docker cp src=/home/mnabil/.cache/act/taiki-e-install-action@1e67dedb5e3c590e1c9d9272ace46ef689da250d/ dst=/var/run/act/actions/taiki-e-install-action@1e67dedb5e3c590e1c9d9272ace46ef689da250d/
+[Continuous Integration/Test Docs]   ✅  Success - Post taiki-e/install-action@1e67dedb5e3c590e1c9d9272ace46ef689da250d [675.263494ms]
+[Continuous Integration/Test Docs] ⭐ Run Post dtolnay/rust-toolchain@f7ccc83f9ed1e5b9c81d8a67d7ad1a747e22a561
+[Continuous Integration/Test Docs]   🐳  docker cp src=/home/mnabil/.cache/act/dtolnay-rust-toolchain@f7ccc83f9ed1e5b9c81d8a67d7ad1a747e22a561/ dst=/var/run/act/actions/dtolnay-rust-toolchain@f7ccc83f9ed1e5b9c81d8a67d7ad1a747e22a561/
+[Continuous Integration/Test Docs]   ✅  Success - Post dtolnay/rust-toolchain@f7ccc83f9ed1e5b9c81d8a67d7ad1a747e22a561 [140.693428ms]
+[Continuous Integration/Test Docs] ⭐ Run Complete job
+[Continuous Integration/Test Docs]   ✅  Success - Complete job
+[Continuous Integration/Test Docs] 🏁  Job failed
+Error: Job 'Test Docs' failed

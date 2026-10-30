@@ -1,0 +1,47 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          3
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      ci (java, 8)
+  Test command(s) run in original CI:
+    $ python ./ci/run_ci.py java --version 8
+    $ mvn -T16 --batch-mode --no-transfer-progress test
+
+--- LLM-Generated Dockerfile ---
+  Base image:   python:3.8-slim
+  RUN steps:    6
+
+--- LLM run.sh Test Command(s) ---
+  $ pip install -r requirements.txt && python ./ci/run_ci.py java --version 8
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Maven] Test run mismatch: original=3007, LLM=1965
+  - [Maven] Test passed mismatch: original=1937, LLM=1911
+  - [Maven] Test skipped mismatch: original=1070, LLM=53
+  - [Maven] Test failed mismatch: original=0, LLM=1
+  - 1 test failed in LLM but not in original: testAccessorClassGC(org.apache.fory.builder.AccessorHelperTest)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    (Tests running with extensive WARN output from ForyBuilder about class registration not being forced)
+    testAccessorClassGC(org.apache.fory.builder.AccessorHelperTest) — FAILED
+
+  [Root cause classification]
+  - The LLM used `python:3.8-slim` as the base image (a Python-focused image) for a Java project, then installed JDK 8 (Temurin 8u302) and Maven 3.8.6 on top of it. While functional, this is an unusual configuration compared to the original CI, which ran on a standard GitHub-hosted ubuntu runner with Temurin 8.0.492+9.
+
+  - The significant difference in skipped tests (1070 original vs 53 LLM) suggests the original CI's `run_ci.py` script triggered a different configuration or test profile that caused many tests to be skipped in the original environment (likely integration tests skipped due to CI environment detection).
+
+  - The `testAccessorClassGC` failure in the LLM environment is likely a non-deterministic garbage collection timing issue that differs between the JDK minor version (8u302 used by LLM vs 8.0.492+9 used in original CI). Such GC-sensitive tests can be flaky across JVM versions.
+
+  - The total test count difference (3007 original vs 1965 LLM) could indicate that the `run_ci.py` script discovered and ran additional test modules in the original environment.
+
+--- Test Statistics Comparison ---
+  [Maven]
+    Original: 3007 run, 1937 passed, 0 failed, 1070 skipped
+    LLM:      1965 run, 1911 passed, 1 failed, 53 skipped

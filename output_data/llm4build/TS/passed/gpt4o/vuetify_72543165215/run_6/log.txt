@@ -1,0 +1,53 @@
+Error from docker build
+
+#1 [internal] load .dockerignore
+#1 transferring context: 83B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 1.00kB done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/ubuntu:24.04
+#3 DONE 0.2s
+
+#4 [1/9] FROM docker.io/library/ubuntu:24.04@sha256:c4a8d5503dfb2a3eb8ab5f807da5bc69a85730fb49b5cfca2330194ebcc41c7b
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 241.72kB 0.3s done
+#5 DONE 0.3s
+
+#6 [2/9] RUN ln -snf /usr/share/zoneinfo/America/Los_Angeles /etc/localtime && echo America/Los_Angeles > /etc/timezone
+#6 CACHED
+
+#7 [3/9] RUN apt-get update && apt-get install -y     git     curl     wget     libatomic1     && rm -rf /var/lib/apt/lists/*
+#7 CACHED
+
+#8 [4/9] RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash     && . /root/.nvm/nvm.sh     && nvm install node     && nvm use node     && npm install -g pnpm
+#8 CACHED
+
+#9 [5/9] WORKDIR /app
+#9 CACHED
+
+#10 [6/9] COPY . .
+#10 DONE 1.7s
+
+#11 [7/9] RUN /bin/bash -c "source /root/.nvm/nvm.sh && pnpm exec playwright install chromium"
+#11 6.145 undefined
+#11 6.146  ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL  Command "playwright" not found
+#11 ERROR: process "/bin/sh -c /bin/bash -c \"source $NVM_DIR/nvm.sh && pnpm exec playwright install chromium\"" did not complete successfully: exit code: 254
+------
+ > [7/9] RUN /bin/bash -c "source /root/.nvm/nvm.sh && pnpm exec playwright install chromium":
+#11 6.145 undefined
+#11 6.146  ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL  Command "playwright" not found
+------
+Dockerfile:33
+--------------------
+  31 |     
+  32 |     # Install Playwright Chromium
+  33 | >>> RUN /bin/bash -c "source $NVM_DIR/nvm.sh && pnpm exec playwright install chromium"
+  34 |     
+  35 |     # Copy run.sh and set as entrypoint
+--------------------
+ERROR: failed to solve: process "/bin/sh -c /bin/bash -c \"source $NVM_DIR/nvm.sh && pnpm exec playwright install chromium\"" did not complete successfully: exit code: 254

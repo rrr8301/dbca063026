@@ -1,0 +1,36 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          3
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      test (1.25.x)
+  Test command(s) run in original CI:
+    $ make test COVERAGE_DIR=/tmp/coverage
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ make test COVERAGE_DIR=/tmp/coverage
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoDefault] Test run mismatch: original=945, LLM=585
+  - [GoDefault] Test passed mismatch: original=945, LLM=299
+  - [GoDefault] Test failed mismatch: original=0, LLM=14
+  - [GoDefault] 14 test(s) failed in LLM but not in original: github.com/golang-migrate/migrate/v4/database/cassandra, github.com/golang-migrate/migrate/v4/database/clickhouse, github.com/golang-migrate/migrate/v4/database/cockroachdb, github.com/golang-migrate/migrate/v4/database/firebird, github.com/golang-migrate/migrate/v4/database/mongodb ... (+9 more)
+
+--- Root Cause Analysis ---
+  - [GoDefault] LLM ran 360 fewer tests than original — LLM likely used a narrower test scope or missed some test suites.
+  - [GoDefault] 14 test(s) failed in LLM but not original: github.com/golang-migrate/migrate/v4/database/cassandra, github.com/golang-migrate/migrate/v4/database/clickhouse, github.com/golang-migrate/migrate/v4/database/cockroachdb, github.com/golang-migrate/migrate/v4/database/firebird, github.com/golang-migrate/migrate/v4/database/mongodb ... (+9 more)
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 945 run, 945 passed, 0 failed, 0 skipped
+    LLM:      585 run, 299 passed, 14 failed, 0 skipped

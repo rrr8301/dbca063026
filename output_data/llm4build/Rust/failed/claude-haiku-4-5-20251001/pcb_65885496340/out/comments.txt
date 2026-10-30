@@ -1,0 +1,95 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          6
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Test (Ubuntu)
+  Platform:         GitHub Actions Ubuntu (x86_64; with internet access to github.com)
+  Test command(s) run in original CI:
+    $ cargo nextest run --workspace --profile ci --locked
+      (1123 nextest tests; 6 failed — insta snapshot assertions in pcb-zen-core)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu/rust-based (x86_64)
+  Architecture: x86_64 (Docker)
+  RUN steps:    several
+
+--- LLM run.sh Test Command(s) ---
+  $ cargo nextest run --workspace ...
+    (1123 nextest tests; 195 failed — snapshot failures + github.com/diodeinc/stdlib unreachable)
+
+--- Reason(s) for Non-Reproducibility ---
+  - [nexttest] Same test count (1123) but 195 LLM failures vs 6 original
+  - 6 common failures: pcb-zen-core::input config_convert_* insta snapshots (pre-existing)
+  - 189 additional LLM failures: all fail to fetch github.com/diodeinc/stdlib via git sparse checkout
+  - Docker container cannot reach github.com/diodeinc/stdlib (git binary not found or no network)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > thread 'test_locked_ignores_kicad_entries_in_lockfile' panicked at
+    >   crates/pcb-test-utils/src/sandbox.rs:665:10:
+    > called `Result::unwrap()` on an `Err` value:
+    >   Failed to fetch github.com/diodeinc/stdlib via git sparse checkout
+    >
+    > Caused by:
+    >   No such file or directory (os error 2)
+    >
+    > [same error pattern for all 189 additional failing tests]
+
+  [Actual error messages from original CI log]
+    > thread 'config_convert_preserves_correct_types' panicked at insta-1.43.1/src/runtime.rs:679:13:
+    > snapshot assertion for 'config_convert_preserves_correct_types' failed in line 473
+
+  [Root cause classification]
+  Two distinct failure causes produce 195 LLM failures vs 6 original:
+
+  (1) Pre-existing: 6 insta snapshot failures (both original CI and LLM)
+    The `pcb-zen-core::input` test group tests config conversion, I/O, and type inference
+    using the `insta` crate for snapshot comparisons. Six tests fail because committed
+    snapshots at `crates/pcb-zen-core/tests/snapshots/` no longer match current output:
+    - config_convert_preserves_correct_types
+    - config_convert_with_enum
+    - config_convert_chain
+    - config_convert_with_default
+    - config_with_convert_function
+    - io_config_with_help_text
+    These represent a pre-existing snapshot regression where the implementation changed
+    but the reference snapshots weren't updated.
+
+  (2) git sparse checkout of diodeinc/stdlib fails in Docker (LLM only — 189 failures)
+    The pcb project's integration tests in `pcb-test-utils/src/sandbox.rs` set up test
+    sandbox environments that fetch the `stdlib` library from `github.com/diodeinc/stdlib`
+    via `git sparse-checkout`. The test infrastructure at `sandbox.rs:665` calls `.unwrap()`
+    on the fetch result, which panics when it fails with:
+      `Failed to fetch github.com/diodeinc/stdlib via git sparse checkout: No such file or directory (os error 2)`
+
+    The `No such file or directory (os error 2)` error indicates that `git` binary itself
+    cannot be found in PATH when the test subprocess tries to invoke `git sparse-checkout`.
+    The Docker container either doesn't have git installed, has it at a non-standard PATH
+    that isn't inherited by the test subprocess, or the test environment's sandbox
+    isolation removes PATH entirely.
+
+    On GitHub Actions, git is pre-installed system-wide and available in PATH for all
+    subprocesses. All 189 tests that use the git sandbox to fetch `diodeinc/stdlib` pass
+    on the original CI.
+
+    The impacted test modules include: pcb::auto_deps, pcb::bom, pcb::build,
+    pcb::electrical_checks, pcb::info, pcb::moved, pcb::netlist, pcb::path, pcb::release,
+    pcb::simple, pcb::tag, pcb::test_bench, pcb-layout, pcb-test-utils, pcb-zen, and
+    pcb-zen-core — essentially every test that spawns a git-based sandbox environment.
+
+--- Test Statistics Comparison ---
+  [nexttest]
+    Original: 1123 run, 1116 passed, 6 failed, 1 skipped
+      (6 failures: pcb-zen-core::input config_convert_* — insta snapshot regressions)
+    LLM:      1123 run, 927 passed, 195 failed, 1 skipped
+      (6 pre-existing insta snapshot failures +
+       189 new failures: git sparse checkout of github.com/diodeinc/stdlib — git not in PATH)
+  [cargo binary capture]
+    Original: 360 run, 0 passed, 12 failed, 348 skipped
+    LLM:      4914 run, 0 passed, 195 failed (different cargo binary scope)

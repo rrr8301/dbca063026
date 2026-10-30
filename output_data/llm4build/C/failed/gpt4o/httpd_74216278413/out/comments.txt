@@ -1,0 +1,34 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          20
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT TESTS NOT REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      HTTP/2 test suite
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    3
+
+--- Test Reproducibility Gap ---
+  Original ran 326 test(s) across [pytest].
+  LLM build produced no test results (empty llm_log_stats).
+
+--- Root Cause ---
+  Reason type: Build configuration failure (APR dependency not found)
+  Key error(s) from build/test log:
+    > configure: error: the --with-apr parameter is incorrect. It must specify an install prefix, a build directory, or an apr-config file.
+    > (APR 1.7.4 built successfully but installed to /root/root/apr-1.7.4 which configure cannot locate)
+
+  [Root cause classification]
+  - The LLM run.sh builds Apache Portable Runtime (APR) from source and installs it to /root/root/apr-1.7.4, but Apache httpd's configure script rejects this path with "the --with-apr parameter is incorrect" because the install layout does not match what the configure script expects. The httpd HTTP/2 test suite requires APR and APR-util to be properly installed before httpd can be built, so httpd never compiles and no tests run.
+  - The original CI uses ubuntu-24.04's GitHub Actions environment with APR already available as a system package or pre-built artifact, plus a dedicated test infrastructure with Python/pytest for the HTTP/2 suite. The LLM attempted to build APR from source in a ubuntu:22.04 container but produced an APR installation that httpd's autoconf-based build system could not locate via the --with-apr flag.
+  - Since httpd never builds successfully, the pytest-based HTTP/2 test suite (which tests live Apache server behavior over real network sockets) produces zero results. The ubuntu:22.04 base image instead of ubuntu:24.04 also introduces potential APR/APR-util version incompatibilities for HTTP/2 module support.
+
+--- Original Test Statistics (not reproduced) ---
+  [pytest] 326 run, 318 passed, 1 failed, 7 skipped

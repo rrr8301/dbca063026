@@ -1,0 +1,20 @@
+{
+ "model": "claude-haiku-4-5-20251001",
+ "content": "```yamlfile\nname: Java CI\n\non:\n  push:\n    branches:\n      - main\n      - \"releases/**\"\n      - \"deploy/**\"\n      - \"test*\"\n    tags:\n      - v*\n  pull_request:\n    paths-ignore:\n      - \"**/*.md\"\n      - \"LICENSE\"\n      - \".vscode/**\"\n      - \".gitignore\"\n      - \"licenses/**\"\n      - \"DISCLAIMER\"\n      - \"NOTICE\"\n    types: [\"opened\", \"reopened\", \"synchronize\"]\n\nconcurrency:\n  group: ${{ github.workflow }}-${{ github.ref }}\n  cancel-in-progress: true\n\njobs:\n  java:\n    name: Java CI (8)\n    runs-on: ubuntu-latest\n    env:\n      MY_VAR: \"PATH\"\n    steps:\n      - uses: actions/checkout@v5\n      \n      - name: Set up JDK 8\n        uses: actions/setup-java@v4\n        with:\n          java-version: 8\n          distribution: \"temurin\"\n      \n      - name: Cache Maven local repository\n        uses: actions/cache@v4\n        with:\n          path: ~/.m2/repository\n          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}\n          restore-keys: |\n            ${{ runner.os }}-maven-\n      \n      - name: Set up Python3.8\n        uses: actions/setup-python@v5\n        with:\n          python-version: 3.8\n          cache: \"pip\"\n      \n      - name: Run CI with Maven\n        run: python ./ci/run_ci.py java --version 8\n      \n      - name: Upload Test Report\n        uses: actions/upload-artifact@v4\n        if: ${{ !cancelled() }}\n        with:\n          name: test-reports-8\n          path: |\n            **/target/surefire-reports/**\n            **/hs_err*.log\n```",
+ "reduced_yaml": "name: Java CI\n\non:\n  push:\n    branches:\n      - main\n      - \"releases/**\"\n      - \"deploy/**\"\n      - \"test*\"\n    tags:\n      - v*\n  pull_request:\n    paths-ignore:\n      - \"**/*.md\"\n      - \"LICENSE\"\n      - \".vscode/**\"\n      - \".gitignore\"\n      - \"licenses/**\"\n      - \"DISCLAIMER\"\n      - \"NOTICE\"\n    types: [\"opened\", \"reopened\", \"synchronize\"]\n\nconcurrency:\n  group: ${{ github.workflow }}-${{ github.ref }}\n  cancel-in-progress: true\n\njobs:\n  java:\n    name: Java CI (8)\n    runs-on: ubuntu-latest\n    env:\n      MY_VAR: \"PATH\"\n    steps:\n      - uses: actions/checkout@v5\n      \n      - name: Set up JDK 8\n        uses: actions/setup-java@v4\n        with:\n          java-version: 8\n          distribution: \"temurin\"\n      \n      - name: Cache Maven local repository\n        uses: actions/cache@v4\n        with:\n          path: ~/.m2/repository\n          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}\n          restore-keys: |\n            ${{ runner.os }}-maven-\n      \n      - name: Set up Python3.8\n        uses: actions/setup-python@v5\n        with:\n          python-version: 3.8\n          cache: \"pip\"\n      \n      - name: Run CI with Maven\n        run: python ./ci/run_ci.py java --version 8\n      \n      - name: Upload Test Report\n        uses: actions/upload-artifact@v4\n        if: ${{ !cancelled() }}\n        with:\n          name: test-reports-8\n          path: |\n            **/target/surefire-reports/**\n            **/hs_err*.log",
+ "input_tokens": 18787,
+ "output_tokens": 493,
+ "cost_usd": 0.017002,
+ "seconds": 4.67,
+ "prompt_sha256": "14c295556133bb95be700ce9fa332dd245b631203b84e25ba12007b887dd4095",
+ "completed_steps": [
+  "Set up job",
+  "Run actions/checkout@v5",
+  "Set up JDK 8",
+  "Cache Maven local repository",
+  "Set up Python3.8",
+  "Run CI with Maven",
+  "Upload Test Report",
+  "Complete job"
+ ]
+}

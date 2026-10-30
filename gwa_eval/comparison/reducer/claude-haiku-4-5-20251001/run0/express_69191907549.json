@@ -1,0 +1,21 @@
+{
+ "model": "claude-haiku-4-5-20251001",
+ "content": "```yamlfile\nname: ci\n\non:\n  push:\n    branches:\n      - master\n      - develop\n      - '4.x'\n      - '5.x'\n    paths-ignore:\n      - '*.md'\n  pull_request:\n    paths-ignore:\n      - '*.md'\n\npermissions:\n  contents: read\n\nconcurrency:\n  group: \"${{ github.workflow }} \u2728 ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}\"\n  cancel-in-progress: true\n\njobs:\n  test:\n    name: Run tests (ubuntu-latest, 23)\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n        with:\n          persist-credentials: false\n\n      - name: Setup Node.js 23\n        uses: actions/setup-node@v4\n        with:\n          node-version: '23'\n\n      - name: Configure npm loglevel\n        run: |\n          npm config set loglevel error\n        shell: bash\n\n      - name: Install dependencies\n        run: npm install\n\n      - name: Remove non-test dependencies\n        run: npm rm --silent --save-dev connect-redis\n\n      - name: Output Node and NPM versions\n        run: |\n          echo \"Node.js version: $(node -v)\"\n          echo \"NPM version: $(npm -v)\"\n\n      - name: Run tests\n        shell: bash\n        run: npm run test-ci\n```",
+ "reduced_yaml": "name: ci\n\non:\n  push:\n    branches:\n      - master\n      - develop\n      - '4.x'\n      - '5.x'\n    paths-ignore:\n      - '*.md'\n  pull_request:\n    paths-ignore:\n      - '*.md'\n\npermissions:\n  contents: read\n\nconcurrency:\n  group: \"${{ github.workflow }} \u2728 ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}\"\n  cancel-in-progress: true\n\njobs:\n  test:\n    name: Run tests (ubuntu-latest, 23)\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n        with:\n          persist-credentials: false\n\n      - name: Setup Node.js 23\n        uses: actions/setup-node@v4\n        with:\n          node-version: '23'\n\n      - name: Configure npm loglevel\n        run: |\n          npm config set loglevel error\n        shell: bash\n\n      - name: Install dependencies\n        run: npm install\n\n      - name: Remove non-test dependencies\n        run: npm rm --silent --save-dev connect-redis\n\n      - name: Output Node and NPM versions\n        run: |\n          echo \"Node.js version: $(node -v)\"\n          echo \"NPM version: $(npm -v)\"\n\n      - name: Run tests\n        shell: bash\n        run: npm run test-ci",
+ "input_tokens": 1927,
+ "output_tokens": 363,
+ "cost_usd": 0.002994,
+ "seconds": 3.29,
+ "prompt_sha256": "43486335cf69d96f8252cf2635004ea86b23b9090c0837d5a7596dcb3305d06d",
+ "completed_steps": [
+  "Set up job",
+  "Run actions/checkout@v4",
+  "Setup Node.js 23",
+  "Configure npm loglevel",
+  "Install dependencies",
+  "Remove non-test dependencies",
+  "Output Node and NPM versions",
+  "Run tests",
+  "Complete job"
+ ]
+}

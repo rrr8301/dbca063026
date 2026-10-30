@@ -1,0 +1,35 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          20
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT TESTS NOT REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      test
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    6
+
+--- Test Reproducibility Gap ---
+  Original ran 6759 test(s) across [GoRace].
+  LLM build produced no test results (empty llm_log_stats).
+
+--- Root Cause ---
+  Reason type: Test runner executed but produced no parseable output
+  Last log output before stopping:
+    [sqlc-test-setup] 21:32:42 mysql 9 installed successfully
+    [sqlc-test-setup] 21:32:42 === Install complete ===
+    * Starting PostgreSQL 16 database server
+    ...done.
+    mysql: unrecognized service
+    mysql-server: unrecognized service
+    mysql-community-server: unrecognized service
+    /app/run.sh: line 16: gotestsum: command not found
+
+--- Original Test Statistics (not reproduced) ---
+  [GoRace] 6759 run, 6648 passed, 0 failed, 111 skipped

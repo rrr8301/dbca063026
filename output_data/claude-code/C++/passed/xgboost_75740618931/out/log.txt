@@ -1,0 +1,89 @@
++ export ASAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer
++ ASAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer
++ export ASAN_OPTIONS=symbolize=1
++ ASAN_OPTIONS=symbolize=1
++ export UBSAN_OPTIONS=print_stacktrace=1:log_path=ubsan_error.log
++ UBSAN_OPTIONS=print_stacktrace=1:log_path=ubsan_error.log
++ sysctl vm.mmap_rnd_bits=28
+vm.mmap_rnd_bits = 28
++ rm -fv dmlc-core/include/dmlc/build_config_default.h
+removed 'dmlc-core/include/dmlc/build_config_default.h'
++ bash ops/pipeline/build-cpu.sh cpu-sanitizer
++ [[ 1 -lt 1 ]]
++ suite=cpu-sanitizer
++ mkdir -p build
++ pushd build
+/app/build /app
++ case "${suite}" in
++ echo '--- Build and test XGBoost with sanitizer'
+--- Build and test XGBoost with sanitizer
++ cmake .. -GNinja -DHIDE_CXX_SYMBOLS=ON -DGOOGLE_TEST=ON -DUSE_DMLC_GTEST=ON -DENABLE_ALL_WARNINGS=ON -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache -DCMAKE_COMPILE_WARNING_AS_ERROR=OFF -DUSE_SANITIZER=ON '-DENABLED_SANITIZERS=address;leak;undefined' -DCMAKE_BUILD_TYPE=Debug -DSANITIZER_PATH=/usr/lib/x86_64-linux-gnu/
+-- The CXX compiler identification is GNU 11.4.0
+-- The C compiler identification is GNU 11.4.0
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/cc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- CMake version 3.22.1
+-- Performing Test XGBOOST_MM_PREFETCH_PRESENT
+-- Performing Test XGBOOST_MM_PREFETCH_PRESENT - Success
+-- Performing Test XGBOOST_BUILTIN_PREFETCH_PRESENT
+-- Performing Test XGBOOST_BUILTIN_PREFETCH_PRESENT - Success
+-- xgboost VERSION: 3.3.0
+CMake Warning (dev) at /usr/share/cmake-3.22/Modules/CMakeDependentOption.cmake:84 (message):
+  Policy CMP0127 is not set: cmake_dependent_option() supports full Condition
+  Syntax.  Run "cmake --help-policy CMP0127" for policy details.  Use the
+  cmake_policy command to set the policy and suppress this warning.
+Call Stack (most recent call first):
+  CMakeLists.txt:96 (cmake_dependent_option)
+This warning is for project developers.  Use -Wno-dev to suppress it.
+
+Sanitizers: address;leak;undefined
+-- Found ASan: /usr/lib/x86_64-linux-gnu/libasan.so.6  
+-- Found LSan: /usr/lib/x86_64-linux-gnu/liblsan.so.0  
+-- Found UBSan: /usr/lib/x86_64-linux-gnu/libubsan.so.1  
+Sanitizers compile flags:  -fsanitize=address -fsanitize=leak -fsanitize=undefined -fno-sanitize-recover=undefined
+-- Looking for pthread.h
+-- Looking for pthread.h - found
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+-- Found Threads: TRUE  
+-- Found OpenMP_C: -fopenmp (found version "4.5") 
+-- Found OpenMP_CXX: -fopenmp (found version "4.5") 
+-- Found OpenMP: TRUE (found version "4.5") found components: C CXX 
+-- Found OpenMP_C: -fopenmp (found version "4.5") 
+-- Found OpenMP_CXX: -fopenmp (found version "4.5") 
+-- Looking for clock_gettime in rt
+-- Looking for clock_gettime in rt - found
+-- Looking for fopen64
+-- Looking for fopen64 - not found
+-- Looking for C++ include cxxabi.h
+-- Looking for C++ include cxxabi.h - found
+-- Looking for nanosleep
+-- Looking for nanosleep - found
+-- Looking for backtrace
+-- Looking for backtrace - found
+-- backtrace facility detected in default set of libraries
+-- Found Backtrace: /usr/include  
+-- /app/dmlc-core/cmake/build_config.h.in -> include/dmlc/build_config.h
+-- Performing Test SUPPORT_MSSE2
+-- Performing Test SUPPORT_MSSE2 - Success
+-- Found GTest: /usr/lib/x86_64-linux-gnu/libgtest.a (Required is at least version "1.14.0") 
+CMake Error at dmlc-core/test/CMakeLists.txt:56 (target_compile_features):
+  Cannot specify compile features for target "GTest::gmock" which is not
+  built by this project.
+
+
+CMake Error at tests/cpp/CMakeLists.txt:6 (message):
+  USE_DMLC_GTEST=ON but dmlc-core didn't bundle gtest
+
+
+-- Configuring incomplete, errors occurred!
+See also "/app/build/CMakeFiles/CMakeOutput.log".
+See also "/app/build/CMakeFiles/CMakeError.log".

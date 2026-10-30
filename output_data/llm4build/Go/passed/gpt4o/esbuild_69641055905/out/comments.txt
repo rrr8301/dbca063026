@@ -1,0 +1,44 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      esbuild CI (ubuntu-latest)
+  Test command(s) run in original CI:
+    $ go test -race ./internal/...
+    $ make test-deno
+    $ make test-wasm-browser
+    $ make test-wasm-node
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    6
+
+--- LLM run.sh Test Command(s) ---
+  $ go test -race ./internal/...
+  $ make test-deno
+  $ make test-wasm-browser
+  $ make test-wasm-node
+  $ make test-sucrase
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoDefault] Test run mismatch: original=29, LLM=15
+  - [GoDefault] Test passed mismatch: original=29, LLM=15
+
+--- Root Cause Analysis ---
+  - [GoDefault] LLM ran 14 fewer tests than original — LLM likely used a narrower test scope or missed some test suites.
+  - Test command differences detected — original CI vs LLM run.sh may use different flags or test selection.
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 29 run, 29 passed, 0 failed, 0 skipped
+    LLM:      15 run, 15 passed, 0 failed, 0 skipped
+  [mocha]
+    Original: 498 run, 495 passed, 0 failed, 3 skipped
+    LLM:      498 run, 495 passed, 0 failed, 3 skipped

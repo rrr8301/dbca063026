@@ -1,0 +1,33 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          20
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT TESTS NOT REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      Linux (Clang) (x64-linux)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    3
+
+--- Test Reproducibility Gap ---
+  Original ran 1139 test(s) across [GTest].
+  LLM build produced no test results (empty llm_log_stats).
+
+--- Root Cause ---
+  Reason type: Compilation / linker failure during build
+  Build stopped at step 90 of 112
+  Key error(s) from build/test log:
+    FAILED: tests/CMakeFiles/unit_tests.dir/engines/unit_test_frostbite_engine.cpp.o
+    FAILED: tests/CMakeFiles/unit_tests.dir/engines/unit_test_iw_engine.cpp.o
+    FAILED: tests/CMakeFiles/unit_tests.dir/engines/unit_test_cry_engine.cpp.o
+    /app/include/omath/linear_algebra/vector2.hpp:7:10: fatal error: 'format' file not found
+    ninja: build stopped: subcommand failed.
+
+--- Original Test Statistics (not reproduced) ---
+  [GTest] 1139 run, 1138 passed, 1 failed, 0 skipped

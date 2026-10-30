@@ -1,0 +1,32 @@
+FROM ubuntu:22.04
+
+# Set timezone to Pacific Time noninteractively
+ENV TZ=America/Los_Angeles
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    curl \
+    ca-certificates \
+    build-essential \
+    python3 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Node.js 18.x
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
+    apt-get install -y nodejs && \
+    rm -rf /var/lib/apt/lists/*
+
+# Create work directory
+WORKDIR /workspace
+
+# Copy repository
+COPY . .
+
+# Copy run script
+COPY run.sh /run.sh
+RUN chmod +x /run.sh
+
+# Set entrypoint
+ENTRYPOINT ["/run.sh"]

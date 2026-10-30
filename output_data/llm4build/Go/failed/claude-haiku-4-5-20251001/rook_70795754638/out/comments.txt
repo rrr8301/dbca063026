@@ -1,0 +1,41 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          11
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      unittests
+  Test command(s) run in original CI:
+    $ actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+--- LLM-Generated Dockerfile ---
+  Base image:   golang:1.25
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ make -j $(nproc) test | tee output.txt
+  $ TEST_EXIT_CODE=$?
+  $ exit $TEST_EXIT_CODE
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoDefault] Test run mismatch: original=2537, LLM=2608
+  - [GoDefault] Test passed mismatch: original=2536, LLM=2608
+  - [GoDefault] Test failed mismatch: original=1, LLM=0
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    (no specific test error messages — all 2608 LLM tests passed)
+
+  [Root cause classification]
+  - The LLM ran 71 more tests (2608 vs 2537) while the original ran 71 fewer and had 1 failure. The rook `make test` target runs Go unit tests in parallel using `-j $(nproc)`. The 71-test difference suggests the original CI excluded a specific subset — possibly through a build tag, a `SKIP` env var, or the CI was pinned to a specific commit that had fewer test functions. The original's 1 failure was a flaky test (a Ceph/storage controller test that passed in the LLM's broader run because the test was included in a different execution order or timing window).
+
+  - The LLM used `golang:1.25` base image which matched the `go-linux` job's Go version. The `make -j $(nproc) test` parallelism reproduced the CI command. The 71 extra tests are the net result of the LLM running a slightly different test selection — perhaps the original CI used `go test ./pkg/... ./cmd/...` while the LLM used `make test` which may invoke `./...` on a different working directory scope.
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 2537 run, 2536 passed, 1 failed, 0 skipped
+    LLM:      2608 run, 2608 passed, 0 failed, 0 skipped

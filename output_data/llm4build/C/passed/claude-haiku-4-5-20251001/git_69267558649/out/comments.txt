@@ -1,0 +1,48 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          9
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      linux-TEST-vars (ubuntu:20.04)
+  Test command(s) run in original CI:
+    $ actions/checkout@v5
+    $ useradd builder --create-home
+    $ chown -R builder .
+    $ chmod a+w $GITHUB_ENV && sudo --preserve-env --set-home --user=builder ci/run-build-and-tests.sh
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:20.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ cmake .. -G "Unix Makefiles"
+  $ cmake --build . --verbose -- -j$(nproc)
+  $ CTEST_OUTPUT_ON_FAILURE=1 ctest --build-config Debug || true
+  (fallback: make -C /workspace test)
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in original but missing in LLM: perl-harness
+  - [tap] Test run mismatch: original=87, LLM=8559
+  - [tap] Test passed mismatch: original=87, LLM=8559
+  - [tap] Test failed mismatch: original=0, LLM=0
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    (8559 tap tests ran; all passed. No perl-harness tests ran at all)
+    make: *** [Makefile:3395: test] Error 2  (cmake-based run failed; fell back to make)
+
+  [Root cause classification]
+  - Different test runner: LLM used a generic cmake/make script that detected a Makefile and ran `make test` from the git working tree. The original CI ran `sudo --preserve-env --set-home --user=builder ci/run-build-and-tests.sh` as a dedicated `builder` user. The `ci/run-build-and-tests.sh` script runs the full per-build-system test suite which produces Files=1043, Tests=34339 via perl-harness (plus 87 tap tests). The LLM's `make test` invocation ran only the `t/` shell-based test suite which produces 8559 tap-style tests from a subset of test scripts. These two test sets are disjoint counting methods: perl-harness counts individual `ok` assertions within each test file (1043 files × ~33 tests/file = 34339), while the tap count (8559) is a separate direct invocation of a smaller test selection. No failures in either run, but the test frameworks are completely different.
+
+--- Test Statistics Comparison ---
+  [perl-harness]
+    Original: 34339 run, 34339 passed, 0 failed, 0 skipped
+    LLM:      (not present)
+  [tap]
+    Original: 87 run, 87 passed, 0 failed, 0 skipped
+    LLM:      8559 run, 8559 passed, 0 failed, 0 skipped

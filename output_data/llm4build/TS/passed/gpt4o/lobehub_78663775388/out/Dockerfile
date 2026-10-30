@@ -1,0 +1,59 @@
+FROM ubuntu:22.04
+
+# Set timezone and locale
+ENV TZ=America/Los_Angeles
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    curl \
+    wget \
+    ca-certificates \
+    unzip \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set environment variables
+ENV CI=true
+ENV GITHUB_ACTIONS=true
+ENV LANG=C.UTF-8
+ENV LC_ALL=C.UTF-8
+
+# Install Node.js via nvm
+ENV NVM_DIR=/root/.nvm
+RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash \
+    && . $NVM_DIR/nvm.sh \
+    && nvm install 24.11.1 \
+    && nvm use 24.11.1 \
+    && nvm alias default 24.11.1
+
+# Install pnpm
+RUN . $NVM_DIR/nvm.sh && npm install -g pnpm
+
+# Install Bun
+RUN curl -fsSL https://bun.sh/install | bash \
+    && export BUN_INSTALL="/root/.bun" \
+    && export PATH="$BUN_INSTALL/bin:$PATH" \
+    && bun --version
+
+# Create and set up workspace
+WORKDIR /workspace
+COPY . /workspace
+RUN git config --global --add safe.directory '*'
+
+# Create non-root user
+RUN useradd -m testuser && chown -R testuser /workspace
+
+# Copy nvm and bun installations to the user's home directory
+RUN mkdir -p /home/testuser/.nvm /home/testuser/.bun && \
+    cp -r /root/.nvm/* /home/testuser/.nvm/ && \
+    cp -r /root/.bun/* /home/testuser/.bun/ && \
+    chown -R testuser:testuser /home/testuser/.nvm /home/testuser/.bun
+
+# Switch to non-root user
+USER testuser
+
+# Ensure environment variables are available for the user
+ENV NVM_DIR=/home/testuser/.nvm
+ENV BUN_INSTALL=/home/testuser/.bun
+ENV PATH=$BUN_INSTALL/bin:$NVM_DIR/versions/node/v24.11.1/bin:$PATH
+
+ENTRYPOINT ["/bin/bash", "/workspace/run.sh"]

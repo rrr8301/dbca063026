@@ -1,0 +1,45 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Unit tests (Node 22.18.0)
+  Test command(s) run in original CI:
+    $ actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+    $ pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1
+    $ pnpm install --frozen-lockfile --force
+    $ pnpm nx run-many -t test:unit -p "@tryghost/admin-x-design-system,@tryghost/parse-email-address,@tryghost/admin-x-framework,@tryghost/admin-x-settings,@tryghost/announcement-bar,@tryghost/activitypub,@tryghost/comments-ui,@tryghost/signup-form,@tryghost/sodo-search,@tryghost/portal,ghost-admin,@tryghost/admin,@tryghost/i18n,@tryghost/posts,@tryghost/shade,@tryghost/stats,ghost,@tryghost/e2e,ghost-monorepo"
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ pnpm nx run-many -t test:unit
+
+--- Reason(s) for Non-Reproducibility ---
+  - [mocha] Test run mismatch: original=6146, LLM=2
+  - [mocha] Test passed mismatch: original=6143, LLM=2
+  - [mocha] Test failed mismatch: original=0, LLM=0
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > (no errors — 2 mocha tests passed; 6144 fewer tests than original)
+
+  [Root cause classification]
+  - The original CI ran `pnpm nx run-many -t test:unit -p "@tryghost/admin-x-design-system,@tryghost/parse-email-address,...19 packages"` — explicitly specifying 19 Ghost monorepo packages to test. The LLM ran `pnpm nx run-many -t test:unit` without the `-p` (projects) flag. Without `-p`, nx runs `test:unit` only for the affected or default project set based on the `nx.json` configuration — in this Ghost monorepo, the default is likely just the root `ghost-monorepo` package or the package where the command was run, producing only 2 mocha tests.
+
+  - The 6144 missing mocha tests are from the 18 explicitly listed packages (admin-x-design-system, parse-email-address, admin-x-framework, etc.) whose `test:unit` tasks weren't triggered without the `-p` flag. The vitest results (1992 tests) matched perfectly in both environments because those are from a separate vitest-based package that runs regardless of the `-p` selection — likely `@tryghost/activitypub` or another package that nx includes by default. The fix would be to include the full `-p` package list in the `pnpm nx run-many` command.
+
+--- Test Statistics Comparison ---
+  [mocha]
+    Original: 6146 run, 6143 passed, 0 failed, 3 skipped
+    LLM:      2 run, 2 passed, 0 failed, 0 skipped
+  [vitest]
+    Original: 1992 run, 1991 passed, 0 failed, 1 skipped
+    LLM:      1992 run, 1991 passed, 0 failed, 1 skipped

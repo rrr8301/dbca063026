@@ -1,0 +1,19 @@
+{
+ "model": "claude-haiku-4-5-20251001",
+ "content": "```yamlfile\nname: CI\n\non:\n  push:\n    branches: [master]\n  pull_request:\n  workflow_dispatch:\n\nconcurrency:\n  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}\n  cancel-in-progress: true\n\njobs:\n  test-others-replications:\n    runs-on: ubuntu-22.04\n    timeout-minutes: 30\n    steps:\n      - uses: actions/checkout@v6\n      \n      - name: Set node version\n        uses: actions/setup-node@v6\n        with:\n          node-version-file: \".nvmrc\"\n\n      - name: Reuse npm cache folder\n        uses: actions/cache@v5\n        env:\n          cache-name: cache-node-modules\n        with:\n          path: |\n            ~/.npm\n          key: ${{ runner.os }}-npm-others-replications-x4-${{ hashFiles('**/package.json') }}\n          restore-keys: |\n            ${{ runner.os }}-npm-others-replications-x4-\n\n      - name: prepare RxDB core\n        run: |\n          npm install || (sleep 15 && npm install) || (sleep 15 && npm install)\n          npm run build\n\n      - run: npm run test:replication-google-drive\n```\n\n---YAML---",
+ "reduced_yaml": "name: CI\n\non:\n  push:\n    branches: [master]\n  pull_request:\n  workflow_dispatch:\n\nconcurrency:\n  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}\n  cancel-in-progress: true\n\njobs:\n  test-others-replications:\n    runs-on: ubuntu-22.04\n    timeout-minutes: 30\n    steps:\n      - uses: actions/checkout@v6\n      \n      - name: Set node version\n        uses: actions/setup-node@v6\n        with:\n          node-version-file: \".nvmrc\"\n\n      - name: Reuse npm cache folder\n        uses: actions/cache@v5\n        env:\n          cache-name: cache-node-modules\n        with:\n          path: |\n            ~/.npm\n          key: ${{ runner.os }}-npm-others-replications-x4-${{ hashFiles('**/package.json') }}\n          restore-keys: |\n            ${{ runner.os }}-npm-others-replications-x4-\n\n      - name: prepare RxDB core\n        run: |\n          npm install || (sleep 15 && npm install) || (sleep 15 && npm install)\n          npm run build\n\n      - run: npm run test:replication-google-drive",
+ "input_tokens": 10663,
+ "output_tokens": 336,
+ "cost_usd": 0.009874,
+ "seconds": 3.01,
+ "prompt_sha256": "1eb1dd43f04ec5acef4417422df076f693c6fced3f00c8c114b8557e8463922f",
+ "completed_steps": [
+  "Set up job",
+  "Run actions/checkout@v6",
+  "Set node version",
+  "Reuse npm cache folder",
+  "prepare RxDB core",
+  "Run npm run test:replication-google-drive",
+  "Complete job"
+ ]
+}

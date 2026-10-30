@@ -1,0 +1,30 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          3
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT TESTS NOT REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      Default (Java 17) / Test (module: core)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   chesnay/flink-ci:java_8_11_17_21_maven_386_jammy
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ ./mvnw clean package -DskipTests -Djdk17 -Pjava17-target -Denforcer.skip=true -Drat.skip=true
+  $ ./tools/azure-pipelines/unpack_build_artifact.sh
+  $ PROFILE="$PROFILE" ./tools/azure-pipelines/uploading_watchdog.sh ./tools/ci/test_controller.sh core
+
+--- Root Cause Analysis ---
+  The uploading_watchdog.sh script requires Azure Pipelines CI environment variables that are absent in Docker.
+    > [ERROR] No CI environment detected that could be used for injecting the parameters which are needed by ./tools/azure-pipelines/uploading_watchdog.sh.
+
+  CI-specific environment dependency: The Flink test orchestration scripts (uploading_watchdog.sh, test_controller.sh) are tightly coupled to the Azure Pipelines CI environment and expect variables such as BUILD_BUILDID, SYSTEM_TEAMPROJECT, and AGENT_* that are not present in a local Docker container. The Maven build itself succeeded (BUILD SUCCESS after ~35 minutes), but the downstream test controller exited immediately when it could not detect an Azure CI context, so no test metrics were captured despite the full Maven build completing successfully.
+
+--- Test Reproducibility Gap ---
+  Test results could not be matched between builds.

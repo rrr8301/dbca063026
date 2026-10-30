@@ -1,0 +1,37 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          4
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-22.04
+  CI job name:      linux-cmake-job (ubuntu-22.04, NONE)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    3
+
+--- Reason(s) for Non-Reproducibility ---
+  - [CTest] Test run mismatch: original=84, LLM=68
+  - [CTest] Test passed mismatch: original=84, LLM=52
+  - [CTest] Test failed mismatch: original=0, LLM=16
+  - [CTest] 16 test(s) failed in LLM but not in original: test-eof__changelist_EPOLL, test-eof__signalfd_EPOLL, test-eof__timerfd_EPOLL, test-eof__timerfd_changelist_EPOLL, test-ratelim__con_lim ... (+11 more)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > [warn] epoll_wait: Function not implemented
+    > Connection bandwidth out of bounds
+    > test-eof__timerfd_EPOLL  ***Failed
+    > test-ratelim__group_con_lim_drain  ***Failed
+
+  [Root cause classification]
+  - Two distinct failure categories appear. First, all 12 EPOLL-backend tests (timerfd, changelist, signalfd variants) fail because the Docker container's kernel does not support `epoll_wait` in the way libevent expects — specifically, `timerfd` and `signalfd` integration with epoll is restricted in the container's seccomp/namespace profile, causing the EPOLL backend to malfunction. Second, the 4 rate-limiter tests fail because they rely on precise timer accuracy; inside Docker the timer resolution is coarser and the measured connection rates are all reported as 0.0 per second, falling outside the expected bounds. The original GitHub Actions runner had native epoll access and adequate timer precision. The 16-test difference in run count is because the LLM's cmake configuration did not build the 16 test binaries that require specific kernel features detected at cmake time.
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 84 run, 84 passed, 0 failed, 0 skipped
+    LLM:      68 run, 52 passed, 16 failed, 0 skipped

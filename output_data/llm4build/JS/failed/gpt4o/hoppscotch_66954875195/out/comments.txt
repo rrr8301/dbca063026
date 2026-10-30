@@ -1,0 +1,24 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): True
+Attempt Number:          1
+Original build category: failed
+
+STATUS: FULLY REPRODUCIBLE
+
+The LLM build fully reproduces the original build results.
+Reason: Test case names, test counts, and pass/fail statuses all match.
+
+Matching test statistics:
+  [jest] 686 run, 686 passed, 0 failed, 0 skipped
+    Failed tests (same in both): Unknown
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @hoppscotch/js-sandbox@2.1.0 do-test: `pnpm run test`
+    > vitest: No test files found, exiting with code 1
+    > include: **/*.{test,spec}.?(c|m)[jt]s?(x) — no matching files in hoppscotch-js-sandbox
+
+  [Root cause classification]
+  - The hoppscotch-backend jest suite (18 suites, 683 tests) ran successfully, but the hoppscotch-js-sandbox package found no test files when vitest scanned its directory. This matches the original CI failure: the js-sandbox test suite was not present/configured at the time of the CI run. Both original and LLM builds reproduce the same outcome (686 total passing, build overall marked failed due to the sandbox subpackage exit code), making this fully reproducible.

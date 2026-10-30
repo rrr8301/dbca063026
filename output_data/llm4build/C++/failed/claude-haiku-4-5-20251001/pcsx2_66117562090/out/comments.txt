@@ -1,0 +1,40 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          8
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      AppImage / AppImage Build
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ cmake -B build -G Ninja \
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    6
+
+--- LLM run.sh Test Command(s) ---
+  $ TEST_FAILED=0
+  $ aria2c -Z "https://github.com/PCSX2/pcsx2_patches/releases/latest/download/patches.zip" || {
+  $ cmake -B build -G Ninja \
+  $ -DCMAKE_BUILD_TYPE=Release \
+  $ -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON \
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in LLM but not in original: CTest
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    (2/2 CTest tests passed — no failure output)
+
+  [Root cause classification]
+  - The original CI job is an AppImage build job; it does not run `ctest` explicitly in its captured steps. The original log contains no CTest summary. The LLM ran cmake with testing enabled and executed the 2 available CTest tests, both of which passed. The non-reproducibility is a parser gap: no test data in the original vs. test data in the LLM output. This is an AppImage packaging job — the test step is not part of the original CI workflow.
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: (not present)
+    LLM:      2 run, 2 passed, 0 failed, 0 skipped

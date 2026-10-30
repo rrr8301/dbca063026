@@ -1,0 +1,44 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      test (windows-latest)
+  Test command(s) run in original CI:
+    $ actions/checkout@v4
+    $ npm ci
+    $ go install github.com/tkrajina/typescriptify-golang-structs/tscriptify@latest
+    $ go test -count=1 -benchtime=1x ./...
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ go install github.com/tkrajina/typescriptify-golang-structs/tscriptify@latest
+  $ go test -count=1 -benchtime=1x ./...
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoDefault] Test run mismatch: original=83, LLM=75
+  - [GoDefault] Test passed mismatch: original=82, LLM=74
+  - [GoDefault] Test failed mismatch: original=1, LLM=1
+  - [GoDefault] 1 test(s) failed in LLM but not in original: github.com/ollama/ollama/cmd/internal/fileutil
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    113:FAIL	github.com/ollama/ollama/cmd/internal/fileutil	0.031s
+
+  [Root cause classification]
+  - The original CI ran on `windows-latest`. The 8 missing packages in the LLM (75 vs 83) are Windows-specific packages with `//go:build windows` constraints (e.g., Windows GPU detection, Windows service manager integration) that are simply not compiled on Linux. The LLM correctly ran `go install tscriptify@latest` and `go test -count=1 -benchtime=1x ./...` but executed them on Linux, missing those 8 packages.
+
+  - `cmd/internal/fileutil` fails because this package tests file utility functions (atomic writes, temp file creation). On Windows, file locking and atomic rename semantics differ from Linux, and the test was written expecting Windows behavior. On Linux, the test may assert that a specific Windows-style file locking error is returned, but Linux returns a different error or succeeds — causing the assertion to fail. The original CI's 1 failure was a different Windows-specific test; the LLM's 1 failure is `fileutil` which passes on Windows but fails on Linux.
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 83 run, 82 passed, 1 failed, 0 skipped
+    LLM:      75 run, 74 passed, 1 failed, 0 skipped

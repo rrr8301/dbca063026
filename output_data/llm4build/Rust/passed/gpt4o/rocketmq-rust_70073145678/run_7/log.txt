@@ -1,0 +1,43 @@
+Error from docker build
+
+#1 [internal] load .dockerignore
+#1 transferring context: 589B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 995B done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/ubuntu:22.04
+#3 DONE 0.0s
+
+#4 [1/8] FROM docker.io/library/ubuntu:22.04
+#4 DONE 0.0s
+
+#5 [2/8] RUN ln -snf /usr/share/zoneinfo/America/Los_Angeles /etc/localtime && echo America/Los_Angeles > /etc/timezone
+#5 CACHED
+
+#6 [3/8] RUN apt-get update &&     apt-get install -y --no-install-recommends     clang llvm libclang-dev     cmake make ninja-build pkg-config     protobuf-compiler     libsnappy-dev liblz4-dev libzstd-dev zlib1g-dev     libxcb1-dev libxkbcommon-dev libxkbcommon-x11-dev     curl git &&     rm -rf /var/lib/apt/lists/*
+#6 CACHED
+
+#7 [internal] load build context
+#7 transferring context: 173.16kB 0.1s done
+#7 DONE 0.1s
+
+#8 [4/8] RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain nightly &&     /bin/bash -c "source $HOME/.cargo/env"
+#8 2.482 curl: (77) error setting certificate file: /etc/ssl/certs/ca-certificates.crt
+#8 2.485 /bin/bash: line 1: /root/.cargo/env: No such file or directory
+#8 ERROR: process "/bin/sh -c curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain nightly &&     /bin/bash -c \"source $HOME/.cargo/env\"" did not complete successfully: exit code: 1
+------
+ > [4/8] RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain nightly &&     /bin/bash -c "source $HOME/.cargo/env":
+#8 2.482 curl: (77) error setting certificate file: /etc/ssl/certs/ca-certificates.crt
+#8 2.485 /bin/bash: line 1: /root/.cargo/env: No such file or directory
+------
+Dockerfile:19
+--------------------
+  18 |     # Install Rust nightly and source the environment in one step
+  19 | >>> RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain nightly && \
+  20 | >>>     /bin/bash -c "source $HOME/.cargo/env"
+  21 |     
+--------------------
+ERROR: failed to solve: process "/bin/sh -c curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain nightly &&     /bin/bash -c \"source $HOME/.cargo/env\"" did not complete successfully: exit code: 1

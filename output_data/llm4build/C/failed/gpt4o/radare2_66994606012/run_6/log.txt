@@ -1,0 +1,60 @@
+Error from docker build
+
+#1 [internal] load .dockerignore
+#1 transferring context: 2B 0.0s done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 1.17kB 0.0s done
+#2 DONE 0.1s
+
+#3 [internal] load metadata for docker.io/library/ubuntu:22.04
+#3 DONE 0.2s
+
+#4 [ 1/12] FROM docker.io/library/ubuntu:22.04@sha256:962f6cadeae0ea6284001009daa4cc9a8c37e75d1f5191cf0eb83fe565b63dd7
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 2.07MB 1.6s done
+#5 DONE 1.7s
+
+#6 [ 3/12] RUN apt-get update && apt-get install -y     git     make     gcc     python3     python3-pip     && rm -rf /var/lib/apt/lists/*
+#6 CACHED
+
+#7 [ 4/12] RUN python3 -m pip install --upgrade pip &&     pip3 install r2pipe wheel
+#7 CACHED
+
+#8 [ 2/12] RUN ln -snf /usr/share/zoneinfo/America/Los_Angeles /etc/localtime && echo America/Los_Angeles > /etc/timezone
+#8 CACHED
+
+#9 [ 5/12] WORKDIR /app
+#9 CACHED
+
+#10 [ 6/12] COPY . .
+#10 DONE 7.0s
+
+#11 [ 7/12] RUN chmod +x sys/install.sh sys/build.sh
+#11 DONE 0.9s
+
+#12 [ 8/12] RUN useradd -ms /bin/bash radareuser
+#12 DONE 1.1s
+
+#13 [ 9/12] RUN git config --global --add safe.directory /app
+#13 DONE 1.4s
+
+#14 [10/12] RUN export CFLAGS="-O2 -Wno-unused-result" &&     chmod +x ./configure &&     sys/install.sh
+#14 1.150 chmod: changing permissions of './configure': Operation not permitted
+#14 ERROR: process "/bin/sh -c export CFLAGS=\"-O2 -Wno-unused-result\" &&     chmod +x ./configure &&     sys/install.sh" did not complete successfully: exit code: 1
+------
+ > [10/12] RUN export CFLAGS="-O2 -Wno-unused-result" &&     chmod +x ./configure &&     sys/install.sh:
+#14 1.150 chmod: changing permissions of './configure': Operation not permitted
+------
+Dockerfile:38
+--------------------
+  37 |     # Build Radare2 as non-root user
+  38 | >>> RUN export CFLAGS="-O2 -Wno-unused-result" && \
+  39 | >>>     chmod +x ./configure && \
+  40 | >>>     sys/install.sh
+  41 |     
+--------------------
+ERROR: failed to solve: process "/bin/sh -c export CFLAGS=\"-O2 -Wno-unused-result\" &&     chmod +x ./configure &&     sys/install.sh" did not complete successfully: exit code: 1

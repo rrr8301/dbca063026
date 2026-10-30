@@ -1,0 +1,36 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          20
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT TESTS NOT REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     llvm-premerge-linux-runners (self-hosted)
+  CI job name:      Build and Test Linux
+  Test command(s) run in original CI:
+    $ .ci/monolithic-linux.sh "${projects_to_build}" "${project_check_targets}" "${runtimes_to_build}" "${runtimes_check_targets}" "${runtimes_check_targets_needs_reconfig}" "${enable_cir}"
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ git config --global --add safe.directory '*'
+  $ projects_to_build=$(git diff --name-only HEAD~1...HEAD | python3 .ci/compute_projects.py | tr -d '\n')
+  $ .ci/monolithic-linux.sh "${projects_to_build}" "${project_check_targets}" ...
+
+--- Root Cause Analysis ---
+  LLM container log shows CMake configuration failed due to a malformed LLVM_ENABLE_PROJECTS value:
+    > CMake Error at CMakeLists.txt:158 (MESSAGE):
+    > projects_to_build='bolt isn't a known project: bolt;clang;clang-tools-extra;...
+    > Did you mean to enable it as a runtime in LLVM_ENABLE_RUNTIMES?
+    > -- Configuring incomplete, errors occurred!
+
+  Shell variable expansion failure; projects string passed verbatim as CMake argument
+  - The LLM's run.sh script passed the projects_to_build variable with its shell assignment syntax (projects_to_build='bolt;...') literally into the CMake -D flag instead of just the value. This occurs because the run.sh uses a dynamic project computation step via git diff and compute_projects.py that produces a structured string, but the downstream .ci/monolithic-linux.sh script receives the full assignment string rather than just the semicolon-separated project list. The LLM could not correctly replicate the CI pipeline's internal variable passing convention.
+
+--- Test Reproducibility Gap ---
+  Test results could not be matched between builds. Original CI ran 200804 LLVMLit tests (all passing); LLM produced no test results due to CMake configuration failure.

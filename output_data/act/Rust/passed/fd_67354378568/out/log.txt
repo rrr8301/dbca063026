@@ -1,0 +1,694 @@
+# command: act push -W .github/workflows/CICD.yml --directory project_path/fd
+
+time="2026-04-15T13:27:45-07:00" level=info msg="Using docker host 'unix:///var/run/docker.sock', and daemon socket 'unix:///var/run/docker.sock'"
+[CICD/Extract crate metadata               ] ⭐ Run Set up job
+[CICD/Extract crate metadata               ] 🚀  Start image=catthehacker/ubuntu:act-latest
+[CICD/Ensure 'cargo clippy' has no warnings] ⭐ Run Set up job
+[CICD/Ensure 'cargo clippy' has no warnings] 🚀  Start image=catthehacker/ubuntu:act-latest
+[CICD/Ensure 'cargo fmt' has been run      ] ⭐ Run Set up job
+[CICD/Ensure 'cargo fmt' has been run      ] 🚀  Start image=catthehacker/ubuntu:act-22.04
+[CICD/Extract crate metadata               ]   🐳  docker pull image=catthehacker/ubuntu:act-latest platform= username= forcePull=true
+[CICD/Ensure 'cargo clippy' has no warnings]   🐳  docker pull image=catthehacker/ubuntu:act-latest platform= username= forcePull=true
+[CICD/Ensure 'cargo fmt' has been run      ]   🐳  docker pull image=catthehacker/ubuntu:act-22.04 platform= username= forcePull=true
+[CICD/Extract crate metadata               ]   🐳  docker create image=catthehacker/ubuntu:act-latest platform= entrypoint=["tail" "-f" "/dev/null"] cmd=[] network="host"
+[CICD/Ensure 'cargo clippy' has no warnings]   🐳  docker create image=catthehacker/ubuntu:act-latest platform= entrypoint=["tail" "-f" "/dev/null"] cmd=[] network="host"
+[CICD/Ensure 'cargo fmt' has been run      ]   🐳  docker create image=catthehacker/ubuntu:act-22.04 platform= entrypoint=["tail" "-f" "/dev/null"] cmd=[] network="host"
+[CICD/Ensure 'cargo clippy' has no warnings]   🐳  docker run image=catthehacker/ubuntu:act-latest platform= entrypoint=["tail" "-f" "/dev/null"] cmd=[] network="host"
+[CICD/Ensure 'cargo fmt' has been run      ]   🐳  docker run image=catthehacker/ubuntu:act-22.04 platform= entrypoint=["tail" "-f" "/dev/null"] cmd=[] network="host"
+[CICD/Extract crate metadata               ]   🐳  docker run image=catthehacker/ubuntu:act-latest platform= entrypoint=["tail" "-f" "/dev/null"] cmd=[] network="host"
+[CICD/Ensure 'cargo fmt' has been run      ]   🐳  docker exec cmd=[node --no-warnings -e console.log(process.execPath)] user= workdir=
+[CICD/Ensure 'cargo clippy' has no warnings]   🐳  docker exec cmd=[node --no-warnings -e console.log(process.execPath)] user= workdir=
+[CICD/Extract crate metadata               ]   🐳  docker exec cmd=[node --no-warnings -e console.log(process.execPath)] user= workdir=
+[CICD/Ensure 'cargo clippy' has no warnings]   ✅  Success - Set up job
+[CICD/Ensure 'cargo fmt' has been run      ]   ✅  Success - Set up job
+[CICD/Extract crate metadata               ]   ✅  Success - Set up job
+[CICD/Ensure 'cargo clippy' has no warnings]   ☁  git clone 'https://github.com/dtolnay/rust-toolchain' # ref=stable
+[CICD/Ensure 'cargo fmt' has been run      ]   ☁  git clone 'https://github.com/dtolnay/rust-toolchain' # ref=stable
+[CICD/Extract crate metadata               ] ⭐ Run Main actions/checkout@v6
+[CICD/Extract crate metadata               ]   🐳  docker cp src=/mnt/2tbb/mnabil/new-llm4build/LLM4Build/project_path/fd/. dst=/mnt/2tbb/mnabil/new-llm4build/LLM4Build/project_path/fd
+[CICD/Extract crate metadata               ]   ✅  Success - Main actions/checkout@v6 [579.020466ms]
+[CICD/Extract crate metadata               ] ⭐ Run Main Extract crate information
+[CICD/Extract crate metadata               ]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/crate_metadata] user= workdir=
+[CICD/Extract crate metadata               ]   | name=fd
+[CICD/Extract crate metadata               ]   | /var/run/act/workflow/crate_metadata: line 3: cargo: command not found
+[CICD/Extract crate metadata               ]   | /var/run/act/workflow/crate_metadata: line 4: cargo: command not found
+[CICD/Extract crate metadata               ]   | /var/run/act/workflow/crate_metadata: line 5: cargo: command not found
+[CICD/Extract crate metadata               ]   | /var/run/act/workflow/crate_metadata: line 6: cargo: command not found
+[CICD/Extract crate metadata               ]   ✅  Success - Main Extract crate information [550.994253ms]
+[CICD/Extract crate metadata               ]   ⚙  ::set-output:: name=fd
+[CICD/Extract crate metadata               ] ⭐ Run Complete job
+[CICD/Extract crate metadata               ] Cleaning up container for job Extract crate metadata
+[CICD/Ensure 'cargo clippy' has no warnings] Non-terminating error while running 'git clone': some refs were not updated
+[CICD/Ensure 'cargo clippy' has no warnings] ⭐ Run Pre dtolnay/rust-toolchain@stable
+[CICD/Ensure 'cargo clippy' has no warnings]   ✅  Success - Pre dtolnay/rust-toolchain@stable [236.112668ms]
+[CICD/Ensure 'cargo clippy' has no warnings] ⭐ Run Main dtolnay/rust-toolchain@stable
+[CICD/Ensure 'cargo clippy' has no warnings]   🐳  docker cp src=/home/mnabil/.cache/act/dtolnay-rust-toolchain@stable/ dst=/var/run/act/actions/dtolnay-rust-toolchain@stable/
+[CICD/Extract crate metadata               ]   ✅  Success - Complete job
+[CICD/Extract crate metadata               ] 🏁  Job succeeded
+[CICD/Ensure 'cargo clippy' has no warnings] ⭐ Run Main : parse toolchain version
+if [[ -z $toolchain ]]; then
+  # GitHub does not enforce `required: true` inputs itself. https://github.com/actions/runner/issues/1070
+  echo "'toolchain' is a required input" >&2
+  exit 1
+elif [[ $toolchain =~ ^stable' '[0-9]+' '(year|month|week|day)s?' 'ago$ ]]; then
+  if [[ Linux == macOS ]]; then
+    echo "toolchain=1.$((($(date -v-$(sed 's/stable \([0-9]*\) \(.\).*/\1\2/' <<< $toolchain) +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT
+  else
+    echo "toolchain=1.$((($(date --date "${toolchain#stable }" +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT
+  fi
+elif [[ $toolchain =~ ^stable' 'minus' '[0-9]+' 'releases?$ ]]; then
+  echo "toolchain=1.$((($(date +%s)/60/60/24-16569)/7/6-${toolchain//[^0-9]/}))" >> $GITHUB_OUTPUT
+elif [[ $toolchain =~ ^1\.[0-9]+$ ]]; then
+  echo "toolchain=1.$((i=${toolchain#1.}, c=($(date +%s)/60/60/24-16569)/7/6, i+9*i*(10*i<=c)+90*i*(100*i<=c)))" >> $GITHUB_OUTPUT
+else
+  echo "toolchain=$toolchain" >> $GITHUB_OUTPUT
+fi
+[CICD/Ensure 'cargo clippy' has no warnings]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/0-composite-parse.sh] user= workdir=
+[CICD/Ensure 'cargo clippy' has no warnings]   ✅  Success - Main : parse toolchain version
+if [[ -z $toolchain ]]; then
+  # GitHub does not enforce `required: true` inputs itself. https://github.com/actions/runner/issues/1070
+  echo "'toolchain' is a required input" >&2
+  exit 1
+elif [[ $toolchain =~ ^stable' '[0-9]+' '(year|month|week|day)s?' 'ago$ ]]; then
+  if [[ Linux == macOS ]]; then
+    echo "toolchain=1.$((($(date -v-$(sed 's/stable \([0-9]*\) \(.\).*/\1\2/' <<< $toolchain) +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT
+  else
+    echo "toolchain=1.$((($(date --date "${toolchain#stable }" +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT
+  fi
+elif [[ $toolchain =~ ^stable' 'minus' '[0-9]+' 'releases?$ ]]; then
+  echo "toolchain=1.$((($(date +%s)/60/60/24-16569)/7/6-${toolchain//[^0-9]/}))" >> $GITHUB_OUTPUT
+elif [[ $toolchain =~ ^1\.[0-9]+$ ]]; then
+  echo "toolchain=1.$((i=${toolchain#1.}, c=($(date +%s)/60/60/24-16569)/7/6, i+9*i*(10*i<=c)+90*i*(100*i<=c)))" >> $GITHUB_OUTPUT
+else
+  echo "toolchain=$toolchain" >> $GITHUB_OUTPUT
+fi
+ [339.150984ms]
+[CICD/Ensure 'cargo clippy' has no warnings]   ⚙  ::set-output:: toolchain=stable
+[CICD/Ensure 'cargo clippy' has no warnings] ⭐ Run Main : construct rustup command line
+echo "targets=$(for t in ${targets//,/ }; do echo -n ' --target' $t; done)" >> $GITHUB_OUTPUT
+echo "components=$(for c in ${components//,/ }; do echo -n ' --component' $c; done)" >> $GITHUB_OUTPUT
+echo "downgrade=" >> $GITHUB_OUTPUT
+[CICD/Ensure 'cargo clippy' has no warnings]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/0-composite-flags.sh] user= workdir=
+[CICD/Ensure 'cargo clippy' has no warnings]   ✅  Success - Main : construct rustup command line
+echo "targets=$(for t in ${targets//,/ }; do echo -n ' --target' $t; done)" >> $GITHUB_OUTPUT
+echo "components=$(for c in ${components//,/ }; do echo -n ' --component' $c; done)" >> $GITHUB_OUTPUT
+echo "downgrade=" >> $GITHUB_OUTPUT
+ [352.678645ms]
+[CICD/Ensure 'cargo clippy' has no warnings]   ⚙  ::set-output:: targets=
+[CICD/Ensure 'cargo clippy' has no warnings]   ⚙  ::set-output:: components= --component clippy
+[CICD/Ensure 'cargo clippy' has no warnings]   ⚙  ::set-output:: downgrade=
+[CICD/Ensure 'cargo clippy' has no warnings] ⭐ Run Main : set $CARGO_HOME
+echo CARGO_HOME=${CARGO_HOME:-"$HOME/.cargo"} >> $GITHUB_ENV
+[CICD/Ensure 'cargo fmt' has been run      ] Non-terminating error while running 'git clone': some refs were not updated
+[CICD/Ensure 'cargo clippy' has no warnings]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/0-composite-2.sh] user= workdir=
+[CICD/Ensure 'cargo clippy' has no warnings]   ✅  Success - Main : set $CARGO_HOME
+echo CARGO_HOME=${CARGO_HOME:-"$HOME/.cargo"} >> $GITHUB_ENV
+ [319.513608ms]
+[CICD/Ensure 'cargo clippy' has no warnings]   ⚙  ::set-env:: CARGO_HOME=/root/.cargo
+[CICD/Ensure 'cargo fmt' has been run      ] ⭐ Run Pre dtolnay/rust-toolchain@stable
+[CICD/Ensure 'cargo fmt' has been run      ]   ✅  Success - Pre dtolnay/rust-toolchain@stable [208.144998ms]
+[CICD/Ensure 'cargo clippy' has no warnings] ⭐ Run Main : install rustup if needed
+if ! command -v rustup &>/dev/null; then
+  curl --proto '=https' --tlsv1.2 --retry 10 --retry-connrefused --location --silent --show-error --fail https://sh.rustup.rs | sh -s -- --default-toolchain none -y
+  echo "$CARGO_HOME/bin" >> $GITHUB_PATH
+fi
+[CICD/Ensure 'cargo clippy' has no warnings]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/0-composite-3.sh] user= workdir=
+[CICD/Ensure 'cargo fmt' has been run      ] ⭐ Run Main dtolnay/rust-toolchain@stable
+[CICD/Ensure 'cargo fmt' has been run      ]   🐳  docker cp src=/home/mnabil/.cache/act/dtolnay-rust-toolchain@stable/ dst=/var/run/act/actions/dtolnay-rust-toolchain@stable/
+[CICD/Ensure 'cargo clippy' has no warnings]   | info: downloading installer
+[CICD/Ensure 'cargo fmt' has been run      ] ⭐ Run Main : parse toolchain version
+if [[ -z $toolchain ]]; then
+  # GitHub does not enforce `required: true` inputs itself. https://github.com/actions/runner/issues/1070
+  echo "'toolchain' is a required input" >&2
+  exit 1
+elif [[ $toolchain =~ ^stable' '[0-9]+' '(year|month|week|day)s?' 'ago$ ]]; then
+  if [[ Linux == macOS ]]; then
+    echo "toolchain=1.$((($(date -v-$(sed 's/stable \([0-9]*\) \(.\).*/\1\2/' <<< $toolchain) +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT
+  else
+    echo "toolchain=1.$((($(date --date "${toolchain#stable }" +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT
+  fi
+elif [[ $toolchain =~ ^stable' 'minus' '[0-9]+' 'releases?$ ]]; then
+  echo "toolchain=1.$((($(date +%s)/60/60/24-16569)/7/6-${toolchain//[^0-9]/}))" >> $GITHUB_OUTPUT
+elif [[ $toolchain =~ ^1\.[0-9]+$ ]]; then
+  echo "toolchain=1.$((i=${toolchain#1.}, c=($(date +%s)/60/60/24-16569)/7/6, i+9*i*(10*i<=c)+90*i*(100*i<=c)))" >> $GITHUB_OUTPUT
+else
+  echo "toolchain=$toolchain" >> $GITHUB_OUTPUT
+fi
+[CICD/Ensure 'cargo clippy' has no warnings]   | warn: It looks like you have an existing rustup settings file at:
+[CICD/Ensure 'cargo clippy' has no warnings]   | warn: /root/.rustup/settings.toml
+[CICD/Ensure 'cargo clippy' has no warnings]   | warn: Rustup will install the default toolchain as specified in the settings file,
+[CICD/Ensure 'cargo clippy' has no warnings]   | warn: instead of the one inferred from the default host triple.
+[CICD/Ensure 'cargo fmt' has been run      ]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/0-composite-parse.sh] user= workdir=
+[CICD/Ensure 'cargo clippy' has no warnings]   | info: profile set to default
+[CICD/Ensure 'cargo clippy' has no warnings]   | info: default host triple is x86_64-unknown-linux-gnu
+[CICD/Ensure 'cargo clippy' has no warnings]   | info: skipping toolchain installation
+[CICD/Ensure 'cargo clippy' has no warnings]   | 
+[CICD/Ensure 'cargo clippy' has no warnings]   | 
+[CICD/Ensure 'cargo clippy' has no warnings]   | Rust is installed now. Great!
+[CICD/Ensure 'cargo clippy' has no warnings]   | 
+[CICD/Ensure 'cargo clippy' has no warnings]   | To get started you may need to restart your current shell.
+[CICD/Ensure 'cargo clippy' has no warnings]   | This would reload your PATH environment variable to include
+[CICD/Ensure 'cargo clippy' has no warnings]   | Cargo's bin directory ($HOME/.cargo/bin).
+[CICD/Ensure 'cargo clippy' has no warnings]   | 
+[CICD/Ensure 'cargo clippy' has no warnings]   | To configure your current shell, you need to source
+[CICD/Ensure 'cargo clippy' has no warnings]   | the corresponding env file under $HOME/.cargo.
+[CICD/Ensure 'cargo clippy' has no warnings]   | 
+[CICD/Ensure 'cargo clippy' has no warnings]   | This is usually done by running one of the following (note the leading DOT):
+[CICD/Ensure 'cargo clippy' has no warnings]   | . "$HOME/.cargo/env"            # For sh/bash/zsh/ash/dash/pdksh
+[CICD/Ensure 'cargo clippy' has no warnings]   | source "$HOME/.cargo/env.fish"  # For fish
+[CICD/Ensure 'cargo clippy' has no warnings]   | source "~/.cargo/env.nu"  # For nushell
+[CICD/Ensure 'cargo clippy' has no warnings]   | source "$HOME/.cargo/env.tcsh"  # For tcsh
+[CICD/Ensure 'cargo clippy' has no warnings]   | . "$HOME/.cargo/env.ps1"        # For pwsh
+[CICD/Ensure 'cargo clippy' has no warnings]   | source "$HOME/.cargo/env.xsh"   # For xonsh
+[CICD/Ensure 'cargo clippy' has no warnings]   ✅  Success - Main : install rustup if needed
+if ! command -v rustup &>/dev/null; then
+  curl --proto '=https' --tlsv1.2 --retry 10 --retry-connrefused --location --silent --show-error --fail https://sh.rustup.rs | sh -s -- --default-toolchain none -y
+  echo "$CARGO_HOME/bin" >> $GITHUB_PATH
+fi
+ [1.05760651s]
+[CICD/Ensure 'cargo fmt' has been run      ]   ✅  Success - Main : parse toolchain version
+if [[ -z $toolchain ]]; then
+  # GitHub does not enforce `required: true` inputs itself. https://github.com/actions/runner/issues/1070
+  echo "'toolchain' is a required input" >&2
+  exit 1
+elif [[ $toolchain =~ ^stable' '[0-9]+' '(year|month|week|day)s?' 'ago$ ]]; then
+  if [[ Linux == macOS ]]; then
+    echo "toolchain=1.$((($(date -v-$(sed 's/stable \([0-9]*\) \(.\).*/\1\2/' <<< $toolchain) +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT
+  else
+    echo "toolchain=1.$((($(date --date "${toolchain#stable }" +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT
+  fi
+elif [[ $toolchain =~ ^stable' 'minus' '[0-9]+' 'releases?$ ]]; then
+  echo "toolchain=1.$((($(date +%s)/60/60/24-16569)/7/6-${toolchain//[^0-9]/}))" >> $GITHUB_OUTPUT
+elif [[ $toolchain =~ ^1\.[0-9]+$ ]]; then
+  echo "toolchain=1.$((i=${toolchain#1.}, c=($(date +%s)/60/60/24-16569)/7/6, i+9*i*(10*i<=c)+90*i*(100*i<=c)))" >> $GITHUB_OUTPUT
+else
+  echo "toolchain=$toolchain" >> $GITHUB_OUTPUT
+fi
+ [282.361416ms]
+[CICD/Ensure 'cargo fmt' has been run      ]   ⚙  ::set-output:: toolchain=stable
+[CICD/Ensure 'cargo clippy' has no warnings]   ⚙  ::add-path:: /root/.cargo/bin
+[CICD/Ensure 'cargo fmt' has been run      ] ⭐ Run Main : construct rustup command line
+echo "targets=$(for t in ${targets//,/ }; do echo -n ' --target' $t; done)" >> $GITHUB_OUTPUT
+echo "components=$(for c in ${components//,/ }; do echo -n ' --component' $c; done)" >> $GITHUB_OUTPUT
+echo "downgrade=" >> $GITHUB_OUTPUT
+[CICD/Ensure 'cargo clippy' has no warnings] ⭐ Run Main rustup toolchain install stable
+[CICD/Ensure 'cargo fmt' has been run      ]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/0-composite-flags.sh] user= workdir=
+[CICD/Ensure 'cargo fmt' has been run      ]   ✅  Success - Main : construct rustup command line
+echo "targets=$(for t in ${targets//,/ }; do echo -n ' --target' $t; done)" >> $GITHUB_OUTPUT
+echo "components=$(for c in ${components//,/ }; do echo -n ' --component' $c; done)" >> $GITHUB_OUTPUT
+echo "downgrade=" >> $GITHUB_OUTPUT
+ [294.335542ms]
+[CICD/Ensure 'cargo fmt' has been run      ]   ⚙  ::set-output:: targets=
+[CICD/Ensure 'cargo fmt' has been run      ]   ⚙  ::set-output:: components= --component rustfmt
+[CICD/Ensure 'cargo fmt' has been run      ]   ⚙  ::set-output:: downgrade=
+[CICD/Ensure 'cargo clippy' has no warnings]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/0-composite-5.sh] user= workdir=
+[CICD/Ensure 'cargo clippy' has no warnings]   | info: syncing channel updates for stable-x86_64-unknown-linux-gnu
+[CICD/Ensure 'cargo fmt' has been run      ] ⭐ Run Main : set $CARGO_HOME
+echo CARGO_HOME=${CARGO_HOME:-"$HOME/.cargo"} >> $GITHUB_ENV
+[CICD/Ensure 'cargo fmt' has been run      ]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/0-composite-2.sh] user= workdir=
+[CICD/Ensure 'cargo fmt' has been run      ]   ✅  Success - Main : set $CARGO_HOME
+echo CARGO_HOME=${CARGO_HOME:-"$HOME/.cargo"} >> $GITHUB_ENV
+ [306.536698ms]
+[CICD/Ensure 'cargo fmt' has been run      ]   ⚙  ::set-env:: CARGO_HOME=/root/.cargo
+[CICD/Ensure 'cargo clippy' has no warnings]   | info: latest update on 2026-03-26 for version 1.94.1 (e408947bf 2026-03-25)
+[CICD/Ensure 'cargo clippy' has no warnings]   | info: downloading 4 components
+[CICD/Ensure 'cargo fmt' has been run      ] ⭐ Run Main : install rustup if needed
+if ! command -v rustup &>/dev/null; then
+  curl --proto '=https' --tlsv1.2 --retry 10 --retry-connrefused --location --silent --show-error --fail https://sh.rustup.rs | sh -s -- --default-toolchain none -y
+  echo "$CARGO_HOME/bin" >> $GITHUB_PATH
+fi
+[CICD/Ensure 'cargo fmt' has been run      ]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/0-composite-3.sh] user= workdir=
+[CICD/Ensure 'cargo fmt' has been run      ]   | info: downloading installer
+[CICD/Ensure 'cargo fmt' has been run      ]   | warn: It looks like you have an existing rustup settings file at:
+[CICD/Ensure 'cargo fmt' has been run      ]   | warn: /root/.rustup/settings.toml
+[CICD/Ensure 'cargo fmt' has been run      ]   | warn: Rustup will install the default toolchain as specified in the settings file,
+[CICD/Ensure 'cargo fmt' has been run      ]   | warn: instead of the one inferred from the default host triple.
+[CICD/Ensure 'cargo fmt' has been run      ]   | info: profile set to default
+[CICD/Ensure 'cargo fmt' has been run      ]   | info: default host triple is x86_64-unknown-linux-gnu
+[CICD/Ensure 'cargo fmt' has been run      ]   | info: skipping toolchain installation
+[CICD/Ensure 'cargo fmt' has been run      ]   | 
+[CICD/Ensure 'cargo fmt' has been run      ]   | 
+[CICD/Ensure 'cargo fmt' has been run      ]   | Rust is installed now. Great!
+[CICD/Ensure 'cargo fmt' has been run      ]   | 
+[CICD/Ensure 'cargo fmt' has been run      ]   | To get started you may need to restart your current shell.
+[CICD/Ensure 'cargo fmt' has been run      ]   | This would reload your PATH environment variable to include
+[CICD/Ensure 'cargo fmt' has been run      ]   | Cargo's bin directory ($HOME/.cargo/bin).
+[CICD/Ensure 'cargo fmt' has been run      ]   | 
+[CICD/Ensure 'cargo fmt' has been run      ]   | To configure your current shell, you need to source
+[CICD/Ensure 'cargo fmt' has been run      ]   | the corresponding env file under $HOME/.cargo.
+[CICD/Ensure 'cargo fmt' has been run      ]   | 
+[CICD/Ensure 'cargo fmt' has been run      ]   | This is usually done by running one of the following (note the leading DOT):
+[CICD/Ensure 'cargo fmt' has been run      ]   | . "$HOME/.cargo/env"            # For sh/bash/zsh/ash/dash/pdksh
+[CICD/Ensure 'cargo fmt' has been run      ]   | source "$HOME/.cargo/env.fish"  # For fish
+[CICD/Ensure 'cargo fmt' has been run      ]   | source "~/.cargo/env.nu"  # For nushell
+[CICD/Ensure 'cargo fmt' has been run      ]   | source "$HOME/.cargo/env.tcsh"  # For tcsh
+[CICD/Ensure 'cargo fmt' has been run      ]   | . "$HOME/.cargo/env.ps1"        # For pwsh
+[CICD/Ensure 'cargo fmt' has been run      ]   | source "$HOME/.cargo/env.xsh"   # For xonsh
+[CICD/Ensure 'cargo fmt' has been run      ]   ✅  Success - Main : install rustup if needed
+if ! command -v rustup &>/dev/null; then
+  curl --proto '=https' --tlsv1.2 --retry 10 --retry-connrefused --location --silent --show-error --fail https://sh.rustup.rs | sh -s -- --default-toolchain none -y
+  echo "$CARGO_HOME/bin" >> $GITHUB_PATH
+fi
+ [2.173586432s]
+[CICD/Ensure 'cargo fmt' has been run      ]   ⚙  ::add-path:: /root/.cargo/bin
+[CICD/Ensure 'cargo fmt' has been run      ] ⭐ Run Main rustup toolchain install stable
+[CICD/Ensure 'cargo fmt' has been run      ]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/0-composite-5.sh] user= workdir=
+[CICD/Ensure 'cargo fmt' has been run      ]   | info: syncing channel updates for stable-x86_64-unknown-linux-gnu
+[CICD/Ensure 'cargo fmt' has been run      ]   | info: latest update on 2026-03-26 for version 1.94.1 (e408947bf 2026-03-25)
+[CICD/Ensure 'cargo fmt' has been run      ]   | info: downloading 4 components
+[CICD/Ensure 'cargo clippy' has no warnings]   | 
+[CICD/Ensure 'cargo clippy' has no warnings]   |   stable-x86_64-unknown-linux-gnu installed - rustc 1.94.1 (e408947bf 2026-03-25)
+[CICD/Ensure 'cargo clippy' has no warnings]   | 
+[CICD/Ensure 'cargo clippy' has no warnings]   | info: default toolchain set to stable-x86_64-unknown-linux-gnu
+[CICD/Ensure 'cargo clippy' has no warnings]   ✅  Success - Main rustup toolchain install stable [14.34862236s]
+[CICD/Ensure 'cargo clippy' has no warnings] ⭐ Run Main rustup default stable
+[CICD/Ensure 'cargo clippy' has no warnings]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/0-composite-6.sh] user= workdir=
+[CICD/Ensure 'cargo clippy' has no warnings]   | info: using existing install for stable-x86_64-unknown-linux-gnu
+[CICD/Ensure 'cargo clippy' has no warnings]   | info: default toolchain set to stable-x86_64-unknown-linux-gnu
+[CICD/Ensure 'cargo clippy' has no warnings]   | 
+[CICD/Ensure 'cargo clippy' has no warnings]   |   stable-x86_64-unknown-linux-gnu unchanged - rustc 1.94.1 (e408947bf 2026-03-25)
+[CICD/Ensure 'cargo clippy' has no warnings]   | 
+[CICD/Ensure 'cargo clippy' has no warnings]   ✅  Success - Main rustup default stable [384.825858ms]
+[CICD/Ensure 'cargo clippy' has no warnings] ⭐ Run Main : create cachekey
+DATE=$(rustc +stable --version --verbose | sed -ne 's/^commit-date: \(20[0-9][0-9]\)-\([01][0-9]\)-\([0-3][0-9]\)$/\1\2\3/p')
+HASH=$(rustc +stable --version --verbose | sed -ne 's/^commit-hash: //p')
+echo "cachekey=$(echo $DATE$HASH | head -c12)" >> $GITHUB_OUTPUT
+[CICD/Ensure 'cargo clippy' has no warnings]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/0-composite-rustc-version.sh] user= workdir=
+[CICD/Ensure 'cargo clippy' has no warnings]   ✅  Success - Main : create cachekey
+DATE=$(rustc +stable --version --verbose | sed -ne 's/^commit-date: \(20[0-9][0-9]\)-\([01][0-9]\)-\([0-3][0-9]\)$/\1\2\3/p')
+HASH=$(rustc +stable --version --verbose | sed -ne 's/^commit-hash: //p')
+echo "cachekey=$(echo $DATE$HASH | head -c12)" >> $GITHUB_OUTPUT
+ [347.505324ms]
+[CICD/Ensure 'cargo clippy' has no warnings]   ⚙  ::set-output:: cachekey=20260325e408
+[CICD/Ensure 'cargo clippy' has no warnings] ⭐ Run Main : disable incremental compilation
+if [ -z "${CARGO_INCREMENTAL+set}" ]; then
+  echo CARGO_INCREMENTAL=0 >> $GITHUB_ENV
+fi
+[CICD/Ensure 'cargo clippy' has no warnings]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/0-composite-8.sh] user= workdir=
+[CICD/Ensure 'cargo clippy' has no warnings]   ✅  Success - Main : disable incremental compilation
+if [ -z "${CARGO_INCREMENTAL+set}" ]; then
+  echo CARGO_INCREMENTAL=0 >> $GITHUB_ENV
+fi
+ [265.438616ms]
+[CICD/Ensure 'cargo clippy' has no warnings]   ⚙  ::set-env:: CARGO_INCREMENTAL=0
+[CICD/Ensure 'cargo clippy' has no warnings] ⭐ Run Main : enable colors in Cargo output
+if [ -z "${CARGO_TERM_COLOR+set}" ]; then
+  echo CARGO_TERM_COLOR=always >> $GITHUB_ENV
+fi
+[CICD/Ensure 'cargo clippy' has no warnings]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/0-composite-9.sh] user= workdir=
+[CICD/Ensure 'cargo clippy' has no warnings]   ✅  Success - Main : enable colors in Cargo output
+if [ -z "${CARGO_TERM_COLOR+set}" ]; then
+  echo CARGO_TERM_COLOR=always >> $GITHUB_ENV
+fi
+ [282.90042ms]
+[CICD/Ensure 'cargo clippy' has no warnings]   ⚙  ::set-env:: CARGO_TERM_COLOR=always
+[CICD/Ensure 'cargo clippy' has no warnings] ⭐ Run Main : enable Cargo sparse registry
+# implemented in 1.66, stabilized in 1.68, made default in 1.70
+if [ -z "${CARGO_REGISTRIES_CRATES_IO_PROTOCOL+set}" -o -f "/tmp"/.implicit_cargo_registries_crates_io_protocol ]; then
+  if rustc +stable --version --verbose | grep -q '^release: 1\.6[89]\.'; then
+    touch "/tmp"/.implicit_cargo_registries_crates_io_protocol || true
+    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse >> $GITHUB_ENV
+  elif rustc +stable --version --verbose | grep -q '^release: 1\.6[67]\.'; then
+    touch "/tmp"/.implicit_cargo_registries_crates_io_protocol || true
+    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=git >> $GITHUB_ENV
+  fi
+fi
+[CICD/Ensure 'cargo clippy' has no warnings]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/0-composite-10.sh] user= workdir=
+[CICD/Ensure 'cargo clippy' has no warnings]   ✅  Success - Main : enable Cargo sparse registry
+# implemented in 1.66, stabilized in 1.68, made default in 1.70
+if [ -z "${CARGO_REGISTRIES_CRATES_IO_PROTOCOL+set}" -o -f "/tmp"/.implicit_cargo_registries_crates_io_protocol ]; then
+  if rustc +stable --version --verbose | grep -q '^release: 1\.6[89]\.'; then
+    touch "/tmp"/.implicit_cargo_registries_crates_io_protocol || true
+    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse >> $GITHUB_ENV
+  elif rustc +stable --version --verbose | grep -q '^release: 1\.6[67]\.'; then
+    touch "/tmp"/.implicit_cargo_registries_crates_io_protocol || true
+    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=git >> $GITHUB_ENV
+  fi
+fi
+ [355.148128ms]
+[CICD/Ensure 'cargo clippy' has no warnings] ⭐ Run Main : work around spurious network errors in curl 8.0
+# https://rust-lang.zulipchat.com/#narrow/stream/246057-t-cargo/topic/timeout.20investigation
+if rustc +stable --version --verbose | grep -q '^release: 1\.7[01]\.'; then
+  echo CARGO_HTTP_MULTIPLEXING=false >> $GITHUB_ENV
+fi
+[CICD/Ensure 'cargo fmt' has been run      ]   | 
+[CICD/Ensure 'cargo fmt' has been run      ]   |   stable-x86_64-unknown-linux-gnu installed - rustc 1.94.1 (e408947bf 2026-03-25)
+[CICD/Ensure 'cargo fmt' has been run      ]   | 
+[CICD/Ensure 'cargo fmt' has been run      ]   | info: default toolchain set to stable-x86_64-unknown-linux-gnu
+[CICD/Ensure 'cargo fmt' has been run      ]   ✅  Success - Main rustup toolchain install stable [14.201651895s]
+[CICD/Ensure 'cargo clippy' has no warnings]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/0-composite-11.sh] user= workdir=
+[CICD/Ensure 'cargo clippy' has no warnings]   ✅  Success - Main : work around spurious network errors in curl 8.0
+# https://rust-lang.zulipchat.com/#narrow/stream/246057-t-cargo/topic/timeout.20investigation
+if rustc +stable --version --verbose | grep -q '^release: 1\.7[01]\.'; then
+  echo CARGO_HTTP_MULTIPLEXING=false >> $GITHUB_ENV
+fi
+ [341.736138ms]
+[CICD/Ensure 'cargo fmt' has been run      ] ⭐ Run Main rustup default stable
+[CICD/Ensure 'cargo clippy' has no warnings] ⭐ Run Main rustc +stable --version --verbose
+[CICD/Ensure 'cargo fmt' has been run      ]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/0-composite-6.sh] user= workdir=
+[CICD/Ensure 'cargo fmt' has been run      ]   | info: using existing install for stable-x86_64-unknown-linux-gnu
+[CICD/Ensure 'cargo fmt' has been run      ]   | 
+[CICD/Ensure 'cargo fmt' has been run      ]   | info: default toolchain set to stable-x86_64-unknown-linux-gnu
+[CICD/Ensure 'cargo fmt' has been run      ]   |   stable-x86_64-unknown-linux-gnu unchanged - rustc 1.94.1 (e408947bf 2026-03-25)
+[CICD/Ensure 'cargo fmt' has been run      ]   | 
+[CICD/Ensure 'cargo fmt' has been run      ]   ✅  Success - Main rustup default stable [352.772981ms]
+[CICD/Ensure 'cargo clippy' has no warnings]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/0-composite-12.sh] user= workdir=
+[CICD/Ensure 'cargo clippy' has no warnings]   | rustc 1.94.1 (e408947bf 2026-03-25)
+[CICD/Ensure 'cargo clippy' has no warnings]   | binary: rustc
+[CICD/Ensure 'cargo clippy' has no warnings]   | commit-hash: e408947bfd200af42db322daf0fadfe7e26d3bd1
+[CICD/Ensure 'cargo clippy' has no warnings]   | commit-date: 2026-03-25
+[CICD/Ensure 'cargo clippy' has no warnings]   | host: x86_64-unknown-linux-gnu
+[CICD/Ensure 'cargo clippy' has no warnings]   | release: 1.94.1
+[CICD/Ensure 'cargo clippy' has no warnings]   | LLVM version: 21.1.8
+[CICD/Ensure 'cargo clippy' has no warnings]   ✅  Success - Main rustc +stable --version --verbose [374.615831ms]
+[CICD/Ensure 'cargo fmt' has been run      ] ⭐ Run Main : create cachekey
+DATE=$(rustc +stable --version --verbose | sed -ne 's/^commit-date: \(20[0-9][0-9]\)-\([01][0-9]\)-\([0-3][0-9]\)$/\1\2\3/p')
+HASH=$(rustc +stable --version --verbose | sed -ne 's/^commit-hash: //p')
+echo "cachekey=$(echo $DATE$HASH | head -c12)" >> $GITHUB_OUTPUT
+[CICD/Ensure 'cargo clippy' has no warnings]   ⚙  ::set-output:: cachekey=20260325e408
+[CICD/Ensure 'cargo clippy' has no warnings]   ⚙  ::set-output:: name=stable
+[CICD/Ensure 'cargo clippy' has no warnings]   ✅  Success - Main dtolnay/rust-toolchain@stable [23.05710609s]
+[CICD/Ensure 'cargo fmt' has been run      ]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/0-composite-rustc-version.sh] user= workdir=
+[CICD/Ensure 'cargo fmt' has been run      ]   ✅  Success - Main : create cachekey
+DATE=$(rustc +stable --version --verbose | sed -ne 's/^commit-date: \(20[0-9][0-9]\)-\([01][0-9]\)-\([0-3][0-9]\)$/\1\2\3/p')
+HASH=$(rustc +stable --version --verbose | sed -ne 's/^commit-hash: //p')
+echo "cachekey=$(echo $DATE$HASH | head -c12)" >> $GITHUB_OUTPUT
+ [452.58256ms]
+[CICD/Ensure 'cargo clippy' has no warnings] ⭐ Run Main actions/checkout@v6
+[CICD/Ensure 'cargo fmt' has been run      ]   ⚙  ::set-output:: cachekey=20260325e408
+[CICD/Ensure 'cargo clippy' has no warnings]   🐳  docker cp src=/mnt/2tbb/mnabil/new-llm4build/LLM4Build/project_path/fd/. dst=/mnt/2tbb/mnabil/new-llm4build/LLM4Build/project_path/fd
+[CICD/Ensure 'cargo fmt' has been run      ] ⭐ Run Main : disable incremental compilation
+if [ -z "${CARGO_INCREMENTAL+set}" ]; then
+  echo CARGO_INCREMENTAL=0 >> $GITHUB_ENV
+fi
+[CICD/Ensure 'cargo fmt' has been run      ]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/0-composite-8.sh] user= workdir=
+[CICD/Ensure 'cargo clippy' has no warnings]   ✅  Success - Main actions/checkout@v6 [683.014364ms]
+[CICD/Ensure 'cargo fmt' has been run      ]   ✅  Success - Main : disable incremental compilation
+if [ -z "${CARGO_INCREMENTAL+set}" ]; then
+  echo CARGO_INCREMENTAL=0 >> $GITHUB_ENV
+fi
+ [398.191178ms]
+[CICD/Ensure 'cargo fmt' has been run      ]   ⚙  ::set-env:: CARGO_INCREMENTAL=0
+[CICD/Ensure 'cargo clippy' has no warnings] ⭐ Run Main cargo clippy --all-targets --all-features -- -Dwarnings
+[CICD/Ensure 'cargo fmt' has been run      ] ⭐ Run Main : enable colors in Cargo output
+if [ -z "${CARGO_TERM_COLOR+set}" ]; then
+  echo CARGO_TERM_COLOR=always >> $GITHUB_ENV
+fi
+[CICD/Ensure 'cargo clippy' has no warnings]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/2] user= workdir=
+[CICD/Ensure 'cargo fmt' has been run      ]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/0-composite-9.sh] user= workdir=
+[CICD/Ensure 'cargo fmt' has been run      ]   ✅  Success - Main : enable colors in Cargo output
+if [ -z "${CARGO_TERM_COLOR+set}" ]; then
+  echo CARGO_TERM_COLOR=always >> $GITHUB_ENV
+fi
+ [270.987168ms]
+[CICD/Ensure 'cargo fmt' has been run      ]   ⚙  ::set-env:: CARGO_TERM_COLOR=always
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m    Updating[0m crates.io index
+[CICD/Ensure 'cargo fmt' has been run      ] ⭐ Run Main : enable Cargo sparse registry
+# implemented in 1.66, stabilized in 1.68, made default in 1.70
+if [ -z "${CARGO_REGISTRIES_CRATES_IO_PROTOCOL+set}" -o -f "/tmp"/.implicit_cargo_registries_crates_io_protocol ]; then
+  if rustc +stable --version --verbose | grep -q '^release: 1\.6[89]\.'; then
+    touch "/tmp"/.implicit_cargo_registries_crates_io_protocol || true
+    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse >> $GITHUB_ENV
+  elif rustc +stable --version --verbose | grep -q '^release: 1\.6[67]\.'; then
+    touch "/tmp"/.implicit_cargo_registries_crates_io_protocol || true
+    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=git >> $GITHUB_ENV
+  fi
+fi
+[CICD/Ensure 'cargo fmt' has been run      ]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/0-composite-10.sh] user= workdir=
+[CICD/Ensure 'cargo fmt' has been run      ]   ✅  Success - Main : enable Cargo sparse registry
+# implemented in 1.66, stabilized in 1.68, made default in 1.70
+if [ -z "${CARGO_REGISTRIES_CRATES_IO_PROTOCOL+set}" -o -f "/tmp"/.implicit_cargo_registries_crates_io_protocol ]; then
+  if rustc +stable --version --verbose | grep -q '^release: 1\.6[89]\.'; then
+    touch "/tmp"/.implicit_cargo_registries_crates_io_protocol || true
+    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse >> $GITHUB_ENV
+  elif rustc +stable --version --verbose | grep -q '^release: 1\.6[67]\.'; then
+    touch "/tmp"/.implicit_cargo_registries_crates_io_protocol || true
+    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=git >> $GITHUB_ENV
+  fi
+fi
+ [616.307116ms]
+[CICD/Ensure 'cargo fmt' has been run      ] ⭐ Run Main : work around spurious network errors in curl 8.0
+# https://rust-lang.zulipchat.com/#narrow/stream/246057-t-cargo/topic/timeout.20investigation
+if rustc +stable --version --verbose | grep -q '^release: 1\.7[01]\.'; then
+  echo CARGO_HTTP_MULTIPLEXING=false >> $GITHUB_ENV
+fi
+[CICD/Ensure 'cargo fmt' has been run      ]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/0-composite-11.sh] user= workdir=
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m Downloading[0m crates ...
+[CICD/Ensure 'cargo fmt' has been run      ]   ✅  Success - Main : work around spurious network errors in curl 8.0
+# https://rust-lang.zulipchat.com/#narrow/stream/246057-t-cargo/topic/timeout.20investigation
+if rustc +stable --version --verbose | grep -q '^release: 1\.7[01]\.'; then
+  echo CARGO_HTTP_MULTIPLEXING=false >> $GITHUB_ENV
+fi
+ [308.837478ms]
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m argmax v0.4.0
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m anstyle-query v1.1.5
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m anstyle v1.0.13
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m colorchoice v1.0.4
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m test-case-core v3.3.1
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m tikv-jemallocator v0.6.1
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m faccess v0.2.4
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m errno v0.3.14
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m clap_lex v1.0.0
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m etcetera v0.11.0
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m bitflags v2.11.0
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m fastrand v2.3.0
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m cfg_aliases v0.2.1
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m anstyle-parse v0.2.7
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m terminal_size v0.4.3
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m heck v0.5.0
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m test-case-macros v3.3.1
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m find-msvc-tools v0.1.9
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m utf8parse v0.2.2
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m anstream v0.6.21
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m test-case v3.3.1
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m globset v0.4.18
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m quote v1.0.45
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m walkdir v2.5.0
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m diff v0.1.13
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m tempfile v3.26.0
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m normpath v1.5.0
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m lscolors v0.21.0
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m is_terminal_polyfill v1.70.2
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m shlex v1.3.0
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m crossbeam-deque v0.8.6
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m crossbeam-epoch v0.9.18
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m once_cell v1.21.3
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m serde_core v1.0.228
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m unicode-ident v1.0.24
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m serde v1.0.228
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m cc v1.2.56
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m jiff-static v0.2.23
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m memchr v2.8.0
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m clap_derive v4.5.55
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m crossbeam-channel v0.5.15
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m aho-corasick v1.1.4
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m proc-macro2 v1.0.106
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m regex v1.12.3
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m clap_builder v4.5.60
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m ignore v0.4.25
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m nu-ansi-term v0.50.3
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m log v0.4.29
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m getrandom v0.4.2
+[CICD/Ensure 'cargo fmt' has been run      ] ⭐ Run Main rustc +stable --version --verbose
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m syn v2.0.117
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m crossbeam-utils v0.8.21
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m nix v0.30.1
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m bstr v1.12.1
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m clap_complete v4.5.66
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m nix v0.31.2
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m rustix v1.1.4
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m regex-syntax v0.8.10
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m clap v4.5.60
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m filetime v0.2.27
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m bitflags v1.3.2
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m strsim v0.11.1
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m same-file v1.0.6
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m ctrlc v3.5.2
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m cfg-if v1.0.4
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m anyhow v1.0.102
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m regex-automata v0.4.14
+[CICD/Ensure 'cargo fmt' has been run      ]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/0-composite-12.sh] user= workdir=
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m jiff v0.2.23
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m libc v0.2.183
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m tikv-jemalloc-sys v0.6.1+5.3.0-1-ge13ca993e8ccb9ba9847cc330696e02839f328f7
+[CICD/Ensure 'cargo fmt' has been run      ]   | rustc 1.94.1 (e408947bf 2026-03-25)
+[CICD/Ensure 'cargo fmt' has been run      ]   | binary: rustc
+[CICD/Ensure 'cargo fmt' has been run      ]   | commit-hash: e408947bfd200af42db322daf0fadfe7e26d3bd1
+[CICD/Ensure 'cargo fmt' has been run      ]   | commit-date: 2026-03-25
+[CICD/Ensure 'cargo fmt' has been run      ]   | host: x86_64-unknown-linux-gnu
+[CICD/Ensure 'cargo fmt' has been run      ]   | release: 1.94.1
+[CICD/Ensure 'cargo fmt' has been run      ]   | LLVM version: 21.1.8
+[CICD/Ensure 'cargo fmt' has been run      ]   ✅  Success - Main rustc +stable --version --verbose [335.156782ms]
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m  Downloaded[0m linux-raw-sys v0.12.1
+[CICD/Ensure 'cargo fmt' has been run      ]   ⚙  ::set-output:: cachekey=20260325e408
+[CICD/Ensure 'cargo fmt' has been run      ]   ⚙  ::set-output:: name=stable
+[CICD/Ensure 'cargo fmt' has been run      ]   ✅  Success - Main dtolnay/rust-toolchain@stable [24.180592873s]
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m   Compiling[0m libc v0.2.183
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m    Checking[0m bitflags v2.11.0
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m   Compiling[0m proc-macro2 v1.0.106
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m   Compiling[0m unicode-ident v1.0.24
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m   Compiling[0m quote v1.0.45
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m    Checking[0m cfg-if v1.0.4
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m   Compiling[0m cfg_aliases v0.2.1
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m    Checking[0m memchr v2.8.0
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m   Compiling[0m rustix v1.1.4
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m    Checking[0m linux-raw-sys v0.12.1
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m   Compiling[0m crossbeam-utils v0.8.21
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m    Checking[0m utf8parse v0.2.2
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m   Compiling[0m find-msvc-tools v0.1.9
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m   Compiling[0m shlex v1.3.0
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m    Checking[0m is_terminal_polyfill v1.70.2
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m    Checking[0m colorchoice v1.0.4
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m    Checking[0m anstyle-query v1.1.5
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m    Checking[0m anstyle v1.0.13
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m    Checking[0m regex-syntax v0.8.10
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m    Checking[0m clap_lex v1.0.0
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m   Compiling[0m heck v0.5.0
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m    Checking[0m strsim v0.11.1
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m    Checking[0m once_cell v1.21.3
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m   Compiling[0m anyhow v1.0.102
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m    Checking[0m log v0.4.29
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m   Compiling[0m getrandom v0.4.2
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m    Checking[0m same-file v1.0.6
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m    Checking[0m nu-ansi-term v0.50.3
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m    Checking[0m bitflags v1.3.2
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m    Checking[0m jiff v0.2.23
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m    Checking[0m normpath v1.5.0
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m    Checking[0m fastrand v2.3.0
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m    Checking[0m diff v0.1.13
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m    Checking[0m etcetera v0.11.0
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m   Compiling[0m nix v0.30.1
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m   Compiling[0m nix v0.31.2
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m    Checking[0m anstyle-parse v0.2.7
+[CICD/Ensure 'cargo fmt' has been run      ] ⭐ Run Main actions/checkout@v6
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m    Checking[0m walkdir v2.5.0
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m   Compiling[0m cc v1.2.56
+[CICD/Ensure 'cargo fmt' has been run      ]   🐳  docker cp src=/mnt/2tbb/mnabil/new-llm4build/LLM4Build/project_path/fd/. dst=/mnt/2tbb/mnabil/new-llm4build/LLM4Build/project_path/fd
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m    Checking[0m anstream v0.6.21
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m    Checking[0m aho-corasick v1.1.4
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m    Checking[0m bstr v1.12.1
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m    Checking[0m crossbeam-epoch v0.9.18
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m    Checking[0m crossbeam-channel v0.5.15
+[CICD/Ensure 'cargo fmt' has been run      ]   ✅  Success - Main actions/checkout@v6 [531.783199ms]
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m   Compiling[0m syn v2.0.117
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m    Checking[0m crossbeam-deque v0.8.6
+[CICD/Ensure 'cargo fmt' has been run      ] ⭐ Run Main cargo fmt -- --check
+[CICD/Ensure 'cargo fmt' has been run      ]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/2] user= workdir=
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m    Checking[0m lscolors v0.21.0
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m   Compiling[0m tikv-jemalloc-sys v0.6.1+5.3.0-1-ge13ca993e8ccb9ba9847cc330696e02839f328f7
+[CICD/Ensure 'cargo fmt' has been run      ]   ✅  Success - Main cargo fmt -- --check [448.742792ms]
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m    Checking[0m regex-automata v0.4.14
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m    Checking[0m faccess v0.2.4
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m    Checking[0m filetime v0.2.27
+[CICD/Ensure 'cargo fmt' has been run      ] ⭐ Run Post dtolnay/rust-toolchain@stable
+[CICD/Ensure 'cargo fmt' has been run      ]   🐳  docker cp src=/home/mnabil/.cache/act/dtolnay-rust-toolchain@stable/ dst=/var/run/act/actions/dtolnay-rust-toolchain@stable/
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m    Checking[0m argmax v0.4.0
+[CICD/Ensure 'cargo fmt' has been run      ]   ✅  Success - Post dtolnay/rust-toolchain@stable [150.29083ms]
+[CICD/Ensure 'cargo fmt' has been run      ] ⭐ Run Complete job
+[CICD/Ensure 'cargo fmt' has been run      ] Cleaning up container for job Ensure 'cargo fmt' has been run
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m    Checking[0m terminal_size v0.4.3
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m    Checking[0m tempfile v3.26.0
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m    Checking[0m clap_builder v4.5.60
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m    Checking[0m ctrlc v3.5.2
+[CICD/Ensure 'cargo fmt' has been run      ]   ✅  Success - Complete job
+[CICD/Ensure 'cargo fmt' has been run      ] 🏁  Job succeeded
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m    Checking[0m globset v0.4.18
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m    Checking[0m regex v1.12.3
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m    Checking[0m ignore v0.4.25
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m   Compiling[0m test-case-core v3.3.1
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m   Compiling[0m clap_derive v4.5.55
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m   Compiling[0m test-case-macros v3.3.1
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m    Checking[0m test-case v3.3.1
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m    Checking[0m clap v4.5.60
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m    Checking[0m clap_complete v4.5.66
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m    Checking[0m tikv-jemallocator v0.6.1
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m    Checking[0m fd-find v10.4.2 (/mnt/2tbb/mnabil/new-llm4build/LLM4Build/project_path/fd)
+[CICD/Ensure 'cargo clippy' has no warnings]   | [1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 42.36s
+[CICD/Ensure 'cargo clippy' has no warnings]   ✅  Success - Main cargo clippy --all-targets --all-features -- -Dwarnings [42.768068566s]
+[CICD/Ensure 'cargo clippy' has no warnings] ⭐ Run Post dtolnay/rust-toolchain@stable
+[CICD/Ensure 'cargo clippy' has no warnings]   🐳  docker cp src=/home/mnabil/.cache/act/dtolnay-rust-toolchain@stable/ dst=/var/run/act/actions/dtolnay-rust-toolchain@stable/
+[CICD/Ensure 'cargo clippy' has no warnings]   ✅  Success - Post dtolnay/rust-toolchain@stable [153.982944ms]
+[CICD/Ensure 'cargo clippy' has no warnings] ⭐ Run Complete job
+[CICD/Ensure 'cargo clippy' has no warnings] Cleaning up container for job Ensure 'cargo clippy' has no warnings
+[CICD/Ensure 'cargo clippy' has no warnings]   ✅  Success - Complete job
+[CICD/Ensure 'cargo clippy' has no warnings] 🏁  Job succeeded
+[CICD/aarch64-unknown-linux-gnu (ubuntu-24.04)-1   ] 🚧  Skipping unsupported platform -- Try running with `-P ubuntu-24.04=...`
+[CICD/Minimum supported rust version               ] ⭐ Run Set up job
+[CICD/Minimum supported rust version               ] 🚀  Start image=catthehacker/ubuntu:act-22.04
+[CICD/aarch64-unknown-linux-musl (ubuntu-24.04)-2  ] 🚧  Skipping unsupported platform -- Try running with `-P ubuntu-24.04=...`
+[CICD/arm-unknown-linux-musleabihf (ubuntu-24.04)-4] 🚧  Skipping unsupported platform -- Try running with `-P ubuntu-24.04=...`
+[CICD/i686-pc-windows-msvc (windows-2022)-5        ] 🚧  Skipping unsupported platform -- Try running with `-P ubuntu-24.04=...`
+[CICD/arm-unknown-linux-gnueabihf (ubuntu-24.04)-3 ] 🚧  Skipping unsupported platform -- Try running with `-P ubuntu-24.04=...`
+[CICD/i686-unknown-linux-gnu (ubuntu-24.04)-6      ] 🚧  Skipping unsupported platform -- Try running with `-P ubuntu-24.04=...`
+[CICD/aarch64-apple-darwin (macos-14)-8            ] 🚧  Skipping unsupported platform -- Try running with `-P ubuntu-24.04=...`
+[CICD/i686-unknown-linux-musl (ubuntu-24.04)-7     ] 🚧  Skipping unsupported platform -- Try running with `-P ubuntu-24.04=...`
+[CICD/aarch64-pc-windows-msvc (windows-11-arm)-11  ] 🚧  Skipping unsupported platform -- Try running with `-P ubuntu-24.04=...`
+[CICD/x86_64-unknown-linux-gnu (ubuntu-24.04)-12   ] 🚧  Skipping unsupported platform -- Try running with `-P ubuntu-24.04=...`
+[CICD/x86_64-pc-windows-gnu (windows-2022)-9       ] 🚧  Skipping unsupported platform -- Try running with `-P ubuntu-24.04=...`
+[CICD/x86_64-unknown-linux-musl (ubuntu-24.04)-13  ] 🚧  Skipping unsupported platform -- Try running with `-P ubuntu-24.04=...`
+[CICD/x86_64-pc-windows-msvc (windows-2022)-10     ] 🚧  Skipping unsupported platform -- Try running with `-P ubuntu-24.04=...`
+[CICD/Minimum supported rust version               ]   🐳  docker pull image=catthehacker/ubuntu:act-22.04 platform= username= forcePull=true
+[CICD/Minimum supported rust version               ]   🐳  docker create image=catthehacker/ubuntu:act-22.04 platform= entrypoint=["tail" "-f" "/dev/null"] cmd=[] network="host"
+[CICD/Minimum supported rust version               ]   🐳  docker run image=catthehacker/ubuntu:act-22.04 platform= entrypoint=["tail" "-f" "/dev/null"] cmd=[] network="host"
+[CICD/Minimum supported rust version               ]   🐳  docker exec cmd=[node --no-warnings -e console.log(process.execPath)] user= workdir=
+[CICD/Minimum supported rust version               ]   ✅  Success - Set up job
+[CICD/Minimum supported rust version               ]   ☁  git clone 'https://github.com/dtolnay/rust-toolchain' # ref=master
+[CICD/Minimum supported rust version               ] Non-terminating error while running 'git clone': some refs were not updated
+[CICD/Minimum supported rust version               ] ⭐ Run Pre Install rust toolchain (v)
+[CICD/Minimum supported rust version               ]   ✅  Success - Pre Install rust toolchain (v) [179.907751ms]
+[CICD/Minimum supported rust version               ] ⭐ Run Main Checkout source code
+[CICD/Minimum supported rust version               ]   🐳  docker cp src=/mnt/2tbb/mnabil/new-llm4build/LLM4Build/project_path/fd/. dst=/mnt/2tbb/mnabil/new-llm4build/LLM4Build/project_path/fd
+[CICD/Minimum supported rust version               ]   ✅  Success - Main Checkout source code [536.189138ms]
+[CICD/Minimum supported rust version               ] ⭐ Run Main Install rust toolchain (v)
+[CICD/Minimum supported rust version               ]   🐳  docker cp src=/home/mnabil/.cache/act/dtolnay-rust-toolchain@master/ dst=/var/run/act/actions/dtolnay-rust-toolchain@master/
+[CICD/Minimum supported rust version               ] ⭐ Run Main : parse toolchain version
+if [[ -z $toolchain ]]; then
+  # GitHub does not enforce `required: true` inputs itself. https://github.com/actions/runner/issues/1070
+  echo "'toolchain' is a required input" >&2
+  exit 1
+elif [[ $toolchain =~ ^stable' '[0-9]+' '(year|month|week|day)s?' 'ago$ ]]; then
+  if [[ Linux == macOS ]]; then
+    echo "toolchain=1.$((($(date -v-$(sed 's/stable \([0-9]*\) \(.\).*/\1\2/' <<< $toolchain) +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT
+  else
+    echo "toolchain=1.$((($(date --date "${toolchain#stable }" +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT
+  fi
+elif [[ $toolchain =~ ^stable' 'minus' '[0-9]+' 'releases?$ ]]; then
+  echo "toolchain=1.$((($(date +%s)/60/60/24-16569)/7/6-${toolchain//[^0-9]/}))" >> $GITHUB_OUTPUT
+elif [[ $toolchain =~ ^1\.[0-9]+$ ]]; then
+  echo "toolchain=1.$((i=${toolchain#1.}, c=($(date +%s)/60/60/24-16569)/7/6, i+9*i*(10*i<=c)+90*i*(100*i<=c)))" >> $GITHUB_OUTPUT
+else
+  echo "toolchain=$toolchain" >> $GITHUB_OUTPUT
+fi
+[CICD/Minimum supported rust version               ]   🐳  docker exec cmd=[bash --noprofile --norc -e -o pipefail /var/run/act/workflow/1-composite-parse.sh] user= workdir=
+[CICD/Minimum supported rust version               ]   | 'toolchain' is a required input
+[CICD/Minimum supported rust version               ]   ❌  Failure - Main : parse toolchain version
+if [[ -z $toolchain ]]; then
+  # GitHub does not enforce `required: true` inputs itself. https://github.com/actions/runner/issues/1070
+  echo "'toolchain' is a required input" >&2
+  exit 1
+elif [[ $toolchain =~ ^stable' '[0-9]+' '(year|month|week|day)s?' 'ago$ ]]; then
+  if [[ Linux == macOS ]]; then
+    echo "toolchain=1.$((($(date -v-$(sed 's/stable \([0-9]*\) \(.\).*/\1\2/' <<< $toolchain) +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT
+  else
+    echo "toolchain=1.$((($(date --date "${toolchain#stable }" +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT
+  fi
+elif [[ $toolchain =~ ^stable' 'minus' '[0-9]+' 'releases?$ ]]; then
+  echo "toolchain=1.$((($(date +%s)/60/60/24-16569)/7/6-${toolchain//[^0-9]/}))" >> $GITHUB_OUTPUT
+elif [[ $toolchain =~ ^1\.[0-9]+$ ]]; then
+  echo "toolchain=1.$((i=${toolchain#1.}, c=($(date +%s)/60/60/24-16569)/7/6, i+9*i*(10*i<=c)+90*i*(100*i<=c)))" >> $GITHUB_OUTPUT
+else
+  echo "toolchain=$toolchain" >> $GITHUB_OUTPUT
+fi
+ [279.993339ms]
+[CICD/Minimum supported rust version               ] exitcode '1': failure
+[CICD/Minimum supported rust version               ]   ⚙  ::set-output:: cachekey=
+[CICD/Minimum supported rust version               ]   ⚙  ::set-output:: name=
+[CICD/Minimum supported rust version               ]   ❌  Failure - Main Install rust toolchain (v) [3.220088273s]
+[CICD/Minimum supported rust version               ] exitcode '1': failure
+[CICD/Minimum supported rust version               ] ⭐ Run Post Install rust toolchain (v)
+[CICD/Minimum supported rust version               ]   🐳  docker cp src=/home/mnabil/.cache/act/dtolnay-rust-toolchain@master/ dst=/var/run/act/actions/dtolnay-rust-toolchain@master/
+[CICD/Minimum supported rust version               ]   ✅  Success - Post Install rust toolchain (v) [171.188166ms]
+[CICD/Minimum supported rust version               ] ⭐ Run Complete job
+[CICD/Minimum supported rust version               ]   ✅  Success - Complete job
+[CICD/Minimum supported rust version               ] 🏁  Job failed
+Error: Job 'Minimum supported rust version' failed

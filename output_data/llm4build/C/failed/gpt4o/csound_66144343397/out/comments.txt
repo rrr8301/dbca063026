@@ -1,0 +1,47 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          14
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      Linux/Ubuntu build (apt-get)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    2
+
+--- LLM run.sh Test Command(s) ---
+  $ cmake .. -DUSE_MP3=0 -DUSE_DOUBLE=0 -DBUILD_TESTS=1 -DBUILD_STATIC_LIBRARY=1
+  $ make
+  $ make test
+  $ make csdtests
+
+--- Reason(s) for Non-Reproducibility ---
+  - [CTest] Test run mismatch: original=127, LLM=91
+  - [CTest] Test passed mismatch: original=127, LLM=91
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > 91/91 Test #91: PfieldTests.testAlwaysOn .....   Passed    0.03 sec
+    > 100% tests passed, 0 tests failed out of 91
+    > (original CI ran 127 tests, including UGenTests.FactoryCreateDelete through UGenTests.AcceptFsigType at test IDs 92-127)
+
+  [Root cause classification]
+  - The LLM build runs 91 CTest tests while the original runs 127. The 36 missing tests (IDs 92-127) are all in the UGenTests suite (e.g., UGenTests.FactoryCreateDelete, UGenTests.CreateOscils, UGenTests.VarConnect, UGenTests.GraphInitPerform), which test Csound's C UGen API. These tests are compiled from a separate test module that requires additional optional development headers or CMake feature detection enabled in the original CI environment but absent in the LLM's minimal Dockerfile.
+  - The original CI ran cmake with the same base flags (-DUSE_MP3=0 -DUSE_DOUBLE=0 -DBUILD_TESTS=1 -DBUILD_STATIC_LIBRARY=1) on ubuntu-24.04 with a richer package set, whereas the LLM Dockerfile installs only a subset of dependencies that does not include the headers/libraries needed to compile the UGen API test module. As a result, cmake auto-disables those 36 tests at configuration time.
+  - Both builds share identical Csound test outcomes (261 run, 260 passed, 1 failed — the same prints_number_no_crash.csd failure), confirming runtime behavior is correct; only the CTest count differs due to the missing UGen test module compilation.
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 127 run, 127 passed, 0 failed, 0 skipped
+    LLM:      91 run, 91 passed, 0 failed, 0 skipped
+  [Csound]
+    Original: 261 run, 260 passed, 1 failed, 0 skipped
+      Failed tests (same in both): test prints does not crash when given a number arguments (prints_number_no_crash.csd)
+    LLM:      261 run, 260 passed, 1 failed, 0 skipped
+      Failed tests (same in both): test prints does not crash when given a number arguments (prints_number_no_crash.csd)

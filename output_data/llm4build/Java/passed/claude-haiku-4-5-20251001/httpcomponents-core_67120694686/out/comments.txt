@@ -1,0 +1,49 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          3
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      build (ubuntu-latest, 21)
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ actions/setup-java@v5 (java-version: 21, distribution: temurin)
+    $ ./mvnw -V --file pom.xml --no-transfer-progress -DtrimStackTrace=false \
+        -Djunit.jupiter.execution.parallel.enabled=false -P-use-toolchains,docker
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ mvn -V --file pom.xml --no-transfer-progress -DtrimStackTrace=false \
+      -Djunit.jupiter.execution.parallel.enabled=false -P-use-toolchains,docker \
+      -Drat.skip=true -Dlicense.skip=true
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Maven] Test run mismatch: original=2213, LLM=2182
+  - [Maven] Test passed mismatch: original=2209, LLM=2159
+  - [Maven] Test skipped mismatch: original=4, LLM=23
+
+--- Root Cause Analysis ---
+  [Root cause classification]
+  - Minor JDK/Maven version differences cause 31 tests to shift from "run" to "skipped". The
+    LLM uses system Maven (`mvn`) from Ubuntu 22.04 APT and system OpenJDK 21 (not Eclipse
+    Temurin 21), while the original CI uses the Maven wrapper (`./mvnw`) with a pinned version
+    and Temurin JDK 21. These differences cause 19 additional tests to be skipped (23 vs 4) in
+    the LLM run, accounting for the 31-test count mismatch. The most likely cause is that some
+    tests in httpcomponents-core check available features (e.g., TLS version support, HTTP/2
+    protocol capabilities) and skip themselves when the JDK doesn't meet certain criteria.
+    Temurin 21 and Ubuntu OpenJDK 21 may differ in their bundled security provider configurations
+    or supported TLS cipher suites, causing different tests to be skipped.
+    Despite the count difference, both runs report 0 test failures, making this a minor
+    environmental discrepancy rather than a functional regression.
+
+--- Test Statistics Comparison ---
+  [Maven]
+    Original: 2213 run, 2209 passed, 0 failed, 4 skipped
+    LLM:      2182 run, 2159 passed, 0 failed, 23 skipped

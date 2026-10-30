@@ -1,0 +1,56 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Default (Java 17) / Test (module: core)
+  Test command(s) run in original CI:
+    $ actions/checkout@v4
+    $ PROFILE="-Dinclude_hadoop_aws -Djdk17 -Pjava17-target" PROFILE="$PROFILE -Pgithub-actions" \
+      ./tools/azure-pipelines/uploading_watchdog.sh \
+      (internally: run_mvn -DskipTests -pl flink-core ... install, then run_mvn test -pl flink-core)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ mvn clean test -pl flink-core \
+      -Dinclude_hadoop_aws -Djdk17 -Pjava17-target
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Maven] Original CI log stats not parseable (custom Maven wrapper with timestamped output)
+  - [Maven] LLM: 7669 run, 6050 passed, 1 failed, 1618 skipped
+  - [Maven] 1 test fails in LLM:
+    testDeleteProtectedDirectory(org.apache.flink.util.FileUtilsTest)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    ERROR org.apache.flink.util.FileUtilsTest.testDeleteProtectedDirectory
+    java.lang.AssertionError: Expecting code to raise a throwable.
+      at org.apache.flink.util.FileUtilsTest.testDeleteProtectedDirectory(FileUtilsTest.java:143)
+
+  [Root cause classification]
+  - Docker runs as root → `testDeleteProtectedDirectory` fails. The test in `FileUtilsTest`
+    creates a directory, makes it non-writable/non-executable (`setReadable(false)` /
+    `setWritable(false)`), and then expects `FileUtils.deleteDirectory()` to throw an exception
+    when attempting to delete a protected directory hierarchy. When running as root, Unix
+    filesystem permission bits are ignored, so `deleteDirectory()` succeeds without throwing,
+    and `AssertionError: Expecting code to raise a throwable` is triggered. In the original CI
+    (GitHub Actions runner as non-root user), the permission restriction takes effect and the
+    expected exception is thrown.
+    The original CI's test stats are absent from `original_log_stats` because the CI uses a
+    custom `uploading_watchdog.sh` script wrapping Maven with timestamped output
+    (`Mar 12 16:11:10 [INFO] ...`), which the stats extractor cannot parse as standard Maven
+    Surefire output format. The LLM uses plain `mvn` without the wrapper, producing standard
+    parseable output.
+
+--- Test Statistics Comparison ---
+  [Maven]
+    Original: (not parseable from CI log — custom Maven wrapper with timestamped output)
+    LLM:      7669 run, 6050 passed, 1 failed, 1618 skipped

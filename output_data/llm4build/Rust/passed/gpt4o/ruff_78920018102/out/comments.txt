@@ -1,0 +1,58 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          8
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      cargo test (linux)
+  Test command(s) run in original CI:
+    $ cargo insta test --all-features --unreferenced reject --test-runner nextest --disable-nextest-doctest
+    $ cargo test --doc --all-features
+    $ uv run --project=./python/py-fuzzer cargo run -p ty check --project=./python/py-fuzzer
+    $ uv run --project=./scripts cargo run -p ty check --project=./scripts
+    $ uv run --project=./scripts/ty_benchmark cargo run -p ty check --project=./scripts/ty_benchmark
+    $ cargo doc --all --no-deps
+    $ cargo doc --no-deps -p ty_python_semantic -p ty_python_core -p ty_module_resolver ...
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    12
+
+--- LLM run.sh Test Command(s) ---
+  $ cargo insta test --all-features --unreferenced reject --test-runner nextest --disable-nextest-doctest
+  $ cargo test --doc --all-features
+  $ uv run --project=./python/py-fuzzer cargo run -p ty check --project=./python/py-fuzzer
+  $ uv run --project=./scripts cargo run -p ty check --project=./scripts
+  $ uv run --project=./scripts/ty_benchmark cargo run -p ty check --project=./scripts/ty_benchmark
+  $ cargo doc --all --no-deps
+  $ cargo doc --no-deps -p ty_python_semantic ... --document-private-items
+
+--- Reason(s) for Non-Reproducibility ---
+  - [cargo] Test run mismatch: original cargo=206 + nexttest=7952, LLM=206 only
+  - [cargo] The LLM did not successfully run `cargo insta test ... --test-runner nextest`; only doc tests (206) ran
+  - [nexttest] 7952 tests from the nextest run are missing from the LLM results
+  - [cargo] Both original and LLM doc tests are identical: 206 run, 194 passed, 0 failed, 12 skipped
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    (No nextest output found in log.txt — the cargo insta test step did not produce nextest output)
+
+  [Root cause classification]
+  - The LLM's run.sh correctly reproduces the full CI command sequence including `cargo insta test --all-features --unreferenced reject --test-runner nextest`. However, the nextest run did not appear to execute or produce parseable output in the log, resulting in only the doc-test results (206) being recorded.
+
+  - The original CI ran 7952 tests via nextest (cargo insta test delegates to nextest) and 206 doc tests. The LLM log only shows the 206 doc tests, indicating that `cargo insta test` either completed silently or its nextest output was not captured. The `cargo-insta` integration requires `cargo-nextest` to be installed; the LLM Dockerfile installs `cargo-insta` and `cargo-nextest` together but may have installed incompatible versions.
+
+  - The `mold` linker is required by ruff's build configuration and is installed in the Dockerfile; the `uv` tool for Python dogfood checks is also installed. Despite these being present, the nextest-driven test phase produced no recorded output, making full reproducibility impossible.
+
+--- Test Statistics Comparison ---
+  [cargo (doc tests)]
+    Original: 206 run, 194 passed, 0 failed, 12 skipped
+    LLM:      206 run, 194 passed, 0 failed, 12 skipped
+
+  [nexttest]
+    Original: 7952 run, 7908 passed, 0 failed, 44 skipped
+    LLM:      0 run, 0 passed, 0 failed, 0 skipped

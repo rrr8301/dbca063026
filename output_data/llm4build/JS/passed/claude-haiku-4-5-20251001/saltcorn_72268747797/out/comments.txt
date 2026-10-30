@@ -1,0 +1,49 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          3
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      build
+  Test command(s) run in original CI:
+    $ actions/checkout@v2
+    $ npm install -g eslint@8.57.0
+    $ psql -d saltcorn_test --command='create extension "uuid-ossp";'
+    $ npm install --legacy-peer-deps
+    $ npm run tsc
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ psql -U postgres -h localhost -c "CREATE DATABASE saltcorn_test;" || true
+  $ psql -U postgres -h localhost -d saltcorn_test -c 'CREATE EXTENSION IF NOT EXISTS "uuid-ossp";'
+  $ npm run tsc
+  $ packages/saltcorn-cli/bin/saltcorn run-tests || TEST_FAILED=1
+  $ packages/saltcorn-cli/bin/saltcorn run-tests saltcorn-data || TEST_FAILED=1
+
+--- Reason(s) for Non-Reproducibility ---
+  - [jest] Test result mismatch (same count 3023): original=(3023p/0f/0s), LLM=(3006p/17f/0s)
+  - [jest] Tests failed in LLM but passed in original: tests/filter.test.ts (6.378 s)
+  - [jest] Tests failed in original but passed in LLM: Unknown
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    Error: $color: undefined is not a color.
+    Error: File.from_file_on_disk: File not found: missingfile.foo
+    Error: File.from_file_on_disk: File not found: not-existing.js
+    Error: File.from_file_on_disk: File not found: not-existing.js
+
+  [Root cause classification]
+  - Missing file or path not found — test data, certificate, or resource file absent in the Docker environment.
+  - Test timed out — likely due to slower execution in Docker container or a blocking service call that never returns.
+
+--- Test Statistics Comparison ---
+  [jest]
+    Original: 3023 run, 3023 passed, 0 failed, 0 skipped
+    LLM:      3023 run, 3006 passed, 17 failed, 0 skipped

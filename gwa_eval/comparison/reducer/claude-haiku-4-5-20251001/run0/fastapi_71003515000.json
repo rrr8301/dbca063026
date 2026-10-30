@@ -1,0 +1,23 @@
+{
+ "model": "claude-haiku-4-5-20251001",
+ "content": "```yamlfile\nname: Test\n\non:\n  push:\n    branches:\n      - master\n  pull_request:\n    types:\n      - opened\n      - synchronize\n  schedule:\n    - cron: \"0 0 * * 1\"\n\nenv:\n  UV_NO_SYNC: true\n  INLINE_SNAPSHOT_DEFAULT_FLAGS: review\n\njobs:\n  test:\n    runs-on: macos-latest\n    env:\n      UV_PYTHON: \"3.10\"\n      UV_RESOLUTION: lowest-direct\n      STARLETTE_SRC: starlette-pypi\n    steps:\n      - name: Dump GitHub context\n        env:\n          GITHUB_CONTEXT: ${{ toJson(github) }}\n        run: echo \"$GITHUB_CONTEXT\"\n      - uses: actions/checkout@v6\n      - name: Set up Python\n        uses: actions/setup-python@v6\n        with:\n          python-version: \"3.10\"\n      - name: Setup uv\n        uses: astral-sh/setup-uv@v7\n        with:\n          enable-cache: true\n          cache-dependency-glob: |\n            pyproject.toml\n            uv.lock\n      - name: Install Dependencies\n        run: uv sync --no-dev --group tests --extra all\n      - name: Ensure that we have the lowest supported Pydantic version\n        run: uv pip install \"pydantic==2.9.0\"\n      - run: mkdir coverage\n      - name: Test\n        run: uv run --no-sync bash scripts/test-cov.sh\n        env:\n          COVERAGE_FILE: coverage/.coverage.macOS-py3.10\n          CONTEXT: macOS-py3.10\n      - name: Store coverage files\n        uses: actions/upload-artifact@v7\n        with:\n          name: coverage-macOS-3.10-${{ hashFiles('**/coverage/.coverage.*') }}\n          path: coverage\n          include-hidden-files: true\n```",
+ "reduced_yaml": "name: Test\n\non:\n  push:\n    branches:\n      - master\n  pull_request:\n    types:\n      - opened\n      - synchronize\n  schedule:\n    - cron: \"0 0 * * 1\"\n\nenv:\n  UV_NO_SYNC: true\n  INLINE_SNAPSHOT_DEFAULT_FLAGS: review\n\njobs:\n  test:\n    runs-on: macos-latest\n    env:\n      UV_PYTHON: \"3.10\"\n      UV_RESOLUTION: lowest-direct\n      STARLETTE_SRC: starlette-pypi\n    steps:\n      - name: Dump GitHub context\n        env:\n          GITHUB_CONTEXT: ${{ toJson(github) }}\n        run: echo \"$GITHUB_CONTEXT\"\n      - uses: actions/checkout@v6\n      - name: Set up Python\n        uses: actions/setup-python@v6\n        with:\n          python-version: \"3.10\"\n      - name: Setup uv\n        uses: astral-sh/setup-uv@v7\n        with:\n          enable-cache: true\n          cache-dependency-glob: |\n            pyproject.toml\n            uv.lock\n      - name: Install Dependencies\n        run: uv sync --no-dev --group tests --extra all\n      - name: Ensure that we have the lowest supported Pydantic version\n        run: uv pip install \"pydantic==2.9.0\"\n      - run: mkdir coverage\n      - name: Test\n        run: uv run --no-sync bash scripts/test-cov.sh\n        env:\n          COVERAGE_FILE: coverage/.coverage.macOS-py3.10\n          CONTEXT: macOS-py3.10\n      - name: Store coverage files\n        uses: actions/upload-artifact@v7\n        with:\n          name: coverage-macOS-3.10-${{ hashFiles('**/coverage/.coverage.*') }}\n          path: coverage\n          include-hidden-files: true",
+ "input_tokens": 2188,
+ "output_tokens": 492,
+ "cost_usd": 0.003718,
+ "seconds": 4.47,
+ "prompt_sha256": "c869485bd17747ba32db7c1d248bafcc6cd3bcc625af8e03d6f66d224376e99b",
+ "completed_steps": [
+  "Set up job",
+  "Dump GitHub context",
+  "Run actions/checkout@v6",
+  "Set up Python",
+  "Setup uv",
+  "Install Dependencies",
+  "Ensure that we have the lowest supported Pydantic version",
+  "Run mkdir coverage",
+  "Test",
+  "Store coverage files",
+  "Complete job"
+ ]
+}

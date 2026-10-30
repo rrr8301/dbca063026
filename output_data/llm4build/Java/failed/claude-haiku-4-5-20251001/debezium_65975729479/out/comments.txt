@@ -1,0 +1,89 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          4
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      MySQL / MySQL 8.0 - mysql-ci
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ ./.github/actions/build-debezium-mysql
+    $ ./mvnw clean install -B -pl debezium-connector-mysql -am -Pmysql-ci
+        -Dcheckstyle.skip=true -Dformat.skip=true -Dversion.mysql.server=8.0
+        -Dmaven.wagon.http.pool=false -Dmaven.wagon.httpconnectionManager.ttlSeconds=120
+        -DfailFlakyTests=false -Ddebezium.test.mongo.replica.primary.startup.timeout.seconds=120
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ mvn clean install -B -pl debezium-connector-mysql -am
+      -DfailFlakyTests=false
+      -Ddebezium.test.mongo.replica.primary.startup.timeout.seconds=120
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Maven] Test run mismatch: original=867, LLM=860
+  - [Maven] Test passed mismatch: original=862, LLM=852
+  - [Maven] Test failed mismatch: original=1, LLM=4
+  - [Maven] 3 tests fail in LLM but not in original:
+    testCluster(io.debezium.testing.testcontainers.MongoDbReplicaSetContainerIT)
+    (io.debezium.testing.testcontainers.ApicurioRegistryTestIT)
+    (io.debezium.testing.testcontainers.DebeziumContainerIT)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    ERROR org.testcontainers.dockerclient.DockerClientProviderStrategy:
+      Could not find a valid Docker environment. Please check configuration.
+      Attempted configurations were:
+        UnixSocketClientProviderStrategy: failed with exception InvalidConfigurationException
+          (Could not find unix domain socket).
+          Root cause NoSuchFileException (/var/run/docker.sock)
+        DockerDesktopClientProviderStrategy: failed with exception NullPointerException
+
+    ERROR MongoDbReplicaSetContainerIT.testCluster
+      java.lang.IllegalStateException: Could not find a valid Docker environment.
+      Please see logs and check configuration
+
+    ERROR ApicurioRegistryTestIT
+      java.lang.IllegalStateException: Previous attempts to find a Docker environment failed.
+      Will not retry. Please see logs and check configuration
+
+    ERROR DebeziumContainerIT
+      (same Testcontainers Docker environment error)
+
+  [From original CI log — 1 failure]
+    ERROR MongoDbReplicaSetAuthContainerIT
+      java.lang.IllegalStateException:
+        An error occurred: MongoServerError: command replSetGetStatus requires authentication
+        (Docker IS available; MongoDB auth setup fails)
+
+  [Root cause classification]
+  - Docker daemon is unavailable inside the LLM's Docker container — `/var/run/docker.sock`
+    does not exist, so all Testcontainers-based integration tests fail with
+    "Could not find a valid Docker environment":
+    The `debezium-testing-testcontainers` module contains integration tests that use
+    Testcontainers to spin up real Docker containers for MongoDB replica sets, Apicurio Schema
+    Registry, Debezium Connect clusters, and MySQL. Testcontainers requires access to the Docker
+    daemon via `/var/run/docker.sock`. On the GitHub Actions runner, Docker is available natively
+    (the runner has Docker installed and the socket is accessible). Inside the LLM's Docker
+    container, no Docker-in-Docker (DinD) setup is configured — the Docker socket is not mounted
+    into the container, and there is no Docker daemon running. Testcontainers detects this on first
+    use (`MongoDbReplicaSetContainerIT.testCluster`) and throws `IllegalStateException: Could not
+    find a valid Docker environment`. Subsequent tests that use Testcontainers (`ApicurioRegistryTestIT`,
+    `DebeziumContainerIT`) get a cached "previous attempts failed" error without re-checking. The
+    original CI's 1 failure (`MongoDbReplicaSetAuthContainerIT`) is a different Docker-related issue:
+    Docker IS available there, but the MongoDB replica set setup fails with a MongoDB authentication
+    error ("replSetGetStatus requires authentication") — the test works in the original CI up to the
+    point of running MongoDB commands. The LLM also ran 7 fewer tests (860 vs 867), likely because
+    the LLM's run.sh omits the `-Pmysql-ci` profile and other debezium-specific flags, causing some
+    test classes to be compiled or filtered differently.
+
+--- Test Statistics Comparison ---
+  [Maven]
+    Original: 867 run, 862 passed, 1 failed, 4 skipped
+    LLM:      860 run, 852 passed, 4 failed, 4 skipped

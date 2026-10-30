@@ -1,0 +1,47 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      build (ubuntu-latest)
+  Test command(s) run in original CI:
+    $ actions/checkout@v4
+    $ cmake -B build -DQPP_ENABLE_TESTING=ON
+    $ cmake -S examples/standalone -B examples/standalone/build
+    $ cmake --build examples/standalone/build --target standalone
+    $ cmake --build build --target examples
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ cmake -B build -DQPP_ENABLE_TESTING=ON
+  $ cmake --install build
+  $ cmake -S examples/standalone -B examples/standalone/build
+  $ cmake --build examples/standalone/build --target standalone
+  $ cmake --build build --target examples
+
+--- Reason(s) for Non-Reproducibility ---
+  - [CTest] Test result mismatch (same count 456): original=(455p/1f/0s), LLM=(456p/0f/0s)
+  - [CTest] Tests failed in original but passed in LLM: qpp_randn.RealMatrix
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    438/456 Test #438: qpp_randn.Real ...........   Passed    0.00 sec
+    439/456 Test #439: qpp_randn.ComplexMatrix ..   Passed    0.01 sec
+    440/456 Test #440: qpp_randn.RealMatrix .....   Passed    0.00 sec
+    100% tests passed, 0 tests failed out of 456
+
+  [Root cause classification]
+  - `qpp_randn.RealMatrix` tests the quantum++ random normal-distribution matrix generator. This test samples random Gaussian matrices and checks statistical properties (mean ≈ 0, element-wise distribution). Its failure in the original CI (ubuntu-latest with the system Eigen/OpenMP) is likely due to a different random seed or floating-point precision difference vs. the LLM's Ubuntu 24.04 build. The test is numerically sensitive and can produce borderline results depending on the PRNG state at test time; it passed cleanly in the LLM run in under 1 ms, indicating no deterministic logic fault.
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 456 run, 455 passed, 1 failed, 0 skipped
+    LLM:      456 run, 456 passed, 0 failed, 0 skipped

@@ -1,0 +1,31 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          20
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT TESTS NOT REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      test-poa
+
+--- LLM-Generated Dockerfile ---
+  Base image:   golang:1.20
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ go test -v -race -coverprofile=coverage.out -timeout 30m ./...
+
+--- Test Reproducibility Gap ---
+  Original ran 93 test(s) across [GoDefault].
+  LLM build produced no test results (empty llm_log_stats).
+
+--- Root Cause ---
+  Reason type: Test runner executed but produced no parseable output
+  Last log output before stopping:
+    go: errors parsing go.mod:
+    /workspace/enterprise/poa/go.mod:1: invalid go version '1.25.9': must match format 1.23
+
+--- Original Test Statistics (not reproduced) ---
+  [GoDefault] 93 run, 93 passed, 3 failed, 0 skipped

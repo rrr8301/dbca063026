@@ -1,0 +1,44 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      test / cargo test on linux
+  Test command(s) run in original CI:
+    $ actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+    $ cargo nextest run \
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ cargo test --all-features --no-fail-fast
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in original but missing in LLM: nexttest
+  - Framework(s) in LLM but not in original: cargo
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > error: Unable to remove credentials for public@http://127.0.0.1:33623/basic-auth
+    >   Caused by: Platform secure storage failure
+    >   Caused by: no secret service provider or dbus session found
+
+  [Root cause classification]
+  - The LLM ran `cargo test --all-features --no-fail-fast` instead of `cargo nextest run`. The `--all-features` flag enables the `uv-keyring` crate, which compiles in OS-level secret-service (D-Bus/GNOME Keyring) integration for credential storage. uv's auth integration tests spin up a local mock HTTP registry (`127.0.0.1:<random-port>`) with basic-auth, and after each test they attempt to remove the stored credential from the OS keyring. In the headless Docker container there is no D-Bus session or secret-service provider, causing every credential-cleanup call to fail with "no secret service provider or dbus session found". This cascades into 2557 test failures.
+
+  - The original CI used `cargo nextest run` (without `--all-features`), which does not enable the `uv-keyring` feature and therefore does not invoke the OS keyring at all — all 3705 tests pass. Additionally, `cargo nextest` runs each test in a separate subprocess, providing stronger isolation between the mock HTTP servers so they do not share port state. The LLM's `cargo test` runs tests in threads within the same process, further increasing the chance of port collisions in the mock-server-heavy auth and build test suites.
+
+--- Test Statistics Comparison ---
+  [cargo]
+    Original: (not present)
+    LLM:      3712 run, 1151 passed, 2557 failed, 4 skipped
+  [nexttest]
+    Original: 3705 run, 3701 passed, 0 failed, 4 skipped
+    LLM:      (not present)

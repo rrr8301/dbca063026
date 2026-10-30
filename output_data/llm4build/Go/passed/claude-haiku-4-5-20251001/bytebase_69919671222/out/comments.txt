@@ -1,0 +1,46 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      go-tests
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ go test -p=8 -timeout 30m -ldflags "-w -s" -v ./backend/... | tee test.log; exit ${PIPESTATUS[0]}
+    $ grep --color=never -e '--- PASS:' -e '--- FAIL:' test.log | sed 's/[:()]//g' | awk '{print $2,$3,$4}' | sort -t' ' -nk3 -r | awk '{sum += $3; print $1,$2,$3,sum"s"}'
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    6
+
+--- LLM run.sh Test Command(s) ---
+  $ go test -v -race -coverprofile=coverage.out ./... || TEST_FAILED=1
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoDefault] Test run mismatch: original=2583, LLM=2052
+  - [GoDefault] Test passed mismatch: original=2580, LLM=2041
+  - [GoDefault] Test failed mismatch: original=0, LLM=11
+  - [GoDefault] 11 test(s) failed in LLM but not in original: github.com/bytebase/bytebase/backend/migrator, github.com/bytebase/bytebase/backend/plugin/db/mongodb, github.com/bytebase/bytebase/backend/plugin/db/mssql, github.com/bytebase/bytebase/backend/plugin/db/pg, github.com/bytebase/bytebase/backend/plugin/db/tidb, github.com/bytebase/bytebase/backend/plugin/schema/mssql, github.com/bytebase/bytebase/backend/plugin/schema/mysql, github.com/bytebase/bytebase/backend/plugin/schema/oracle (+3 more)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    73:backend/plugin/parser/pg/query_span_omni.go:130:4: unhandled-error: Unhandled error in call to function fmt.Fprintf (revive)
+    76:backend/plugin/parser/pg/query_span_omni.go:150:5: unhandled-error: Unhandled error in call to function fmt.Fprintf (revive)
+    79:backend/plugin/parser/pg/query_span_omni.go:158:2: unhandled-error: Unhandled error in call to function fmt.Fprintf (revive)
+    82-backend/plugin/parser/redshift/query_span_extractor.go:861:5: unhandled-error: Unhandled error in call to function strings.Builder.WriteByte (revive)
+    1958:FAIL	github.com/bytebase/bytebase/backend/plugin/db/mssql	27.103s
+
+  [Root cause classification]
+  - The 11 failing packages are all database-driver and schema-related packages: `plugin/db/mssql` (Microsoft SQL Server — FAIL at 27.103s, timeout waiting for connection), `plugin/db/mongodb`, `plugin/db/pg` (PostgreSQL), `plugin/db/tidb` (TiDB), `plugin/schema/mssql`, `plugin/schema/mysql`, `plugin/schema/oracle`, plus 3 more. None of these database services are running in the LLM's Docker container.
+
+  - The LLM changed the test command from the original's `go test -p=8 -timeout 30m -ldflags "-w -s" -v ./backend/...` to `go test -v -race -coverprofile=coverage.out ./...` — running `./...` instead of `./backend/...` and adding `-race`. The `revive` linter warnings (`unhandled-error: Unhandled error in call to function fmt.Fprintf`) are from a `go vet`-like check triggered by the broader `./...` scope that includes non-backend packages. The 531 fewer tests (2052 vs 2583) are database-integration test cases that require live database connections that the LLM never provisioned.
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 2583 run, 2580 passed, 0 failed, 0 skipped
+    LLM:      2052 run, 2041 passed, 11 failed, 0 skipped

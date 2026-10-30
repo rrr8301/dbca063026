@@ -1,0 +1,42 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          10
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      test (20)
+  Test command(s) run in original CI:
+    $ pnpm test
+
+--- LLM-Generated Dockerfile ---
+  Base image:   node:20-alpine
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ pnpm test || TEST_FAILED=1
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoDefault] 1 test(s) failed in original but passed in LLM: ripple-hydration
+  - [GoDefault] 1 test(s) failed in LLM but not in original: |ripple-hydration|
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > (same underlying failure in both: ripple-hydration test fails in both original and LLM)
+
+  [Root cause classification]
+  - Both the original CI and the LLM have exactly 1 GoDefault test failure, 1769 vitest tests (1763 passed, 1 failed, 5 skipped) — the actual test results are identical. The apparent discrepancy is a test name parsing artifact: the original CI reports the failing test as `ripple-hydration`, while the LLM's output wraps the name with pipe characters as `|ripple-hydration|`. This difference comes from how the Ripple framework formats its test output — `node:20-alpine` (the LLM's base image) produces test output with pipe-delimited test names, while `ubuntu-24.04` with Node.js 20 (original CI) does not. The LLM4Build parser then treats `ripple-hydration` and `|ripple-hydration|` as different test names, flagging it as non-reproducible.
+
+  - In reality both runs have identical test outcomes: the `ripple-hydration` package fails its integration test in both environments. The vitest results match exactly (1769/1763/1/5). This is a parser artifact from test name formatting differences between Alpine-based and Ubuntu-based Node.js environments' Playwright/vitest output format.
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 1 run, 0 passed, 1 failed, 0 skipped
+    LLM:      1 run, 0 passed, 1 failed, 0 skipped
+  [vitest]
+    Original: 1769 run, 1763 passed, 1 failed, 5 skipped
+    LLM:      1769 run, 1763 passed, 1 failed, 5 skipped

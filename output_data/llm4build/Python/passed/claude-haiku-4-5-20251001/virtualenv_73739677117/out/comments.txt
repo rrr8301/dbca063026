@@ -1,0 +1,58 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          4
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      🧪 test 3.12 - ubuntu-24.04
+  Test command(s) run in original CI:
+    $ actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+    $ tox run -vvvv --notest --skip-missing-interpreters false
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    7
+
+--- LLM run.sh Test Command(s) ---
+  $ tox run -e py312 -vvvv --notest --skip-missing-interpreters false
+
+--- Reason(s) for Non-Reproducibility ---
+  - [pytest] Test result mismatch (same count 316): original=(300p/0f/14s), LLM=(296p/2f/16s)
+  - [pytest] 2 tests failed in LLM but not in original:
+    tests/unit/activation/test_powershell.py::test_powershell_activation
+    tests/unit/activation/test_powershell.py::test_powershell_activation_profile
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > tests/unit/activation/test_powershell.py::test_powershell_activation FAILED
+    >   /workspace/.tox/py312/lib/python3.12/site-packages/virtualenv/activation/powershell/...
+    >     subprocess.run(["pwsh", ...])
+    > E                   FileNotFoundError: [Errno 2] No such file or directory: 'pwsh'
+    >
+    > tests/unit/activation/test_powershell.py::test_powershell_activation_profile FAILED
+    >   FileNotFoundError: [Errno 2] No such file or directory: 'pwsh'
+
+  [Root cause classification]
+  - PowerShell (`pwsh`) not installed in Docker container
+    The virtualenv tests for PowerShell activation scripts (`test_powershell_activation` and
+    `test_powershell_activation_profile` in tests/unit/activation/test_powershell.py) verify
+    that the generated `Activate.ps1` PowerShell activation script works correctly. These tests
+    invoke `pwsh` (PowerShell Core) as a subprocess to actually execute the activation script
+    and check the results.
+    The LLM Dockerfile uses `ubuntu:24.04` as the base image and installs standard build
+    dependencies but does not install PowerShell. The `pwsh` binary is not in PATH, so when
+    the test tries to run `subprocess.run(["pwsh", ...])`, it raises:
+      `FileNotFoundError: [Errno 2] No such file or directory: 'pwsh'`
+    On the GitHub Actions ubuntu-24.04 runner, PowerShell Core is pre-installed and available
+    as `pwsh` in the PATH (it is included in the GitHub Actions runner image by default).
+    The 2 extra skipped tests in the LLM run (16 vs 14) are unrelated tests that depend on
+    other missing system tools.
+
+--- Test Statistics Comparison ---
+  [pytest]
+    Original: 316 run, 300 passed, 0 failed, 14 skipped
+    LLM:      316 run, 296 passed, 2 failed, 16 skipped

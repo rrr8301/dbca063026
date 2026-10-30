@@ -1,0 +1,80 @@
+Error from docker build
+
+#1 [internal] load .dockerignore
+#1 transferring context: 105B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 1.43kB done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/ubuntu:latest
+#3 DONE 0.1s
+
+#4 [ 1/13] FROM docker.io/library/ubuntu:latest@sha256:c4a8d5503dfb2a3eb8ab5f807da5bc69a85730fb49b5cfca2330194ebcc41c7b
+#4 DONE 0.0s
+
+#5 [ 2/13] RUN ln -snf /usr/share/zoneinfo/America/Los_Angeles /etc/localtime && echo America/Los_Angeles > /etc/timezone
+#5 CACHED
+
+#6 [internal] load build context
+#6 transferring context: 112.80kB 0.1s done
+#6 DONE 0.1s
+
+#7 [ 6/15] RUN curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.50.1
+#7 CACHED
+
+#8 [ 3/15] RUN apt-get update && apt-get install -y     git     curl     wget     make     gcc     g++     && rm -rf /var/lib/apt/lists/*
+#8 CACHED
+
+#9 [ 4/15] RUN wget https://golang.org/dl/go1.20.linux-amd64.tar.gz &&     tar -C /usr/local -xzf go1.20.linux-amd64.tar.gz &&     rm go1.20.linux-amd64.tar.gz
+#9 CACHED
+
+#10 [ 5/15] RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - &&     apt-get install -y nodejs
+#10 CACHED
+
+#11 [ 7/15] WORKDIR /app
+#11 CACHED
+
+#12 [ 8/15] COPY . .
+#12 DONE 0.2s
+
+#13 [ 9/15] RUN sed -i 's/^go 1\.24\.1$/go 1.20/' go.mod
+#13 DONE 0.3s
+
+#14 [10/15] RUN go mod download
+#14 DONE 5.3s
+
+#15 [11/15] WORKDIR /app/ui/app
+#15 DONE 0.0s
+
+#16 [12/15] RUN if [ ! -f package-lock.json ]; then npm install; fi
+#16 0.917 npm error code ENOENT
+#16 0.917 npm error syscall open
+#16 0.917 npm error path /app/ui/app/package.json
+#16 0.918 npm error errno -2
+#16 0.918 npm error enoent Could not read package.json: Error: ENOENT: no such file or directory, open '/app/ui/app/package.json'
+#16 0.918 npm error enoent This is related to npm not being able to find a file.
+#16 0.918 npm error enoent
+#16 0.919 npm error A complete log of this run can be found in: /root/.npm/_logs/2026-04-26T18_39_19_855Z-debug-0.log
+#16 ERROR: process "/bin/sh -c if [ ! -f package-lock.json ]; then npm install; fi" did not complete successfully: exit code: 254
+------
+ > [12/15] RUN if [ ! -f package-lock.json ]; then npm install; fi:
+#16 0.917 npm error code ENOENT
+#16 0.917 npm error syscall open
+#16 0.917 npm error path /app/ui/app/package.json
+#16 0.918 npm error errno -2
+#16 0.918 npm error enoent Could not read package.json: Error: ENOENT: no such file or directory, open '/app/ui/app/package.json'
+#16 0.918 npm error enoent This is related to npm not being able to find a file.
+#16 0.918 npm error enoent
+#16 0.919 npm error A complete log of this run can be found in: /root/.npm/_logs/2026-04-26T18_39_19_855Z-debug-0.log
+------
+Dockerfile:45
+--------------------
+  43 |     WORKDIR /app/ui/app
+  44 |     # Check if package-lock.json exists, if not, run npm install to generate it
+  45 | >>> RUN if [ ! -f package-lock.json ]; then npm install; fi
+  46 |     RUN npm ci
+  47 |     
+--------------------
+ERROR: failed to solve: process "/bin/sh -c if [ ! -f package-lock.json ]; then npm install; fi" did not complete successfully: exit code: 254

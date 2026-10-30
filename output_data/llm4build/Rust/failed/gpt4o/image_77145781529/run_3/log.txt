@@ -1,0 +1,91 @@
+Error from docker build
+
+#1 [internal] load .dockerignore
+#1 transferring context: 2B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 1.03kB done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/ubuntu:22.04
+#3 DONE 0.2s
+
+#4 [ 1/10] FROM docker.io/library/ubuntu:22.04@sha256:4f838adc7181d9039ac795a7d0aba05a9bd9ecd480d294483169c5def983b64d
+#4 DONE 0.0s
+
+#5 [ 2/10] RUN apt-get update && apt-get install -y tzdata && ln -fs /usr/share/zoneinfo/UTC /etc/localtime && dpkg-reconfigure --frontend noninteractive tzdata
+#5 CACHED
+
+#6 [ 3/10] RUN apt-get update && apt-get install -y     git     curl     build-essential
+#6 CACHED
+
+#7 [internal] load build context
+#7 transferring context: 258.32kB 0.2s done
+#7 DONE 0.2s
+
+#8 [ 4/10] RUN useradd -m testuser
+#8 DONE 0.4s
+
+#9 [ 5/10] RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain nightly
+#9 0.815 info: downloading installer
+#9 1.409 warn: It looks like you have an existing rustup settings file at:
+#9 1.409 warn: /home/testuser/.rustup/settings.toml
+#9 1.409 warn: Rustup will install the default toolchain as specified in the settings file,
+#9 1.409 warn: instead of the one inferred from the default host triple.
+#9 1.449 info: profile set to default
+#9 1.449 info: default host triple is x86_64-unknown-linux-gnu
+#9 1.451 info: syncing channel updates for nightly-x86_64-unknown-linux-gnu
+#9 1.701 info: latest update on 2026-06-09 for version 1.98.0-nightly (cb46fbb8c 2026-06-08)
+#9 1.701 info: downloading 6 components
+#9 21.03 info: default toolchain set to nightly-x86_64-unknown-linux-gnu
+#9 21.03 
+#9 21.05   nightly-x86_64-unknown-linux-gnu installed - rustc 1.98.0-nightly (cb46fbb8c 2026-06-08)
+#9 21.05 
+#9 21.05 
+#9 21.05 Rust is installed now. Great!
+#9 21.05 
+#9 21.05 To get started you may need to restart your current shell.
+#9 21.05 This would reload your PATH environment variable to include
+#9 21.05 Cargo's bin directory ($HOME/.cargo/bin).
+#9 21.05 
+#9 21.05 To configure your current shell, you need to source
+#9 21.05 the corresponding env file under $HOME/.cargo.
+#9 21.05 
+#9 21.05 This is usually done by running one of the following (note the leading DOT):
+#9 21.05 . "$HOME/.cargo/env"            # For sh/bash/zsh/ash/dash/pdksh
+#9 21.05 source "$HOME/.cargo/env.fish"  # For fish
+#9 21.05 source "~/.cargo/env.nu"  # For nushell
+#9 21.05 source "$HOME/.cargo/env.tcsh"  # For tcsh
+#9 21.05 . "$HOME/.cargo/env.ps1"        # For pwsh
+#9 21.05 source "$HOME/.cargo/env.xsh"   # For xonsh
+#9 DONE 26.2s
+
+#10 [ 6/10] WORKDIR /workspace
+#10 DONE 0.4s
+
+#11 [ 7/10] COPY . /workspace
+#11 DONE 0.6s
+
+#12 [ 8/10] RUN git config --global --add safe.directory '*'
+#12 DONE 1.0s
+
+#13 [ 9/10] COPY run.sh /workspace/run.sh
+#13 DONE 0.0s
+
+#14 [10/10] RUN chmod +x /workspace/run.sh
+#14 0.355 chmod: changing permissions of '/workspace/run.sh': Operation not permitted
+#14 ERROR: process "/bin/sh -c chmod +x /workspace/run.sh" did not complete successfully: exit code: 1
+------
+ > [10/10] RUN chmod +x /workspace/run.sh:
+#14 0.355 chmod: changing permissions of '/workspace/run.sh': Operation not permitted
+------
+Dockerfile:40
+--------------------
+  38 |     # Copy run.sh and make it executable
+  39 |     COPY run.sh /workspace/run.sh
+  40 | >>> RUN chmod +x /workspace/run.sh
+  41 |     
+  42 |     # Set entrypoint
+--------------------
+ERROR: failed to solve: process "/bin/sh -c chmod +x /workspace/run.sh" did not complete successfully: exit code: 1

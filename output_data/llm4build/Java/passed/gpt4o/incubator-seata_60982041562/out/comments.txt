@@ -1,0 +1,33 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          N/A
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      test (17, ubuntu-24.04, 2.7.18         -D spring-framework-bom.version=5.3.31)
+  Docker image pulled: redis:7.2
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Maven] Test run mismatch: original=5274, LLM=651
+  - [Maven] Test passed mismatch: original=5242, LLM=646
+  - [Maven] Test failed mismatch: original=0, LLM=1
+  - [Maven] Test skipped mismatch: original=32, LLM=4
+  - [Maven] 1 test(s) failed in LLM but not in original: testLoadWhenSpecial(org.apache.seata.common.io.FileLoaderTest)
+
+--- Root Cause Analysis ---
+  - [Maven] LLM ran 4623 fewer tests than original — LLM likely used a narrower test scope or missed some test suites.
+  - [Maven] 1 test(s) failed in LLM but not original: testLoadWhenSpecial(org.apache.seata.common.io.FileLoaderTest)
+
+--- Test Statistics Comparison ---
+  [Maven]
+    Original: 5274 run, 5242 passed, 0 failed, 32 skipped
+    LLM:      651 run, 646 passed, 1 failed, 4 skipped

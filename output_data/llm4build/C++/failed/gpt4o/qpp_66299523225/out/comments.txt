@@ -1,0 +1,43 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      build (ubuntu-latest)
+  Test command(s) run in original CI:
+    $ ctest --test-dir build -E qpp_Timer
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ ctest --test-dir build -E qpp_Timer
+
+Note: Original had test failures; LLM build passed all — failed build has passed.
+
+--- Reason(s) for Non-Reproducibility ---
+  - [CTest] Test passed mismatch: original=455, LLM=456
+  - [CTest] Test failed mismatch: original=1, LLM=0
+  - [CTest] 1 test(s) failed in original but passed in LLM: qpp_randn.RealMatrix
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 456 run, 455 passed, 1 failed, 0 skipped
+    LLM:      456 run, 456 passed, 0 failed, 0 skipped
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > 440/456 Test #440: qpp_randn.RealMatrix ...***Failed    0.00 sec (original CI)
+    > 99% tests passed, 1 tests failed out of 456
+    > Errors while running CTest — exit code 8
+    > LLM: 440/456 Test #440: qpp_randn.RealMatrix ...Passed    0.01 sec
+
+  [Root cause classification]
+  The qpp_randn.RealMatrix test validates that a randomly generated real matrix from the quantum++ random number engine has the expected statistical properties. The test failed in under 0.01 seconds in the original CI runner, indicating a numerical edge case triggered by a specific random seed or PRNG state on the ubuntu-24.04 GitHub Actions host. The LLM used ubuntu:22.04 which initialises the PRNG differently, and the test passed. This is a seed/PRNG-state-sensitive flaky test: the quantum random number generator produces a matrix that marginally violates a tolerance check only under specific seed conditions produced by the CI runner's hardware state, and the failure does not reproduce with different seeding.

@@ -1,0 +1,31 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          20
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT TESTS NOT REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      linux (-Duseshrplib -Dusequadmath -Dusecbacktrace -Dusethreads)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    4
+
+--- Test Reproducibility Gap ---
+  Original ran 1384287 test(s) across [shell-tests, perl-harness].
+  LLM build produced no test results (empty llm_log_stats).
+
+--- Root Cause ---
+  Reason type: Build succeeded but test runner could not execute tests
+  Key error(s) from build/test log:
+    Could not execute (./perl base/cond.t): open3: exec of ./perl base/cond.t failed: No such file or directory
+    No saved state, selection will be empty
+    (perl binary not found at expected relative path; TAP harness cannot invoke test scripts)
+
+--- Original Test Statistics (not reproduced) ---
+  [shell-tests] 1 run, 0 passed, 1 failed, 0 skipped
+  [perl-harness] 1384286 run, 1384286 passed, 0 failed, 0 skipped

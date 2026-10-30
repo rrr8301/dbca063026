@@ -1,0 +1,49 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          4
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      ubuntu / Ubuntu 24.04 Intel GCC
+  Test command(s) run in original CI:
+    $ cmake -DENABLE_PNG=1 -DENABLE_FREETYPE=1 -DENABLE_JPEG=1 -DENABLE_ULTRAHDR=1 -DENABLE_WEBP=1 -DENABLE_TIFF=1 -DENABLE_XPM=1 -DENABLE_GD_FORMATS=1 -DENABLE_HEIF=1 -DENABLE_AVIF=1 -DBUILD_TEST=1 -B /home/runner/work/libgd/libgd/build -DCMAKE_BUILD_TYPE=RELWITHDEBINFO
+    $ cmake --build /home/runner/work/libgd/libgd/build --config RELWITHDEBINFO --parallel 4
+    $ CTEST_OUTPUT_ON_FAILURE=1 ctest -C RELWITHDEBINFO
+    $ cmake -DENABLE_PNG=1 -DENABLE_FREETYPE=1 -DENABLE_JPEG=1 -DENABLE_ULTRAHDR=1 -DENABLE_WEBP=1 -DENABLE_TIFF=1 -DENABLE_XPM=1 -DENABLE_GD_FORMATS=1 -DENABLE_HEIF=1 -DENABLE_AVIF=1 -DBUILD_TEST=1 -B buildasan -DCMAKE_BUILD_TYPE=RELWITHDEBINFO
+    $ CTEST_OUTPUT_ON_FAILURE=1 ctest -C RELWITHDEBINFO  (ASAN build)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ cmake -DENABLE_PNG=1 -DENABLE_FREETYPE=1 -DENABLE_JPEG=1 -DENABLE_ULTRAHDR=1 -DENABLE_WEBP=1 -DENABLE_TIFF=1 -DENABLE_XPM=1 -DENABLE_GD_FORMATS=1 -DENABLE_HEIF=1 -DENABLE_AVIF=1 -DBUILD_TEST=1 -B /workspace/build -DCMAKE_BUILD_TYPE=RELWITHDEBINFO
+  $ cmake --build /workspace/build --config RELWITHDEBINFO --parallel 4
+  $ CTEST_OUTPUT_ON_FAILURE=1 ctest -C RELWITHDEBINFO
+  $ cmake -DENABLE_PNG=1 -DENABLE_FREETYPE=1 -DENABLE_JPEG=1 -DENABLE_ULTRAHDR=1 -DENABLE_WEBP=1 -DENABLE_TIFF=1 -DENABLE_XPM=1 -DENABLE_GD_FORMATS=1 -DENABLE_HEIF=1 -DENABLE_AVIF=1 -DBUILD_TEST=1 -B /workspace/buildasan -DCMAKE_BUILD_TYPE=RELWITHDEBINFO
+  $ CTEST_OUTPUT_ON_FAILURE=1 ctest -C RELWITHDEBINFO  (ASAN build)
+
+--- Reason(s) for Non-Reproducibility ---
+  - [CTest] Test count mismatch: original=526 run (2 × 263 for GCC + ASAN), LLM=263 run (only GCC build)
+  - [CTest] Test failed mismatch: original=0 failed, LLM=1 failed (test_heif_bug788)
+  - [CTest] Test skipped mismatch: original=0 skipped, LLM=2 skipped (test_heif_heif_im2im, test_heif_heif_read)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    1827: GD Warning: gd-heif decoding failed
+    1828: /workspace/tests/heif/bug788.c:27: Assert failed
+    1951: 99% tests passed, 1 tests failed out of 263
+
+  [Root cause classification]
+  - The test_heif_bug788 failure in the LLM environment is due to a libheif codec plugin availability difference. The test verifies that a specific HEIF file can be decoded, which requires the HEIF decoder codec (libheif-plugin-aomdec or equivalent). The LLM Dockerfile correctly uses ubuntu:24.04 with the ppa:strukturag/libheif packages, but the Docker container may lack the codec plugin configuration or runtime loading that the GitHub Actions runner provides.
+  - test_heif_heif_im2im and test_heif_heif_read are skipped in the LLM (vs passing in original) because HEIF round-trip encode+decode functionality requires both encoder and decoder codec plugins; the LLM container has the packages installed but codec discovery/loading at runtime differs from the CI environment.
+  - The original CI also runs an ASAN-instrumented build (263 additional tests), which the LLM attempted but did not successfully complete in the tracked results, accounting for the 263 vs 526 test count difference.
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 526 run, 526 passed, 0 failed, 0 skipped
+    LLM:      263 run, 260 passed, 1 failed, 2 skipped

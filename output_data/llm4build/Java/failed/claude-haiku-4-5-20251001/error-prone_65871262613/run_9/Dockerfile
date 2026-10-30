@@ -1,0 +1,1 @@
+RUN sh -c 'cat > /root/.m2/toolchains.xml << '\''EOF'\''

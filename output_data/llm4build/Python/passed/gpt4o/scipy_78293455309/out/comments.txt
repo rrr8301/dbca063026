@@ -1,0 +1,48 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          20
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      mypy (py3.12) & dev deps (py3.14), fast, spin (3.12, false)
+  Test command(s) run in original CI:
+    $ python -m pip install numpy cython pytest pytest-xdist pytest-timeout pybind11 mpmath gmpy2 pythran ninja meson pooch hypothesis spin "click<8.3.0"
+    $ spin build --release
+    $ spin test -j3 -- --durations 10 --timeout=60
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    6
+
+--- LLM run.sh Test Command(s) ---
+  $ pyenv shell 3.12.0 && pip install numpy cython pytest pytest-xdist pytest-timeout pybind11 mpmath gmpy2 pythran ninja meson pooch hypothesis spin "click<8.3.0"
+  $ pyenv shell 3.14-dev && pip install git+https://github.com/numpy/numpy.git && pip install ninja cython pytest pybind11 pytest-xdist pytest-timeout spin pooch hypothesis "setuptools<67.3" meson "click<8.3.0" && pip install git+https://github.com/serge-sans-paille/pythran.git
+  $ spin build --release
+  $ spin mypy
+  $ pyrefly check --output-format=github
+  $ OMP_NUM_THREADS=2 spin test -j3 -- --durations 10 --timeout=60
+
+--- Reason(s) for Non-Reproducibility ---
+  - [TR=False] No LLM test statistics were recorded after 20 attempts; llm_log_stats is empty.
+  - The LLM run did not produce parseable test output, or timed out before tests completed.
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    (Log shows pip install phase for numpy, cython, pytest, and related packages)
+    (Build proceeds through dependency installation but test output not captured)
+
+  [Root cause classification]
+  - The LLM's run.sh was significantly more complex than the original CI, attempting to: (1) set up both Python 3.12.0 and 3.14-dev via pyenv, (2) install packages for both Python versions including numpy/pythran from git, (3) run mypy type checking, (4) run pyrefly static analysis, and (5) run the full scipy test suite. This mirrors the pattern from a different scipy CI job (the py3.14 variant) rather than the simpler py3.12 variant that the original CI ran.
+
+  - Installing numpy and pythran from git sources can be slow or fail due to network timeouts or git compilation issues in the Docker container. The pyenv-based dual-Python setup adds additional complexity and potential failure points.
+
+  - After 20 attempts, the LLM was unable to produce a run that successfully completed the full test pipeline and generated parseable test output. The original CI used a simpler setup (Python 3.12 with released packages) that the LLM overcomplicated by combining two CI job patterns.
+
+--- Test Statistics Comparison ---
+  [pytest]
+    Original: 84710 run, 76362 passed, 0 failed, 8124 skipped (204 xfailed, 20 xpassed)
+    LLM:      (no test statistics recorded — execution did not complete successfully)

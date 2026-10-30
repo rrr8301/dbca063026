@@ -1,0 +1,85 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          8
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      tests (3.11, macos-14)
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ cd bootloader && python waf --tests all
+    $ sh release/build-wheels
+    $ python -m pip install --progress-bar=off --upgrade --requirement tests/requirements-base.txt
+    $ python -m pip install --progress-bar=off --upgrade --requirement tests/requirements-libraries.txt
+    $ pytest -n 5 --maxfail 3 --durations 10 tests/unit tests/functional
+
+--- LLM-Generated Dockerfile ---
+  Base image:   python:3.11-slim
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ python waf --tests all
+  $ python -m pip install --progress-bar=off --upgrade --requirement tests/requirements-base.txt
+  $ python -m pip install --progress-bar=off --upgrade --requirement tests/requirements-libraries.txt
+  $ pytest -n 5 --maxfail 3 --durations 10 tests/unit tests/functional
+
+--- Reason(s) for Non-Reproducibility ---
+  - [pytest] Test run mismatch: original=1369, LLM=793
+  - [pytest] Test passed mismatch: original=1094, LLM=649
+  - [pytest] Test failed mismatch: original=0, LLM=5
+  - [pytest] Tests failed in LLM but not in original (from functional tests):
+    test_symlink_basename_is_kept[onedir-splash] (tests/functional/test_basic.py)
+    test_symlink_basename_is_kept[onefile-splash] (tests/functional/test_basic.py)
+    test_user_preferred_locale[onedir] (tests/functional/test_basic.py)
+    test_user_preferred_locale[onefile] (tests/functional/test_basic.py)
+    test_gi_repository[onedir-GLib] (tests/functional/test_gi.py)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > ERROR: Bootloaders have been compiled for the wrong platform
+    >        (expected: 'Linux-64bit-intel')
+    > (repeated for each functional test run)
+    > SystemExit: ERROR: Your platform does not support the splash screen feature,
+    >             since tkinter is not installed. Please install tkinter and try again.
+    > FAILED tests/functional/test_basic.py::test_symlink_basename_is_kept[onedir-splash]
+    > FAILED tests/functional/test_basic.py::test_user_preferred_locale[onedir]
+    > FAILED tests/functional/test_gi.py::test_gi_repository[onedir-GLib]
+
+  [Root cause classification]
+  Three issues from cross-platform mismatch:
+
+  (1) Original CI runs on macOS (macos-14), LLM runs on Linux -- wrong bootloaders
+    The original CI job is `tests (3.11, macos-14)` which compiles and tests PyInstaller
+    on macOS arm64. The LLM uses `python:3.11-slim` (Linux x86_64). The git repository
+    contains pre-compiled bootloaders for macOS. When functional tests run PyInstaller
+    on Linux, they need Linux bootloaders. The repo's bootloaders were compiled for
+    macOS, causing: `ERROR: Bootloaders have been compiled for the wrong platform
+    (expected: 'Linux-64bit-intel')`. The `python waf --tests all` step re-compiles the
+    bootloaders for Linux, but PyInstaller's internal bootloader selection may still
+    use the pre-compiled macOS ones from the package installation path.
+
+  (2) Splash screen requires tkinter -- not installed in python:3.11-slim
+    `test_symlink_basename_is_kept[*-splash]` tests splash screen functionality, which
+    requires `tkinter` to be installed. `python:3.11-slim` does not include tkinter.
+    When PyInstaller tries to build a splash-enabled application, it raises:
+    `SystemExit: ERROR: Your platform does not support the splash screen feature,
+     since tkinter is not installed. Please install tkinter and try again.`
+
+  (3) Test count mismatch (1369 vs 793) -- macOS-specific tests skipped on Linux
+    The original macOS run included 1369 tests. On Linux, 576 fewer tests run (793):
+    macOS-specific tests (`test_apple_events.py::test_apple_event_handling_*`,
+    `test_macos_*.py`, macOS bundle tests) are all skipped on Linux. Additionally,
+    the `test_gi_repository[onedir-GLib]` GObject introspection test fails because
+    `libglib2.0-dev` / GObject typelibs are not installed in `python:3.11-slim`.
+    The original CI's macOS runner provides macOS-native GUI frameworks that don't
+    require GObject introspection. Original: 254 skipped (macOS-only tests);
+    LLM: 121 skipped (different skip set on Linux).
+
+--- Test Statistics Comparison ---
+  [pytest]
+    Original: 1369 run, 1094 passed, 0 failed, 254 skipped (macos-14 runner)
+    LLM:      793 run, 649 passed, 5 failed, 121 skipped (linux/python:3.11-slim)

@@ -1,0 +1,59 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      build
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ sudo --preserve-env=http_proxy python3 build/fbcode_builder/getdeps.py --allow-system-packages install-system-deps --recursive folly && sudo --preserve-env=http_proxy python3 build/fbcode_builder/getdeps.py --allow-system-packages install-system-deps --recursive patchelf
+    $ python3 build/fbcode_builder/getdeps.py --allow-system-packages query-paths --recursive --src-dir=. folly  >> "$GITHUB_OUTPUT"
+    $ python3 build/fbcode_builder/getdeps.py --allow-system-packages fetch --no-tests fast_float
+    $ python3 build/fbcode_builder/getdeps.py --allow-system-packages fetch --no-tests fmt
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ TEST_FAILED=0
+  $ python3 build/fbcode_builder/getdeps.py --allow-system-packages fetch --no-tests boost
+  $ python3 build/fbcode_builder/getdeps.py --allow-system-packages fetch --no-tests libaio
+  $ python3 build/fbcode_builder/getdeps.py --allow-system-packages fetch --no-tests ninja
+  $ python3 build/fbcode_builder/getdeps.py --allow-system-packages fetch --no-tests cmake
+
+--- Reason(s) for Non-Reproducibility ---
+  - [CTest] Test run mismatch: original=7410, LLM=3698
+  - [CTest] Test passed mismatch: original=7401, LLM=3695
+  - [CTest] Test failed mismatch: original=1, LLM=1
+  - [CTest] 1 test(s) failed in LLM but not in original: file_util_test.WriteFileAtomic.directoryPermissions
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    12630:          Start 2794: file_util_test.WriteFileAtomic.directoryPermissions
+    12743:2787/3700 Test #2794: file_util_test.WriteFileAtomic.directoryPermissions ......................................................................***Failed    0.17 sec
+    12744:Note: Google Test filter = WriteFileAtomic.directoryPermissions
+    12748:[ RUN      ] WriteFileAtomic.directoryPermissions
+    1169:FileNotFoundError: [Errno 2] No such file or directory: 'pip'
+    1188:getdeps.runcmd.RunCommandError: [Errno 2] No such file or directory: 'pip' while running `pip \
+    1234:FileNotFoundError: [Errno 2] No such file or directory: 'pip'
+    1253:getdeps.runcmd.RunCommandError: [Errno 2] No such file or directory: 'pip' while running `pip \
+
+  [Root cause classification]
+  - Permission denied on executable/script — fake compiler or test helper script lacks execute permission in Docker container.
+  - Required environment variable not set — test reads a specific env var that was present in original CI but not in Docker container.
+  - Missing file or path not found — test data, certificate, or resource file absent in the Docker environment.
+  - I/O error — test encountered a system-level I/O failure, possibly due to filesystem permissions or missing mount points.
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 7410 run, 7401 passed, 1 failed, 8 skipped
+    LLM:      3698 run, 3695 passed, 1 failed, 2 skipped
+  [GTest]
+    Original: 1 run, 0 passed, 1 failed, 0 skipped
+    LLM:      1 run, 0 passed, 1 failed, 0 skipped

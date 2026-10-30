@@ -1,0 +1,17 @@
+{
+ "model": "claude-haiku-4-5-20251001",
+ "content": "```yamlfile\nname: Quick Tests\n\non:\n  pull_request:\n    paths-ignore:\n    - 'doc/**'\n  push:\n    branches:\n    - master\n    - v2\n    - 'release-*'\n\nenv:\n  INSTALL_DEPS: |\n    install_deps() {\n      local clang=$1\n      export DEBIAN_FRONTEND=noninteractive && sudo apt-get update && sudo apt-get install --no-upgrade --no-install-recommends -y clang-$clang libc++-$clang-dev libc++abi-$clang-dev libclang-rt-$clang-dev lld-$clang llvm-$clang\n    }\n\njobs:\n  Linux-clang:\n    runs-on: ubuntu-24.04\n    strategy:\n      fail-fast: false\n      matrix:\n        clang: [18]\n        driver: [super-test]\n        include:\n          - driver: super-test\n            run-test: ./super-test.sh quick\n    steps:\n      - uses: actions/checkout@v5\n      - name: install dependencies\n        run: eval \"$INSTALL_DEPS\" && install_deps 18\n      - name: test\n        run: |\n            export CC=clang-18\n            export CXX=clang++-18\n            ./super-test.sh quick\n```",
+ "reduced_yaml": "name: Quick Tests\n\non:\n  pull_request:\n    paths-ignore:\n    - 'doc/**'\n  push:\n    branches:\n    - master\n    - v2\n    - 'release-*'\n\nenv:\n  INSTALL_DEPS: |\n    install_deps() {\n      local clang=$1\n      export DEBIAN_FRONTEND=noninteractive && sudo apt-get update && sudo apt-get install --no-upgrade --no-install-recommends -y clang-$clang libc++-$clang-dev libc++abi-$clang-dev libclang-rt-$clang-dev lld-$clang llvm-$clang\n    }\n\njobs:\n  Linux-clang:\n    runs-on: ubuntu-24.04\n    strategy:\n      fail-fast: false\n      matrix:\n        clang: [18]\n        driver: [super-test]\n        include:\n          - driver: super-test\n            run-test: ./super-test.sh quick\n    steps:\n      - uses: actions/checkout@v5\n      - name: install dependencies\n        run: eval \"$INSTALL_DEPS\" && install_deps 18\n      - name: test\n        run: |\n            export CC=clang-18\n            export CXX=clang++-18\n            ./super-test.sh quick",
+ "input_tokens": 2082,
+ "output_tokens": 337,
+ "cost_usd": 0.003014,
+ "seconds": 3.33,
+ "prompt_sha256": "9f4f7f412888afc6ab014315749d6368859ff0aa0b9718e7bad2440b3be476c6",
+ "completed_steps": [
+  "Set up job",
+  "Run actions/checkout@v5",
+  "install dependencies",
+  "test",
+  "Complete job"
+ ]
+}

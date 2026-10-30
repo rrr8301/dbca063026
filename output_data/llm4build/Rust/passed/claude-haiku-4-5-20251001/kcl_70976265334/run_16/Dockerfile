@@ -1,0 +1,1 @@
+/workspace/venv/bin/python3 -m pip install pytest pytest-html pytest-xdist ruamel.yaml

@@ -1,0 +1,36 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      go-tests
+  Test command(s) run in original CI:
+    $ go test -p=8 -timeout 30m -ldflags "-w -s" -v ./backend/... | tee test.log; exit ${PIPESTATUS[0]}
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ go test -p=8 -timeout 30m -ldflags "-w -s" -v ./backend/... | tee test.log
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoDefault] Test run mismatch: original=2642, LLM=2083
+  - [GoDefault] Test passed mismatch: original=2619, LLM=2072
+  - [GoDefault] Test failed mismatch: original=2, LLM=11
+  - [GoDefault] 9 test(s) failed in LLM but not in original: github.com/bytebase/bytebase/backend/migrator, github.com/bytebase/bytebase/backend/plugin/db/mongodb, github.com/bytebase/bytebase/backend/plugin/db/mssql, github.com/bytebase/bytebase/backend/plugin/db/pg, github.com/bytebase/bytebase/backend/plugin/db/tidb ... (+4 more)
+
+--- Root Cause Analysis ---
+  - [GoDefault] LLM ran 559 fewer tests than original — LLM likely used a narrower test scope or missed some test suites.
+  - [GoDefault] 9 test(s) failed in LLM but not original: github.com/bytebase/bytebase/backend/migrator, github.com/bytebase/bytebase/backend/plugin/db/mongodb, github.com/bytebase/bytebase/backend/plugin/db/mssql, github.com/bytebase/bytebase/backend/plugin/db/pg, github.com/bytebase/bytebase/backend/plugin/db/tidb ... (+4 more)
+  - Test command differences detected — original CI vs LLM run.sh may use different flags or test selection.
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 2642 run, 2619 passed, 2 failed, 0 skipped
+    LLM:      2083 run, 2072 passed, 11 failed, 0 skipped

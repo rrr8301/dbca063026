@@ -1,0 +1,59 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Test and Lint
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ : set $CARGO_HOME
+    $ : enable colors in Cargo output
+    $ : enable Cargo sparse registry
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    8
+
+--- LLM run.sh Test Command(s) ---
+  $ cargo nextest run --all --exclude e2e_test
+  $ cargo test --all --doc
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in original but missing in LLM: nexttest
+  - Framework(s) in LLM but not in original: GoDefault
+  - [cargo] Test run mismatch: original=92, LLM=34
+  - [cargo] Test passed mismatch: original=47, LLM=0
+  - [cargo] Test failed mismatch: original=0, LLM=34
+  - [cargo] 34 test(s) failed in LLM but not in original: app::capacity_dirty_scope_test::data_movement_put_object_marks_dirty_disks_for_capacity_manager, app::capacity_dirty_scope_test::heal_object_marks_missing_shard_disk_dirty_for_capacity_manager, bucket::lifecycle::bucket_lifecycle_ops::tests::cleanup_removes_empty_multipart_sha_dirs, bucket::lifecycle::bucket_lifecycle_ops::tests::multipart_info_and_list_parts_do_not_expose_internal_metadata_keys, bucket::lifecycle::bucket_lifecycle_ops::tests::stale_multipart_cleanup_applies_abort_incomplete_lifecycle_before_default_expiry, bucket::lifecycle::bucket_lifecycle_ops::tests::stale_multipart_cleanup_applies_abort_lifecycle_with_size_filter, bucket::lifecycle::bucket_lifecycle_ops::tests::stale_multipart_cleanup_uses_default_expiry_without_lifecycle, disk::fs::tests::test_access (+26 more)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    5234:    [0m[31;1mthread 'disk::local::test::test_read_file_all' (44684) panicked at crates/ecstore/src/disk/local.rs:3522:50:[0m
+    5235-    [31;1mcalled `Result::unwrap()` on an `Err` value: Os { code: 12, kind: OutOfMemory, message: "Cannot allocate memory" }[0m
+    3446:    [0m[31;1mthread 'disk::fs::tests::test_lstat' (44608) panicked at crates/ecstore/src/disk/fs.rs:344:61:[0m
+    3546:    [0m[31;1mthread 'disk::local::test::test_local_disk_file_operations' (44660) panicked at crates/ecstore/src/disk/local.rs:3338:14:[0m
+    3446:    [0m[31;1mthread 'disk::fs::tests::test_lstat' (44608) panicked at crates/ecstore/src/disk/fs.rs:344:61:[0m
+    3546:    [0m[31;1mthread 'disk::local::test::test_local_disk_file_operations' (44660) panicked at crates/ecstore/src/disk/local.rs:3338:14:[0m
+    3631:    [0m[31;1mthread 'disk::fs::tests::test_open_file_append' (44605) panicked at crates/ecstore/src/disk/fs.rs:282:56:[0m
+    3711:    [0m[31;1mthread 'disk::local::test::cleanup_stale_tmp_objects_keeps_fresh_dirs_and_regular_files' (44636) panicked at crates/ecstore/src/disk/local.rs:3118:51:[0m
+
+  [Root cause classification]
+  - Process aborted (SIGABRT) — likely a GLib g_assert() failure, AddressSanitizer/UBSan abort, or missing D-Bus/system service in Docker container.
+  - I/O error — test encountered a system-level I/O failure, possibly due to filesystem permissions or missing mount points.
+  - Rust panic: 5234:    [0m[31;1mthread 'disk::local::test::test_read_file_all' (44684) panicked at crates/ecstore/src/disk/local.rs:3522:50:[0m
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: (not present)
+    LLM:      68 run, 0 passed, 68 failed, 0 skipped
+  [cargo]
+    Original: 92 run, 47 passed, 0 failed, 45 skipped
+    LLM:      34 run, 0 passed, 34 failed, 0 skipped
+  [nexttest]
+    Original: 4511 run, 4445 passed, 0 failed, 66 skipped
+    LLM:      (not present)

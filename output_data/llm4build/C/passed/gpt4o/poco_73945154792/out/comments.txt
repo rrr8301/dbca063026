@@ -1,0 +1,44 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          7
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      linux-gcc-cmake-sanitizers (asan, default, -fsanitize=address)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ ctest --output-on-failure --no-tests=error --output-junit test-report.xml --test-output-size-failed 0 --test-output-truncation tail --parallel $(nproc) && break
+
+--- Reason(s) for Non-Reproducibility ---
+  - [CTest] Test run mismatch: original=19, LLM=57
+  - [CTest] Test passed mismatch: original=19, LLM=51
+  - [CTest] Test failed mismatch: original=0, LLM=6
+  - [CTest] 2 test(s) failed in LLM but not in original: MongoDB, Net
+
+--- Root Cause Analysis ---
+  [Actual error from LLM log.txt]
+    > Poco::Net::NetException: Net Exception: Cannot assign requested address: [::1]:1234
+    > DatagramSocketTest::testReuseAddressPortSpecific — bind6() failed at SocketImpl.cpp:285
+    > 6 - Net (Failed)
+    > 7 - MongoDB (Failed)
+    > 19/19 Test #1: Foundation ..... Passed 197.12 sec
+    > 89% tests passed, 2 tests failed out of 19 (after retry: still 57 total)
+
+  [Root cause classification: IPv6 loopback unavailable in Docker and MongoDB not running]
+  - The Net test suite fails on DatagramSocketTest::testReuseAddressPortSpecific because the Docker container does not have the IPv6 loopback interface (::1) enabled by default; binding to [::1]:1234 returns EADDRNOTAVAIL, throwing a Poco::Net::NetException.
+  - The MongoDB test fails because no MongoDB server is running inside the Docker container; the Poco MongoDB connector tests require an active MongoDB instance on localhost, which is not provisioned in the LLM's Dockerfile.
+  - The +38 test count vs the original (57 vs 19) occurs because the LLM enabled additional CMake component builds (e.g., Data/MongoDB, Crypto, NetSSL) that the original ubuntu-24.04 sanitizer-only job did not include, exposing more test suites but also revealing the missing MongoDB service and IPv6 configuration.
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 19 run, 19 passed, 0 failed, 0 skipped
+    LLM:      57 run, 51 passed, 6 failed, 0 skipped

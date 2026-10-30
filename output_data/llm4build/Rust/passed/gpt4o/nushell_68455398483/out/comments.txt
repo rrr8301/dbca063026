@@ -1,0 +1,31 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          N/A
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-22.04
+  CI job name:      build-and-test (ubuntu-22.04)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    5
+
+--- Reason(s) for Non-Reproducibility ---
+  - [cargo] Test run mismatch: original=1323, LLM=13
+  - [cargo] Test passed mismatch: original=1297, LLM=13
+  - [cargo] Test skipped mismatch: original=26, LLM=0
+  - [cargo] 109 test(s) failed in LLM but not in original: plugin_persistence::custom_values_can_still_be_collapsed_after_stop, plugin_persistence::custom_values_can_still_be_passed_to_plugin_after_stop, plugin_persistence::multiple_plugin_commands_run_with_the_same_plugin_pid, plugin_persistence::plugin_commands_run_multiple_times_without_error, plugin_persistence::plugin_commands_run_without_error ... (+104 more)
+
+--- Root Cause Analysis ---
+  - [cargo] LLM ran 1310 fewer tests than original — LLM likely used a narrower test scope or missed some test suites.
+  - [cargo] 109 test(s) failed in LLM but not original: plugin_persistence::custom_values_can_still_be_collapsed_after_stop, plugin_persistence::custom_values_can_still_be_passed_to_plugin_after_stop, plugin_persistence::multiple_plugin_commands_run_with_the_same_plugin_pid, plugin_persistence::plugin_commands_run_multiple_times_without_error, plugin_persistence::plugin_commands_run_without_error ... (+104 more)
+
+--- Test Statistics Comparison ---
+  [cargo]
+    Original: 1323 run, 1297 passed, 0 failed, 26 skipped
+    LLM:      13 run, 13 passed, 0 failed, 0 skipped

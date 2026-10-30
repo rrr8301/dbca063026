@@ -1,0 +1,63 @@
+Error from docker build
+Sending build context to Docker daemon  6.762MB
+
+Step 1/11 : FROM ubuntu:24.04
+ ---> f794f40ddfff
+Step 2/11 : ENV TZ=America/Los_Angeles
+ ---> Using cache
+ ---> be1f900f1f24
+Step 3/11 : RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+ ---> Using cache
+ ---> 6ddbcfa98bdd
+Step 4/11 : RUN apt-get update && apt-get install -y --no-install-recommends     git     build-essential     curl     wget     ca-certificates     software-properties-common     && add-apt-repository ppa:deadsnakes/ppa     && apt-get update     && apt-get install -y --no-install-recommends     python3.14     python3.14-dev     python3.14-venv     python3-pip     && apt-get clean     && rm -rf /var/lib/apt/lists/*
+ ---> Using cache
+ ---> c2f048dd2ab8
+Step 5/11 : RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.14 1
+ ---> Using cache
+ ---> 1c57d577ad01
+Step 6/11 : WORKDIR /workspace
+ ---> Using cache
+ ---> 2e8c78552ba7
+Step 7/11 : COPY . /workspace/
+ ---> 8208c5b44bab
+Step 8/11 : RUN python3 -m ensurepip --upgrade &&     python3 -m pip install --no-cache-dir --upgrade --force-reinstall --break-system-packages pip setuptools wheel &&     python3 -m pip install --no-cache-dir --break-system-packages tox
+ ---> Running in 08a040f9258d
+Looking in links: /tmp/tmprhichekc
+Requirement already satisfied: pip in /usr/lib/python3/dist-packages (24.0)
+Processing /tmp/tmprhichekc/pip-25.3-py3-none-any.whl
+Installing collected packages: pip
+  Attempting uninstall: pip
+    Found existing installation: pip 24.0
+[91merror: uninstall-no-record-file
+
+× Cannot uninstall pip 24.0
+╰─> The package's contents are unknown: no RECORD file was found for pip.
+
+hint: The package was installed by debian. You should check if it can uninstall the package.
+[0m[91mTraceback (most recent call last):
+[0m[91m  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/usr/lib/python3.14/ensurepip/__main__.py", line 5, in <module>
+    sys.exit(ensurepip._main())
+             ~~~~~~~~~~~~~~~^^
+  File "/usr/lib/python3.14/ensurepip/__init__.py", line 257, in _main
+    return _bootstrap(
+        root=args.root,
+    ...<4 lines>...
+        default_pip=args.default_pip,
+    )
+  File "/usr/lib/python3.14/ensurepip/__init__.py", line 172, in _bootstrap
+    return _run_pip([*args, "pip"], [os.fsdecode(tmp_wheel_path)])
+  File "/usr/lib/python3.14/ensurepip/__init__.py", line 87, in _run_pip
+    return subprocess.run(cmd, check=True).returncode
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/subprocess.py", line 577, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '['/usr/bin/python3', '-W', 'ignore::DeprecationWarning', '-c', '\nimport runpy\nimport sys\nsys.path = [\'/tmp/tmprhichekc/pip-25.3-py3-none-any.whl\'] + sys.path\nsys.argv[1:] = [\'install\', \'--no-cache-dir\', \'--no-index\', \'--find-links\', \'/tmp/tmprhichekc\', \'--upgrade\', \'pip\']\nrunpy.run_module("pip", run_name="__main__", alter_sys=True)\n']' returned non-zero exit status 1.
+[0m
+DEPRECATED: The legacy builder is deprecated and will be removed in a future release.
+            Install the buildx component to build images with BuildKit:
+            https://docs.docker.com/go/buildx/
+
+The command '/bin/sh -c python3 -m ensurepip --upgrade &&     python3 -m pip install --no-cache-dir --upgrade --force-reinstall --break-system-packages pip setuptools wheel &&     python3 -m pip install --no-cache-dir --break-system-packages tox' returned a non-zero code: 1

@@ -1,0 +1,61 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      build
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ sudo --preserve-env=http_proxy python3 build/fbcode_builder/getdeps.py --allow-system-packages install-system-deps --recursive folly && sudo --preserve-env=http_proxy python3 build/fbcode_builder/getdeps.py --allow-system-packages install-system-deps --recursive patchelf
+    $ python3 build/fbcode_builder/getdeps.py --allow-system-packages query-paths --recursive --src-dir=. folly  >> "$GITHUB_OUTPUT"
+    $ python3 build/fbcode_builder/getdeps.py --allow-system-packages fetch --no-tests fast_float
+    $ python3 build/fbcode_builder/getdeps.py --allow-system-packages fetch --no-tests fmt
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ for dep in boost libaio ninja cmake double-conversion fast_float fmt gflags glog googletest libdwarf libevent zlib lz4 snappy zstd autoconf automake libtool libiberty libsodium libunwind xz openssl; do
+  $ python3 build/fbcode_builder/getdeps.py --allow-system-packages fetch --no-tests $dep || true
+  $ for dep in boost libaio ninja cmake double-conversion fast_float fmt gflags glog googletest libdwarf libevent zlib lz4 snappy zstd autoconf automake libtool libiberty libsodium libunwind xz openssl; do
+  $ python3 build/fbcode_builder/getdeps.py --allow-system-packages build --free-up-disk --no-tests $dep || true
+  $ python3 build/fbcode_builder/getdeps.py --allow-system-packages test --src-dir=. folly --project-install-prefix folly:/usr/local
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in LLM but not in original: GTest
+  - [CTest] Test run mismatch: original=14820, LLM=3698
+  - [CTest] Test passed mismatch: original=14804, LLM=3694
+  - [CTest] Test failed mismatch: original=0, LLM=2
+  - [CTest] 2 test(s) failed in LLM but not in original: file_util_test.WriteFileAtomic.directoryPermissions, io_async_hh_wheel_timer_test.HHWheelTimerTest.CancelTimeout
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    1156:FileNotFoundError: [Errno 2] No such file or directory: 'pip'
+    1175:getdeps.runcmd.RunCommandError: [Errno 2] No such file or directory: 'pip' while running `pip \
+    1221:FileNotFoundError: [Errno 2] No such file or directory: 'pip'
+    1240:getdeps.runcmd.RunCommandError: [Errno 2] No such file or directory: 'pip' while running `pip \
+    1156:FileNotFoundError: [Errno 2] No such file or directory: 'pip'
+    1175:getdeps.runcmd.RunCommandError: [Errno 2] No such file or directory: 'pip' while running `pip \
+    1221:FileNotFoundError: [Errno 2] No such file or directory: 'pip'
+    1240:getdeps.runcmd.RunCommandError: [Errno 2] No such file or directory: 'pip' while running `pip \
+
+  [Root cause classification]
+  - Permission denied on executable/script — fake compiler or test helper script lacks execute permission in Docker container.
+  - Missing file or path not found — test data, certificate, or resource file absent in the Docker environment.
+  - Required environment variable not set — test reads a specific env var that was present in original CI but not in Docker container.
+  - Test timed out — likely due to slower execution in Docker container or a blocking service call that never returns.
+  - I/O error — test encountered a system-level I/O failure, possibly due to filesystem permissions or missing mount points.
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 14820 run, 14804 passed, 0 failed, 16 skipped
+    LLM:      3698 run, 3694 passed, 2 failed, 2 skipped
+  [GTest]
+    Original: (not present)
+    LLM:      2 run, 0 passed, 2 failed, 0 skipped

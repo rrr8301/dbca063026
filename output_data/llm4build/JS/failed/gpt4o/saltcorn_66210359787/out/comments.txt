@@ -1,0 +1,41 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          4
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      build
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ service postgresql start
+  $ npm install --legacy-peer-deps
+  $ npm run tsc
+  $ eslint .
+  $ packages/saltcorn-cli/bin/saltcorn run-tests
+
+--- Reason(s) for Non-Reproducibility ---
+  - jest failed test count mismatch: original=0 failed (1161 passed), LLM=4 failed (1157 passed)
+
+--- Root Cause Analysis ---
+  Actual error messages from LLM log.txt:
+    > Cannot find module 'express' from '../../node_modules/express-promise-router/lib/express-promise-router.js'
+    > Test Suites: 21 failed, 1 passed, 22 total
+    > Tests: 5 passed, 5 total
+    > npm error Lifecycle script `test` failed with error
+
+  Root cause classification: Missing dependency / incomplete monorepo install
+  - The saltcorn server package failed to resolve the 'express' module during testing, indicating that the full monorepo workspace dependencies were not properly linked or installed. The LLM used npm with --legacy-peer-deps at the workspace root, but failed to correctly set up the workspace symlinks that the @saltcorn/server package requires. The original CI likely bootstrapped all packages in the correct order, ensuring express and related peer dependencies were resolved transitively, whereas the LLM's install strategy left some packages unresolved.
+
+--- Test Statistics Comparison ---
+  jest
+    Original: 1161 run, 1161 passed, 0 failed, 0 skipped
+    LLM:      1161 run, 1157 passed, 4 failed, 0 skipped

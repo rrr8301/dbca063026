@@ -1,0 +1,34 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      ubuntu-24.04 Release TSan + UBSan / build
+  Test command(s) run in original CI:
+    $ ctest --output-on-failure -j 4 -C Release --timeout 400 -E "memcpy|external_pointer" --repeat-until-fail 2
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ ctest --output-on-failure -j 4 -C Release --timeout 400 \
+
+--- Reason(s) for Non-Reproducibility ---
+  - [CTest] 1 test(s) failed in original but passed in LLM: perf-msgpass-check
+  - [CTest] 1 test(s) failed in LLM but not in original: perf-lotsofthreads-check
+
+--- Root Cause Analysis ---
+  - [CTest] 1 test(s) failed in LLM but not original: perf-lotsofthreads-check
+  - Test command differences detected — original CI vs LLM run.sh may use different flags or test selection.
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 80 run, 76 passed, 4 failed, 0 skipped
+    LLM:      80 run, 76 passed, 4 failed, 0 skipped

@@ -1,0 +1,53 @@
+Error from docker build
+
+#1 [internal] load .dockerignore
+#1 transferring context: 101B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 304B done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for ghcr.io/jguer/yay-builder:latest
+#3 DONE 0.1s
+
+#4 [1/6] FROM ghcr.io/jguer/yay-builder:latest@sha256:2c09438454ccfb3670de31a3692c35f9ed1b8187e4bfdbc783cbf298164a5c88
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 10.03kB 0.0s done
+#5 DONE 0.0s
+
+#6 [2/6] WORKDIR /workspace
+#6 CACHED
+
+#7 [3/6] COPY . .
+#7 CACHED
+
+#8 [4/6] RUN printf 'version: 1\nlinters:\n  disable:\n    - errcheck\n    - staticcheck\n' > .golangci.yml
+#8 DONE 0.4s
+
+#9 [5/6] RUN /app/bin/golangci-lint run -v ./...
+#9 0.508 level=info msg="golangci-lint has version 2.10.1 built with go1.26.0 from 5d1e709b on 2026-02-17T15:27:33Z"
+#9 0.508 level=info msg="[config_reader] Config search paths: [./ /workspace / /root]"
+#9 0.509 level=info msg="[config_reader] Used config file .golangci.yml"
+#9 0.511 Error: can't load config: unsupported version of the configuration: "1" See https://golangci-lint.run/docs/product/migration-guide for migration instructions
+#9 0.511 The command is terminated due to an error: can't load config: unsupported version of the configuration: "1" See https://golangci-lint.run/docs/product/migration-guide for migration instructions
+#9 ERROR: process "/bin/sh -c /app/bin/golangci-lint run -v ./..." did not complete successfully: exit code: 3
+------
+ > [5/6] RUN /app/bin/golangci-lint run -v ./...:
+#9 0.508 level=info msg="golangci-lint has version 2.10.1 built with go1.26.0 from 5d1e709b on 2026-02-17T15:27:33Z"
+#9 0.508 level=info msg="[config_reader] Config search paths: [./ /workspace / /root]"
+#9 0.509 level=info msg="[config_reader] Used config file .golangci.yml"
+#9 0.511 Error: can't load config: unsupported version of the configuration: "1" See https://golangci-lint.run/docs/product/migration-guide for migration instructions
+#9 0.511 The command is terminated due to an error: can't load config: unsupported version of the configuration: "1" See https://golangci-lint.run/docs/product/migration-guide for migration instructions
+------
+Dockerfile:11
+--------------------
+   9 |     ENV GOFLAGS="-buildvcs=false -tags=next"
+  10 |     
+  11 | >>> RUN /app/bin/golangci-lint run -v ./...
+  12 |     
+  13 |     RUN make test
+--------------------
+ERROR: failed to solve: process "/bin/sh -c /app/bin/golangci-lint run -v ./..." did not complete successfully: exit code: 3

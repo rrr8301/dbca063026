@@ -1,0 +1,57 @@
+Error from docker build
+
+#1 [internal] load .dockerignore
+#1 transferring context: 2B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 1.02kB done
+#2 DONE 0.0s
+
+#3 [auth] library/ubuntu:pull token for registry-1.docker.io
+#3 DONE 0.0s
+
+#4 [internal] load metadata for docker.io/library/ubuntu:22.04
+#4 DONE 0.4s
+
+#5 [1/9] FROM docker.io/library/ubuntu:22.04@sha256:962f6cadeae0ea6284001009daa4cc9a8c37e75d1f5191cf0eb83fe565b63dd7
+#5 DONE 0.0s
+
+#6 [internal] load build context
+#6 transferring context: 30.86kB 0.0s done
+#6 DONE 0.0s
+
+#7 [2/9] RUN ln -snf /usr/share/zoneinfo/America/Los_Angeles /etc/localtime && echo America/Los_Angeles > /etc/timezone
+#7 CACHED
+
+#8 [3/9] RUN apt-get update && apt-get install -y     git     make     curl     wget     cmake     ninja-build     g++     clang     cargo     unzip     gettext-base &&     rm -rf /var/lib/apt/lists/*
+#8 CACHED
+
+#9 [4/9] WORKDIR /app
+#9 CACHED
+
+#10 [5/9] COPY . .
+#10 DONE 0.1s
+
+#11 [6/9] RUN curl -sSL https://correct-url.com/install-uv.sh | bash || (echo "Failed to download install-uv.sh due to network issues" && exit 1)
+#11 129.8 curl: (28) Failed to connect to correct-url.com port 443 after 129448 ms: Connection timed out
+#11 DONE 129.8s
+
+#12 [7/9] RUN uv --version || (echo "uv installation failed" && exit 1)
+#12 0.403 /bin/sh: 1: uv: not found
+#12 0.404 uv installation failed
+#12 ERROR: process "/bin/sh -c uv --version || (echo \"uv installation failed\" && exit 1)" did not complete successfully: exit code: 1
+------
+ > [7/9] RUN uv --version || (echo "uv installation failed" && exit 1):
+#12 0.403 /bin/sh: 1: uv: not found
+#12 0.404 uv installation failed
+------
+Dockerfile:36
+--------------------
+  34 |     
+  35 |     # Verify uv installation
+  36 | >>> RUN uv --version || (echo "uv installation failed" && exit 1)
+  37 |     
+  38 |     # Copy run.sh and make it executable
+--------------------
+ERROR: failed to solve: process "/bin/sh -c uv --version || (echo \"uv installation failed\" && exit 1)" did not complete successfully: exit code: 1

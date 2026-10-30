@@ -1,0 +1,60 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      build
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ sudo --preserve-env=http_proxy python3 build/fbcode_builder/getdeps.py --allow-system-packages install-system-deps --recursive mvfst && sudo --preserve-env=http_proxy python3 build/fbcode_builder/getdeps.py --allow-system-packages install-system-deps --recursive patchelf
+    $ python3 build/fbcode_builder/getdeps.py --allow-system-packages query-paths --recursive --src-dir=. mvfst  >> "$GITHUB_OUTPUT"
+    $ python3 build/fbcode_builder/getdeps.py --allow-system-packages fetch --no-tests fast_float
+    $ python3 build/fbcode_builder/getdeps.py --allow-system-packages fetch --no-tests fmt
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ python3 build/fbcode_builder/getdeps.py --allow-system-packages fetch --no-tests fast_float
+  $ python3 build/fbcode_builder/getdeps.py --allow-system-packages fetch --no-tests fmt
+  $ python3 build/fbcode_builder/getdeps.py --allow-system-packages fetch --no-tests glog
+  $ python3 build/fbcode_builder/getdeps.py --allow-system-packages fetch --no-tests googletest
+  $ python3 build/fbcode_builder/getdeps.py --allow-system-packages fetch --no-tests liboqs
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in original but missing in LLM: GTest
+  - [CTest] Test run mismatch: original=3706, LLM=1752
+  - [CTest] Test passed mismatch: original=3705, LLM=1724
+  - [CTest] Test failed mismatch: original=1, LLM=28
+  - [CTest] 28 test(s) failed in LLM but not in original: QuicServerTakeoverTest.TakeoverTest, QuicServerTest.DontRouteDataAfterShutdown, QuicServerTest.NetworkTest, QuicServerTest.NetworkTestHealthCheck, QuicServerTest.NetworkTestNoVersionNegotiation, QuicServerTest.NetworkTestReset, QuicServerTest.NetworkTestResetLargePacket, QuicServerTest.NetworkTestResetLongHeader (+20 more)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    1957:-- Installing: /tmp/fbcode_builder_getdeps-ZworkspaceZbuildZfbcode_builder-root/installed/googletest-qttmp3lwJywUkWeTqSFbsSnNlLxr0MQ1ZoY9gekCRhc/include/gtest/gtest-assertion-result.h
+    4533:[228/669] Building CXX object folly/lang/CMakeFiles/folly_lang_safe_assert_obj.dir/SafeAssert.cpp.o
+    4615:[262/669] Linking CXX static library folly/lang/libfolly_lang_safe_assert.a
+    5898:-- Installing: /tmp/fbcode_builder_getdeps-ZworkspaceZbuildZfbcode_builder-root/installed/folly/include/folly/lang/SafeAssert.h
+    1957:-- Installing: /tmp/fbcode_builder_getdeps-ZworkspaceZbuildZfbcode_builder-root/installed/googletest-qttmp3lwJywUkWeTqSFbsSnNlLxr0MQ1ZoY9gekCRhc/include/gtest/gtest-assertion-result.h
+    4533:[228/669] Building CXX object folly/lang/CMakeFiles/folly_lang_safe_assert_obj.dir/SafeAssert.cpp.o
+    4615:[262/669] Linking CXX static library folly/lang/libfolly_lang_safe_assert.a
+    5898:-- Installing: /tmp/fbcode_builder_getdeps-ZworkspaceZbuildZfbcode_builder-root/installed/folly/include/folly/lang/SafeAssert.h
+
+  [Root cause classification]
+  - Process aborted (SIGABRT) — likely a GLib g_assert() failure, AddressSanitizer/UBSan abort, or missing D-Bus/system service in Docker container.
+  - Network connectivity issue — test requires network access or a service (e.g., local server) that is unavailable in Docker.
+  - I/O error — test encountered a system-level I/O failure, possibly due to filesystem permissions or missing mount points.
+  - Assertion failure: 1957:-- Installing: /tmp/fbcode_builder_getdeps-ZworkspaceZbuildZfbcode_builder-root/installed/googletest-qttmp3lwJywUkWeTqSFbsSnNlLxr0MQ1ZoY9gekCRhc/include/gtest/gtest-assertion-result.h
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 3706 run, 3705 passed, 1 failed, 0 skipped
+    LLM:      1752 run, 1724 passed, 28 failed, 0 skipped
+  [GTest]
+    Original: 1 run, 0 passed, 1 failed, 0 skipped
+    LLM:      (not present)

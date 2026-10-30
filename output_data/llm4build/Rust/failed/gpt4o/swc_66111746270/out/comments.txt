@@ -1,0 +1,40 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          4
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      Test - swc - ubuntu-latest
+  Test command(s) run in original CI:
+    $ cargo test -p swc
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    8
+
+--- LLM run.sh Test Command(s) ---
+  $ yarn dlx jest --version && yarn dlx mocha --version
+  $ cargo test -p $DEFAULT_CRATE --all-features || true
+
+--- Reason(s) for Non-Reproducibility ---
+  - [cargo] Test run mismatch: original=674, LLM=620
+  - [cargo] Test passed mismatch: original=560, LLM=613
+  - [cargo] Test failed mismatch: original=5, LLM=2
+  - [cargo] Test skipped mismatch: original=109, LLM=5
+  - [cargo] 5 test(s) failed in original but passed in LLM: run_babel_fixture_exec_test_tests__babel_exec__packages__babel_plugin_transform_named_capturing_groups_regex__test__fixtures__runtime__exec_js, run_babel_fixture_exec_test_tests__babel_exec__packages__babel_plugin_transform_named_capturing_groups_regex__test__fixtures__runtime__issue_10393__exec_js, run_babel_fixture_exec_test_tests__babel_exec__packages__babel_plugin_transform_named_capturing_groups_regex__test__fixtures__runtime__issue_10601__exec_js, run_babel_fixture_exec_test_tests__babel_exec__packages__babel_plugin_transform_named_capturing_groups_regex__test__fixtures__runtime__match_all__exec_js, run_babel_fixture_exec_test_tests__babel_exec__packages__babel_preset_env__test__fixtures__plugins_integration__issue_8951__exec_js
+  - [cargo] 2 test(s) failed in LLM but not in original: error, identity
+
+--- Root Cause Analysis ---
+  - [cargo] LLM ran 54 fewer tests than original — LLM likely used a narrower test scope or missed some test suites.
+  - [cargo] 2 test(s) failed in LLM but not original: error, identity
+  - Test command differences detected — original CI vs LLM run.sh may use different flags or test selection.
+
+--- Test Statistics Comparison ---
+  [cargo]
+    Original: 674 run, 560 passed, 5 failed, 109 skipped
+    LLM:      620 run, 613 passed, 2 failed, 5 skipped

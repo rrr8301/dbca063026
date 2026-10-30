@@ -1,0 +1,56 @@
+name: Conditions
+on: [push, pull_request]
+env:
+  MODE: release
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      v: ${{ steps.win.outputs.v }}
+    steps:
+      - id: win
+        if: runner.os == 'Windows'
+        run: echo "v=1" >> "$GITHUB_OUTPUT"
+      - run: echo setup
+  test:
+    needs: setup
+    name: test ${{ matrix.python }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: ["3.10", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Linux setup
+        if: runner.os == 'Linux'
+        run: ./setup-linux.sh
+      - name: Windows setup
+        if: runner.os == 'Windows'
+        run: ./setup-windows.ps1
+      - name: Only 3.10
+        if: matrix.python == '3.10'
+        run: echo old
+      - name: Deploy
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: ./deploy.sh
+      - name: Pull requests only
+        if: github.event_name == 'pull_request'
+        run: echo pr
+      - name: Release mode
+        if: env.MODE == 'release'
+        run: echo release
+      - run: echo "MODE=debug" >> $GITHUB_ENV
+      - name: After the env write
+        if: env.MODE == 'release'
+        run: echo maybe
+      - name: Run tests
+        if: matrix.python == '3.12'
+        env:
+          V: ${{ needs.setup.outputs.v }}
+        run: pytest
+      - name: Cleanup
+        if: always()
+        run: ./cleanup.sh
+      - name: On failure
+        if: failure()
+        run: echo failed

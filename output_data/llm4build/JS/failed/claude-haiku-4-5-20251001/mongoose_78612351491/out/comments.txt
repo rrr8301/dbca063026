@@ -1,0 +1,47 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Reason(s) for Non-Reproducibility ---
+  - [mocha] Test passed mismatch: original=4345, LLM=4346
+  - [mocha] Test failed mismatch: original=1, LLM=0
+
+--- Test Statistics Comparison ---
+  [mocha] 4391 run, 4345 passed, 1 failed, 45 skipped
+    Failed: Model > 3.6 features > bug fixes > sessions (gh-6362) >
+LLM:
+  [mocha] 4391 run, 4346 passed, 0 failed, 45 skipped
+
+--- Original CI Environment ---
+  Platform:   GitHub Actions ubuntu-22.04
+  Runtime:    js/ts — mocha — 4391 run, 1 failing, 45 pending
+
+--- LLM-Generated Dockerfile ---
+  Base image:  ubuntu:22.04
+  User:        non-root testuser
+
+--- Root Cause Analysis ---
+  [Actual error from original CI log]
+    > AssertionError [ERR_ASSERTION]:
+    >   assert.ok(session.serverSession.lastUse > lastUse) → false
+    > at test/model.test.js:4467
+
+  [Root cause classification]
+  Inverted result — test fails in original CI but passes in LLM Docker:
+
+  The test `supports overwriting 'session' in save()` asserts that after calling
+  `doc.save({session})`, the server session's `lastUse` timestamp advances
+  (`lastUse > prevLastUse`). In the original CI (ubuntu-22.04) this assertion
+  evaluates to false — the timestamp did not advance, likely because the save()
+  round-trip completed within the same server-tick granularity as the previous
+  operation.
+
+  In LLM Docker (ubuntu:22.04) the test passes — the timestamp does advance.
+  This is an inverted failure pattern: fail in original but pass in LLM.
+  The original has 1 failure that the LLM does not reproduce (inverted result,
+  Existence=False).

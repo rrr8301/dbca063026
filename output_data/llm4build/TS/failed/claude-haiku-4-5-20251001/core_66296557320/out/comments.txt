@@ -1,0 +1,46 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      test / e2e-test
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ pnpm/action-setup@v4.2.0
+    $ pnpm install
+    $ pnpm run test-e2e
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ trap 'TEST_FAILED=1' ERR
+  $ TEST_FAILED=0
+  $ pnpm install || { echo "Failed to install dependencies"; TEST_FAILED=1; }
+  $ node node_modules/puppeteer/install.mjs || { echo "Failed to install Puppeteer"; TEST_FAILED=1; }
+  $ pnpm run test-e2e || { echo "E2E tests failed"; TEST_FAILED=1; }
+
+--- Reason(s) for Non-Reproducibility ---
+  - [vitest] Test result mismatch (same count 109): original=(107p/2f/0s), LLM=(0p/0f/109s)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    Error: Failed to launch the browser process: Code: 127
+    /root/.cache/puppeteer/chrome/linux-145.0.7632.77/chrome-linux64/chrome:
+      error while loading shared libraries: libcairo.so.2: cannot open shared object file: No such file or directory
+    (14 FAIL suites: Transition, TransitionGroup, commits, grid, hydrationStrategies, markdown,
+     memory-leak, ssr-custom-element, ssr-custom-element-vapor, svg, todomvc, tree, trusted-types, vModel)
+
+  [Root cause classification]
+  - All 109 E2E tests are skipped (vitest reports them as skipped rather than failed) because Puppeteer/Chrome fails to launch: the downloaded Chrome binary requires `libcairo.so.2` which is not installed in the ubuntu:22.04 base image. The LLM's run.sh installed Puppeteer and downloaded a Chrome binary (linux-145.0.7632.77) but did not install the full set of Chrome system dependencies (libcairo2, libpango, etc.). When each E2E test suite attempts to start a browser, the launch fails and vitest marks all tests as skipped. The original CI ran the E2E tests on a GitHub Actions runner with Chrome pre-installed, running 107 of 109 tests successfully (2 real failures). The LLM's 0-pass/109-skipped outcome is entirely due to the missing `libcairo.so.2` shared library.
+
+--- Test Statistics Comparison ---
+  [vitest]
+    Original: 109 run, 107 passed, 2 failed, 0 skipped
+    LLM:      109 run, 0 passed, 0 failed, 109 skipped

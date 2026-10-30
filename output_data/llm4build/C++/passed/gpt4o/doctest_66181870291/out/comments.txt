@@ -1,0 +1,41 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          3
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      ci (gcc, ubuntu-22.04, 9)
+  Test command(s) run in original CI:
+    $ python3 .github/workflows/build_and_test.py Linux X64 gcc 9
+    $ python3 .github/workflows/build_and_test.py Linux x86 gcc 9
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ python3 .github/workflows/build_and_test.py Linux x64 gcc 9
+  $ python3 .github/workflows/build_and_test.py Linux x86 gcc 9
+
+--- Reason(s) for Non-Reproducibility ---
+  - [CTest] Test count mismatch: original=2864 run (16 suites × 179 tests), LLM=1432 run (8 suites × 179 tests)
+  - [CTest] The x86 cross-compilation suites all failed in LLM due to missing 32-bit kernel headers, so half of the total test runs were lost
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    4961: FAILED: CMakeFiles/doctest_with_main.dir/doctest/parts/private/assert/message.cpp.o
+    4976: /usr/include/linux/errno.h:1:10: fatal error: asm/errno.h: No such file or directory
+
+  [Root cause classification]
+  - The original CI runs `build_and_test.py` twice: once for X64 and once for x86 (32-bit), each running 8 build configurations × 179 CTest tests = 1432 per run, for 2864 total.
+  - The LLM's x64 run (8 × 179 = 1432 tests) succeeded and matched the original. However, the x86 run failed to compile because the `-m32` cross-compilation flag requires 32-bit system headers (`asm/errno.h` for x86) that are not present in the default `ubuntu:22.04` Docker image. The Dockerfile installs `g++-9-multilib` (which provides 32-bit headers), but the `linux-libc-dev:i386` or equivalent cross-compilation header package was not sufficient, resulting in `fatal error: asm/errno.h: No such file or directory` for all x86 build targets.
+  - As a result, the LLM only completed 1432 of the expected 2864 tests (only the x64 half), with 0 failures vs 0 failures in the original (both agreed on x64 correctness, but x86 could not be evaluated).
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 2864 run, 2864 passed, 0 failed, 0 skipped
+    LLM:      1432 run, 1432 passed, 0 failed, 0 skipped

@@ -1,0 +1,50 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT TESTS NOT REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      ci
+  Test command(s) run in original CI:
+    $ pnpm test
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    6
+
+--- LLM run.sh Test Command(s) ---
+  $ pnpm test || TEST_FAILED=1
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > @nuclearplayer/ui:test: Error: Uncaught [Error: Badge variant "dot" does not support children]
+    >     at new Mock (@vitest/spy/dist/index.js:262:27)
+    > @nuclearplayer/player:test: Error: Uncaught [Error: Custom widget "auth" not found for plugin "lastfm"]
+    >     at performUnitOfWork (react-dom.development.js:26599:12)
+    > ERROR  run failed: command  exited (1)
+    > ELIFECYCLE  Command failed with exit code 1.
+    > ✗ Some checks failed: - Build failed
+
+  [Root cause classification]
+  - The `@nuclearplayer/ui` package's vitest tests fail with `Error: Badge variant "dot" does not support children`. This is a React component invariant violation: the `Badge` component with `variant="dot"` was updated to reject children, but a test still renders it with children. This is a genuine code-level test failure that indicates either a test that wasn't updated after the component API changed, or a dependency version drift where a newer version of the component enforces a stricter API.
+
+  - The `@nuclearplayer/player` package's tests fail with `Error: Custom widget "auth" not found for plugin "lastfm"`. This is a plugin registration issue: the test renders the LastFM plugin's settings page, which tries to render a custom widget named `"auth"` that should be registered in the plugin's widget registry. If the registration happens asynchronously or through a module that wasn't fully initialized in the test environment, the widget lookup fails.
+
+  - Both errors cause the turbo test orchestrator to exit with code 1 after the failing test packages report failures. The result parser receives no parseable stats because the ELIFECYCLE exit prevents the vitest summary lines from being emitted in a format the parser recognizes from the turbo-prefixed output.
+
+  - The original CI ran 778 vitest tests (777 passed, 1 skipped). The LLM produced no parseable results. These are likely dependency version drift issues — the original CI used pinned package versions from the lockfile where the component API was still compatible with the tests, while the LLM may have resolved to different patch versions that introduced the `Badge "dot"` restriction and the `lastfm` widget lookup change.
+
+--- Test Reproducibility Gap ---
+  Original ran 778 test(s) across [vitest].
+  LLM build produced no test results (empty llm_log_stats).
+
+--- Root Cause ---
+  Reason type: Compilation / linker failure during build
+
+--- Original Test Statistics (not reproduced) ---
+  [vitest] 778 run, 777 passed, 0 failed, 1 skipped

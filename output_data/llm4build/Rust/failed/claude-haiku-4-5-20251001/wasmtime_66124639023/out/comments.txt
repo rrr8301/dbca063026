@@ -1,0 +1,74 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          3
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Test Linux x86_64 (2/6)
+  Platform:         GitHub Actions Linux x86_64
+  Test command(s) run in original CI:
+    $ python3 ./ci/run-tests.py --locked --package cranelift-fuzzgen [and other packages]
+      (134 tests; 1 failed — component_fuzz::tests::arbtest integer overflow)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu-based with Rust stable, Python 3
+  Architecture: x86_64 (Docker)
+  RUN steps:    several
+
+--- LLM run.sh Test Command(s) ---
+  $ cargo test (or nextest run) for the same packages
+    (196 tests; 0 failed — arbtest passes with different random seed)
+
+--- Reason(s) for Non-Reproducibility ---
+  - [cargo] Test count mismatch: original=134 run, LLM=196 run (62 more in LLM)
+  - [cargo] Original: 1 failure (component_fuzz::tests::arbtest); LLM: 0 failures
+  - Flipped failure pattern: original CI finds integer overflow bug, LLM passes all
+  - arbtest is randomized fuzzing: seed 0xd47052a700000373 triggers bug, LLM seed doesn't
+
+--- Root Cause Analysis ---
+  [Actual error messages from original CI log]
+    > thread 'component_fuzz::tests::arbtest' panicked at crates/test-util/src/component_fuzz.rs:230:17:
+    > attempt to subtract with overflow
+    > arbtest failed!
+    >     Seed: 0xd47052a700000373
+
+  [LLM log.txt — no failures]
+    All 196 tests pass. The component_fuzz::tests::arbtest test is not among LLM failures.
+    The arbtest runs with a different initial seed in the LLM Docker, which doesn't
+    produce the integer overflow condition.
+
+  [Root cause classification]
+  The `component_fuzz::tests::arbtest` test in `crates/test-util/src/component_fuzz.rs`
+  is a property-based fuzzing test using the `arbtest` crate. It generates random
+  WebAssembly component structures and tests the wasmtime component compilation pipeline.
+  The test failed in the original CI with:
+    `attempt to subtract with overflow` (seed: 0xd47052a700000373)
+
+  This indicates a pre-existing integer overflow bug in the component fuzzer at line 230
+  of `component_fuzz.rs`: a subtraction operation doesn't account for the case where the
+  subtrahend is larger than the minuend. The `arbtest` crate uses a random seed to generate
+  test inputs; the seed `0xd47052a700000373` happened to generate a component configuration
+  that triggered this overflow path.
+
+  The LLM Docker runs the same test with a different seed (arbtest seeds are time-based or
+  process-based) and does not generate the overflow-triggering input. This is the "flipped
+  failure" pattern: the original CI found a real bug via fuzzing, but the LLM's random
+  exploration didn't hit the same code path.
+
+  The 62-test count difference (134 vs 196) reflects different package scope: the original
+  CI uses a `python3 ./ci/run-tests.py` script with specific `--package` and `--exclude`
+  flags that produces a carefully curated set of 134 packages to test. The LLM runs a
+  broader scope without the same filtering, discovering 62 more tests.
+
+--- Test Statistics Comparison ---
+  [cargo]
+    Original: 134 run, 133 passed, 1 failed
+      (1 failure: component_fuzz::tests::arbtest
+       Seed 0xd47052a700000373 → "attempt to subtract with overflow" at component_fuzz.rs:230)
+    LLM: 196 run, 196 passed, 0 failed
+      (arbtest passes: different seed doesn't trigger overflow condition;
+       62 more tests due to broader package scope without ci/run-tests.py filtering)

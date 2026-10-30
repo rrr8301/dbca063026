@@ -1,0 +1,35 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ gofmt -d -e . 2>&1 | tee outfile && test -z "$(cat outfile)" && rm outfile
+  $ go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
+  $ cd _examples && go test -v -race ./... && cd ..
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoDefault] Test run mismatch: original=68, LLM=488
+  - [GoDefault] Test passed mismatch: original=64, LLM=475
+  - [GoDefault] Test failed mismatch: original=0, LLM=0
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    [31mError: [0m[1;31mexpected 6 godogs to be remaining, but there is 7[0m
+
+  [Root cause classification]
+  - The 420 extra tests in the LLM (488 vs 68) are a direct consequence of the LLM adding `-v` to `go test`. Without `-v`, the Go test runner emits one result per package (68 packages). With `-v`, every BDD scenario step and sub-test is counted individually — the godog BDD framework's `_examples` directory with `-v` expands each Cucumber scenario step into a separate registered test, producing 488 counted results. Both runs have 0 package-level failures, so the extra tests are a counting artifact from verbosity level.
+
+  - The assertion error 'expected 6 godogs to be remaining, but there is 7' is a BDD scenario data isolation issue from `_examples` where godog world state was not properly reset between parallel scenarios. This caused 13 sub-scenarios to fail in the expanded count (488 run, 475 passed = 13 not passing) — but since these are sub-scenario steps rather than top-level package tests, they don't register as package-level failures in the GoDefault count. The original CI ran without `-v` and counted only 68 package summaries (64 passing, 4 not passing at package level).
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 68 run, 64 passed, 0 failed, 0 skipped
+    LLM:      488 run, 475 passed, 0 failed, 0 skipped

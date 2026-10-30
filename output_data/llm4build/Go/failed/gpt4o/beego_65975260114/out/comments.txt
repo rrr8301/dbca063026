@@ -1,0 +1,38 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      test (1.22)
+  Docker image pulled: redis:latest
+  Test command(s) run in original CI:
+    $ go test -coverprofile=coverage_postgres.txt -covermode=atomic $(go list ./... | grep client/orm)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ go test -coverprofile=coverage_sqlite3.txt -covermode=atomic $(go list ./... | grep client/orm)
+  $ go test -coverprofile=coverage_postgres.txt -covermode=atomic $(go list ./... | grep client/orm)
+  $ go test -coverprofile=coverage.txt -covermode=atomic ./...
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoDefault] Test passed mismatch: original=73, LLM=61
+  - [GoDefault] Test failed mismatch: original=1, LLM=13
+  - [GoDefault] 8 test(s) failed in LLM but not in original: github.com/beego/beego/v2/client/cache, github.com/beego/beego/v2/client/cache/memcache, github.com/beego/beego/v2/client/cache/redis, github.com/beego/beego/v2/client/cache/ssdb, github.com/beego/beego/v2/client/orm ... (+3 more)
+
+--- Root Cause Analysis ---
+  - [GoDefault] 8 test(s) failed in LLM but not original: github.com/beego/beego/v2/client/cache, github.com/beego/beego/v2/client/cache/memcache, github.com/beego/beego/v2/client/cache/redis, github.com/beego/beego/v2/client/cache/ssdb, github.com/beego/beego/v2/client/orm ... (+3 more)
+  - Test command differences detected — original CI vs LLM run.sh may use different flags or test selection.
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 74 run, 73 passed, 1 failed, 0 skipped
+    LLM:      74 run, 61 passed, 13 failed, 0 skipped

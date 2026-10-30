@@ -1,0 +1,35 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          N/A
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      build (ubuntu-latest, 17)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ mvn -V --file pom.xml --no-transfer-progress -DtrimStackTrace=false -Djunit.jupiter.execution.parallel.enabled=false -Dhc.build.toolchain.version="17" -Pdocker -Drat.skip=true -Dlicense.skip=true
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Maven] Test run mismatch: original=2683, LLM=2559
+  - [Maven] Test passed mismatch: original=2671, LLM=2543
+  - [Maven] Test failed mismatch: original=0, LLM=8
+  - [Maven] Test skipped mismatch: original=12, LLM=8
+  - [Maven] 8 test(s) failed in LLM but not in original: testConnectionConfig(String)[1](org.apache.hc.client5.testing.async.TestAsyncConnectionTimeouts), testConnectionConfig(String)[1](org.apache.hc.client5.testing.sync.TestConnectionTimeouts), testConnectionConfig(String)[2](org.apache.hc.client5.testing.async.TestAsyncConnectionTimeouts), testConnectionConfig(String)[2](org.apache.hc.client5.testing.sync.TestConnectionTimeouts), testRequestConfig(String)[1](org.apache.hc.client5.testing.async.TestAsyncConnectionTimeouts) ... (+3 more)
+
+--- Root Cause Analysis ---
+  - [Maven] LLM ran 124 fewer tests than original — LLM likely used a narrower test scope or missed some test suites.
+  - [Maven] 8 test(s) failed in LLM but not original: testConnectionConfig(String)[1](org.apache.hc.client5.testing.async.TestAsyncConnectionTimeouts), testConnectionConfig(String)[1](org.apache.hc.client5.testing.sync.TestConnectionTimeouts), testConnectionConfig(String)[2](org.apache.hc.client5.testing.async.TestAsyncConnectionTimeouts), testConnectionConfig(String)[2](org.apache.hc.client5.testing.sync.TestConnectionTimeouts), testRequestConfig(String)[1](org.apache.hc.client5.testing.async.TestAsyncConnectionTimeouts) ... (+3 more)
+
+--- Test Statistics Comparison ---
+  [Maven]
+    Original: 2683 run, 2671 passed, 0 failed, 12 skipped
+    LLM:      2559 run, 2543 passed, 8 failed, 8 skipped

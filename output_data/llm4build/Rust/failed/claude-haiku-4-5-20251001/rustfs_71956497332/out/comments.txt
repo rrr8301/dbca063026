@@ -1,0 +1,95 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Test and Lint
+  Platform:         GitHub Actions ubuntu-latest (x86_64)
+  Test command(s) run in original CI:
+    $ cargo nextest run (workspace, with lifecycle integration tests)
+      (4042 nextest tests; 1 failed — scanner lifecycle metadata read)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04 with Rust stable
+  Architecture: x86_64 (Docker)
+  RUN steps:    several
+
+--- LLM run.sh Test Command(s) ---
+  $ cargo nextest run --workspace (or cargo test)
+    (nexttest: 1913 tests, 34 failed; cargo: 30154 run, 34 failed, 30120 skipped)
+
+--- Reason(s) for Non-Reproducibility ---
+  - [nexttest] Test count mismatch: original=4042 run, LLM=1913 run (2129 fewer in LLM)
+  - [nexttest] Original: 1 failure (scanner lifecycle); LLM: 34 failures (disk::fs OOM)
+  - Docker container memory constraint causes OOM (ENOMEM) in all disk I/O tests
+  - Different failing tests: original fails metadata reader, LLM fails disk allocation
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > thread 'disk::local::test::cleanup_stale_tmp_objects_moves_expired_tmp_dirs_to_trash'
+    >   panicked at crates/ecstore/src/disk/local.rs:2827:47:
+    > called `Result::unwrap()` on an `Err` value:
+    >   Os { code: 12, kind: OutOfMemory, message: "Cannot allocate memory" }
+    >
+    > thread 'disk::fs::tests::test_remove_file' panicked at crates/ecstore/src/disk/fs.rs:383:53:
+    > called `Result::unwrap()` on an `Err` value:
+    >   Os { code: 12, kind: OutOfMemory, message: "Cannot allocate memory" }
+    > [same pattern for all 34 disk::fs and disk::local test failures]
+
+  [Actual error messages from original CI log]
+    > thread 'serial_tests::test_scanner_expires_zero_day_current_version'
+    >   panicked at crates/scanner/tests/lifecycle_integration_test.rs:571:31:
+    > scanner get_size should succeed:
+    >   Io(Custom { kind: Other, error: "failed to read metadata" })
+
+  [Root cause classification]
+  Two separate failure causes:
+
+  (1) LLM only: OOM (code 12) in disk::fs and disk::local tests
+    All 34 LLM failures are in the `rustfs-ecstore` crate's disk layer tests
+    (`crates/ecstore/src/disk/fs.rs` and `crates/ecstore/src/disk/local.rs`). These tests
+    exercise file system operations: open, read, write, rename, stat, remove, and cleanup.
+    Every test panics with `Os { code: 12, kind: OutOfMemory, message: "Cannot allocate memory" }`.
+
+    The `rustfs` project uses io_uring-style async disk operations that require the kernel
+    to pin pages in locked memory (RLIMIT_MEMLOCK). Docker containers without `--privileged`
+    or `--ulimit memlock=-1` have a very low default locked memory limit (typically 64KB).
+    When the disk layer tries to allocate I/O ring buffers or large file-backed buffers for
+    its async operations, the kernel returns ENOMEM (error 12). The unwrap at each file
+    operation site panics when the allocation fails.
+
+    On GitHub Actions, the runner has no RLIMIT_MEMLOCK restriction, so all disk operations
+    allocate their buffers normally. In the Docker container, every disk I/O operation that
+    requires locked memory fails with ENOMEM.
+
+  (2) Original CI only: Scanner lifecycle test fails with metadata read error
+    The `test_scanner_expires_zero_day_current_version` test validates that the rustfs
+    lifecycle scanner correctly expires objects with zero-day lifecycle rules on the current
+    version. The test panics at `lifecycle_integration_test.rs:571` with:
+      `scanner get_size should succeed: Io(Custom { kind: Other, error: "failed to read metadata" })`
+    This is a pre-existing lifecycle integration test failure where the scanner's `get_size`
+    call cannot read object metadata. The LLM doesn't fail this test — likely because the
+    full lifecycle integration test suite requires a running rustfs server instance, and the
+    LLM Docker doesn't start the server.
+
+  (3) Test count difference: original=4042 vs LLM=1913 (2129 fewer in LLM)
+    The original CI runs the full workspace including `rustfs-scanner` lifecycle integration
+    tests (4042 total). The LLM runs a narrower scope (1913 tests) — the lifecycle scanner
+    tests are absent because the LLM's run.sh doesn't configure the necessary service
+    dependencies (embedded server, S3 endpoints) for the integration tests to run.
+
+--- Test Statistics Comparison ---
+  [nexttest]
+    Original: 4042 run, 4008 passed, 1 failed, 33 skipped
+      (1 failure: rustfs-scanner::lifecycle_integration_test serial_tests::test_scanner_expires_zero_day_current_version
+       Error: scanner get_size should succeed: Io(Custom { kind: Other, error: "failed to read metadata" }))
+    LLM:      1913 run, 1846 passed, 34 failed, 33 skipped
+      (34 failures: all in rustfs-ecstore disk::fs and disk::local tests — ENOMEM from RLIMIT_MEMLOCK;
+       2129 fewer tests: lifecycle scanner integration tests not started)
+  [cargo binary]
+    LLM:      30154 run, 0 passed, 34 failed, 30120 skipped (full workspace scope w/ cargo binary)

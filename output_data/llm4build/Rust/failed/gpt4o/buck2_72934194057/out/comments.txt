@@ -1,0 +1,31 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      linux-build-and-test
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    6
+
+--- Reason(s) for Non-Reproducibility ---
+  - [cargo] Test run mismatch: original=1435, LLM=1428
+  - [cargo] Test passed mismatch: original=1434, LLM=1427
+  - [cargo] 1 test(s) failed in original but passed in LLM: cached_validation_result::tests::test_error_rendering
+  - [cargo] 1 test(s) failed in LLM but not in original: per_thread_instruction_counter::tests::test_perf_thread_instruction_counter
+
+--- Root Cause Analysis ---
+  - [cargo] LLM ran 7 fewer tests than original — LLM likely used a narrower test scope or missed some test suites.
+  - [cargo] 1 test(s) failed in LLM but not original: per_thread_instruction_counter::tests::test_perf_thread_instruction_counter
+
+--- Test Statistics Comparison ---
+  [cargo]
+    Original: 1435 run, 1434 passed, 1 failed, 0 skipped
+    LLM:      1428 run, 1427 passed, 1 failed, 0 skipped

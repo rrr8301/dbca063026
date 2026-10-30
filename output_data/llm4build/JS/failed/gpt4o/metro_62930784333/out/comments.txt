@@ -1,0 +1,39 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          3
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      test (ubuntu-latest, 20.19.4, true) / Tests [Node.js 20.19.4, ubuntu-latest, Ignoring yarn.lock]
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    6
+
+--- LLM run.sh Test Command(s) ---
+  $ yarn jest
+
+Note: Original had test failures; LLM build passed all — failed build has passed.
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in original but missing in LLM: GoDefault
+  - [jest] Test passed mismatch: original=2331, LLM=2333
+  - [jest] Test failed mismatch: original=2, LLM=0
+  - [jest] 1 test(s) failed in original but passed in LLM: scripts/__tests__/babel-lib-defs-test.js
+  - [jest] 1 test(s) failed in LLM but not in original: Unknown
+
+--- Root Cause Analysis ---
+  - [jest] 1 test(s) failed in LLM but not original: Unknown
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 4 run, 0 passed, 4 failed, 0 skipped
+    LLM:      (not present)
+  [jest]
+    Original: 2355 run, 2331 passed, 2 failed, 22 skipped
+    LLM:      2355 run, 2333 passed, 0 failed, 22 skipped

@@ -1,0 +1,40 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Build and Test Linux
+  Test command(s) run in original CI:
+    $ actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    6
+
+--- LLM run.sh Test Command(s) ---
+  (no test commands found)
+
+--- Reason(s) for Non-Reproducibility ---
+  - [LLVMLit] Test run mismatch: original=200804, LLM=65127
+  - [LLVMLit] Test passed mismatch: original=195245, LLM=64451
+  - [LLVMLit] Test failed mismatch: original=0, LLM=60
+  - [LLVMLit] 60 test(s) failed in LLM but not in original: debuginfo-tests/dexter-tests/aggregate-indirect-arg.cpp (147 of 169, 3 of 3 attempts), debuginfo-tests/dexter-tests/ctor.cpp (104 of 169, 3 of 3 attempts), debuginfo-tests/dexter-tests/dbg-arg.c (148 of 169, 3 of 3 attempts), debuginfo-tests/dexter-tests/deferred_globals.cpp (136 of 169, 3 of 3 attempts), debuginfo-tests/dexter-tests/memvars/ctrl-flow.c (106 of 169, 3 of 3 attempts), debuginfo-tests/dexter-tests/memvars/inlining.c (142 of 169, 3 of 3 attempts), debuginfo-tests/dexter-tests/memvars/unused-merged-value.c (107 of 169, 3 of 3 attempts), debuginfo-tests/dexter-tests/namespace.cpp (115 of 169, 3 of 3 attempts) (+52 more)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    TimeoutError: timed out
+    urllib3.exceptions.ReadTimeoutError: HTTPConnectionPool(host='34.82.126.63', port=5000): Read timed out. (read timeout=5)
+
+  [Root cause classification]
+  - Missing file or path not found — test data, certificate, or resource file absent in the Docker environment.
+  - Test timed out — likely due to slower execution in Docker container or a blocking service call that never returns.
+
+--- Test Statistics Comparison ---
+  [LLVMLit]
+    Original: 200804 run, 195245 passed, 0 failed, 5559 skipped
+    LLM:      65127 run, 64451 passed, 60 failed, 616 skipped

@@ -1,0 +1,63 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          3
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Test Reflect JDK 11 on ubuntu-24.04
+  Test command(s) run in original CI:
+    $ actions/checkout@v4
+    $ actions/setup-java@v4 (java-version: 11)
+    $ ./mvnw -V --no-transfer-progress -Dfastjson2.creator=reflect clean package
+
+--- LLM-Generated Dockerfile ---
+  Base image:   eclipse-temurin:11-jdk-jammy
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ mvn --no-transfer-progress -Dfastjson2.creator=reflect -Drat.skip=true -Dlicense.skip=true clean package
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Maven] Test run mismatch: original=7807, LLM=9428
+  - [Maven] Test passed mismatch: original=7806, LLM=9428
+  - [Maven] Test failed mismatch: original=1, LLM=0
+
+--- Root Cause Analysis ---
+  [From original CI log]
+    ERROR com.alibaba.fastjson2.issues_1800.Issue1855.test
+      java.lang.UnsupportedOperationException
+        at com.alibaba.fastjson2.JSONReaderJSONB.readInstant(JSONReaderJSONB.java:4905)
+        at com.alibaba.fastjson2.reader.FieldReaderInstant.readFieldValueJSONB(FieldReaderInstant.java:59)
+        at com.alibaba.fastjson2.reader.ObjectReader1.readJSONBObject(ObjectReader1.java:183)
+        at com.alibaba.fastjson2.JSONB.parseObject(JSONB.java:734)
+        at com.alibaba.fastjson2.issues_1800.Issue1855.test(Issue1855.java:23)
+    fastjson2  FAILURE [02:24 min]
+
+  [Root cause classification]
+  - Two issues: (1) LLM adds `-Drat.skip=true -Dlicense.skip=true` which can enable additional
+    test modules, running 1621 more tests than the original CI's 7807; (2) original CI's failing
+    `Issue1855.test` (`UnsupportedOperationException` in `JSONReaderJSONB.readInstant` when using
+    `reflect` creator) does not appear among LLM failures, likely because the failing test class
+    is in the `core` module but the test count increase in the LLM suggests additional sub-modules
+    run — those extra tests pass, and `Issue1855` itself may run but not be counted if the module
+    test results are reported differently:
+    `Issue1855.test` verifies JSONB deserialization of a class containing `java.time.Instant` using
+    the `reflect` creator (`-Dfastjson2.creator=reflect`). When the reader is `JSONReaderJSONB`,
+    `FieldReaderInstant.readFieldValueJSONB()` calls `readInstant()` which throws
+    `UnsupportedOperationException` in the original CI's code (a bug in the PR being tested on
+    commit `511684a09b92fc998144505a7518c218c54d149b`). The LLM's `clean package` also uses
+    `-Dfastjson2.creator=reflect` but adds `-Drat.skip=true -Dlicense.skip=true`. These skip flags
+    remove RAT license checks that gate some module builds, potentially enabling additional test
+    subprojects to compile and run (accounting for the 1621 extra tests). The `Issue1855.test`
+    failure either doesn't appear in LLM due to a different code state in the workspace, or the
+    test result is masked by the broader module scope. The original CI ran on a specific PR merge
+    commit, which may have introduced the `readInstant` regression not present in the workspace.
+
+--- Test Statistics Comparison ---
+  [Maven]
+    Original: 7807 run, 7806 passed, 1 failed, 0 skipped
+    LLM:      9428 run, 9428 passed, 0 failed, 0 skipped

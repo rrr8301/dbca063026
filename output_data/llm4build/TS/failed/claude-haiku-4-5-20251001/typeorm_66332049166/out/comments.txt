@@ -1,0 +1,43 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      tests-linux (24) / mysql_mariadb
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ pnpm/action-setup@v4
+    $ pnpm install
+    $ pnpm exec c8 pnpm run test:ci
+
+--- LLM-Generated Dockerfile ---
+  Base image:   node:24-alpine
+  RUN steps:    6
+
+--- LLM run.sh Test Command(s) ---
+  $ pnpm run compile
+  $ TEST_FAILED=0
+  $ pnpm exec c8 pnpm run test:ci || TEST_FAILED=1
+
+--- Reason(s) for Non-Reproducibility ---
+  - [mocha] Test run mismatch: original=1417, LLM=6
+  - [mocha] Test passed mismatch: original=1393, LLM=5
+  - [mocha] Test failed mismatch: original=1, LLM=1
+  - [mocha] 1 test(s) failed in LLM but not in original: column kinds > create date column
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    68-[0m[31m     Error: connect ECONNREFUSED 127.0.0.1:3306[0m[90m
+
+  [Root cause classification]
+  - Database service unavailable or not properly configured — test requires an external database service.
+
+--- Test Statistics Comparison ---
+  [mocha]
+    Original: 1417 run, 1393 passed, 1 failed, 23 skipped
+    LLM:      6 run, 5 passed, 1 failed, 0 skipped

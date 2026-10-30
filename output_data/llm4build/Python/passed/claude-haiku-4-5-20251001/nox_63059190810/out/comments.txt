@@ -1,0 +1,77 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          5
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      build (ubuntu-22.04, 3.11)
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ nox --session "tests-3.11" -- --full-trace
+
+--- LLM-Generated Dockerfile ---
+  Base image:   python:3.11-slim
+  RUN steps:    6
+
+--- LLM run.sh Test Command(s) ---
+  $ nox --session "tests-3.11" -- --full-trace
+
+--- Reason(s) for Non-Reproducibility ---
+  - [pytest] Test run mismatch: original=1371, LLM=690
+  - [pytest] Test passed mismatch: original=1357, LLM=660
+  - [pytest] Test failed mismatch: original=0, LLM=4
+  - [pytest] 4 tests failed in LLM but not in original (all from tests/test_virtualenv.py):
+    test_uv_install[3.11-True]
+    test_uv_install[pypy3.8-True]
+    test_uv_install[cpython3.9-True]
+    test_uv_install[python3.12-True]
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > FAILED tests/test_virtualenv.py::test_uv_install[3.11-True]
+    >   AssertionError: assert False == True
+    >     where False = <function uv_install_python at 0x7fe83f62dd00>('3.11')
+    > Captured stderr call:
+    >   Python downloads are not allowed (`python-downloads = "never"`).
+    >   Change to `python-downloads = "manual"` to allow explicit installs.
+    > FAILED tests/test_virtualenv.py::test_uv_install[pypy3.8-True]
+    >   AssertionError: assert False == True
+    > SKIPPED [1] tests/test_virtualenv.py:154: Missing conda command.
+    > (13 additional SKIPPED tests for conda tests not present on original CI)
+
+  [Root cause classification]
+  Two distinct failure modes:
+
+  (1) ENV UV_PYTHON_DOWNLOADS=never in Dockerfile -- uv_install_python() returns False
+    (4 tests: test_uv_install[3.11-True], test_uv_install[pypy3.8-True],
+              test_uv_install[cpython3.9-True], test_uv_install[python3.12-True])
+    The LLM Dockerfile sets `ENV UV_PYTHON_DOWNLOADS=never`, which is equivalent to
+    passing `--python-downloads=never` to every `uv` invocation. The test
+    `test_uv_install` calls `nox.virtualenv.uv_install_python(requested_python)` and
+    expects it to return `True` (successfully installing/finding the requested Python
+    version). With `UV_PYTHON_DOWNLOADS=never`, when `uv` is asked to install a Python
+    interpreter (e.g., 3.11, pypy3.8, cpython3.9, python3.12), it refuses with:
+    `Python downloads are not allowed (python-downloads = "never")`, causing
+    `uv_install_python()` to return `False`. The tests for version specs expected to
+    succeed (`expected_result=True`) all fail with `assert False == True`.
+    On the GitHub Actions runner, `uv` is allowed to download Python interpreters
+    (default `python-downloads = "auto"`), so the installations succeed and return `True`.
+
+  (2) Test count mismatch (1371 vs 690) -- conda not installed in Docker
+    The LLM Docker container has 13 more skips (`Missing conda command`) than the
+    original CI (25 vs 12 skipped). The count difference of 681 tests (1371 - 690)
+    comes from pytest-parametrize test cases that depend on available Python
+    interpreters and backends. In the original CI, `uv` can download Python versions
+    (pypy, multiple cpython), making more parametrized test cases runnable. In Docker
+    with `UV_PYTHON_DOWNLOADS=never` and no conda, many parametrized backend/interpreter
+    combinations are not exercised, resulting in only 690 test cases being generated
+    vs 1371 in CI.
+
+--- Test Statistics Comparison ---
+  [pytest]
+    Original: 1371 run, 1357 passed, 0 failed, 12 skipped, 1 xfailed, 1 xpassed
+    LLM:      690 run, 660 passed, 4 failed, 25 skipped, 0 xfailed, 1 xpassed

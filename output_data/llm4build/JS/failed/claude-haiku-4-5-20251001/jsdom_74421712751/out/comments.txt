@@ -1,0 +1,44 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Tests (22)
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ ./test/web-platform-tests/tests/wpt make-hosts-file | sudo tee -a /etc/hosts
+    $ npm ci --engine-strict
+    $ npm test
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ ./test/web-platform-tests/tests/wpt make-hosts-file | sudo tee -a /etc/hosts
+  $ npm test
+
+--- Reason(s) for Non-Reproducibility ---
+  - [mocha] Test run mismatch: original=10093, LLM=2381
+  - [mocha] Test passed mismatch: original=7195, LLM=2381
+  - [mocha] Test failed mismatch: original=1, LLM=0
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    Exception during run: Error: Manifest generation failed
+    Exception during run: Error: The directory "css/css-shadow" does not exist
+
+  [Root cause classification]
+  - jsdom's test suite includes tests that run W3C Web Platform Tests (WPT) fetched from `test/web-platform-tests/tests/`. The WPT runner requires a pre-generated manifest file (`MANIFEST.json`) that indexes all WPT test files. The LLM's Docker environment cloned jsdom but the WPT submodule is incomplete — specific directories like `css/css-shadow` are missing because the submodule was not fully checked out with `git submodule update --init --recursive`. Without those directories, the WPT manifest generation fails, and the 7712 missing tests are WPT-backed mocha tests that cannot run without a valid manifest.
+
+  - The 2381 tests that the LLM ran are jsdom's own unit tests (not WPT-backed) — these test the jsdom APIs directly without needing the WPT manifest. The 2897 skipped tests in the original are WPT test cases that were skipped because jsdom doesn't yet implement the corresponding DOM APIs. The 1 original failure was a real jsdom regression in the WPT suite. The LLM's clean pass (2381/2381) reflects only the non-WPT unit tests running successfully.
+
+--- Test Statistics Comparison ---
+  [mocha]
+    Original: 10093 run, 7195 passed, 1 failed, 2897 skipped
+    LLM:      2381 run, 2381 passed, 0 failed, 0 skipped

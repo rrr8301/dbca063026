@@ -1,0 +1,1 @@
+GOWORK=off make verify-generate

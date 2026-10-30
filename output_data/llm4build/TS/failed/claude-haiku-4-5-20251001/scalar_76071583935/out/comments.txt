@@ -1,0 +1,48 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      test-packages (1, 3)
+  Test command(s) run in original CI:
+    $ actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+    $ ./.github/actions/build
+    $ pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320
+    $ pnpm install --frozen-lockfile
+    $ pnpm turbo --concurrency=100% --filter "!./integrations/{java,rust,dotnet,docker,fastapi,django-ninja}/**" --filter "!./projects/proxy-scalar-com/**" --filter './packages/**' build
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ pnpm script run test-servers &
+  $ TEST_SERVERS_PID=$!
+  $ kill $TEST_SERVERS_PID 2>/dev/null || true
+  $ pnpm turbo "${args[@]}" test
+  $ kill $TEST_SERVERS_PID 2>/dev/null || true
+
+--- Reason(s) for Non-Reproducibility ---
+  - [vitest] Test result mismatch (same count 3757): original=(3743p/3f/11s), LLM=(3745p/1f/11s)
+  - [vitest] Tests failed in LLM but passed in original: src/standalone.test.ts
+  - [vitest] Tests failed in original but passed in LLM: src/components/ApiReference.ssr.test.ts
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    10062:@scalar/api-reference:test:  [31m❯[39m src/standalone.test.ts [2m([22m[2m3 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[33m 46080[2mms[22m[39m
+    10185:@scalar/api-reference:test: [41m[1m FAIL [22m[49m src/standalone.test.ts[2m > [22mstandalone[2m > [22mrenders a basic reference with the HTML API
+    10186:@scalar/api-reference:test: [41m[1m FAIL [22m[49m src/standalone.test.ts[2m > [22mstandalone[2m > [22mrenders a basic reference with the HTML API
+
+  [Root cause classification]
+  - Missing file or path not found — test data, certificate, or resource file absent in the Docker environment.
+  - Test timed out — likely due to slower execution in Docker container or a blocking service call that never returns.
+
+--- Test Statistics Comparison ---
+  [vitest]
+    Original: 3757 run, 3743 passed, 3 failed, 11 skipped
+    LLM:      3757 run, 3745 passed, 1 failed, 11 skipped

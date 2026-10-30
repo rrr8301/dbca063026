@@ -1,0 +1,52 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          7
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      app-tests
+  Test command(s) run in original CI:
+    $ npm ci
+    $ npx playwright install --with-deps chromium
+    $ npm run build:app-deps
+    $ npm run test --workspace=@getpaseo/app
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    9
+
+--- LLM run.sh Test Command(s) ---
+  $ npm run build:app-deps
+  $ npm run test --workspace=@getpaseo/app
+
+--- Reason(s) for Non-Reproducibility ---
+  - [vitest] Test run mismatch: original=2025, LLM=2007
+  - [vitest] Test passed mismatch: original=2019, LLM=2001
+  - [vitest] Same 6 tests failed in both original and LLM: all in src/screens/projects-screen.test.tsx
+  - [vitest] Same failing test set: ProjectsScreen tests (6 identical failures)
+  - [vitest] 18 fewer tests ran in LLM (2007 vs 2025)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    497:[vitest] No "projectIconToDataUri" export is defined on the "@/hooks/use-project-icon-query" mock. Did you forget to return it from "vi.mock"?
+    45:[HostRuntime] Failed to persist host registry ReferenceError: window is not defined
+    215:Error: Uncaught [TypeError: activeElement$1.attachEvent is not a function]
+    225:TypeError: activeElement$1.attachEvent is not a function
+
+  [Root cause classification]
+  - `No "projectIconToDataUri" export is defined on the "@/hooks/use-project-icon-query" mock` is the key error for the 6 ProjectsScreen test failures. This error also appears in the original CI log, meaning the same mock definition issue exists in both environments — the test mock does not export `projectIconToDataUri` which the component under test requires.
+
+  - The 18-test difference (2025 original vs 2007 LLM) is likely due to Node.js version differences: the original CI used Node.js 22.22.3 while the LLM used Node.js 20.x. Some test suites may not be discovered or executed under Node.js 20, resulting in slightly fewer tests.
+
+  - The `ReferenceError: window is not defined` and `TypeError: activeElement$1.attachEvent is not a function` appear in both environments as non-fatal errors from jsdom during browser-API simulation in the test environment.
+
+  - Both the same 6 tests fail: the original category is `failed` and the reproduction captures the same failure set, but the test count difference prevents full reproducibility.
+
+--- Test Statistics Comparison ---
+  [vitest]
+    Original: 2025 run, 2019 passed, 6 failed, 0 skipped
+    LLM:      2007 run, 2001 passed, 6 failed, 0 skipped

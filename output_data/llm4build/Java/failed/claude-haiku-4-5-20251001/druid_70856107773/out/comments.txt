@@ -1,0 +1,64 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          5
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      unit tests / unit tests(main) (21, K*,E*,W*,Z*,Y*,X*) / test-jdk21-[K*,E*,W*,Z*,Y*,X*]
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ .github/scripts/run_unit-tests -Dtest=!QTest,'K*,E*,W*,Z*,Y*,X*' -Dmaven.test.failure.ignore=true
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ mvn clean test "$@"
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Maven] Test run mismatch: original=22103, LLM=257064
+  - [Maven] Test passed mismatch: original=21781, LLM=251817
+  - [Maven] Test failed mismatch: original=1, LLM=2
+  - [Maven] 2 tests fail in LLM but not in original:
+    testCreateTempDirUnwritableBase(org.apache.druid.java.util.common.FileUtilsTest)
+    testMkdirpCannotCreateInNonWritableDirectory(org.apache.druid.java.util.common.FileUtilsTest)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    ERROR FileUtilsTest.testMkdirpCannotCreateInNonWritableDirectory
+      java.lang.AssertionError: expected java.io.IOException to be thrown, but nothing was thrown
+      at org.junit.Assert.assertThrows(Assert.java:1028)
+      at org.apache.druid.java.util.common.FileUtilsTest.testMkdirpCannotCreateInNonWritableDirectory(FileUtilsTest.java:215)
+
+    ERROR FileUtilsTest.testCreateTempDirUnwritableBase
+      (AssertionError / IOException not thrown — test expects directory creation to fail
+      when parent dir is unwritable)
+
+  [Root cause classification]
+  - Two compounding issues: (1) LLM omits the `-Dtest=!QTest,'K*,E*,W*,Z*,Y*,X*'` test filter,
+    running all 257064 tests instead of the CI's 22103-test subset; and (2) Docker runs as root,
+    causing two `FileUtilsTest` file-permission tests to fail because root bypasses `chmod 000`:
+    The original CI's job name `test-jdk21-[K*,E*,W*,Z*,Y*,X*]` shows it is one partition of
+    Apache Druid's multi-job unit test matrix — this job only runs test classes whose names start
+    with K, E, W, Z, Y, or X, excluding QTest classes (`-Dtest=!QTest,'K*,E*,W*,Z*,Y*,X*'`).
+    The LLM's run.sh uses plain `mvn clean test` with no `-Dtest` filter, which runs the entire
+    test suite across all modules, yielding 257064 tests (>11x more than the CI's 22103).
+    The two additional LLM failures are both in `FileUtilsTest`: `testMkdirpCannotCreateInNonWritableDirectory`
+    calls `chmod 000` on a directory and expects `IOException` when trying to create a subdirectory;
+    `testCreateTempDirUnwritableBase` expects temp dir creation to fail under a read-only base
+    directory. Both assertions fail with "expected java.io.IOException to be thrown, but nothing was
+    thrown" because the Docker container runs as root — root can always write to any directory
+    regardless of POSIX permissions, so the `IOException` is never thrown and the test fails.
+    The original CI's 1 failure (`test_start_whenDeserializationExceptionThrown_isIgnored` in
+    `KubernetesTaskRunnerTest`) is a different test that starts with K and is within the CI's
+    filter scope; it does not appear in the LLM run's failures.
+
+--- Test Statistics Comparison ---
+  [Maven]
+    Original: 22103 run, 21781 passed, 1 failed, 321 skipped
+    LLM:      257064 run, 251817 passed, 2 failed, 5245 skipped

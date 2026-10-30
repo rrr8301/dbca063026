@@ -1,0 +1,41 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      Build+test (stable, ubuntu-latest)
+  Test command(s) run in original CI:
+    $ cargo test --locked --release --all-features --all-targets
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ cargo test --locked --release --all-features --all-targets || true
+  $ cargo test --locked --release --all-features --doc || true
+  $ cargo test --locked --all-features -p rustls-provider-example || true
+  $ cargo test --locked --all-features -p rustls-provider-test || true
+
+Note: Original had test failures; LLM build passed all — failed build has passed.
+
+--- Reason(s) for Non-Reproducibility ---
+  - [cargo] Test run mismatch: original=729, LLM=7
+  - [cargo] Test passed mismatch: original=721, LLM=7
+  - [cargo] Test failed mismatch: original=8, LLM=0
+  - [cargo] 8 test(s) failed in original but passed in LLM: tests_with_aws_lc_rs::quic::test_quic_handshake, tests_with_aws_lc_rs::quic::test_quic_rejects_missing_alpn, tests_with_aws_lc_rs::quic::test_quic_resumption_data_0rtt, tests_with_aws_lc_rs::quic::test_quic_server_no_params_received, tests_with_ring::quic::test_quic_handshake ... (+3 more)
+
+--- Root Cause Analysis ---
+  - [cargo] LLM ran 722 fewer tests than original — LLM likely used a narrower test scope or missed some test suites.
+  - Test command differences detected — original CI vs LLM run.sh may use different flags or test selection.
+
+--- Test Statistics Comparison ---
+  [cargo]
+    Original: 729 run, 721 passed, 8 failed, 0 skipped
+    LLM:      7 run, 7 passed, 0 failed, 0 skipped

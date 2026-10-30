@@ -1,0 +1,67 @@
+Error from docker build
+
+#1 [ 1/10] FROM docker.io/library/ubuntu:22.04
+#1 CACHED
+
+#2 [2/9] RUN ln -snf /usr/share/zoneinfo/America/Los_Angeles /etc/localtime && echo America/Los_Angeles > /etc/timezone
+#2 CACHED
+
+#3 [internal] load build definition from Dockerfile
+#3 transferring dockerfile: 1.25kB done
+#3 DONE 0.0s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 2B done
+#4 DONE 0.0s
+
+#5 [internal] load metadata for docker.io/library/ubuntu:22.04
+#5 DONE 0.0s
+
+#6 [internal] load build context
+#6 transferring context: 102.69kB 0.0s done
+#6 DONE 0.1s
+
+#7 [ 6/13] RUN /root/.cargo/bin/cargo install mdbook --version 0.5.2
+#7 CACHED
+
+#8 [ 3/13] RUN apt-get update && apt-get install -y --no-install-recommends     git     curl     jq     build-essential     ca-certificates     && rm -rf /var/lib/apt/lists/*
+#8 CACHED
+
+#9 [ 4/13] RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+#9 CACHED
+
+#10 [ 5/13] RUN /root/.cargo/bin/rustc --version
+#10 CACHED
+
+#11 [ 7/13] WORKDIR /workspace
+#11 CACHED
+
+#12 [ 8/13] COPY . .
+#12 DONE 0.2s
+
+#13 [ 9/13] RUN git config --global --add safe.directory '*'
+#13 DONE 0.4s
+
+#14 [10/13] RUN useradd -m testuser && chown -R testuser /workspace
+#14 DONE 0.9s
+
+#15 [11/13] RUN echo 'source $HOME/.cargo/env' >> /home/testuser/.bashrc
+#15 DONE 0.4s
+
+#16 [12/13] WORKDIR /workspace
+#16 DONE 0.0s
+
+#17 [13/13] RUN /root/.cargo/bin/rustc --version
+#17 0.673 /bin/sh: 1: /root/.cargo/bin/rustc: Permission denied
+#17 ERROR: process "/bin/sh -c /root/.cargo/bin/rustc --version" did not complete successfully: exit code: 126
+------
+ > [13/13] RUN /root/.cargo/bin/rustc --version:
+#17 0.673 /bin/sh: 1: /root/.cargo/bin/rustc: Permission denied
+------
+Dockerfile:51
+--------------------
+  49 |     USER testuser
+  50 |     WORKDIR /workspace
+  51 | >>> RUN /root/.cargo/bin/rustc --version
+--------------------
+ERROR: failed to solve: process "/bin/sh -c /root/.cargo/bin/rustc --version" did not complete successfully: exit code: 126

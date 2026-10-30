@@ -1,0 +1,35 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      tester (ubuntu-latest, 24)
+  Test command(s) run in original CI:
+    $ npm test -- --no-parallel
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ npm test -- --no-parallel || true
+
+--- Reason(s) for Non-Reproducibility ---
+  - [mocha] Test passed mismatch: original=1278, LLM=1274
+  - [mocha] Test failed mismatch: original=0, LLM=4
+  - [mocha] 4 test(s) failed in LLM but not in original: asset, asset > page - type: create - exist:} to not exist > page - type: delete:, asset > page - type: update: > page - type: create - exist:, asset} to not exist > page - type: create - exist:
+
+--- Root Cause Analysis ---
+  - [mocha] 4 test(s) failed in LLM but not original: asset, asset > page - type: create - exist:} to not exist > page - type: delete:, asset > page - type: update: > page - type: create - exist:, asset} to not exist > page - type: create - exist:
+  - Test command differences detected — original CI vs LLM run.sh may use different flags or test selection.
+
+--- Test Statistics Comparison ---
+  [mocha]
+    Original: 1283 run, 1278 passed, 0 failed, 5 skipped
+    LLM:      1283 run, 1274 passed, 4 failed, 5 skipped

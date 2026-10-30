@@ -1,0 +1,38 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      test
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    6
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Bazel] Test run mismatch: original=871, LLM=613
+  - [Bazel] Test passed mismatch: original=871, LLM=536
+  - [Bazel] Test failed mismatch: original=0, LLM=77
+  - [Bazel] 77 test(s) failed in LLM but not in original: //src/aria/combobox:unit_tests_firefox, //src/aria/private/accordion:unit_tests_chromium, //src/aria/private/accordion:unit_tests_firefox, //src/aria/private/behaviors/expansion:unit_tests_chromium, //src/aria/private/behaviors/expansion:unit_tests_firefox ... (+72 more)
+  - [jasmine] Test passed mismatch: original=871, LLM=536
+  - [jasmine] Test skipped mismatch: original=5, LLM=340
+  - [jasmine] 39 test(s) failed in LLM but not in original: //src/aria/combobox, //src/aria/private/accordion, //src/aria/private/behaviors/expansion, //src/aria/private/behaviors/grid, //src/aria/private/behaviors/label ... (+34 more)
+
+--- Root Cause Analysis ---
+  - [Bazel] LLM ran 258 fewer tests than original — LLM likely used a narrower test scope or missed some test suites.
+  - [Bazel] 77 test(s) failed in LLM but not original: //src/aria/combobox:unit_tests_firefox, //src/aria/private/accordion:unit_tests_chromium, //src/aria/private/accordion:unit_tests_firefox, //src/aria/private/behaviors/expansion:unit_tests_chromium, //src/aria/private/behaviors/expansion:unit_tests_firefox ... (+72 more)
+  - [jasmine] 39 test(s) failed in LLM but not original: //src/aria/combobox, //src/aria/private/accordion, //src/aria/private/behaviors/expansion, //src/aria/private/behaviors/grid, //src/aria/private/behaviors/label ... (+34 more)
+
+--- Test Statistics Comparison ---
+  [Bazel]
+    Original: 871 run, 871 passed, 0 failed, 0 skipped
+    LLM:      613 run, 536 passed, 77 failed, 0 skipped
+  [jasmine]
+    Original: 876 run, 871 passed, 0 failed, 5 skipped
+    LLM:      876 run, 536 passed, 0 failed, 340 skipped

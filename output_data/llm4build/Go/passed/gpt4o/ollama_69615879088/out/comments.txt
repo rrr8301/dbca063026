@@ -1,0 +1,43 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          20
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT TESTS NOT REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      test (ubuntu-latest)
+  Test command(s) run in original CI:
+    $ npm test
+    $ go test -count=1 -benchtime=1x ./...
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    9
+
+--- LLM run.sh Test Command(s) ---
+  $ npm test || true
+  $ go test -count=1 -benchtime=1x ./... || true
+
+--- Test Reproducibility Gap ---
+  Original ran 102 test(s) across [vitest, GoDefault].
+  LLM build produced no test results (empty llm_log_stats).
+
+--- Root Cause ---
+  Reason type: Test runner executed but produced no parseable output
+  Last log output before stopping:
+    /root/go/pkg/mod/golang.org/x/crypto@v0.43.0/ssh/mlkem.go:9:2: package crypto/mlkem is not in GOROOT (/usr/local/go/src/crypto/mlkem)
+    note: imported by a module that requires go 1.24
+    internal/orderedmap/orderedmap.go:7:2: package iter is not in GOROOT (/usr/local/go/src/iter)
+    auth/auth.go:11:2: package log/slog is not in GOROOT (/usr/local/go/src/log/slog)
+    cmd/launch/opencode.go:6:2: package maps is not in GOROOT (/usr/local/go/src/maps)
+    sample/samplers.go:6:2: package math/rand/v2 is not in GOROOT (/usr/local/go/src/math/rand/v2)
+    /root/go/pkg/mod/golang.org/x/sys@v0.37.0/unix/syscall_linux.go:16:2: package slices is not in GOROOT (/usr/local/go/src/slices)
+    level=error msg="Can't read config: can't unmarshal config by viper: 1 error(s) decoding:\n\n* 'Version' expected a map, got 'string'"
+
+--- Original Test Statistics (not reproduced) ---
+  [vitest] 29 run, 29 passed, 0 failed, 0 skipped
+  [GoDefault] 73 run, 73 passed, 0 failed, 0 skipped

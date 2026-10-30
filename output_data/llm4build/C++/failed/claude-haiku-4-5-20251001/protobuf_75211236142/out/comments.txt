@@ -1,0 +1,52 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          4
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Bazel / Bazel Tests ubuntu
+  Test command(s) run in original CI:
+    $ protocolbuffers/protobuf-ci/checkout@v5
+    $ actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+    $ echo "value=$(echo us-docker.pkg.dev/protobuf-build/containers/common/linux/bazel:9.0.0-7932bf8b25fb76a111e7257d151a6a58d5c3c671 | md5sum | cut -f1 -d' ')" >> $GITHUB_OUTPUT
+    $ echo "BAZEL_FLAGS=--keep_going --test_output=errors --test_timeout=600" >> $GITHUB_ENV
+    $ echo "BAZEL_FLAGS=$BAZEL_FLAGS --google_credentials=/workspace/$(basename /home/runner/work/protobuf/protobuf/gha-creds-3562146d71297204.json) --remote_cache=https://storage.googleapis.com/protobuf-bazel-cache/protobuf/gha/bazel-tests-855841c6b09faf1e8f47b175f0fdd9c8" >> $GITHUB_ENV
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ bazel test //... \
+  $ --build_tag_filters=-no_test \
+  $ --test_tag_filters=-no_test \
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Bazel] Test run mismatch: original=74, LLM=387
+  - [Bazel] Test passed mismatch: original=74, LLM=375
+  - [Bazel] Test failed mismatch: original=0, LLM=6
+  - [Bazel] 6 test(s) failed in LLM but not in original: //build_defs:cc_proto_blacklist_test, //csharp/compatibility_tests/v3.0.0:tests, //csharp:tests, //python:well_known_types_test, //python:x86_64_test, //src/google/protobuf/compiler:protoc_x86_64_test
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    126:FAIL: //csharp:tests (Exit 127) (see /root/.cache/bazel/_bazel_root/eab0d61a99b6696edb3d2aff87b585e8/execroot/_main/bazel-out/k8-fastbuild/testlogs/csharp/tests/test.log)
+    128-[1,426 / 1,880] 62 / 69 tests, 1 failed; Testing //objectivec:sources_pddm_expansion_test; 1s processwrapper-sandbox ... (88 actions, 87 running)
+    129-ERROR: /workspace/src/google/protobuf/test_protos/BUILD:10:14: Generating Descriptor Set proto_library //src/google/protobuf/test_protos:test_protos failed: (Exit 1): protoc failed: error executin
+    182556://csharp:tests                                                           FAILED in 0.1s
+    151-DEBUG: Repo 'rules_ruby++ruby+protobuf_bundle' indicated that a canonical reproducible form can be obtained by modifying arguments gem_checksums = {"bigdecimal-4.0.1": "8b07d3d065a9f921c80ceaea7c9
+    206:FAIL: //build_defs:cc_proto_blacklist_test (Exit 1) (see /root/.cache/bazel/_bazel_root/eab0d61a99b6696edb3d2aff87b585e8/execroot/_main/bazel-out/k8-fastbuild/testlogs/build_defs/cc_proto_blacklis
+    208-[3,762 / 9,200] 69 / 292 tests, 2 failed; Compiling absl/flags/parse.cc; 3s processwrapper-sandbox ... (87 actions running)
+    182554://build_defs:cc_proto_blacklist_test                                     FAILED in 0.3s
+
+  [Root cause classification]
+  - Database service unavailable or not properly configured — test requires an external database service.
+  - Test timed out — likely due to slower execution in Docker container or a blocking service call that never returns.
+
+--- Test Statistics Comparison ---
+  [Bazel]
+    Original: 74 run, 74 passed, 0 failed, 0 skipped
+    LLM:      387 run, 375 passed, 6 failed, 6 skipped

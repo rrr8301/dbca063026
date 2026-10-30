@@ -1,0 +1,87 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Run tests
+  Platform:         macOS ARM64 (Darwin-arm64; /Users/runner/work/)
+  Rust version:     1.92.0 (ded5c06cf 2025-12-08)
+  Test command(s) run in original CI:
+    $ cargo test --all-features
+      (97 tests across egui workspace; 1 failed in egui_tests snapshot test)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  Architecture: x86_64 Linux (Docker)
+  RUN steps:    several
+  Rust version: 1.92.0 (same version as original CI)
+
+--- LLM run.sh Test Command(s) ---
+  $ cargo test --all-features
+  $ cargo test --all-features --doc
+
+--- Reason(s) for Non-Reproducibility ---
+  - [cargo] Test count mismatch: original=97, LLM=45 (52 fewer tests in LLM)
+  - [cargo] Different test fails: original=text_edit_halign (snapshot), LLM=test_demo_app (wgpu)
+  - Original failure: missing PNG snapshot file on macOS CI runner
+  - LLM failure: no GPU adapter available in headless Docker container
+
+--- Root Cause Analysis ---
+  [Actual error messages from original CI log (macOS)]
+    > ---- text_edit_halign stdout ----
+    > thread 'text_edit_halign' panicked at /rustc/.../library/core/src/ptr/mod.rs:805:1:
+    >   Missing snapshot: /Users/runner/work/egui/egui/tests/egui_tests/tests/snapshots/text_edit_halign.png.
+    >   Run `UPDATE_SNAPSHOTS=1 cargo test --all-features` to update the snapshots.
+    >
+    > test result: FAILED. 5 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.18s
+
+  [Actual error messages from LLM log.txt (Linux Docker)]
+    > thread 'test_demo_app' panicked at crates/egui_kittest/src/wgpu.rs:72:6:
+    > Failed to create render state: CustomNativeAdapterSelectionError("No adapter found")
+    >
+    > test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+  [Root cause classification]
+  Two separate environment mismatches cause two different test failures:
+
+  (1) Original CI — missing snapshot file for text_edit_halign (macOS)
+    egui uses image snapshot tests: tests render a widget and compare the output against a
+    reference PNG stored in `tests/egui_tests/tests/snapshots/`. The snapshot file
+    `text_edit_halign.png` was never committed to the repository or was recently deleted.
+    The snapshot testing framework (egui_kittest) panics when the expected PNG is missing:
+      `Missing snapshot: .../snapshots/text_edit_halign.png.
+       Run UPDATE_SNAPSHOTS=1 cargo test --all-features to update the snapshots.`
+    The snapshot file must first be generated with `UPDATE_SNAPSHOTS=1` and then committed.
+    This test therefore fails as a pre-existing issue in the macOS CI.
+
+  (2) LLM Docker — wgpu GPU adapter not found (Linux headless)
+    The `test_demo_app` integration test in `crates/egui_demo_app/` uses egui's wgpu backend
+    (`egui_kittest/src/wgpu.rs`) to render the egui demo application and capture output for
+    verification. The test calls `wgpu::Instance::create_adapter(...)` to initialize a GPU
+    render pipeline. In a headless Linux Docker container with no physical or virtual GPU,
+    wgpu finds no suitable Vulkan/OpenGL adapter and panics:
+      `Failed to create render state: CustomNativeAdapterSelectionError("No adapter found")`
+    On macOS ARM64 CI, the runner has Metal GPU support available so `test_demo_app` succeeds;
+    the snapshot-based `text_edit_halign` test is the one that fails instead.
+
+  (3) Test count difference: 97 (original) vs 45 (LLM)
+    The 52-test gap arises from platform differences:
+    - macOS has native Metal GPU support enabling more wgpu/GPU-backed tests to build and run
+    - On headless Linux Docker, crates with GPU/display backend requirements (egui_kittest
+      wgpu tests, windowing tests) may be skipped or compile differently under the
+      `--all-features` flag, reducing the set of runnable tests
+    - The original macOS runner includes tests from `tests/egui_tests/`, `tests/test_viewports/`,
+      and other workspace members that may not build on Linux without display server
+
+--- Test Statistics Comparison ---
+  [cargo]
+    Original (macOS ARM64): 97 run, 95 passed, 1 failed, 1 skipped
+      (1 failure: text_edit_halign — missing PNG snapshot file in repository)
+    LLM (Linux x86_64 Docker): 45 run, 43 passed, 1 failed, 1 skipped
+      (1 failure: test_demo_app — no wgpu GPU adapter in headless Docker;
+       52 fewer tests: GPU/display-dependent tests not compiled/run on headless Linux)

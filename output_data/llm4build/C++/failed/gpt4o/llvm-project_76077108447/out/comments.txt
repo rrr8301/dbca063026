@@ -1,0 +1,43 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          13
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     llvm-premerge-libcxx-next-runners (self-hosted)
+  CI job name:      stage1 (generic-cxx26, clang-23, clang++-23)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    6
+
+--- LLM run.sh Test Command(s) ---
+  $ python3 -m venv --system-site-packages .venv && source .venv/bin/activate
+  $ pip install -r libcxx/test/requirements.txt
+  $ export CC=clang-23 && export CXX=clang++-23
+  $ libcxx/utils/ci/run-buildbot generic-cxx26
+
+--- Reason(s) for Non-Reproducibility ---
+  - LLVMLit test count mismatch: original=11371, LLM=11620
+  - LLVMLit failure mismatch: original=2 failed, LLM=164 failed
+  - LLVMLit skipped mismatch: original=947 skipped, LLM=1219 skipped
+
+--- Root Cause Analysis ---
+  LLM container log shows large numbers of clang-tidy, filesystem, timezone, and module tests failing:
+    > FAILED: libcxx/test/CMakeFiles/check-cxx
+    > Failed: 164 (1.41%)
+    > std/time/time.zone/... (multiple timezone tests)
+    > libcxx/clang_tidy.gen.py/... (clang-tidy tests)
+    > std/input.output/filesystems/... (filesystem tests)
+
+  Missing system tzdata and clang-tidy configuration differences
+  - The LLM environment on ubuntu:22.04 lacks the same timezone database version (tzdata) and clang-tidy configuration present on the self-hosted LLVM premerge runner, causing 164 test failures versus the original 2. The clang-tidy tests fail because the clang-tidy binary version or lint rules differ from the expected configuration, and the timezone/filesystem tests fail due to runtime environment differences such as missing timezone files or restricted filesystem permissions in Docker.
+
+--- Test Statistics Comparison ---
+  LLVMLit
+    Original: 11371 run, 10422 passed, 2 failed, 947 skipped
+    LLM:      11620 run, 10237 passed, 164 failed, 1219 skipped

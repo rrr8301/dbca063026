@@ -1,0 +1,47 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      build (16.x)
+  Test command(s) run in original CI:
+    $ actions/checkout@v2
+    $ npm i
+    $ npm run cover
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ test_exit_code=0
+  $ npm run cover || test_exit_code=$?
+  $ node node_modules/eslint/bin/eslint "lib/ace/**/*.js" || test_exit_code=$?
+  $ node node_modules/eslint/bin/eslint $jsChanges || test_exit_code=$?
+  $ npm run update-types || test_exit_code=$?
+
+--- Reason(s) for Non-Reproducibility ---
+  - [summary-block] Test result mismatch (same count 1480): original=(1456p/22f/2s), LLM=(1458p/20f/2s)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    [18/4] test: composition with visible textarea FAIL — AssertionError: false == true
+    [18/5] test: composition with hidden textarea FAIL — TypeError: Cannot read properties of null (reading 'getLine')
+    [7/5] test: marker with CJK characters FAIL — AssertionError: span HTML mismatch
+    [3/2] test rendering width of ideographic space (U+3000) FAIL — deep-equal mismatch
+    [8/2] test: multiselect FAIL — AssertionError: 'Range: [0/0] -> [0/0]' == 'Range: [0/2] -> [0/2],...'
+    Failed to parse file: src/ext/diff/providers/default.js — Error: Line 590: Unexpected token {
+    Failed to parse file: src/keyboard/vim_test.js — Error: Line 268: Unexpected token function
+
+  [Root cause classification]
+  - The original CI uses Node.js 16.x; istanbul (the coverage tool) fails to parse two source files with "Unexpected token {" and "Unexpected token function" — these are ES6+ object shorthand or function-keyword syntax that older istanbul versions mishandle under Node 16's instrumentation. The 2 tests that moved from FAIL (original) to PASS (LLM) are likely browser-event tests (`composition with visible/hidden textarea`, `multiselect`) whose DOM mocking behavior differs between Node versions. The LLM uses a later Node.js where the mock or polyfill resolves differently, making those 2 tests pass while 20 others still fail.
+
+--- Test Statistics Comparison ---
+  [summary-block]
+    Original: 1480 run, 1456 passed, 22 failed, 2 skipped
+    LLM:      1480 run, 1458 passed, 20 failed, 2 skipped

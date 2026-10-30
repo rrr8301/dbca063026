@@ -1,0 +1,35 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      test
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    5
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > AssertionError: "$ fetch https://github.com { method: 'GET' }\n" == "$ \x1B[92mfetch\x1B[39m https://github.com { method: 'GET' }\n"  (log.test.ts:85 — "fetch")
+    > AssertionError: ' FAIL  Attempt: 1/3...\n' == '\x1B[41m\x1B[37m FAIL \x1B[39m\x1B[49m Attempt: 1/3...\n'  (log.test.ts:110 — "retry")
+    > AssertionError: "$ echo $'hi'\n" == "$ \x1B[92mecho\x1B[39m \x1B[93m$\x1B[39m...\n"  (log.test.ts:212 — "formatCwd()")
+    > 8 tests fail (all in log.test.ts): expected ANSI color escape codes, received plain text
+
+  [Root cause classification]
+  - The zx log-formatting tests assert that shell commands are printed with ANSI color escape codes (e.g., command names in green \x1B[92m, strings in yellow \x1B[93m). The LLM container's terminal is not a TTY and has FORCE_COLOR or NO_COLOR set differently from the original ubuntu-24.04 CI runner, causing zx to emit plain-text output instead of colorized output. All 8 failures are in log.test.ts and all share the same pattern: expected colored output, got uncolored — a pure terminal color-detection environment mismatch.
+
+--- Reason(s) for Non-Reproducibility ---
+  - [node:test] Test passed mismatch: original=266, LLM=258
+  - [node:test] Test failed mismatch: original=0, LLM=8
+
+--- Test Statistics Comparison ---
+  [node:test]
+    Original: 267 run, 266 passed, 0 failed, 1 skipped
+    LLM:      267 run, 258 passed, 8 failed, 1 skipped

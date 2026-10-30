@@ -1,0 +1,36 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          N/A
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      mvn (full-build-java-tests, 11, -Pfull-build verify -Dsurefire-forkcount=1 -DskipCppUnit -Dsurefi...
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ mvn -B -V -e -ntp "-Dstyle.color=always" -Pfull-build verify -Dsurefire-forkcount=1 -DskipCppUnit -Dsurefire.rerunFailingTestsCount=5 -Drat.skip=true -Dlicense.skip=true
+
+Note: Original had test failures; LLM build passed all — failed build has passed.
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Maven] Test run mismatch: original=3037, LLM=10
+  - [Maven] Test passed mismatch: original=3032, LLM=10
+  - [Maven] Test failed mismatch: original=1, LLM=0
+  - [Maven] Test skipped mismatch: original=4, LLM=0
+  - [Maven] 1 test(s) failed in original but passed in LLM: testRequestThrottler(org.apache.zookeeper.server.RequestThrottlerTest)
+
+--- Root Cause Analysis ---
+  - [Maven] LLM ran 3027 fewer tests than original — LLM likely used a narrower test scope or missed some test suites.
+
+--- Test Statistics Comparison ---
+  [Maven]
+    Original: 3037 run, 3032 passed, 1 failed, 4 skipped
+    LLM:      10 run, 10 passed, 0 failed, 0 skipped

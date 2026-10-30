@@ -1,0 +1,38 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      Tests (22)
+  Test command(s) run in original CI:
+    $ npm test
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ npm test
+
+Note: Original had test failures; LLM build passed all — failed build has passed.
+
+--- Reason(s) for Non-Reproducibility ---
+  - [mocha] Test run mismatch: original=10093, LLM=2381
+  - [mocha] Test passed mismatch: original=7195, LLM=2381
+  - [mocha] Test failed mismatch: original=1, LLM=0
+  - [mocha] Test skipped mismatch: original=2897, LLM=0
+  - [mocha] 1 test(s) failed in original but passed in LLM: web-platform-tests > timer-nesting-not-inherited-in-microtask.html: > html/webappapis/timers > 1/2 errors in test: > Failed in "Test that a timer scheduled during a microtask checkpoint does not inherit the timer nesting level of the task that just ran.": > assert_less_than: Timer should not be clamped to 4ms expected a number less than 4 but got 13.401333999936469 > at Test.<anonymous> (http://web-platform.test:9000/html/webappapis/timers/timer-nesting-not-inherited-in-microtask.html:23:30) > at Test.step (http://web-platform.test:9000/resources/testharness.js:2869:25) > at http://web-platform.test:9000/html/webappapis/timers/timer-nesting-not-inherited-in-microtask.html:23:19 > at Timeout.task [as _onTimeout] (/home/runner/work/jsdom/jsdom/lib/jsdom/browser/Window.js:552:19)
+
+--- Root Cause Analysis ---
+  - [mocha] LLM ran 7712 fewer tests than original — LLM likely used a narrower test scope or missed some test suites.
+
+--- Test Statistics Comparison ---
+  [mocha]
+    Original: 10093 run, 7195 passed, 1 failed, 2897 skipped
+    LLM:      2381 run, 2381 passed, 0 failed, 0 skipped

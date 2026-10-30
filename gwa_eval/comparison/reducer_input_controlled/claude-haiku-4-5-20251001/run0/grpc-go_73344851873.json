@@ -1,0 +1,11 @@
+{
+ "model": "claude-haiku-4-5-20251001",
+ "content": "```yamlfile\nname: Testing\n\non:\n  push:\n  pull_request:\n  schedule:\n    - cron: 0 0 * * * # daily at 00:00\n\npermissions:\n  contents: read\n\nenv:\n  GO111MODULE: on\n\njobs:\n  tests:\n    name: tests (latest)\n    runs-on: ubuntu-latest\n    timeout-minutes: 20\n    \n    steps:\n      - name: Checkout repo\n        uses: actions/checkout@v4\n\n      - name: Setup Go\n        uses: actions/setup-go@v5\n        with:\n          go-version: '1.26'\n          cache-dependency-path: \"**/*go.sum\"\n\n      - name: Run tests\n        run: |\n          go version\n          go test -cpu 1,4 -timeout 7m ./...\n          cd \"${GITHUB_WORKSPACE}\"\n          for MOD_FILE in $(find . -name 'go.mod' | grep -Ev '^\\./go\\.mod'); do\n            pushd \"$(dirname ${MOD_FILE})\"\n            go test -cpu 1,4 -timeout 2m ./...\n            popd\n          done\n```",
+ "reduced_yaml": "name: Testing\n\non:\n  push:\n  pull_request:\n  schedule:\n    - cron: 0 0 * * * # daily at 00:00\n\npermissions:\n  contents: read\n\nenv:\n  GO111MODULE: on\n\njobs:\n  tests:\n    name: tests (latest)\n    runs-on: ubuntu-latest\n    timeout-minutes: 20\n    \n    steps:\n      - name: Checkout repo\n        uses: actions/checkout@v4\n\n      - name: Setup Go\n        uses: actions/setup-go@v5\n        with:\n          go-version: '1.26'\n          cache-dependency-path: \"**/*go.sum\"\n\n      - name: Run tests\n        run: |\n          go version\n          go test -cpu 1,4 -timeout 7m ./...\n          cd \"${GITHUB_WORKSPACE}\"\n          for MOD_FILE in $(find . -name 'go.mod' | grep -Ev '^\\./go\\.mod'); do\n            pushd \"$(dirname ${MOD_FILE})\"\n            go test -cpu 1,4 -timeout 2m ./...\n            popd\n          done",
+ "input_tokens": 1431,
+ "output_tokens": 289,
+ "cost_usd": 0.002301,
+ "seconds": 2.55,
+ "prompt_sha256": "2c62b5d59bd9a8d56123610a63d3cd1d46278ac91d57a203903a8e7b0e665e3a",
+ "completed_steps": []
+}

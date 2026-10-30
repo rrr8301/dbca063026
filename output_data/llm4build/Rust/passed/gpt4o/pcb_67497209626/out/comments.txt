@@ -1,0 +1,37 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          N/A
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-22.04
+  CI job name:      Test (Ubuntu)
+  Test command(s) run in original CI:
+    $ cargo test --doc --workspace --locked
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    2
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in original but missing in LLM: nexttest
+  - [cargo] Test run mismatch: original=7, LLM=138
+  - [cargo] Test passed mismatch: original=7, LLM=135
+  - [cargo] Test failed mismatch: original=0, LLM=3
+  - [cargo] 3 test(s) failed in LLM but not in original: publish::tests::test_infer_all_bumps_filters_commit_history_per_package, publish::tests::test_infer_all_bumps_treats_non_conventional_commits_conservatively, publish::tests::test_infer_all_bumps_uses_dependency_floor_across_waves
+
+--- Root Cause Analysis ---
+  - [cargo] LLM ran 131 more tests than original — LLM likely used a broader test scope or included extra test suites.
+  - [cargo] 3 test(s) failed in LLM but not original: publish::tests::test_infer_all_bumps_filters_commit_history_per_package, publish::tests::test_infer_all_bumps_treats_non_conventional_commits_conservatively, publish::tests::test_infer_all_bumps_uses_dependency_floor_across_waves
+
+--- Test Statistics Comparison ---
+  [cargo]
+    Original: 7 run, 7 passed, 0 failed, 0 skipped
+    LLM:      138 run, 135 passed, 3 failed, 0 skipped
+  [nexttest]
+    Original: 1182 run, 1181 passed, 0 failed, 1 skipped
+    LLM:      (not present)

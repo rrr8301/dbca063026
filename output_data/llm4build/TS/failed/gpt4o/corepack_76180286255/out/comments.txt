@@ -1,0 +1,48 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      ubuntu-latest w/ Node.js 22.x
+  Test command(s) run in original CI:
+    $ corepack yarn install --immutable
+    $ corepack yarn build
+    $ corepack yarn test
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    6
+
+--- LLM run.sh Test Command(s) ---
+  $ corepack yarn install --immutable
+  $ corepack yarn build
+  $ corepack yarn test
+
+--- Reason(s) for Non-Reproducibility ---
+  - [vitest] Test suite failed mismatch: original=1 suite failed, LLM=2 suites failed
+  - [vitest] New failure in LLM not in original: tests/Disable.test.ts > DisableCommand > shouldn't remove Yarn binaries if they are in a /switch/ folder
+  - [vitest] Missing failure in LLM: should use the pinned version when local projects don't list any spec (npm) (present in original, absent in LLM)
+  - [vitest] Test counts match: original=149 run/144 passed/4 failed/1 skipped, LLM=149 run/144 passed/4 failed/1 skipped
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    411:::error ...tests/Disable.test.ts > DisableCommand > shouldn't remove Yarn binaries if they are in a /switch/ folder...
+    ::AssertionError: expected { exitCode: 1, …(2) } to match object { exitCode: +0 }
+    241:[ERROR] Error during pnpmfile execution. pnpmfile: "/tmp/xfs-a6f539c4/.pnpmfile.mjs". Error: "Cannot find module '/tmp/xfs-a6f539c4/.pnpmfile.mjs' imported from /tmp/xfs-e545e60e/v1/pnpm/11.1.2/dist/pnpm.mjs"
+
+  [Root cause classification]
+  - The corepack test suite tests package manager switching and shim behavior. The `DisableCommand` test (`shouldn't remove Yarn binaries if they are in a /switch/ folder`) newly fails in the LLM environment with `exitCode: 1` when `exitCode: 0` is expected, indicating the corepack `disable` command behaves differently in the Docker container (possibly due to different Yarn binary paths or corepack version).
+
+  - The pnpm-related failures in both original and LLM share a common error: `Cannot find module '/tmp/xfs-*.pnpmfile.mjs' imported from pnpm.mjs`. This is a pnpm integration issue where corepack downloads a version of pnpm (11.1.2) and the pnpmfile module lookup fails. Both environments have this error but the specific failing test names differ slightly.
+
+  - The `should use the pinned version when local projects don't list any spec (npm)` tests failed in the original but not in the LLM run, while the `(pnpm)` variants and `DisableCommand` differ. These are environment-sensitive tests that depend on exact pnpm/npm version behavior and corepack cache state.
+
+--- Test Statistics Comparison ---
+  [vitest]
+    Original: 149 run, 144 passed, 4 failed, 1 skipped
+    LLM:      149 run, 144 passed, 4 failed, 1 skipped

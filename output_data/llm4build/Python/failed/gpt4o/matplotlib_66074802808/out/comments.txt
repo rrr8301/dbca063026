@@ -1,0 +1,32 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   False
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          N/A
+Original build category: failed
+
+STATUS: BUILD EXECUTION FAILED
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      Python 3.12 on ubuntu-24.04
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    6
+
+--- Failure Analysis ---
+  Failure type: Build error
+
+  Original build was already failing. LLM could not reproduce or fix it after N/A attempt(s).
+
+No test results could be produced due to build failure.
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > COPY failed: file not found in build context or excluded by .dockerignore: stat tests/: file does not exist
+
+  [Root cause classification]: LLM-generated Dockerfile referenced a non-existent file/directory
+  - The Dockerfile copies the entire repo with `COPY . .` and then issues a redundant `COPY tests/ /app/tests/`, but `tests/` does not exist as a standalone directory in the build context (it may be named differently or excluded by .dockerignore).
+  - The matplotlib repo uses `lib/matplotlib/tests/` as its test directory, not a top-level `tests/` folder, so the LLM hallucinated an incorrect path.
+  - Because the error occurs at the Docker COPY step, no Python code is ever executed and the image cannot be built at all.

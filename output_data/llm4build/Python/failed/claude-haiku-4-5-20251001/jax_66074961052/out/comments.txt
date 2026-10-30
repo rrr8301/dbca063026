@@ -1,0 +1,79 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          3
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      build with 3.14 (py 3.14 on ubuntu-22.04, x64=0)
+  Test command(s) run in original CI:
+    $ uv pip install --system .[minimum-jaxlib] -r build/test-requirements.txt
+    $ pytest -n auto --tb=short --maxfail=20 tests examples
+
+--- LLM-Generated Dockerfile ---
+  Base image:   python:3.14-slim
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ uv pip install --system .[minimum-jaxlib] -r build/test-requirements.txt
+  $ pytest -n auto --tb=short --maxfail=20 tests examples
+
+--- Reason(s) for Non-Reproducibility ---
+  - [pytest] Test run mismatch: original=41258, LLM=41255 (3 fewer tests collected)
+  - [pytest] Skip count mismatch: original=22637 skipped, LLM=22634 skipped (3 fewer skips)
+  - [pytest] Same test fails in both: test_basic_reshape_lanes_to_sublanes
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > ____________ PullBlockSpecTest.test_basic_reshape_lanes_to_sublanes ____________
+    >   tests/pallas/fuser_block_spec_test.py:960: in test_basic_reshape_lanes_to_sublanes
+    >     new_block_shape = tuple(*block_shape[:-2], total_block_size)
+    > E   TypeError: tuple expected at most 1 argument, got 2
+
+  [Root cause classification]
+  Two separate issues, one pre-existing and one causing the test count discrepancy:
+
+  (1) Minor test count discrepancy: 3 fewer tests collected in LLM (41255 vs 41258)
+    The original CI uses pytest==8.4.2 and pytest-xdist==3.8.0 (pinned in the CI
+    environment). The LLM Docker installs the latest pytest available from the JAX
+    requirements file. Any difference in pytest version or test discovery logic (especially
+    with `-n auto` and xdist) can cause 3 tests to be collected differently — either
+    because of parameterization differences, minor conditional skip logic, or plugin
+    version changes.
+
+    Additionally, the Dockerfile sets `ENV TZ=America/Los_Angeles`. If any tests have
+    timezone-sensitive skip conditions, the timezone mismatch could affect which tests
+    are skipped vs collected.
+
+    This 3-test discrepancy (all in the skipped category: 22637 → 22634) makes the build
+    non-fully-reproducible even though the actual failure is identical.
+
+  (2) Pre-existing Python 3.14 incompatibility in JAX Pallas code (same failure in both)
+    Both the original CI and the LLM Docker fail the same test:
+      `tests/pallas/fuser_block_spec_test.py::PullBlockSpecTest::test_basic_reshape_lanes_to_sublanes`
+
+    The test code at line 960 calls:
+      `new_block_shape = tuple(*block_shape[:-2], total_block_size)`
+
+    This unpacks elements of `block_shape[:-2]` as positional arguments to `tuple()` and
+    also passes `total_block_size` as a second positional argument. In Python 3.14, the
+    `tuple()` constructor was made strict — it accepts at most 1 positional argument (the
+    iterable). Passing 2 arguments (`*unpacked_element, total_block_size`) raises:
+      `TypeError: tuple expected at most 1 argument, got 2`
+
+    This is a JAX code bug exposed by Python 3.14's stricter `tuple()` signature. It is a
+    pre-existing failure present in both the original CI and the LLM Docker, so it does not
+    contribute to the non-reproducibility. The correct fix would be:
+      `new_block_shape = (*block_shape[:-2], total_block_size)`
+    using a tuple unpacking expression rather than calling `tuple()` with multiple positional
+    arguments.
+
+--- Test Statistics Comparison ---
+  [pytest]
+    Original: 41258 run, 18620 passed, 1 failed, 22637 skipped
+    LLM:      41255 run, 18620 passed, 1 failed, 22634 skipped
+    (3 fewer tests in LLM: minor pytest version/collection difference;
+     same test fails in both: Pallas code passes 2 args to tuple() on Python 3.14)

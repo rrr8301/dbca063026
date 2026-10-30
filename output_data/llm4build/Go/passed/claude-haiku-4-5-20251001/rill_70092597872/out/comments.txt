@@ -1,0 +1,48 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          9
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      test
+  Test command(s) run in original CI:
+    $ actions/checkout@v4
+    $ test -z $(gofmt -l .)
+    $ go test -timeout 30m -short -v ./...
+
+--- LLM-Generated Dockerfile ---
+  Base image:   golang:1.25-alpine
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ go test -timeout 30m -short -v ./...
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoDefault] Test run mismatch: original=2456, LLM=1019
+  - [GoDefault] Test passed mismatch: original=2386, LLM=1017
+  - [GoDefault] Test failed mismatch: original=0, LLM=53
+  - [GoDefault] 53 test(s) failed in LLM but not in original: github.com/rilldata/rill/admin, github.com/rilldata/rill/admin/database/postgres, github.com/rilldata/rill/admin/provisioner/clickhousestatic, github.com/rilldata/rill/admin/provisioner/static, github.com/rilldata/rill/admin/server, github.com/rilldata/rill/admin/server/auth, github.com/rilldata/rill/cli/cmd/deploy, github.com/rilldata/rill/cli/cmd/org (+45 more)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    413:--- FAIL: TestClickHouseStatic (0.00s)
+    414-panic: rootless Docker not found [recovered, repanicked]
+    453:FAIL	github.com/rilldata/rill/admin/provisioner/clickhousestatic	0.054s
+    455-FAIL	github.com/rilldata/rill/admin/provisioner/static [build failed]
+    25-/usr/bin/gcc -m64 -s -Wl,--build-id=0x294cbce7943e0d4129f92b6aee03772469abb2ce -o $WORK/b1896/static.test -Wl,--export-dynamic-symbol=_cgo_panic -Wl,--export-dynamic-symbol=_cgo_topofstack -Wl,--ex
+    7187:/usr/bin/gcc -m64 -s -Wl,--build-id=0x924841fb7a04701289b5a9286c953a90ed4a8798 -o $WORK/b2847/fieldselectorpb.test -Wl,--export-dynamic-symbol=_cgo_panic -Wl,--export-dynamic-symbol=_cgo_topofsta
+    8463:FAIL	github.com/rilldata/rill/runtime/pkg/fieldselectorpb [build failed]
+
+  [Root cause classification]
+  - `TestClickHouseStatic` panics with `rootless Docker not found` — this is the testcontainers-go panic that occurs when the test tries to start a ClickHouse container via Docker but finds no Docker daemon at `unix:///var/run/docker.sock`. The LLM used `golang:1.25-alpine` which has no Docker daemon. The `admin/provisioner/clickhousestatic` and `admin/provisioner/static` packages both require testcontainers to provision database instances for integration tests.
+
+  - CGO build failures account for most of the 1437 fewer tests (1019 vs 2456): the Alpine-based `golang:1.25-alpine` image uses musl libc and may lack `gcc`/CGO support for some packages. The linker command `/usr/bin/gcc -m64 -s -Wl,--build-id=...` failing for `fieldselectorpb` and `provisioner/static` indicates CGO compilation errors — Alpine's gcc does not have all the x86-64 multilib headers that these CGO packages need. The 53 failing packages span the full admin/server/runtime stack because they all transitively depend on testcontainers or CGO packages that fail to build. This is the same dual root cause as the failed-category counterpart `rill_70803431302`.
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 2456 run, 2386 passed, 0 failed, 0 skipped
+    LLM:      1019 run, 1017 passed, 53 failed, 0 skipped

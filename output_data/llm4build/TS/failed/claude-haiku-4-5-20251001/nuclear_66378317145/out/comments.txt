@@ -1,0 +1,47 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT TESTS NOT REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      ci
+  Test command(s) run in original CI:
+    $ pnpm test
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    6
+
+--- LLM run.sh Test Command(s) ---
+  $ pnpm test || TEST_FAILED=1
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > @nuclearplayer/hifi:test: [vitest] The vi.fn() mock did not use 'function' or 'class' in its implementation,
+    >   see https://vitest.dev/api/vi#vi-spyon for examples.
+    > @nuclearplayer/hifi:test: Error: Uncaught [TypeError: () => fakeCtx is not a constructor]
+    >     at new Mock (/workspace/node_modules/.pnpm/@vitest+spy@4.0.18/node_modules/@vitest/spy/dist/index.js:262:27)
+    > @nuclearplayer/hifi:test:  ❯ src/test/CrossfadeSound.test.tsx (1 test | 1 failed) 37ms
+
+  [Root cause classification]
+  - The `@nuclearplayer/hifi` test package fails because vitest 4.0.18 introduced a breaking change in how `vi.fn()` handles arrow-function mock implementations. When an arrow function is passed to `vi.fn()` as the mock body, vitest 4.0.18 enforces a new check: if the mock is invoked with `new`, it throws `TypeError: () => fakeCtx is not a constructor`. The `@nuclearplayer/hifi` tests use `vi.fn(() => fakeCtx)` to mock a React audio context provider — which is internally constructed with `new` by the React rendering pipeline. In older vitest versions, this arrow-function pattern worked silently; vitest 4.0.18 rejects it with an explicit warning and a hard error.
+
+  - The LLM installed vitest 4.0.18 (the latest release), while the original CI used the version pinned in the monorepo's lockfile (an earlier release that did not enforce the `vi.fn()` constructor restriction). The nuclear monorepo's `package.json` specifies `vitest` without a pinned version, so `pnpm install` resolves to the latest, introducing the breaking behavior change.
+
+  - Because the turbo orchestrator runs all package tests in parallel, the `@nuclearplayer/hifi:test` failure causes turbo to exit with a non-zero code immediately, and the result parser receives no parseable test output (empty stats). The original CI's 19 passing vitest tests (from `@nuclearplayer/model`, `@nuclearplayer/themes`, `@nuclearplayer/hifi`) all passed because the older vitest version accepted the arrow-function mock pattern. The GoDefault test from the original (1 run, 1 failed) is a separate component not executed by the LLM.
+
+--- Test Reproducibility Gap ---
+  Original ran 20 test(s) across [vitest, GoDefault].
+  LLM build produced no test results (empty llm_log_stats).
+
+--- Root Cause ---
+  Reason type: Compilation / linker failure during build
+
+--- Original Test Statistics (not reproduced) ---
+  [vitest] 19 run, 19 passed, 0 failed, 0 skipped
+  [GoDefault] 1 run, 0 passed, 1 failed, 0 skipped

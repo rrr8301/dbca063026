@@ -1,0 +1,24 @@
+{
+ "model": "claude-haiku-4-5-20251001",
+ "content": "```yamlfile\nname: CI\n\non:\n  push:\n    paths-ignore:\n      - '**/*.md'\n    branches: [next]\n  pull_request:\n    types: [opened, synchronize]\n    paths-ignore:\n      - '**/*.md'\n    branches: [next]\n  merge_group:\n\npermissions:\n  id-token: write\n  actions: write\n\njobs:\n  test:\n    strategy:\n      fail-fast: false\n      matrix:\n        os: ['ubuntu-latest']\n        node: ['24']\n\n    name: Test (ubuntu-latest, 24)\n    runs-on: ubuntu-latest\n\n    concurrency:\n      group: test-${{ github.workflow }}-#${{ github.event.pull_request.number || github.head_ref || github.ref }}-(ubuntu-latest, 24)\n      cancel-in-progress: true\n\n    steps:\n      - name: Checkout repository\n        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6\n\n      - name: Start Redis (MacOS or Linux)\n        uses: shogo82148/actions-setup-redis@cff708d63a30aebc0bfaa7276fb709d173f36cb6 # v1\n        with:\n          redis-version: '7'\n          auto-start: 'true'\n\n      - name: Start MySQL (macOS or Linux)\n        uses: shogo82148/actions-setup-mysql@27e74fac04c136a9f4c2dc2ed457df57331b3e0c # v1\n        with:\n          mysql-version: '8'\n          auto-start: 'true'\n\n      - name: Init DB (macOS or Linux)\n        run: |\n          mysql -uroot -e \"CREATE DATABASE IF NOT EXISTS test;\"\n\n      - name: Setup utoo\n        uses: utooland/setup-utoo@3a51006d0b66afcc32d1b9177a4b200b74f4a8cb # main\n\n      - name: Set up Node.js\n        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6\n        with:\n          node-version: '24'\n\n      - name: Install dependencies\n        run: ut install --from pnpm\n\n      - name: Run tests with coverage\n        run: ut run ci\n\n      - name: Run example tests\n        run: |\n          ut run example:test:all\n\n      - name: Code Coverage\n        uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5\n        with:\n          use_oidc: true\n          flags: unittest-node24\n```",
+ "reduced_yaml": "name: CI\n\non:\n  push:\n    paths-ignore:\n      - '**/*.md'\n    branches: [next]\n  pull_request:\n    types: [opened, synchronize]\n    paths-ignore:\n      - '**/*.md'\n    branches: [next]\n  merge_group:\n\npermissions:\n  id-token: write\n  actions: write\n\njobs:\n  test:\n    strategy:\n      fail-fast: false\n      matrix:\n        os: ['ubuntu-latest']\n        node: ['24']\n\n    name: Test (ubuntu-latest, 24)\n    runs-on: ubuntu-latest\n\n    concurrency:\n      group: test-${{ github.workflow }}-#${{ github.event.pull_request.number || github.head_ref || github.ref }}-(ubuntu-latest, 24)\n      cancel-in-progress: true\n\n    steps:\n      - name: Checkout repository\n        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6\n\n      - name: Start Redis (MacOS or Linux)\n        uses: shogo82148/actions-setup-redis@cff708d63a30aebc0bfaa7276fb709d173f36cb6 # v1\n        with:\n          redis-version: '7'\n          auto-start: 'true'\n\n      - name: Start MySQL (macOS or Linux)\n        uses: shogo82148/actions-setup-mysql@27e74fac04c136a9f4c2dc2ed457df57331b3e0c # v1\n        with:\n          mysql-version: '8'\n          auto-start: 'true'\n\n      - name: Init DB (macOS or Linux)\n        run: |\n          mysql -uroot -e \"CREATE DATABASE IF NOT EXISTS test;\"\n\n      - name: Setup utoo\n        uses: utooland/setup-utoo@3a51006d0b66afcc32d1b9177a4b200b74f4a8cb # main\n\n      - name: Set up Node.js\n        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6\n        with:\n          node-version: '24'\n\n      - name: Install dependencies\n        run: ut install --from pnpm\n\n      - name: Run tests with coverage\n        run: ut run ci\n\n      - name: Run example tests\n        run: |\n          ut run example:test:all\n\n      - name: Code Coverage\n        uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5\n        with:\n          use_oidc: true\n          flags: unittest-node24",
+ "input_tokens": 3172,
+ "output_tokens": 688,
+ "cost_usd": 0.00529,
+ "seconds": 6.77,
+ "prompt_sha256": "794348cf0218984a4f170046b83834653593fda671ec742ed40ad36d944a4159",
+ "completed_steps": [
+  "Set up job",
+  "Checkout repository",
+  "Start Redis (MacOS or Linux)",
+  "Start MySQL (macOS or Linux)",
+  "Init DB (macOS or Linux)",
+  "Setup utoo",
+  "Set up Node.js",
+  "Install dependencies",
+  "Run tests with coverage",
+  "Run example tests",
+  "Code Coverage",
+  "Complete job"
+ ]
+}

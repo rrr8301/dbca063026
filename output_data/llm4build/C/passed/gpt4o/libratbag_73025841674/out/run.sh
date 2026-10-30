@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# Activate the virtual environment
+source /opt/venv/bin/activate
+
+# Run meson build and test
+meson setup builddir --prefix=$PWD/_instdir
+meson configure builddir
+ninja -C builddir install
+meson test -C builddir --print-errorlogs
+
+# Check installation of data files
+diff -u <(cd data/devices; ls *.device) <(cd _instdir/share/libratbag; ls *.device)
+
+# Uninstall and verify cleanup
+ninja -C builddir uninstall
+(test -d _instdir && tree _instdir && exit 1) || exit 0

@@ -1,0 +1,83 @@
+Error from docker build
+
+#1 [internal] load .dockerignore
+#1 transferring context: 2B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 1.32kB done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/ubuntu:22.04
+#3 DONE 0.3s
+
+#4 [ 1/11] FROM docker.io/library/ubuntu:22.04@sha256:962f6cadeae0ea6284001009daa4cc9a8c37e75d1f5191cf0eb83fe565b63dd7
+#4 DONE 0.0s
+
+#5 [ 2/11] RUN ln -snf /usr/share/zoneinfo/America/Los_Angeles /etc/localtime && echo America/Los_Angeles > /etc/timezone
+#5 CACHED
+
+#6 [ 3/11] RUN apt-get update && apt-get install -y     git     wget     curl     ash     csh     fish     tcsh     zsh     && rm -rf /var/lib/apt/lists/*
+#6 CACHED
+
+#7 [ 4/11] RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O /miniconda.sh &&     bash /miniconda.sh -b -p /opt/conda &&     rm /miniconda.sh
+#7 CACHED
+
+#8 [internal] load build context
+#8 transferring context: 867.71kB 0.9s done
+#8 DONE 1.0s
+
+#9 [ 5/11] RUN conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main &&     conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r
+#9 3.730 accepted Terms of Service for https://repo.anaconda.com/pkgs/main
+#9 5.670 accepted Terms of Service for https://repo.anaconda.com/pkgs/r
+#9 DONE 7.6s
+
+#10 [ 6/11] WORKDIR /app
+#10 DONE 0.1s
+
+#11 [ 7/11] COPY . .
+#11 DONE 5.4s
+
+#12 [ 8/11] RUN conda install --yes     --file tests/requirements.txt     --file tests/requirements-ubuntu.txt     --file tests/requirements-ci.txt     --file tests/requirements-s3.txt     python=3.11
+#12 1.272 2 channel Terms of Service accepted
+#12 1.273 Retrieving notices: - \ | / - \ | / - \ | / - \ | / - done
+#12 4.021 
+#12 4.021 EnvironmentSpecPluginNotDetected: Environment at tests/requirements-ubuntu.txt is not able to be detected by any installed environment specifier plugins.
+#12 4.021 
+#12 4.021 Available plugins: 
+#12 4.021     - cep-24
+#12 4.021     - explicit
+#12 4.021     - requirements.txt
+#12 4.021 
+#12 4.021 Found compatible plugins but they must be explicitly selected.
+#12 4.021 Request conda to use these plugins by providing
+#12 4.021 the cli argument `--environment-spec PLUGIN_NAME`:
+#12 4.021 
+#12 4.021     - environment.yml
+#12 4.021 
+#12 ERROR: process "/bin/sh -c conda install --yes     --file tests/requirements.txt     --file tests/requirements-ubuntu.txt     --file tests/requirements-ci.txt     --file tests/requirements-s3.txt     python=3.11" did not complete successfully: exit code: 1
+------
+ > [ 8/11] RUN conda install --yes     --file tests/requirements.txt     --file tests/requirements-ubuntu.txt     --file tests/requirements-ci.txt     --file tests/requirements-s3.txt     python=3.11:
+#12 4.021     - cep-24
+#12 4.021     - explicit
+#12 4.021     - requirements.txt
+#12 4.021 
+#12 4.021 Found compatible plugins but they must be explicitly selected.
+#12 4.021 Request conda to use these plugins by providing
+#12 4.021 the cli argument `--environment-spec PLUGIN_NAME`:
+#12 4.021 
+#12 4.021     - environment.yml
+#12 4.021 
+------
+Dockerfile:37
+--------------------
+  36 |     # Install Python dependencies
+  37 | >>> RUN conda install --yes \
+  38 | >>>     --file tests/requirements.txt \
+  39 | >>>     --file tests/requirements-ubuntu.txt \
+  40 | >>>     --file tests/requirements-ci.txt \
+  41 | >>>     --file tests/requirements-s3.txt \
+  42 | >>>     python=3.11
+  43 |     
+--------------------
+ERROR: failed to solve: process "/bin/sh -c conda install --yes     --file tests/requirements.txt     --file tests/requirements-ubuntu.txt     --file tests/requirements-ci.txt     --file tests/requirements-s3.txt     python=3.11" did not complete successfully: exit code: 1

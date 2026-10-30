@@ -1,0 +1,76 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      core / Test with debug build (3.13)
+  Test command(s) run in original CI:
+    $ uv sync --all-packages --all-extras --group testing-extra
+      (UV_PYTHON=3.13 → downloads cpython-3.13.12-linux-x86_64-gnu)
+    $ uv run pytest
+      (pydantic-core built as Rust debug profile, cached from previous builds)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ uv sync --all-packages --all-extras --group testing-extra
+    (ubuntu:24.04 provides Python 3.14.5 — different from CI's Python 3.13.12)
+  $ uv run pytest
+    (pydantic-core built from scratch as Rust dev profile)
+
+--- Reason(s) for Non-Reproducibility ---
+  - [pytest] Test run mismatch: original=12236, LLM=12246 (10 more tests collected in LLM)
+  - [pytest] Test failed mismatch: original=843, LLM=846 (3 more failures in LLM)
+  - [pytest] Skip count mismatch: original=465 skipped, LLM=455 skipped
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > platform linux -- Python 3.14.5, pytest-8.3.5, pluggy-1.5.0
+    > pydantic==2.13.0b2, pydantic-core==2.42.0
+    > [Rust dev profile: "unoptimized + debuginfo"]
+
+  [Root cause classification]
+  Python version mismatch (3.14.5 vs 3.13.12) causes different test parametrization
+  and 3 additional failures
+
+  The original CI sets `UV_PYTHON=3.13` which causes uv to download and use
+  cpython-3.13.12. The LLM Docker uses ubuntu:24.04 which provides Python 3.14.5 as
+  the system Python. This major Python version difference (3.13 vs 3.14) has two effects:
+
+  (1) 10 more tests collected in LLM (12246 vs 12236)
+    pydantic's test suite has version-conditional test parametrization. Some tests are
+    parametrized based on Python version capabilities (e.g., new Python 3.14 type system
+    features, new syntax, or changed built-in behaviors). Python 3.14 enables additional
+    test variants that don't exist for Python 3.13, adding 10 tests to the collection.
+    Conversely, 10 fewer skips (455 vs 465) confirms that Python 3.14's expanded feature
+    set allows some previously-skipped tests to now run.
+
+  (2) 3 more failures in LLM (846 vs 843)
+    The 3 additional failures are pydantic validation tests that produce different error
+    messages or behaviors on Python 3.14 vs 3.13. Python 3.14 introduced changes to type
+    error formatting, exception chaining, and decorator handling. When pydantic-core's Rust
+    extension raises validation errors, the error message format can differ between Python
+    versions if pydantic's expected error strings are pinned to Python 3.13 format.
+
+  (3) CI job name "debug build" refers to Rust build profile, not Python
+    The CI job is labeled "Test with debug build (3.13)" — "debug" refers to compiling
+    the pydantic-core Rust extension with the Cargo `debug` profile ([unoptimized + debuginfo])
+    rather than the `release` profile. Both CI and LLM Docker compile pydantic-core with the
+    dev/debug Rust profile. The Python itself is a standard (non-debug) build in both cases.
+    However, the CI has a Cargo cache restored for the debug build, while the LLM builds
+    pydantic-core from scratch (taking ~10s in the Dockerfile).
+
+--- Test Statistics Comparison ---
+  [pytest]
+    Original: 12236 run, 11393 passed, 843 failed, 465 skipped  (Python 3.13.12)
+    LLM:      12246 run, 11400 passed, 846 failed, 455 skipped  (Python 3.14.5)
+    (10 more tests in LLM: Python 3.14 parametrization expansion;
+     3 more failures: Python 3.14 behavior changes in error message formatting;
+     both run same pydantic-core dev/debug Rust build)

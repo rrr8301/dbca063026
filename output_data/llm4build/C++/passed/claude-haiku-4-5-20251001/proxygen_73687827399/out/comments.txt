@@ -1,0 +1,61 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          3
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      build
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ sudo --preserve-env=http_proxy python3 build/fbcode_builder/getdeps.py --allow-system-packages install-system-deps --recursive proxygen && sudo --preserve-env=http_proxy python3 build/fbcode_builder/getdeps.py --allow-system-packages install-system-deps --recursive patchelf
+    $ python3 build/fbcode_builder/getdeps.py --allow-system-packages query-paths --recursive --src-dir=. proxygen  >> "$GITHUB_OUTPUT"
+    $ python3 build/fbcode_builder/getdeps.py --allow-system-packages fetch --no-tests c-ares
+    $ python3 build/fbcode_builder/getdeps.py --allow-system-packages fetch --no-tests fast_float
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ python3 build/fbcode_builder/getdeps.py --allow-system-packages fetch --no-tests c-ares || true
+  $ python3 build/fbcode_builder/getdeps.py --allow-system-packages fetch --no-tests fast_float || true
+  $ python3 build/fbcode_builder/getdeps.py --allow-system-packages fetch --no-tests fmt || true
+  $ python3 build/fbcode_builder/getdeps.py --allow-system-packages fetch --no-tests glog || true
+  $ python3 build/fbcode_builder/getdeps.py --allow-system-packages fetch --no-tests googletest || true
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in LLM but not in original: GTest
+  - [CTest] Test run mismatch: original=6272, LLM=1551
+  - [CTest] Test passed mismatch: original=6272, LLM=1548
+  - [CTest] Test failed mismatch: original=0, LLM=3
+  - [CTest] 3 test(s) failed in LLM but not in original: AcceptorTest.Basic, HTTPConnectorWithFizzTest.TestFizzConnect, HTTPConnectorWithFizzTest.TestFizzConnectFailure
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    1716:-- Looking for include file assert.h
+    1717:-- Looking for include file assert.h - found
+    2750:-- Installing: /tmp/fbcode_builder_getdeps-ZworkspaceZbuildZfbcode_builder-root/installed/googletest-qttmp3lwJywUkWeTqSFbsSnNlLxr0MQ1ZoY9gekCRhc/include/gtest/gtest-assertion-result.h
+    5785:[262/669] Building CXX object folly/lang/CMakeFiles/folly_lang_safe_assert_obj.dir/SafeAssert.cpp.o
+    1716:-- Looking for include file assert.h
+    1717:-- Looking for include file assert.h - found
+    2750:-- Installing: /tmp/fbcode_builder_getdeps-ZworkspaceZbuildZfbcode_builder-root/installed/googletest-qttmp3lwJywUkWeTqSFbsSnNlLxr0MQ1ZoY9gekCRhc/include/gtest/gtest-assertion-result.h
+    5785:[262/669] Building CXX object folly/lang/CMakeFiles/folly_lang_safe_assert_obj.dir/SafeAssert.cpp.o
+
+  [Root cause classification]
+  - TLS/SSL certificate path not found — test expects certificate files (e.g., tests/certs/) that are absent or not properly initialized.
+  - Process aborted (SIGABRT) — likely a GLib g_assert() failure, AddressSanitizer/UBSan abort, or missing D-Bus/system service in Docker container.
+  - Test timed out — likely due to slower execution in Docker container or a blocking service call that never returns.
+  - I/O error — test encountered a system-level I/O failure, possibly due to filesystem permissions or missing mount points.
+  - Assertion failure: 1716:-- Looking for include file assert.h
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 6272 run, 6272 passed, 0 failed, 0 skipped
+    LLM:      1551 run, 1548 passed, 3 failed, 0 skipped
+  [GTest]
+    Original: (not present)
+    LLM:      1 run, 0 passed, 1 failed, 0 skipped

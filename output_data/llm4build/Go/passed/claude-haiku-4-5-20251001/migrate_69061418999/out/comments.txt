@@ -1,0 +1,43 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      test (1.25.x)
+  Test command(s) run in original CI:
+    $ actions/checkout@v4
+    $ make test COVERAGE_DIR=/tmp/coverage
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ make test COVERAGE_DIR=/tmp/coverage
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoDefault] Test run mismatch: original=945, LLM=585
+  - [GoDefault] Test passed mismatch: original=945, LLM=299
+  - [GoDefault] Test failed mismatch: original=0, LLM=14
+  - [GoDefault] 14 test(s) failed in LLM but not in original: github.com/golang-migrate/migrate/v4/database/cassandra, github.com/golang-migrate/migrate/v4/database/clickhouse, github.com/golang-migrate/migrate/v4/database/cockroachdb, github.com/golang-migrate/migrate/v4/database/firebird, github.com/golang-migrate/migrate/v4/database/mongodb, github.com/golang-migrate/migrate/v4/database/mysql, github.com/golang-migrate/migrate/v4/database/neo4j, github.com/golang-migrate/migrate/v4/database/pgx (+6 more)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    751:    dktest.go:188: Failed: error pulling image: jacobalberty/firebird:v5.0 error: Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?
+    753-    dktest.go:188: Failed: error pulling image: jacobalberty/firebird:v3.0 error: Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?
+    522:    dktest.go:188: Failed: error pulling image: clickhouse:24.8 error: Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?
+
+  [Root cause classification]
+  - The `golang-migrate` library's test suite uses `dktest` (Docker-based test infrastructure) to spin up database containers on-demand: it pulls Docker images (`jacobalberty/firebird:v5.0`, `jacobalberty/firebird:v3.0`, `clickhouse:24.8`, and images for cassandra, cockroachdb, mongodb, mysql, neo4j, pgx, etc.) and runs database-specific migration tests against live containers. Inside the LLM's Docker container, there is no Docker daemon (`unix:///var/run/docker.sock` is absent), so all `dktest.go:188` calls to pull images fail with "Cannot connect to the Docker daemon". All 14 failing packages use `dktest` to start their respective databases.
+
+  - The 360 fewer tests (585 vs 945) are tests inside those 14 failing packages that would have run against live database containers — since the containers cannot be started, those tests never execute. The 272 fewer passing tests (299 vs 571 of 585-14=571) indicate that even some of the packages that did run failed individual test cases because they attempted database connections mid-test. This is the same Docker-daemon-unavailable pattern as the failed-category counterpart `migrate_74822810915`, but in that case CGO build failures were the primary blocker; here the CGO packages compile successfully but the runtime `dktest` container pull fails.
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 945 run, 945 passed, 0 failed, 0 skipped
+    LLM:      585 run, 299 passed, 14 failed, 0 skipped

@@ -1,0 +1,53 @@
+Error from docker build
+
+#1 [internal] load .dockerignore
+#1 transferring context: 2B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 2.09kB done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/ubuntu:24.04
+#3 DONE 0.0s
+
+#4 [ 1/11] FROM docker.io/library/ubuntu:24.04
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 605.42kB 0.2s done
+#5 DONE 0.3s
+
+#6 [ 2/11] RUN ln -snf /usr/share/zoneinfo/America/Los_Angeles /etc/localtime && echo America/Los_Angeles > /etc/timezone
+#6 CACHED
+
+#7 [ 3/11] RUN apt-get update && apt-get install -y --no-install-recommends     git     curl     wget     ca-certificates     unzip     build-essential     && rm -rf /var/lib/apt/lists/*
+#7 CACHED
+
+#8 [ 4/11] WORKDIR /workspace
+#8 CACHED
+
+#9 [ 5/11] COPY . .
+#9 DONE 1.5s
+
+#10 [ 6/11] RUN git config --global --add safe.directory '*'
+#10 DONE 0.4s
+
+#11 [ 7/11] RUN mkdir -p /opt/graalvm &&     curl -fsSL https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-21.0.0/graalvm-ce-java21-linux-amd64-21.0.0.tar.gz     -o /tmp/graalvm.tar.gz &&     tar -xzf /tmp/graalvm.tar.gz -C /opt/graalvm --strip-components=1 &&     rm /tmp/graalvm.tar.gz
+#11 0.665 curl: (22) The requested URL returned error: 404
+#11 ERROR: process "/bin/sh -c mkdir -p /opt/graalvm &&     curl -fsSL https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-21.0.0/graalvm-ce-java21-linux-amd64-21.0.0.tar.gz     -o /tmp/graalvm.tar.gz &&     tar -xzf /tmp/graalvm.tar.gz -C /opt/graalvm --strip-components=1 &&     rm /tmp/graalvm.tar.gz" did not complete successfully: exit code: 22
+------
+ > [ 7/11] RUN mkdir -p /opt/graalvm &&     curl -fsSL https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-21.0.0/graalvm-ce-java21-linux-amd64-21.0.0.tar.gz     -o /tmp/graalvm.tar.gz &&     tar -xzf /tmp/graalvm.tar.gz -C /opt/graalvm --strip-components=1 &&     rm /tmp/graalvm.tar.gz:
+#11 0.665 curl: (22) The requested URL returned error: 404
+------
+Dockerfile:33
+--------------------
+  32 |     # Install GraalVM JDK 21 (using a valid release)
+  33 | >>> RUN mkdir -p /opt/graalvm && \
+  34 | >>>     curl -fsSL https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-21.0.0/graalvm-ce-java21-linux-amd64-21.0.0.tar.gz \
+  35 | >>>     -o /tmp/graalvm.tar.gz && \
+  36 | >>>     tar -xzf /tmp/graalvm.tar.gz -C /opt/graalvm --strip-components=1 && \
+  37 | >>>     rm /tmp/graalvm.tar.gz
+  38 |     
+--------------------
+ERROR: failed to solve: process "/bin/sh -c mkdir -p /opt/graalvm &&     curl -fsSL https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-21.0.0/graalvm-ce-java21-linux-amd64-21.0.0.tar.gz     -o /tmp/graalvm.tar.gz &&     tar -xzf /tmp/graalvm.tar.gz -C /opt/graalvm --strip-components=1 &&     rm /tmp/graalvm.tar.gz" did not complete successfully: exit code: 22

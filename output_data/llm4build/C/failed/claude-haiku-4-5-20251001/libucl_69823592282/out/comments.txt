@@ -1,0 +1,44 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          4
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      build
+  Test command(s) run in original CI:
+    $ actions/checkout@v3
+    $ make
+    $ make check
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ make
+  $ make check
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Autotools] Test result mismatch (same count 5): original=(4p/1f/0s), LLM=(0p/5f/0s)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    230:FAIL: basic.test
+    231:FAIL: generate.test
+    232:FAIL: schema.test
+    233:FAIL: msgpack.test
+    234:FAIL: speed.test
+    246:See tests/test-suite.log
+    249:make[3]: *** [Makefile:876: test-suite.log] Error 1
+
+  [Root cause classification]
+  - All 5 Autotools tests fail in LLM; specific error text in tests/test-suite.log was not captured in log.txt (only referenced). The original CI had 4p/1f (msgpack.test was the known failure). The LLM's test run produces 0 passed. The Dockerfile installed `liblua5.4-dev` and `lua5.4`, but libucl's Lua binding tests may require Lua 5.1 or 5.3 APIs that differ from Lua 5.4. Additionally, the test binaries rely on the shared library being findable at runtime; if the Dockerfile's LD library path is not configured to include the build directory where `libucl.so` was placed, all tests will fail with a "cannot open shared object file" linker error at startup, which would produce the observed all-fail pattern without any test logic running.
+
+--- Test Statistics Comparison ---
+  [Autotools]
+    Original: 5 run, 4 passed, 1 failed, 0 skipped
+    LLM:      5 run, 0 passed, 5 failed, 0 skipped

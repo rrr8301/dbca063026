@@ -1,0 +1,41 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          3
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     N/A (not found in CI log)
+  CI job name:      Leader Lock Tests (w/Redis)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ redis-server --port 6379 --bind 127.0.0.1 --save "" --appendonly no --daemonize yes
+  $ cargo test --package fuel-core --lib service::adapters::consensus_module::poa::tests:: --features leader_lock -- --test-threads=1 --nocapture
+  $ cargo test --package fuel-core-tests --test integration_tests leader_lock --features leader_lock -- --test-threads=1 --nocapture
+
+--- Reason(s) for Non-Reproducibility ---
+  - cargo num_tests_run mismatch: original=37, LLM=45
+  - cargo num_tests_failed mismatch: original=1, LLM=2
+  - cargo tests_failed mismatch: original includes has_lease_owner_quorum__adopts_higher_epoch_from_expanded_node; LLM includes different tests
+
+--- Root Cause Analysis ---
+  The LLM-run container executes more tests and encounters different failures than the original CI.
+    > test leader_lock::leader_lock__two_producers__when_second_starts_after_first_shutdown_then_second_builds_on_redis_height ... FAILED
+    > assertion `left == right` failed: Second producer should first produce block at height 2 by reconciling Redis stream
+    >   left: 3
+    >   right: 2
+    > test result: FAILED. 7 passed; 1 failed; 0 ignored; 0 measured; 407 filtered out; finished in 131.22s
+
+  Test scope and Redis timing differences: The original CI ran 37 tests and caught a failure in the poa consensus module, whereas the LLM container ran 45 tests from a broader filter including additional poa unit tests. The failing test in the LLM run (leader_lock__two_producers__when_second_starts_after_first_shutdown_then_second_builds_on_redis_height) is a timing-sensitive integration test that depends on Redis stream reconciliation; the assertion failure (block height 3 vs expected 2) indicates a race condition caused by different Redis or system timing in the container environment compared to the original CI runner. The original failing test (has_lease_owner_quorum__adopts_higher_epoch_from_expanded_node) was not reproduced, suggesting commit drift or environment differences altered which edge case is triggered.
+
+--- Test Statistics Comparison ---
+  cargo
+    Original: 37 run, 36 passed, 1 failed, 0 skipped
+    LLM:      45 run, 43 passed, 2 failed, 0 skipped

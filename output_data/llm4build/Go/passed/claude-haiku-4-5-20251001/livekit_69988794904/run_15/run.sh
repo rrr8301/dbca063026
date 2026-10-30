@@ -1,0 +1,1 @@
+if grep -q '"Action":"fail"' /tmp/gotest.log; then

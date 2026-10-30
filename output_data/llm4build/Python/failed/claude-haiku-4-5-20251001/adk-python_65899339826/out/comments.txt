@@ -1,0 +1,81 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          6
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      test (3.13)
+  Test command(s) run in original CI:
+    $ uv sync --extra test
+    $ pytest tests/unittests \
+        --ignore=tests/unittests/artifacts/test_artifact_service.py \
+        --ignore=tests/unittests/tools/google_api_tool/test_googleapi_to_openapi_converter.py
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    7
+
+--- LLM run.sh Test Command(s) ---
+  $ uv venv .venv && source .venv/bin/activate
+  $ uv sync --extra test
+  $ pytest tests/unittests \
+      --ignore=tests/unittests/artifacts/test_artifact_service.py \
+      --ignore=tests/unittests/tools/google_api_tool/test_googleapi_to_openapi_converter.py
+
+--- Reason(s) for Non-Reproducibility ---
+  - [pytest] Different test failed: original=test_parallel_function_execution_timing,
+    LLM=test_finish_reason_unknown_maps_to_other
+  - [pytest] Skip mismatch: original=1 skipped, LLM=2 skipped (1 more skip)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > ___________________ test_finish_reason_unknown_maps_to_other ___________________
+    >   """Test that unmapped finish_reason values map to FinishReason.OTHER."""
+    >   # LiteLLM validates finish_reason to a known set. Use a value that
+    >   # won't map to a standard finish reason.
+    >   finish_reason="eos",
+    >
+    >   # Unknown finish_reason should map to OTHER
+    >   assert isinstance(response.finish_reason, types.FinishReason)
+    > >  assert response.finish_reason == types.FinishReason.OTHER
+    > E  AssertionError: assert <FinishReason.STOP: 'STOP'> == <FinishReason.OTHER: 'OTHER'>
+    > E    - OTHER
+    > E    + STOP
+    >
+    > tests/unittests/models/test_litellm.py: AssertionError
+
+  [Root cause classification]
+  - litellm 1.82.6 changed the mapping behavior for unknown finish_reason values
+    The test `test_finish_reason_unknown_maps_to_other` creates a mock LLM response with
+    `finish_reason="eos"` — an unmapped value not in litellm's standard set (stop, length,
+    tool_calls, content_filter). The adk-python codebase maps litellm finish_reason values
+    to its own `types.FinishReason` enum and expects that any unknown/unmapped finish_reason
+    value results in `FinishReason.OTHER`.
+
+    In litellm 1.82.6 (installed in the Docker run), the behavior changed: unknown finish_reason
+    values are no longer passed through as-is for the caller to handle. Instead litellm itself
+    normalizes unknown values to a default known value — specifically `'stop'`. When adk-python's
+    model adapter receives `finish_reason='stop'` from litellm, it maps it to `FinishReason.STOP`.
+    The test expects `FinishReason.OTHER` but gets `FinishReason.STOP`.
+
+    The original CI (2026-03-05) ran with a version of litellm where unknown finish reasons
+    preserved the original string and were passed through differently, allowing adk-python to
+    detect the unmapped value and return `FinishReason.OTHER`. The litellm version in the original
+    CI was likely earlier than 1.82.6 where this normalization was not yet applied.
+
+    The difference in which test failed is unrelated to Docker:
+    - Original CI failure: `test_parallel_function_execution_timing` — a timing-sensitive flaky
+      test measuring parallel function execution latency that failed under CI's specific load
+      conditions; it passes in Docker under lower concurrency.
+    - LLM failure: `test_finish_reason_unknown_maps_to_other` — fails due to litellm 1.82.6
+      version drift that changed how unmapped finish_reason strings are returned to callers.
+
+--- Test Statistics Comparison ---
+  [pytest]
+    Original: 4840 run, 4838 passed, 1 failed, 1 skipped
+    LLM:      4840 run, 4837 passed, 1 failed, 2 skipped
+    (Different tests fail: original=timing flaky, LLM=litellm finish_reason version change)

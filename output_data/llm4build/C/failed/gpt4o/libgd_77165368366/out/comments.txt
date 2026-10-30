@@ -1,0 +1,48 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          9
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      ubuntu / Ubuntu 24.04 Intel GCC
+  Test command(s) run in original CI:
+    $ cmake -DENABLE_PNG=1 -DENABLE_FREETYPE=1 -DENABLE_JPEG=1 -DENABLE_WEBP=1 -DENABLE_TIFF=1 -DENABLE_XPM=1 -DENABLE_GD_FORMATS=1 -DENABLE_HEIF=1 -DENABLE_RAQM=1 -DENABLE_AVIF=1 -DBUILD_TEST=1 -B /home/runner/work/libgd/libgd/build -DCMAKE_BUILD_TYPE=RELWITHDEBINFO
+    $ cmake --build /home/runner/work/libgd/libgd/build --config RELWITHDEBINFO --parallel 4
+    $ CTEST_OUTPUT_ON_FAILURE=1 ctest -C RELWITHDEBINFO
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    7
+
+--- LLM run.sh Test Command(s) ---
+  $ cmake -DENABLE_PNG=1 -DENABLE_FREETYPE=1 -DENABLE_JPEG=1 -DENABLE_WEBP=1 -DENABLE_TIFF=1 -DENABLE_XPM=1 -DENABLE_GD_FORMATS=1 -DENABLE_HEIF=1 -DENABLE_RAQM=1 -DENABLE_AVIF=1 -DBUILD_TEST=1 -B /workspace/build -DCMAKE_BUILD_TYPE=RelWithDebInfo
+  $ cmake --build /workspace/build --config RelWithDebInfo --parallel 4
+  $ CTEST_OUTPUT_ON_FAILURE=1 ctest -C RelWithDebInfo
+
+--- Reason(s) for Non-Reproducibility ---
+  - [CTest] Test count mismatch: original=227 run, LLM=227 run (same count)
+  - [CTest] Test failed mismatch: original=1 failed (test_gdimagestringft_gdimagestringft_bbox), LLM=5 failed
+  - [CTest] Test skipped mismatch: original=0 skipped, LLM=1 skipped (test_heif_heif_im2im)
+  - [CTest] 4 additional failures in LLM not in original: test_avif_avif_im2im, test_avif_bad_input, test_avif_compare_avif_to_png, test_heif_bug788
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    872: /workspace/tests/avif/avif_im2im.c:42: gdImageAvifPtr() returned null
+    884: /workspace/tests/avif/compare_avif_to_png.c:47: baboon: gdImageAvifPtrEx failed
+    890: /workspace/tests/avif/compare_avif_to_png.c:47: sunset: gdImageAvifPtrEx failed
+    1246: GD Warning: gd-heif encoder acquisition failed (missing codec support?: code: 3, subcode: 0, message: Unsupported file-type: Unspecified)
+    1248: /workspace/tests/heif/bug788.c:27: Assert failed
+
+  [Root cause classification]
+  - The AVIF test failures (test_avif_avif_im2im, test_avif_bad_input, test_avif_compare_avif_to_png) are caused by a version mismatch in the libavif library. The LLM built libavif from source at v1.0.0 (git clone --branch v1.0.0), while the original CI used Ubuntu 24.04's system libavif package (v1.0.4 via apt). The older v1.0.0 libavif lacks full encoder support for the codec combination used by these tests, causing `gdImageAvifPtr()` to return null.
+  - The HEIF test failure (test_heif_bug788) occurs because the LLM uses Ubuntu 22.04 as the base image while the original CI runs on Ubuntu 24.04. The libheif version available from ppa:strukturag/libheif on Ubuntu 22.04 (1.19.8) lacks the HEIF encoder codec support required by bug788.c (checks for specific HEIF encoding modes), whereas the Ubuntu 24.04 system had the correct codec plugins (libheif-plugin-aomenc, libheif-plugin-x265) installed.
+  - The test_heif_heif_im2im skip in LLM (vs pass in original) also reflects missing HEIF round-trip encoder codec support in the Ubuntu 22.04 environment.
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 227 run, 226 passed, 1 failed, 0 skipped
+    LLM:      227 run, 221 passed, 5 failed, 1 skipped

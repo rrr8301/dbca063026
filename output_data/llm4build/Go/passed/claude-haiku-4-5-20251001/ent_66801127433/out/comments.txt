@@ -1,0 +1,48 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          5
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      unit (1.24)
+  Test command(s) run in original CI:
+    $ actions/checkout@v4
+    $ go test -race ./...
+    $ go test -race ./...
+    $ go test -race ./...
+    $ go test -race ./...
+
+--- LLM-Generated Dockerfile ---
+  Base image:   golang:latest
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ run_tests() {
+  $ run_tests "cmd"
+  $ run_tests "dialect"
+  $ run_tests "schema"
+  $ run_tests "entc/load"
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoDefault] Test result mismatch (same count 46): original=(46p/0f/0s), LLM=(38p/8f/0s)
+  - [GoDefault] Tests failed in LLM but passed in original: entgo.io/ent/examples/compositetypes, entgo.io/ent/examples/domaintypes, entgo.io/ent/examples/enumtypes, entgo.io/ent/examples/functionalidx, entgo.io/ent/examples/rls, entgo.io/ent/examples/triggers, entgo.io/ent/examples/viewcomposite, entgo.io/ent/examples/viewschema
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    118:FAIL	entgo.io/ent/examples/domaintypes	0.043s
+    157:FAIL	entgo.io/ent/examples/enumtypes	0.054s
+    319:FAIL	entgo.io/ent/examples/rls	0.049s
+
+  [Root cause classification]
+  - All 8 failing packages are `entgo.io/ent/examples/*` packages that require a live PostgreSQL connection: `domaintypes` (PostgreSQL domain types), `enumtypes` (PostgreSQL enum types), `rls` (Row-Level Security, a PostgreSQL-only feature), `triggers` (PostgreSQL triggers), `viewcomposite`/`viewschema` (PostgreSQL views), `compositetypes` and `functionalidx`. Each of these packages calls `enttest.Open(t, "postgres", dsn)` in `TestMain` or at the start of each test, which immediately fails with `connection refused` since no PostgreSQL server is running in the LLM's Docker environment.
+
+  - The original CI job `unit (1.24)` ran `go test -race ./...` four times (once each for `cmd`, `dialect`, `schema`, and `entc/load` sub-directories). The GitHub Actions runner had a PostgreSQL service container attached. The LLM ran the same packages but without PostgreSQL, causing all 8 example packages to fail. The 38 passing packages are the core `entgo.io/ent` packages (schema building, codegen, dialect adapters, etc.) that use SQLite or in-memory storage and do not require PostgreSQL.
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 46 run, 46 passed, 0 failed, 0 skipped
+    LLM:      46 run, 38 passed, 8 failed, 0 skipped

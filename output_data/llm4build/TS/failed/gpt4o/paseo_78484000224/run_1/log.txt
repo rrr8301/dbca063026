@@ -1,0 +1,94 @@
+Error from docker build
+
+#1 [ 1/10] FROM docker.io/library/ubuntu:22.04
+#1 CACHED
+
+#2 [2/9] RUN ln -snf /usr/share/zoneinfo/America/Los_Angeles /etc/localtime && echo America/Los_Angeles > /etc/timezone
+#2 CACHED
+
+#3 [internal] load .dockerignore
+#3 transferring context: 2B done
+#3 DONE 0.0s
+
+#4 [internal] load build definition from Dockerfile
+#4 transferring dockerfile: 894B done
+#4 DONE 0.0s
+
+#5 [internal] load metadata for docker.io/library/ubuntu:22.04
+#5 DONE 0.0s
+
+#6 [internal] load build context
+#6 transferring context: 246.34kB 0.1s done
+#6 DONE 0.1s
+
+#7 [ 3/11] RUN apt-get update && apt-get install -y     git     curl     wget     && rm -rf /var/lib/apt/lists/*
+#7 CACHED
+
+#8 [ 4/11] RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - &&     apt-get install -y nodejs
+#8 CACHED
+
+#9 [ 5/11] RUN useradd -m testuser
+#9 CACHED
+
+#10 [ 6/11] WORKDIR /workspace
+#10 CACHED
+
+#11 [ 7/11] RUN chown -R testuser /workspace
+#11 CACHED
+
+#12 [ 8/11] COPY . /workspace
+#12 DONE 0.6s
+
+#13 [ 9/11] RUN git config --global --add safe.directory '*'
+#13 DONE 0.4s
+
+#14 [10/11] RUN npm ci
+#14 2.484 npm error code EACCES
+#14 2.484 npm error syscall mkdir
+#14 2.484 npm error path /workspace/packages/app/node_modules
+#14 2.484 npm error errno -13
+#14 2.484 npm error Error: EACCES: permission denied, mkdir '/workspace/packages/app/node_modules'
+#14 2.484 npm error     at async mkdir (node:internal/fs/promises:858:10)
+#14 2.484 npm error     at async /usr/lib/node_modules/npm/node_modules/@npmcli/arborist/lib/arborist/reify.js:638:20
+#14 2.484 npm error     at async Promise.allSettled (index 2413)
+#14 2.484 npm error     at async [reifyPackages] (/usr/lib/node_modules/npm/node_modules/@npmcli/arborist/lib/arborist/reify.js:334:11)
+#14 2.484 npm error     at async Arborist.reify (/usr/lib/node_modules/npm/node_modules/@npmcli/arborist/lib/arborist/reify.js:149:5)
+#14 2.484 npm error     at async CI.exec (/usr/lib/node_modules/npm/lib/commands/ci.js:100:5)
+#14 2.484 npm error     at async Npm.exec (/usr/lib/node_modules/npm/lib/npm.js:207:9)
+#14 2.484 npm error     at async module.exports (/usr/lib/node_modules/npm/lib/cli/entry.js:74:5) {
+#14 2.484 npm error   errno: -13,
+#14 2.484 npm error   code: 'EACCES',
+#14 2.484 npm error   syscall: 'mkdir',
+#14 2.484 npm error   path: '/workspace/packages/app/node_modules'
+#14 2.484 npm error }
+#14 2.484 npm error
+#14 2.484 npm error The operation was rejected by your operating system.
+#14 2.484 npm error It is likely you do not have the permissions to access this file as the current user
+#14 2.484 npm error
+#14 2.484 npm error If you believe this might be a permissions issue, please double-check the
+#14 2.484 npm error permissions of the file and its containing directories, or try running
+#14 2.484 npm error the command again as root/Administrator.
+#14 2.486 npm error A complete log of this run can be found in: /home/testuser/.npm/_logs/2026-05-31T06_36_17_532Z-debug-0.log
+#14 ERROR: process "/bin/sh -c npm ci" did not complete successfully: exit code: 243
+------
+ > [10/11] RUN npm ci:
+#14 2.484 npm error   path: '/workspace/packages/app/node_modules'
+#14 2.484 npm error }
+#14 2.484 npm error
+#14 2.484 npm error The operation was rejected by your operating system.
+#14 2.484 npm error It is likely you do not have the permissions to access this file as the current user
+#14 2.484 npm error
+#14 2.484 npm error If you believe this might be a permissions issue, please double-check the
+#14 2.484 npm error permissions of the file and its containing directories, or try running
+#14 2.484 npm error the command again as root/Administrator.
+#14 2.486 npm error A complete log of this run can be found in: /home/testuser/.npm/_logs/2026-05-31T06_36_17_532Z-debug-0.log
+------
+Dockerfile:37
+--------------------
+  35 |     
+  36 |     # Install project dependencies
+  37 | >>> RUN npm ci
+  38 |     
+  39 |     # Install Playwright dependencies
+--------------------
+ERROR: failed to solve: process "/bin/sh -c npm ci" did not complete successfully: exit code: 243

@@ -1,0 +1,48 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      freebsd-cmake-job (14.1, DISABLE_THREAD_SUPPORT)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    3
+
+--- Reason(s) for Non-Reproducibility ---
+  - [CTest] Test run mismatch: original=320, LLM=84
+  - [CTest] Test passed mismatch: original=307, LLM=60
+  - [CTest] Test failed mismatch: original=13, LLM=24
+  - [CTest] 10 test(s) failed in original but passed in LLM: regress__KQUEUE, regress__KQUEUE_debug, regress__POLL, regress__POLL_debug, regress__SELECT ... (+5 more)
+  - [CTest] 24 test(s) failed in LLM but not in original: regress__changelist_EPOLL, regress__changelist_EPOLL_debug, regress__signalfd_EPOLL, regress__signalfd_EPOLL_debug, regress__timerfd_EPOLL ... (+19 more)
+  - [GoDefault] Test run mismatch: original=12, LLM=14
+  - [GoDefault] Test failed mismatch: original=12, LLM=14
+  - [GoDefault] 1 test(s) failed in original but passed in LLM: /home/runner/work/libevent/libevent/test/regress_dns.c:2627:
+  - [GoDefault] 2 test(s) failed in LLM but not in original: /app/test/regress.c:1678:, /app/test/regress.c:2204:
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > [warn] epoll_wait: Function not implemented
+    > 2/84 Test #2: test-eof__timerfd_EPOLL ...***Failed    0.00 sec
+    > regress__timerfd_EPOLL (Timeout)
+    > regress__changelist_EPOLL (Timeout)
+    > 71% tests passed, 24 tests failed out of 84
+
+  [Root cause classification]
+  - The original CI job name is "freebsd-cmake-job (14.1, DISABLE_THREAD_SUPPORT)" — this runs on FreeBSD 14.1, which uses KQUEUE, POLL, and SELECT backends rather than Linux's EPOLL+timerfd/signalfd. The original 320 tests cover FreeBSD-specific event backends, while the LLM build on Linux (ubuntu:22.04) only exposes 84 EPOLL-based tests, explaining the 236-test count gap.
+  - The EPOLL-based tests in the LLM run fail with "[warn] epoll_wait: Function not implemented" — this occurs because the Docker container's kernel (or its seccomp/capability profile) does not support epoll_wait in the way the test expects, or the timerfd/signalfd kernel interfaces behave differently under the container's isolation, causing these tests to fail or time out.
+  - The original CI failures (KQUEUE, POLL, SELECT, signalfd variants) do not appear in the LLM run because Linux does not expose KQUEUE at all, and those FreeBSD-only backends are simply not compiled on Linux. This is fundamentally an OS/kernel mismatch: FreeBSD CI vs. Linux Docker container.
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 320 run, 307 passed, 13 failed, 0 skipped
+    LLM:      84 run, 60 passed, 24 failed, 0 skipped
+  [GoDefault]
+    Original: 12 run, 0 passed, 12 failed, 0 skipped
+    LLM:      14 run, 0 passed, 14 failed, 0 skipped

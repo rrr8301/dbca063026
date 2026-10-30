@@ -1,0 +1,50 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   False
+TR (Test Result):        False
+FR (Fully Reproducible): False
+Attempt Number:          20
+Original build category: failed
+
+STATUS: BUILD EXECUTION FAILED
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      test / e2e-test
+
+--- LLM-Generated Dockerfile ---
+  Base image:   node:14
+  RUN steps:    5
+
+--- Failure Analysis ---
+  Failure type: Docker build error
+  Failed at Docker build step: 7 of 9
+  Step label:   RUN npm install --legacy-peer-deps --no-audit --no-fund --force --engine-strict=false --unsafe-perm ||     (cat /root...
+
+  Original build was already failing. LLM could not reproduce or fix it after 20 attempt(s).
+
+--- Dockerfile Error Context ---
+  Dockerfile:26
+  --------------------
+    25 |     # Add --unsafe-perm to allow running scripts as root
+    26 | >>> RUN npm install --legacy-peer-deps --no-audit --no-fund --force --engine-strict=false --unsafe-perm || \
+    27 | >>>     (cat /root/.npm/_logs/*-debug.log && exit 1)
+    28 |     
+  --------------------
+
+--- Error Message(s) ---
+  #11 ERROR: process "/bin/sh -c npm install --legacy-peer-deps --no-audit --no-fund --force --engine-strict=false --unsafe-perm ||     (cat /root/.npm/_logs/*-debug.log && exit 1)" did not complete ...
+  ERROR: failed to solve: process "/bin/sh -c npm install --legacy-peer-deps --no-audit --no-fund --force --engine-strict=false --unsafe-perm ||     (cat /root/.npm/_logs/*-debug.log && exit 1)" did ...
+
+No test results could be produced due to build failure.
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > npm 2022 error Only absolute URLs are supported
+    > npm 2020 verbose node v14.21.3
+    > npm 2021 verbose npm  v6.14.18
+    > npm 2013 warn notsup Unsupported engine for npm-run-all2@8.0.4: wanted: {"npm":">= 10","node":"^20.5.0 || >=22.0.0"} (current: {"node":null,"npm":"6.14.18"})
+
+  [Root cause classification]
+  - The LLM chose node:14 as the base image, but the vuejs/core project (a pnpm monorepo) requires Node >=20.5 and npm >=10. Node 14 ships with npm 6.14 which throws "Only absolute URLs are supported" when resolving pnpm workspace catalog: protocol entries in package.json, causing the npm install to crash.
+  - The original CI used pnpm/action-setup with the Node version resolved from .node-version (lts/*), which resolves to Node 20+. The LLM's 20-attempt span never switched away from node:14, so every attempt hit the same Node/npm incompatibility.
+  - Because the dependency installation always failed, no test execution was ever reached and no test results were produced.

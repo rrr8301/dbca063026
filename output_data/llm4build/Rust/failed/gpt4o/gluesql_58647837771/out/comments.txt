@@ -1,0 +1,38 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      Run storage tests
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ cargo test --verbose || true
+  $ cargo test --verbose -- --skip sled_transaction_timeout || true
+  $ cargo test sled_transaction_timeout --verbose -- --test-threads=1 || true
+  $ cargo test --benches || true
+
+--- Reason(s) for Non-Reproducibility ---
+  - [cargo] Test run mismatch: original=582, LLM=1804
+  - [cargo] Test passed mismatch: original=581, LLM=1568
+  - [cargo] Test failed mismatch: original=1, LLM=12
+  - [cargo] Test skipped mismatch: original=0, LLM=224
+  - [cargo] 4 test(s) failed in LLM but not in original: ast_builder_schemaless_basic, distinct, schemaless_basic, schemaless_error
+
+--- Root Cause Analysis ---
+  - [cargo] LLM ran 1222 more tests than original — LLM likely used a broader test scope or included extra test suites.
+  - [cargo] 4 test(s) failed in LLM but not original: ast_builder_schemaless_basic, distinct, schemaless_basic, schemaless_error
+
+--- Test Statistics Comparison ---
+  [cargo]
+    Original: 582 run, 581 passed, 1 failed, 0 skipped
+    LLM:      1804 run, 1568 passed, 12 failed, 224 skipped

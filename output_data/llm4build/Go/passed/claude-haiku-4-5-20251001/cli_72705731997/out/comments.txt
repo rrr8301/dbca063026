@@ -1,0 +1,46 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      build (ubuntu-latest)
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ go test -race -tags=integration ./...
+    $ go build -v ./cmd/gh
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ go test -race -tags=integration ./...
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoDefault] Test result mismatch (same count 235): original=(235p/0f/0s), LLM=(233p/2f/0s)
+  - [GoDefault] Tests failed in LLM but passed in original: github.com/cli/cli/v2/internal/config, github.com/cli/cli/v2/pkg/cmd/codespace
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    29:            	Error Trace:	/workspace/internal/config/migrate_test.go:217
+    30-            	Error:      	An error is expected but got nil.
+    31-            	Test:       	TestMigrationWriteErrors/failure_to_write_hosts
+    32:    --- FAIL: TestMigrationWriteErrors/failure_to_write_config (0.00s)
+    26---- FAIL: TestMigrationWriteErrors (0.01s)
+    27-    --- FAIL: TestMigrationWriteErrors/failure_to_write_hosts (0.00s)
+    125:FAIL	github.com/cli/cli/v2/pkg/cmd/codespace	0.773s
+
+  [Root cause classification]
+  - `TestMigrationWriteErrors` in `internal/config` creates read-only files via `os.Chmod(path, 0o444)` and then expects the migration writer to return an error when it cannot overwrite those files. When running as root inside Docker (the default for Docker containers), `os.Chmod` succeeds but the subsequent file write also succeeds — the root user bypasses Unix file permission checks. The test asserts "An error is expected but got nil", which is the signature of the root-user permission bypass seen in the failed-category counterpart `cli_72496729276`. GitHub Actions runners run as a non-root user, so `chmod 0444` actually prevents writes there.
+
+  - `pkg/cmd/codespace` fails (exit after 0.773s) because its integration tests (`-tags=integration`) make real GitHub API calls to manage codespace resources. Inside the Docker container there are no GitHub credentials (no `GITHUB_TOKEN` environment variable, no `~/.config/gh/hosts.yml`), so every API call that requires authentication returns 401 or the CLI exits with an error. The original CI runner has `GITHUB_TOKEN` injected automatically by GitHub Actions.
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 235 run, 235 passed, 0 failed, 0 skipped
+    LLM:      235 run, 233 passed, 2 failed, 0 skipped

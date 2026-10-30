@@ -1,0 +1,18 @@
+{
+ "model": "claude-haiku-4-5-20251001",
+ "content": "```yamlfile\nname: Test\n\non:\n  pull_request:\n  merge_group:\n  push:\n    branches:\n      - main\n  workflow_dispatch:\n\nconcurrency:\n  group: ${{ github.workflow }}-${{ github.ref }}\n  cancel-in-progress: true\n\njobs:\n  test:\n    runs-on: ubuntu-latest\n\n    steps:\n      - name: Checkout Repository\n        uses: actions/checkout@v6\n\n      - name: Setup Bazel\n        uses: bazel-contrib/setup-bazel@0.19.0\n        with:\n          bazelisk-cache: true\n          disk-cache: ${{ github.workflow }}\n          repository-cache: true\n\n      - name: Run Tests\n        if: github.event_name != 'pull_request'\n        run: |\n          if [ -n \"${{ secrets.BUILDBUDDY_ORG_API_KEY }}\" ]; then\n            echo \"Running with BuildBuddy ci config\"\n            bazel test --config=ci --remote_header=x-buildbuddy-api-key=${{ secrets.BUILDBUDDY_ORG_API_KEY }} //...\n          else\n            echo \"Running without BuildBuddy (no API key)\"\n            bazel test //...\n          fi\n\n      - name: Rust CLI Smoke Test\n        if: github.event_name != 'pull_request'\n        run: |\n          if [ -n \"${{ secrets.BUILDBUDDY_ORG_API_KEY }}\" ]; then\n            bazel build \\\n              --config=ci \\\n              --compilation_mode=opt \\\n              --remote_download_outputs=all \\\n              --remote_header=x-buildbuddy-api-key=${{ secrets.BUILDBUDDY_ORG_API_KEY }} \\\n              //crates/formatjs_cli\n          else\n            bazel build --compilation_mode=opt //crates/formatjs_cli\n          fi\n          BINARY_PATH=bazel-bin/crates/formatjs_cli/formatjs_cli\n          $BINARY_PATH --version\n          $BINARY_PATH --help\n```",
+ "reduced_yaml": "name: Test\n\non:\n  pull_request:\n  merge_group:\n  push:\n    branches:\n      - main\n  workflow_dispatch:\n\nconcurrency:\n  group: ${{ github.workflow }}-${{ github.ref }}\n  cancel-in-progress: true\n\njobs:\n  test:\n    runs-on: ubuntu-latest\n\n    steps:\n      - name: Checkout Repository\n        uses: actions/checkout@v6\n\n      - name: Setup Bazel\n        uses: bazel-contrib/setup-bazel@0.19.0\n        with:\n          bazelisk-cache: true\n          disk-cache: ${{ github.workflow }}\n          repository-cache: true\n\n      - name: Run Tests\n        if: github.event_name != 'pull_request'\n        run: |\n          if [ -n \"${{ secrets.BUILDBUDDY_ORG_API_KEY }}\" ]; then\n            echo \"Running with BuildBuddy ci config\"\n            bazel test --config=ci --remote_header=x-buildbuddy-api-key=${{ secrets.BUILDBUDDY_ORG_API_KEY }} //...\n          else\n            echo \"Running without BuildBuddy (no API key)\"\n            bazel test //...\n          fi\n\n      - name: Rust CLI Smoke Test\n        if: github.event_name != 'pull_request'\n        run: |\n          if [ -n \"${{ secrets.BUILDBUDDY_ORG_API_KEY }}\" ]; then\n            bazel build \\\n              --config=ci \\\n              --compilation_mode=opt \\\n              --remote_download_outputs=all \\\n              --remote_header=x-buildbuddy-api-key=${{ secrets.BUILDBUDDY_ORG_API_KEY }} \\\n              //crates/formatjs_cli\n          else\n            bazel build --compilation_mode=opt //crates/formatjs_cli\n          fi\n          BINARY_PATH=bazel-bin/crates/formatjs_cli/formatjs_cli\n          $BINARY_PATH --version\n          $BINARY_PATH --help",
+ "input_tokens": 840,
+ "output_tokens": 515,
+ "cost_usd": 0.002732,
+ "seconds": 3.78,
+ "prompt_sha256": "ae2f334c285b16d4ca361e69c48a292ecf06c1f2336126af9155adea5f80135a",
+ "completed_steps": [
+  "Set up job",
+  "Checkout Repository",
+  "Setup Bazel",
+  "Run Tests",
+  "Rust CLI Smoke Test",
+  "Complete job"
+ ]
+}

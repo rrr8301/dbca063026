@@ -1,0 +1,42 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          7
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      build (ubuntu-latest)
+  Test command(s) run in original CI:
+    $ actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+    $ : set $CARGO_HOME
+    $ : enable colors in Cargo output
+    $ : enable Cargo sparse registry
+    $ cargo run -p ci -- test
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ cargo run -p ci -- test
+
+--- Reason(s) for Non-Reproducibility ---
+  - [cargo] Test run mismatch: original=4495, LLM=2285
+  - [cargo] Test passed mismatch: original=4495, LLM=2285
+  - [cargo] Test failed mismatch: original=0, LLM=0
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    thread 'main' (9) panicked at tools/ci/src/ci.rs:62:13:
+
+  [Root cause classification]
+  - Required environment variable not set — test reads a specific env var that was present in original CI but not in Docker container.
+  - Rust panic: thread 'main' (9) panicked at tools/ci/src/ci.rs:62:13:
+
+--- Test Statistics Comparison ---
+  [cargo]
+    Original: 4495 run, 4495 passed, 0 failed, 0 skipped
+    LLM:      2285 run, 2285 passed, 0 failed, 0 skipped

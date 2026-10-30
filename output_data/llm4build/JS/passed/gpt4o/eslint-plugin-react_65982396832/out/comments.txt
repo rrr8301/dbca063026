@@ -1,0 +1,37 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      latest majors (23, 8, 10, 6)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ npx ls-engines
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > AssertionError [ERR_ASSERTION]: A fatal parsing error occurred: Parsing error: ts9__default.default.isTokenKind is not a function
+    > expected - actual: -false +true  (rule-tester.js:894 — @typescript-eslint/parser tests)
+    > ~5980 tests all fail with: "Parsing error: ts9__default.default.isTokenKind is not a function"
+
+  [Root cause classification]
+  - Identical root cause to the failed eslint-plugin-react counterpart: the LLM resolved an incompatible combination of typescript and @typescript-eslint/parser packages when using ubuntu:latest, causing every TypeScript-parser test case to crash with "ts9__default.default.isTokenKind is not a function". The original CI job ("latest majors (23, 8, 10, 6)") used Node 23 with pinned package majors that kept the typescript/parser API compatible. The ~5980 LLM failures all stem from this single API incompatibility, not from logical test differences.
+
+--- Reason(s) for Non-Reproducibility ---
+  - [mocha] Test passed mismatch: original=17788, LLM=11808
+  - [mocha] Test failed mismatch: original=0, LLM=5980
+
+--- Test Statistics Comparison ---
+  [mocha]
+    Original: 17788 run, 17788 passed, 0 failed, 0 skipped
+    LLM:      17788 run, 11808 passed, 5980 failed, 0 skipped

@@ -1,0 +1,29 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          7
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Reason(s) for Non-Reproducibility ---
+  - [CTest] Test passed mismatch: original=6, LLM=1
+  - [CTest] Test failed mismatch: original=1, LLM=6
+
+--- Test Statistics Comparison ---
+  [CTest] 7 run, 6 passed, 1 failed, 0 skipped
+    Failed: qpdf
+LLM:
+  [CTest] 7 run, 1 passed, 6 failed, 0 skipped
+    Failed: compare-for-test, qpdf, libtests, examples, zlib-flate ... +1 more
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > Can't exec "/workspace/qtest/bin/qtest-driver": Permission denied at /workspace/run-qtest line 116.
+    > 2/7 Test #2: compare-for-test .................***Failed    0.02 sec
+    > 3/7 Test #3: qpdf .............................***Failed    0.02 sec
+    > 14% tests passed, 6 tests failed out of 7
+
+  [Root cause classification]
+  qtest-driver execute permission missing: qpdf uses the qtest framework whose driver binary (qtest/bin/qtest-driver) must be executable. In the LLM container the file exists but lacks the execute permission bit, causing a "Permission denied" error the moment any qtest-based test starts. This affects all 6 qtest-backed tests (compare-for-test, qpdf, libtests, examples, zlib-flate, fuzz); only the one non-qtest CTest target passes. The permission issue likely stems from how the LLM extracted or cloned the qtest submodule without preserving filesystem permissions.

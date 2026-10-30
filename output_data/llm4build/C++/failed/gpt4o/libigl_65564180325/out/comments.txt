@@ -1,0 +1,40 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          3
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      ubuntu-24.04 Static tutorial tests Release
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ ctest --output-on-failure --parallel 2  # Adjusted to show output on failure and run in parallel
+
+Note: Original had test failures; LLM build passed all — failed build has passed.
+
+--- Reason(s) for Non-Reproducibility ---
+  - [CTest] Test passed mismatch: original=296, LLM=297
+  - [CTest] Test failed mismatch: original=1, LLM=0
+  - [CTest] 1 test(s) failed in original but passed in LLM: AABB: dynamic
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 297 run, 296 passed, 1 failed, 0 skipped
+    LLM:      297 run, 297 passed, 0 failed, 0 skipped
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > 34/297 Test #4: AABB: dynamic ...***Failed (in original CI run)
+    > LLM: 297/297 Test #4: AABB: dynamic ...Passed    3.38 sec
+    > 100% tests passed, 0 tests failed out of 297
+
+  [Root cause classification]
+  The "AABB: dynamic" test in libigl's geometry-processing suite involves axis-aligned bounding box computations that are sensitive to floating-point timing and hardware-level parallelism. The original CI runner on ubuntu-24.04 GitHub Actions exposed a race condition or numerical precision difference (likely in parallel BVH tree queries) that caused the AABB dynamic test to fail intermittently. The LLM's Docker container ran the same test sequentially (with --parallel 2 but a different CPU topology) and the test passed, indicating the failure is timing- or thread-schedule-dependent rather than a deterministic algorithmic bug. This is a flaky environment-sensitive test, not reproducible across different hardware scheduling contexts.

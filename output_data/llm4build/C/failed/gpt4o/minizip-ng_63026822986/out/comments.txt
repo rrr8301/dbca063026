@@ -1,0 +1,44 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      Ubuntu GCC ASAN
+  Test command(s) run in original CI:
+    $ ctest --output-on-failure -C Release
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    5
+
+--- LLM run.sh Test Command(s) ---
+  $ ctest --output-on-failure -C Release --test-dir build || true
+
+--- Reason(s) for Non-Reproducibility ---
+  - [CTest] Test run mismatch: original=139, LLM=82
+  - [CTest] Test passed mismatch: original=120, LLM=71
+  - [CTest] Test failed mismatch: original=19, LLM=11
+  - [CTest] 8 test(s) failed in original but passed in LLM: deflate-erase-wzaes, ppmd-erase-wzaes, raw-erase-wzaes, zstd-erase-generic, zstd-erase-pkcrypt ... (+3 more)
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > SUMMARY: AddressSanitizer: 256 byte(s) leaked in 1 allocation(s).
+    > 6 - raw-erase-generic (Failed)
+    > 13 - deflate-erase-generic (Failed)
+    > 87% tests passed, 11 tests failed out of 82
+
+  [Root cause classification]
+  - The LLM ran only 82 tests compared to 139 in the original because the original CI job enables GCC ASAN with zstd, wzaes, and additional encryption backend options compiled in; the LLM-built CMake configuration omitted these optional codec backends (zstd, wzaes, pkcrypt), causing those test variants to not be generated at all.
+  - The erase-generic, erase-span, and erase-pkcrypt tests that are present in both still fail in the LLM build due to AddressSanitizer detecting a 256-byte memory leak in the minizip erase code path, a genuine bug exposed by ASAN instrumentation that also manifests in the original CI (hence those failures are shared).
+  - The 8 tests that failed in the original but passed in the LLM (zstd-erase-*, wzaes-erase-*) are simply absent from the LLM test suite because those backends were not built, so they cannot register as failures.
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 139 run, 120 passed, 19 failed, 0 skipped
+    LLM:      82 run, 71 passed, 11 failed, 0 skipped

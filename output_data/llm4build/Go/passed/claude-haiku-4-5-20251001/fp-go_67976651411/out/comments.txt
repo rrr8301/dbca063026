@@ -1,0 +1,39 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          3
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      Build v1 (Go 1.24.x)
+  Test command(s) run in original CI:
+    $ actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+    $ # Check if coveralls binary exists
+
+--- LLM-Generated Dockerfile ---
+  Base image:   golang:1.24-alpine
+  RUN steps:    2
+
+--- LLM run.sh Test Command(s) ---
+  $ go test -race -coverprofile=coverage.txt -covermode=atomic -coverpkg=./... ./... || TEST_FAILED=1
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoDefault] Test result mismatch (same count 75): original=(75p/0f/0s), LLM=(74p/1f/0s)
+  - [GoDefault] Tests failed in LLM but passed in original: github.com/IBM/fp-go/ioeither/exec
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    Error:      	Should be true
+
+  [Root cause classification]
+  - `github.com/IBM/fp-go/ioeither/exec` tests functional I/O combinators that execute external shell commands. The `ioeither/exec` package wraps `os/exec` in a functional style, and its tests run actual system commands (e.g., `ls`, `cat`, `echo`) and assert that their output or exit codes match expected values. The failure `Error: Should be true` indicates a boolean assertion that the command execution returned success, but the command failed. On Alpine-based Docker images (`golang:1.24-alpine`), not all standard Unix utilities are present — Alpine uses `busybox` instead of GNU coreutils, so the output format of commands like `ls -l` or `cat` may differ from what the test expects, or a specific utility may be missing entirely.
+
+  - The original CI job "Build v1 (Go 1.24.x)" ran on `ubuntu-latest` where GNU coreutils are present. The LLM used `golang:1.24-alpine` which uses musl libc and busybox utilities. The `ioeither/exec` tests assume standard Unix command behavior (exit codes, output format, available flags) that differs between Alpine/busybox and Ubuntu/GNU environments.
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 75 run, 75 passed, 0 failed, 0 skipped
+    LLM:      75 run, 74 passed, 1 failed, 0 skipped

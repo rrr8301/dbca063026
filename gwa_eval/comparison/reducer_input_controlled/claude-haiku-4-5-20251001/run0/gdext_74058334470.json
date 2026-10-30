@@ -1,0 +1,11 @@
+{
+ "model": "claude-haiku-4-5-20251001",
+ "content": "```yamlfile\nname: Minimal CI\n\non:\n  pull_request:\n    branches:\n      - master\n    types:\n      - opened\n      - synchronize\n      - reopened\n\nenv:\n  CLIPPY_FEATURES: '--features register-docs,godot/experimental-godot-api,godot/serde'\n  TEST_FEATURES: ''\n  RETRY: ${{ github.workspace }}/.github/other/retry.sh\n\ndefaults:\n  run:\n    shell: bash\n\nconcurrency:\n  group: ${{ github.head_ref }}\n  cancel-in-progress: true\n\njobs:\n  unit-test:\n    name: unit-test\n    runs-on: ubuntu-22.04\n    steps:\n      - uses: actions/checkout@v6\n\n      - name: \"Patch Cargo.toml to use nightly extension API\"\n        run: .github/other/patch-prebuilt.sh nightly\n\n      - name: \"Install Rust\"\n        uses: ./.github/composite/rust\n\n      - name: \"Compile tests\"\n        run: cargo test $TEST_FEATURES --no-run\n\n      - name: \"Test\"\n        run: cargo test $TEST_FEATURES\n\n      - name: \"Run doctest in minimal feature set\"\n        run: cargo test --doc --no-default-features\n```\n\n---YAML---",
+ "reduced_yaml": "name: Minimal CI\n\non:\n  pull_request:\n    branches:\n      - master\n    types:\n      - opened\n      - synchronize\n      - reopened\n\nenv:\n  CLIPPY_FEATURES: '--features register-docs,godot/experimental-godot-api,godot/serde'\n  TEST_FEATURES: ''\n  RETRY: ${{ github.workspace }}/.github/other/retry.sh\n\ndefaults:\n  run:\n    shell: bash\n\nconcurrency:\n  group: ${{ github.head_ref }}\n  cancel-in-progress: true\n\njobs:\n  unit-test:\n    name: unit-test\n    runs-on: ubuntu-22.04\n    steps:\n      - uses: actions/checkout@v6\n\n      - name: \"Patch Cargo.toml to use nightly extension API\"\n        run: .github/other/patch-prebuilt.sh nightly\n\n      - name: \"Install Rust\"\n        uses: ./.github/composite/rust\n\n      - name: \"Compile tests\"\n        run: cargo test $TEST_FEATURES --no-run\n\n      - name: \"Test\"\n        run: cargo test $TEST_FEATURES\n\n      - name: \"Run doctest in minimal feature set\"\n        run: cargo test --doc --no-default-features",
+ "input_tokens": 4068,
+ "output_tokens": 326,
+ "cost_usd": 0.004558,
+ "seconds": 3.9,
+ "prompt_sha256": "8f9fd424cad44b274070a8ef0188ce516148ec96ee3b3e64afc55c3666be1c33",
+ "completed_steps": []
+}

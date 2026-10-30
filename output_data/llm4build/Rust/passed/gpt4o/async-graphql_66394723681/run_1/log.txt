@@ -1,0 +1,60 @@
+Error from docker build
+
+#1 [ 1/10] FROM docker.io/library/ubuntu:22.04
+#1 CACHED
+
+#2 [internal] load .dockerignore
+#2 transferring context: 2B done
+#2 DONE 0.0s
+
+#3 [internal] load build definition from Dockerfile
+#3 transferring dockerfile: 1.02kB done
+#3 DONE 0.0s
+
+#4 [internal] load metadata for docker.io/library/ubuntu:22.04
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 102.44kB 0.1s done
+#5 DONE 0.1s
+
+#6 [ 2/10] RUN apt-get update && apt-get install -y tzdata && ln -fs /usr/share/zoneinfo/UTC /etc/localtime && dpkg-reconfigure --frontend noninteractive tzdata
+#6 CACHED
+
+#7 [ 3/10] RUN apt-get update && apt-get install -y     git     curl     wget     jq     && rm -rf /var/lib/apt/lists/*
+#7 CACHED
+
+#8 [ 4/10] RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+#8 CACHED
+
+#9 [ 5/10] RUN rustup component add rustfmt
+#9 CACHED
+
+#10 [ 6/10] WORKDIR /workspace
+#10 CACHED
+
+#11 [ 7/10] COPY . /workspace
+#11 DONE 0.2s
+
+#12 [ 8/10] RUN git config --global --add safe.directory '*'
+#12 DONE 0.3s
+
+#13 [ 9/10] RUN useradd -m testuser && chown -R testuser /workspace
+#13 DONE 0.9s
+
+#14 [10/10] RUN /bin/bash -c "source $HOME/.cargo/env && rustup component add rustfmt"
+#14 0.393 /bin/bash: line 1: /home/testuser/.cargo/env: No such file or directory
+#14 ERROR: process "/bin/sh -c /bin/bash -c \"source $HOME/.cargo/env && rustup component add rustfmt\"" did not complete successfully: exit code: 1
+------
+ > [10/10] RUN /bin/bash -c "source $HOME/.cargo/env && rustup component add rustfmt":
+#14 0.393 /bin/bash: line 1: /home/testuser/.cargo/env: No such file or directory
+------
+Dockerfile:37
+--------------------
+  35 |     # Set up Rust environment for testuser
+  36 |     USER testuser
+  37 | >>> RUN /bin/bash -c "source $HOME/.cargo/env && rustup component add rustfmt"
+  38 |     
+  39 |     ENTRYPOINT ["/bin/bash", "/workspace/run.sh"]
+--------------------
+ERROR: failed to solve: process "/bin/sh -c /bin/bash -c \"source $HOME/.cargo/env && rustup component add rustfmt\"" did not complete successfully: exit code: 1

@@ -1,0 +1,62 @@
+Error from docker build
+
+#1 [internal] load .dockerignore
+#1 transferring context: 2B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 863B done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/node:lts
+#3 DONE 0.1s
+
+#4 [1/9] FROM docker.io/library/node:lts@sha256:e9891237dfbb1de60ce19e9ff9fac5d73ad9c37da303ad72ff2a425ad1057e71
+#4 DONE 0.0s
+
+#5 [2/9] RUN apt-get update && apt-get install -y     git     curl     && rm -rf /var/lib/apt/lists/*
+#5 CACHED
+
+#6 [3/9] RUN npm install -g pnpm
+#6 CACHED
+
+#7 [internal] load build context
+#7 transferring context: 217.23kB 0.1s done
+#7 DONE 0.1s
+
+#8 [4/9] RUN pnpm setup &&     source /root/.bashrc &&     echo 'export PATH="$PNPM_HOME:$PATH"' >> /root/.bashrc
+#8 0.782 Appended new lines to /root/.bashrc
+#8 0.782 
+#8 0.782 Next configuration changes were made:
+#8 0.782 export PNPM_HOME="/root/.local/share/pnpm"
+#8 0.782 case ":$PATH:" in
+#8 0.782   *":$PNPM_HOME:"*) ;;
+#8 0.782   *) export PATH="$PNPM_HOME:$PATH" ;;
+#8 0.782 esac
+#8 0.782 
+#8 0.782 To start using pnpm, run:
+#8 0.782 source /root/.bashrc
+#8 0.791 /bin/sh: 1: source: not found
+#8 ERROR: process "/bin/sh -c pnpm setup &&     source /root/.bashrc &&     echo 'export PATH=\"$PNPM_HOME:$PATH\"' >> /root/.bashrc" did not complete successfully: exit code: 127
+------
+ > [4/9] RUN pnpm setup &&     source /root/.bashrc &&     echo 'export PATH="$PNPM_HOME:$PATH"' >> /root/.bashrc:
+#8 0.782 Next configuration changes were made:
+#8 0.782 export PNPM_HOME="/root/.local/share/pnpm"
+#8 0.782 case ":$PATH:" in
+#8 0.782   *":$PNPM_HOME:"*) ;;
+#8 0.782   *) export PATH="$PNPM_HOME:$PATH" ;;
+#8 0.782 esac
+#8 0.782 
+#8 0.782 To start using pnpm, run:
+#8 0.782 source /root/.bashrc
+#8 0.791 /bin/sh: 1: source: not found
+------
+Dockerfile:20
+--------------------
+  19 |     # Set up pnpm global bin directory and ensure it's in the PATH
+  20 | >>> RUN pnpm setup && \
+  21 | >>>     source /root/.bashrc && \
+  22 | >>>     echo 'export PATH="$PNPM_HOME:$PATH"' >> /root/.bashrc
+  23 |     
+--------------------
+ERROR: failed to solve: process "/bin/sh -c pnpm setup &&     source /root/.bashrc &&     echo 'export PATH=\"$PNPM_HOME:$PATH\"' >> /root/.bashrc" did not complete successfully: exit code: 127

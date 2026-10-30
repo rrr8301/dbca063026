@@ -1,0 +1,38 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      build (16.x)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   node:16-bullseye
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ npx tsc -v
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    > AssertionError [ERR_ASSERTION]: 'block' == 'none'  (tooltip_test.js:55 — "show doc tooltip")
+    > AssertionError [ERR_ASSERTION]: 0 == 1  (virtual_renderer_test.js:60 — "screen2text column rounding")
+    > AssertionError [ERR_ASSERTION]: 10.752479866025036 == 10  (virtual_renderer_test.js:112 — "handle css transforms")
+    > [summary-block] Failed: 20 in LLM vs 22 in original; Passed: 1458 vs 1456
+
+  [Root cause classification]
+  - The Ace editor test suite exercises browser-rendering APIs (tooltip visibility, pixel-to-text coordinate mapping, CSS transform calculations) that depend on a real or faithfully emulated DOM renderer. Running the suite inside a headless Node.js environment (node:16-bullseye with jsdom) produces subtly different floating-point geometry and CSS layout results compared to the Ubuntu-24.04 GitHub runner where the original CI ran with a properly configured browser context, causing 2 tests that originally failed to now pass and 2 others to flip differently — a net mismatch of 2 tests in each direction.
+
+--- Reason(s) for Non-Reproducibility ---
+  - [summary-block] Test passed mismatch: original=1456, LLM=1458
+  - [summary-block] Test failed mismatch: original=22, LLM=20
+
+--- Test Statistics Comparison ---
+  [summary-block]
+    Original: 1480 run, 1456 passed, 22 failed, 2 skipped
+    LLM:      1480 run, 1458 passed, 20 failed, 2 skipped

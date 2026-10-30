@@ -1,0 +1,34 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-22.04
+  CI job name:      Build and Test on Ubuntu (ubuntu-22.04, g++-9)
+  Test command(s) run in original CI:
+    $ ctest -C $BUILD_TYPE --output-on-failure
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ ctest -C $BUILD_TYPE --output-on-failure
+
+--- Reason(s) for Non-Reproducibility ---
+  - [CTest] Test passed mismatch: original=4, LLM=2
+  - [CTest] Test failed mismatch: original=0, LLM=2
+  - [CTest] 2 test(s) failed in LLM but not in original: add-subdirectory-test, find-package-test
+
+--- Root Cause Analysis ---
+  - [CTest] 2 test(s) failed in LLM but not original: add-subdirectory-test, find-package-test
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 4 run, 4 passed, 0 failed, 0 skipped
+    LLM:      4 run, 2 passed, 2 failed, 0 skipped

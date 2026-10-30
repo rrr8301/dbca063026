@@ -1,0 +1,49 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      build-linux
+  Test command(s) run in original CI:
+    $ ./autogen.sh
+    $ mkdir build && (cd build && ../configure)
+    $ make -C build distcheck
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    6
+
+--- LLM run.sh Test Command(s) ---
+  $ ./autogen.sh
+  $ mkdir build
+  $ (cd build && ../configure)
+  $ make -C build distcheck
+
+--- Reason(s) for Non-Reproducibility ---
+  - [TAP] Test passed mismatch: original=505 passed, LLM=482 passed
+  - [TAP] Test failed mismatch: original=0 failed, LLM=4 failed (idle_starvation, run_nowait, shutdown_eof, timer_from_check)
+  - [TAP] Test skipped mismatch: original=8 skipped, LLM=27 skipped
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    1433: not ok 206 - idle_starvation
+    1525: not ok 294 - run_nowait
+    1535: not ok 301 - shutdown_eof
+    1677: not ok 439 - timer_from_check
+    1755: FAIL: test/run-tests
+    1757: 1 of 1 test failed
+
+  [Root cause classification]
+  - The four failing tests are timer/event-loop tests that depend on precise timing and OS scheduling behavior: `idle_starvation` tests event loop starvation under idle handles, `run_nowait` tests non-blocking event loop runs, `shutdown_eof` tests TCP shutdown EOF signaling, and `timer_from_check` tests timer firing from within a check handle callback.
+  - These tests are sensitive to the host kernel scheduler, system load, and I/O latency. The Docker container running on a shared host (linux 5.4.0) under LLM4Build infrastructure has different timing characteristics than a GitHub Actions runner. The original CI passed 505 of 513 tests (8 skipped); the LLM environment only passed 482 of 513 (27 skipped, 4 failed), suggesting additional timing-sensitive or platform-specific tests also degraded to skipped/failed in the container.
+  - The `distcheck` target runs the full libuv test suite under `make distcheck`, which packages and then builds/tests from the tarball. The test infrastructure and expected behaviors for timing tests may differ between the `ubuntu:22.04` Docker environment and the GitHub Actions `ubuntu-latest` runner due to differences in kernel version, available resources, and virtual machine characteristics.
+
+--- Test Statistics Comparison ---
+  [TAP]
+    Original: 513 run, 505 passed, 0 failed, 8 skipped
+    LLM:      513 run, 482 passed, 4 failed, 27 skipped

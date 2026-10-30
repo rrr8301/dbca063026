@@ -1,0 +1,51 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          8
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      coverage_32bit
+  Test command(s) run in original CI:
+    $ actions/checkout@v6
+    $ tools/ci.sh unix_coverage_32bit_build
+    $ tools/ci.sh unix_coverage_32bit_run_tests
+    $ tests/run-tests.py --print-failures
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    7
+
+--- LLM run.sh Test Command(s) ---
+  $ bash tools/ci.sh unix_coverage_32bit_run_tests || TEST_SUITE_FAILED=1
+  $ bash tools/ci.sh unix_coverage_32bit_run_native_mpy_tests || NATIVE_TEST_FAILED=1
+  $ python3 tests/run-tests.py --print-failures || true
+
+--- Reason(s) for Non-Reproducibility ---
+  - [micropython] Test run mismatch: original=1085, LLM=1123
+  - [micropython] Test passed mismatch: original=1084, LLM=1119
+  - [micropython] Test failed mismatch: original=1, LLM=4
+  - [micropython] 4 test(s) failed in LLM but not in original: extmod/asyncio_get_event_loop.py, extmod/asyncio_new_event_loop.py, extmod/asyncio_wait_for_linked_task.py, thread/stress_aes.py
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    1223:FAIL  extmod/asyncio_new_event_loop.py
+    1315:FAIL  extmod/asyncio_get_event_loop.py
+    1766:FAIL  extmod/asyncio_wait_for_linked_task.py
+    1805:FAIL  thread/stress_aes.py
+    2192:-/workspace/micropython/tests/extmod/asyncio_wait_for_linked_task.py:65: DeprecationWarning: There is no current event loop
+    2203:+TIMEOUT
+    (diff shows expected output contains DeprecationWarning lines, LLM output shows TIMEOUT instead)
+
+  [Root cause classification]
+  - asyncio API version difference: `asyncio_new_event_loop.py` and `asyncio_get_event_loop.py` fail because MicroPython's asyncio implementation on this newer build no longer emits the `DeprecationWarning: There is no current event loop` in the same way the test's expected output requires. The test output diverges from the reference file.
+  - Thread stress test times out: `thread/stress_aes.py` fails with `TIMEOUT` — the AES multi-threading stress test exceeds the allowed time limit in the Docker container, likely due to slower CPU throughput or scheduling constraints compared to the original CI runner.
+  - The 38 extra tests in LLM (1123 vs 1085) reflect that the LLM also ran `unix_coverage_32bit_run_native_mpy_tests` while the original only ran `unix_coverage_32bit_run_tests`.
+
+--- Test Statistics Comparison ---
+  [micropython]
+    Original: 1085 run, 1084 passed, 1 failed, 21 skipped
+    LLM:      1123 run, 1119 passed, 4 failed, 28 skipped

@@ -1,0 +1,32 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      Build v1 (Go 1.24.x)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ go test -race -coverprofile=coverage.txt -covermode=atomic -coverpkg=./... ./...
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoDefault] Test passed mismatch: original=75, LLM=74
+  - [GoDefault] Test failed mismatch: original=0, LLM=1
+  - [GoDefault] 1 test(s) failed in LLM but not in original: github.com/IBM/fp-go/lambda
+
+--- Root Cause Analysis ---
+  - [GoDefault] 1 test(s) failed in LLM but not original: github.com/IBM/fp-go/lambda
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 75 run, 75 passed, 0 failed, 0 skipped
+    LLM:      75 run, 74 passed, 1 failed, 0 skipped

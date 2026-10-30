@@ -1,0 +1,40 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          3
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      tests (latest)
+  Test command(s) run in original CI:
+    $ actions/checkout@v4
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  (no test commands found)
+
+--- Reason(s) for Non-Reproducibility ---
+  - [GoDefault] Test result mismatch (same count 145): original=(145p/0f/0s), LLM=(143p/2f/0s)
+  - [GoDefault] Tests failed in LLM but passed in original: google.golang.org/grpc/security/advancedtls, google.golang.org/grpc/test
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    753---- FAIL: TestVerifyConnection (0.00s)
+    755---- FAIL: TestVerifyConnection (0.00s)
+    758:FAIL	google.golang.org/grpc/security/advancedtls	8.095s
+
+  [Root cause classification]
+  - `TestVerifyConnection` in `google.golang.org/grpc/security/advancedtls` tests the advanced TLS connection verification logic. The test loads X.509 test certificates from a `testdata/` directory relative to the package, then establishes mTLS connections between a test client and server. The failure at 8.095s suggests the TLS handshake times out — either the certificate files are present but malformed for this Go/TLS version, or the TLS record sizes and cipher negotiation differ from what the test expects in a newer `crypto/tls` standard library version shipped with the LLM's Go installation vs the Go version used in original CI.
+
+  - `google.golang.org/grpc/test` fails as a secondary consequence — `grpc/test` contains end-to-end transport tests that depend on the TLS handshake infrastructure from `security/advancedtls`. When TLS verification fails to initialize correctly, the transport-level test cannot establish secure connections and reports failures. The Go standard library's `crypto/tls` has had several behavioral changes across minor versions (e.g., minimum TLS version negotiation, cipher suite defaults), and the LLM's Go version produces different TLS handshake behavior than the original CI's pinned Go version.
+
+--- Test Statistics Comparison ---
+  [GoDefault]
+    Original: 145 run, 145 passed, 0 failed, 0 skipped
+    LLM:      145 run, 143 passed, 2 failed, 0 skipped

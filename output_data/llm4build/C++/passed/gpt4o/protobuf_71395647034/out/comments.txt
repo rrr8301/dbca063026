@@ -1,0 +1,39 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      C++ / Linux GCC 9.1
+  Docker image pulled: us-docker.pkg.dev/protobuf-build/containers/test/binfmt@sha256:10d6fc4cc07629be6d9960ae427535ea2e6ceec57206cafc5471e3476141a46f
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    4
+
+--- LLM run.sh Test Command(s) ---
+  $ ctest --no-tests=error --verbose --parallel 20 || true
+
+--- Reason(s) for Non-Reproducibility ---
+  - Framework(s) in LLM but not in original: CTest, GTest
+  - [Bazel] Test run mismatch: original=115, LLM=1
+  - [Bazel] Test passed mismatch: original=114, LLM=0
+
+--- Root Cause Analysis ---
+  - [Bazel] LLM ran 114 fewer tests than original — LLM likely used a narrower test scope or missed some test suites.
+
+--- Test Statistics Comparison ---
+  [Bazel]
+    Original: 115 run, 114 passed, 0 failed, 1 skipped
+    LLM:      1 run, 0 passed, 0 failed, 1 skipped
+  [CTest]
+    Original: (not present)
+    LLM:      4 run, 4 passed, 0 failed, 0 skipped
+  [GTest]
+    Original: (not present)
+    LLM:      5767 run, 5753 passed, 0 failed, 0 skipped

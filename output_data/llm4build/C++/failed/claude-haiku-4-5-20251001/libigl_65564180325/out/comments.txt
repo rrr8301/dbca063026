@@ -1,0 +1,43 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          1
+Original build category: failed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  CI job name:      ubuntu-24.04 Static tutorial tests Release
+  Test command(s) run in original CI:
+    $ actions/checkout@v1
+    $ mkdir -p build
+    $ cd build; make -j2; ccache --show-stats
+    $ cd build; ctest --show-only; ctest --verbose
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:24.04
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ cmake .. \
+  $ -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
+  $ -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+  $ -DCMAKE_BUILD_TYPE=Release \
+  $ -DLIBIGL_GLFW_TESTS=OFF \
+
+--- Reason(s) for Non-Reproducibility ---
+  - [CTest] Test result mismatch (same count 297): original=(296p/1f/0s), LLM=(297p/0f/0s)
+  - [CTest] Tests failed in original but passed in LLM: AABB: dynamic
+
+--- Root Cause Analysis ---
+  [Actual error messages from LLM log.txt]
+    (297/297 tests passed in LLM — "AABB: dynamic" completed in 3.46 sec with no failure output)
+
+  [Root cause classification]
+  - The "AABB: dynamic" test stresses the dynamic Axis-Aligned Bounding Box tree from the CGAL library with many insert/query operations. Its failure in the original CI (ubuntu-24.04 with clang via actions/checkout@v1, which resolves to an older version) is likely a timing or compiler-specific numerical issue rather than a logic bug — the test passed in the LLM environment using the same Ubuntu 24.04 base with GCC. The original CI also uses ccache, which can affect timing-sensitive benchmarks indirectly. This is a flaky/environment-sensitive test; the LLM is not regression.
+
+--- Test Statistics Comparison ---
+  [CTest]
+    Original: 297 run, 296 passed, 1 failed, 0 skipped
+    LLM:      297 run, 297 passed, 0 failed, 0 skipped

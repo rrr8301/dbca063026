@@ -1,0 +1,38 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          2
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      Build mlibc (x86_64, mlibc, gcc)
+  Docker image pulled: debian:trixie
+
+--- LLM-Generated Dockerfile ---
+  Base image:   debian:trixie
+  RUN steps:    3
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Meson] Test run mismatch: original=413, LLM=415
+  - [Meson] Test failed mismatch: original=0, LLM=2
+  - [Meson] 2 test(s) failed in LLM but not in original: mlibc:host-libc+posix/getaddrinfo, mlibc:posix/getaddrinfo
+
+--- Root Cause Analysis ---
+  [Actual error from LLM log.txt]
+    > 203/415 mlibc:host-libc+posix / getaddrinfo    FAIL    0.81s   killed by signal 6 SIGABRT
+    > 202/415 mlibc:posix / getaddrinfo               FAIL    1.50s   killed by signal 6 SIGABRT
+    > Ok: 409   Expected Fail: 4   Fail: 2
+
+  [Root cause classification: DNS resolver / network configuration difference in Docker]
+  - Both getaddrinfo tests abort with SIGABRT, indicating an assertion failure or abort() call inside mlibc's POSIX getaddrinfo implementation when it cannot reach a functioning DNS resolver or when /etc/resolv.conf points to a non-routable address inside the Docker container.
+  - The original CI ran on ubuntu-24.04 with a working host-level DNS, so getaddrinfo succeeded; the LLM's Docker container has no outbound DNS configured by default, causing the mlibc resolver to hit an unexpected condition and abort.
+  - The +2 test count difference (415 vs 413) is because the LLM's Meson build included an extra test variant (host-libc+posix copies), exposing the same DNS failure in two test suites rather than one.
+
+--- Test Statistics Comparison ---
+  [Meson]
+    Original: 413 run, 409 passed, 0 failed, 0 skipped
+    LLM:      415 run, 409 passed, 2 failed, 0 skipped

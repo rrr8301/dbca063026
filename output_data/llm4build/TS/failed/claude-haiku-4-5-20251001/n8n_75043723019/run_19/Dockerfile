@@ -1,0 +1,36 @@
+FROM node:24.14.1-alpine
+
+# Install git (required for prepare script and lefthook)
+RUN apk add --no-cache git
+
+# Install pnpm
+RUN npm install -g pnpm
+
+# Set working directory
+WORKDIR /app
+
+# Copy project files (ensure turbo.json is included)
+COPY . .
+
+# Verify turbo.json exists
+RUN test -f turbo.json || test -f turbo.jsonc || (echo "Error: turbo.json or turbo.jsonc not found" && exit 1)
+
+# Verify pnpm cache directory exists
+RUN mkdir -p "$(pnpm store path --silent)"
+
+# Install dependencies (skip prepare script which requires git hooks setup)
+RUN pnpm install --frozen-lockfile --ignore-scripts
+
+# Configure git (required for prepare script)
+RUN git config --global user.email "ci@n8n.io" && \
+    git config --global user.name "CI Bot"
+
+# Run prepare script manually but skip lefthook
+RUN node scripts/prepare.mjs 2>/dev/null || true
+
+# Set environment variables for tests
+ENV NODE_OPTIONS="--max-old-space-size=7168"
+ENV COVERAGE_ENABLED="false"
+
+# Run all tests
+CMD ["sh", "-c", "pnpm test:ci:backend:unit --summarize && pnpm test:ci:backend:integration --summarize && pnpm turbo test --filter=n8n-nodes-base --summarize && pnpm test:ci:frontend --summarize -- --shard=1/2 && pnpm test:ci:frontend --summarize -- --shard=2/2 && node .github/scripts/send-build-stats.mjs || true"]

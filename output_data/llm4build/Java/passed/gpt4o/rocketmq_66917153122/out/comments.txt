@@ -1,0 +1,36 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          N/A
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     ubuntu-24.04
+  CI job name:      maven-compile (ubuntu-latest, JDK-8)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:latest
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ mvn clean install
+  $ mvn test || true
+
+--- Reason(s) for Non-Reproducibility ---
+  - [Maven] Test run mismatch: original=2859, LLM=2806
+  - [Maven] Test passed mismatch: original=2842, LLM=2787
+  - [Maven] Test failed mismatch: original=0, LLM=1
+  - [Maven] Test skipped mismatch: original=17, LLM=18
+  - [Maven] 1 test(s) failed in LLM but not in original: testGetWhenComputeIfPresentReturnNull(org.apache.rocketmq.proxy.common.ReceiptHandleGroupTest)
+
+--- Root Cause Analysis ---
+  - [Maven] LLM ran 53 fewer tests than original — LLM likely used a narrower test scope or missed some test suites.
+  - [Maven] 1 test(s) failed in LLM but not original: testGetWhenComputeIfPresentReturnNull(org.apache.rocketmq.proxy.common.ReceiptHandleGroupTest)
+
+--- Test Statistics Comparison ---
+  [Maven]
+    Original: 2859 run, 2842 passed, 0 failed, 17 skipped
+    LLM:      2806 run, 2787 passed, 1 failed, 18 skipped

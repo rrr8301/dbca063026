@@ -1,0 +1,44 @@
+=== Build Reproducibility Analysis ===
+ER (Execution Result):   True
+TR (Test Result):        True
+FR (Fully Reproducible): False
+Attempt Number:          4
+Original build category: passed
+
+STATUS: BUILD SUCCEEDED BUT NOT FULLY REPRODUCIBLE
+
+--- Original CI Environment ---
+  Runner image:     self-hosted (torch-mlir-cpubuilder-linux-x86-64)
+  CI job name:      Build and Test (Linux, torch-nightly, assertions)
+
+--- LLM-Generated Dockerfile ---
+  Base image:   ubuntu:22.04
+  RUN steps:    3
+
+--- LLM run.sh Test Command(s) ---
+  $ python3.11 -m venv venv
+  $ source venv/bin/activate
+  $ pip install -r /app/pytorch-requirements.txt
+  $ pip install -r /app/test-requirements.txt
+  $ bash build_tools/ci/build_posix.sh
+  $ bash build_tools/ci/test_posix.sh nightly
+
+--- Reason(s) for Non-Reproducibility ---
+  - LLVMLit test count mismatch: original=192 run / 191 passed / 0 failed, LLM=127 run / 119 passed / 7 failed
+  - LLM ran 65 fewer tests than original (127 vs 192)
+  - LLM had 7 test failures vs 0 in the original
+
+--- Root Cause Analysis ---
+  Actual error messages from LLM log.txt:
+    > ModuleNotFoundError: No module named 'packaging'
+    > from torch_mlir import fx
+    > from packaging import version
+    > Failed Tests (7): python/fx_importer/basic_test.py, python/fx_importer/custom_op_test.py, python/fx_importer/symbolic_shape_expr_test.py, python/fx_importer/v2.3/auto_functionalized.py, python/fx_importer/v2.3/mutation_import.py, python/fx_importer/v2.3/special_forms_test.py, python/fx_importer/v2.3/types_test.py
+
+  Root cause classification: Missing Python package dependency / incomplete venv setup
+  - All 7 failing tests are Python fx_importer tests that import `torch_mlir.fx`, which in turn imports from the `packaging` Python package. The LLM's virtual environment setup did not include the `packaging` package (or the pip version was too old to have it as a transitive dependency), causing all fx_importer tests to crash at import time. The original CI used a pre-configured container image with a complete Python environment. Additionally, the LLM ran 65 fewer tests (127 vs 192) because several test categories were either excluded or their prerequisites were not met in the simplified build environment.
+
+--- Test Statistics Comparison ---
+  LLVMLit
+    Original: 192 run, 191 passed, 0 failed, 1 skipped
+    LLM:      127 run, 119 passed, 7 failed, 1 skipped
